@@ -1,0 +1,56 @@
+import type { LayerModelState } from './layerModel.types';
+
+export const mockLayerModelState: LayerModelState = {
+  layer_model_id: 'lm_001',
+  route_layer_model_id: 'rlm_001',
+  basis_layer_id: 'bl_hochwab_001',
+  layers: [
+    {
+      layer_id: 'layer_osm_base',
+      layer_type: 'basis_tile_layer',
+      display_name: 'OSM Basiskarte',
+      visible: true,
+      z_index: 0,
+      opacity: 1.0,
+      data_class: 'public_aggregate',
+    },
+    {
+      layer_id: 'layer_route_score',
+      layer_type: 'route_score_layer',
+      display_name: 'Routenbewertung',
+      visible: true,
+      z_index: 10,
+      opacity: 0.85,
+      data_class: 'reduced_scim_result',
+    },
+    {
+      layer_id: 'layer_poi_load',
+      layer_type: 'poi_load_layer',
+      display_name: 'POI-Auslastung',
+      visible: true,
+      z_index: 20,
+      opacity: 0.9,
+      data_class: 'reduced_scim_result',
+    },
+    {
+      layer_id: 'layer_movement_flow',
+      layer_type: 'movement_flow_layer',
+      display_name: 'Bewegungsfluss',
+      visible: false,
+      z_index: 15,
+      opacity: 0.7,
+      data_class: 'operator_internal',
+    },
+  ],
+  visible_layer_count: 3,
+  validation: {
+    is_valid: true,
+    errors: [],
+    warnings: [],
+    checked_at: '2026-05-21T00:11:00.000Z',
+    checked_against_route_layer_model_id: 'rlm_001',
+    checked_against_basis_layer_id: 'bl_hochwab_001',
+  },
+  status: 'layer_model_valid',
+  built_at: '2026-05-21T00:11:00.000Z',
+};

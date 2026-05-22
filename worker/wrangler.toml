@@ -1,0 +1,14 @@
+name            = "scim3-bundle-worker"
+main            = "src/index.ts"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# KV-Namespace für Bundle-Speicherung.
+# Nach `wrangler kv namespace create BUNDLES` die IDs eintragen.
+[[kv_namespaces]]
+binding    = "BUNDLES"
+id         = "0ded19f001c2452ba2bc615c4be31ac9"
+preview_id = "0ded19f001c2452ba2bc615c4be31ac9"
+
+# Geheimnis UPLOAD_API_KEY per `wrangler secret put UPLOAD_API_KEY` setzen.
+# Wird niemals in diese Datei eingetragen.

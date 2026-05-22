@@ -1,0 +1,56 @@
+import type { MovementModelState } from './movementModel.types';
+
+export const mockMovementModelState: MovementModelState = {
+  movement_model_id: 'mm_001',
+  graph_id: 'graph_hochwab_001',
+  load_projection_id: 'lp_001',
+  edge_movement_states: [
+    {
+      edge_id: 'e_001',
+      movement_class: 'moderate_flow',
+      movement_ratio: 0.74,
+      stillness_ratio: 0.26,
+      flow_direction: 'bidirectional',
+      normalized_movement_score: 0.62,
+      confidence_score: 0.82,
+      privacy_masked: false,
+    },
+    {
+      edge_id: 'e_002',
+      movement_class: 'moderate_flow',
+      movement_ratio: 0.60,
+      stillness_ratio: 0.40,
+      flow_direction: 'bidirectional',
+      normalized_movement_score: 0.51,
+      confidence_score: 0.77,
+      privacy_masked: false,
+    },
+    {
+      edge_id: 'e_003',
+      movement_class: 'low_flow',
+      movement_ratio: 0.22,
+      stillness_ratio: 0.78,
+      flow_direction: 'unknown',
+      normalized_movement_score: 0.19,
+      confidence_score: 0.55,
+      privacy_masked: false,
+    },
+  ],
+  metrics: {
+    evaluated_edge_count: 3,
+    high_flow_edge_count: 0,
+    static_edge_count: 0,
+    masked_edge_count: 0,
+    avg_movement_score: 0.44,
+  },
+  validation: {
+    is_valid: true,
+    errors: [],
+    warnings: [],
+    checked_at: '2026-05-21T00:07:00.000Z',
+    checked_against_graph_id: 'graph_hochwab_001',
+    checked_against_load_projection_id: 'lp_001',
+  },
+  status: 'movement_model_valid',
+  computed_at: '2026-05-21T00:07:00.000Z',
+};

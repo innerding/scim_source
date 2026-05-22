@@ -1,0 +1,371 @@
+import { useState, useRef, useEffect } from 'react';
+import type { Role } from './RoleContext';
+import logoBase from '../../assets/logo-base.svg';
+import logoHex from '../../assets/logo-hex.svg';
+
+interface Props {
+  onAuth: (role: Role) => void;
+}
+
+const USERS: Record<string, { code: string; role: Role }> = {
+  'dietmar broda': { code: import.meta.env.VITE_CODE_OPERATOR ?? '', role: 'operator' },
+  'michael moser': { code: import.meta.env.VITE_CODE_ANALYST  ?? '', role: 'analyst'  },
+};
+
+type Phase = 'idle' | 'confirming' | 'fading';
+
+// Hex pivot as % of SVG viewBox: x=53.075/182.625, y=30.208/51.122
+const HEX_ORIGIN = '29.1% 59.1%';
+
+const CSS = `
+  @keyframes scim-bob {
+    0%, 100% { transform: translateY(0px); }
+    50%       { transform: translateY(-6px); }
+  }
+  @keyframes scim-pulse {
+    0%, 100% { opacity: 0.75; }
+    50%      { opacity: 1; }
+  }
+  .scim-input::placeholder { color: rgba(255,255,255,0.28); }
+  .scim-input:focus { border-color: rgba(255,255,255,0.45) !important; }
+`;
+
+// ─── Empty-Sea mesh ───────────────────────────────────────────────────────────
+
+const S = {
+  cols: 42, rows: 34, cellSize: 118, waveAmplitude: 9,
+  focalLength: 1060, screenLift: 0.58,
+  orbitRadius: 1560, orbitHeight: 430, orbitSpeed: 0.055,
+};
+
+const EUROPE = [
+  [5.7,46.0],[6.2,45.6],[8.5,45.5],[11.6,45.7],[14.4,46.0],
+  [17.8,47.2],[20.0,49.0],[19.4,50.9],[15.0,51.2],[11.0,50.8],
+  [8.1,49.6],[5.5,47.6],
+];
+
+const GEO = { lonMin:5.0, lonMax:20.5, latMin:45.4, latMax:51.2 };
+
+type Vec3 = { x:number; y:number; z:number };
+
+function cross(a: Vec3, b: Vec3): Vec3 {
+  return { x: a.y*b.z - a.z*b.y, y: a.z*b.x - a.x*b.z, z: a.x*b.y - a.y*b.x };
+}
+function dot(a: Vec3, b: Vec3) { return a.x*b.x + a.y*b.y + a.z*b.z; }
+function norm(v: Vec3): Vec3 {
+  const l = Math.hypot(v.x, v.y, v.z) || 1;
+  return { x:v.x/l, y:v.y/l, z:v.z/l };
+}
+function lerp(a: number, b: number, t: number) { return a + (b - a) * t; }
+function clamp01(v: number) { return Math.max(0, Math.min(1, v)); }
+
+function waveY(x: number, z: number, t: number) {
+  return (
+    Math.sin(x * 0.010 + t) * S.waveAmplitude +
+    Math.sin(z * 0.014 - t * 0.8) * S.waveAmplitude * 0.52 +
+    Math.sin((x + z) * 0.006 + t * 0.47) * S.waveAmplitude * 0.28
+  );
+}
+
+function inEurope(lon: number, lat: number): boolean {
+  const p = EUROPE;
+  let inside = false;
+  for (let i = 0, j = p.length - 1; i < p.length; j = i++) {
+    if (((p[i][1] > lat) !== (p[j][1] > lat)) &&
+        lon < ((p[j][0] - p[i][0]) * (lat - p[i][1])) / (p[j][1] - p[i][1]) + p[i][0]) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+
+function geoFromLattice(row: number, col: number) {
+  return {
+    lon: GEO.lonMin + (col / Math.max(1, S.cols - 1)) * (GEO.lonMax - GEO.lonMin),
+    lat: GEO.latMax - (row / Math.max(1, S.rows - 1)) * (GEO.latMax - GEO.latMin),
+  };
+}
+
+interface WorldPt { x: number; y: number; z: number; inEurope: boolean; }
+interface ScreenPt { x: number; y: number; near: number; inEurope: boolean; }
+
+function latticeWorld(row: number, col: number, t: number): WorldPt {
+  const cell = S.cellSize;
+  const triH = cell * 0.866;
+  const geo = geoFromLattice(row, col);
+  const x = (col - S.cols / 2) * cell + (row % 2 ? cell / 2 : 0);
+  const z = (row - 6) * triH;
+  return { x, y: waveY(x, z, t), z, inEurope: inEurope(geo.lon, geo.lat) };
+}
+
+function buildBasis(camera: { eye: Vec3; target: Vec3 }) {
+  const forward = norm({ x: camera.target.x - camera.eye.x, y: camera.target.y - camera.eye.y, z: camera.target.z - camera.eye.z });
+  const right = norm(cross(forward, { x:0, y:1, z:0 }));
+  const up = norm(cross(right, forward));
+  return { forward, right, up };
+}
+
+function project(world: WorldPt, camera: { eye: Vec3; target: Vec3 }, w: number, h: number): ScreenPt | null {
+  const basis = buildBasis(camera);
+  const rel = { x: world.x - camera.eye.x, y: world.y - camera.eye.y, z: world.z - camera.eye.z };
+  const camZ = dot(rel, basis.forward);
+  if (camZ <= 1) return null;
+  const scale = S.focalLength / camZ;
+  return {
+    x: w * 0.5 + dot(rel, basis.right) * scale,
+    y: h * S.screenLift - dot(rel, basis.up) * scale,
+    near: clamp01(1 - camZ / 4200),
+    inEurope: world.inEurope,
+  };
+}
+
+function renderEmptySea(ctx: CanvasRenderingContext2D, w: number, h: number, t: number) {
+  // Background
+  const bg = ctx.createLinearGradient(0, 0, 0, h);
+  bg.addColorStop(0, '#000000');
+  bg.addColorStop(0.56, '#020b14');
+  bg.addColorStop(1, '#000000');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, w, h);
+
+  // Light falloff
+  const glow = ctx.createRadialGradient(w*0.5, h*0.44, 0, w*0.5, h*0.46, Math.max(w, h)*0.62);
+  glow.addColorStop(0, 'rgba(0,80,180,0.06)');
+  glow.addColorStop(0.34, 'rgba(0,60,140,0.025)');
+  glow.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, w, h);
+
+  // Camera
+  const orbit = t * S.orbitSpeed;
+  const cx = 0, cz = 1690;
+  const camera = {
+    eye: {
+      x: cx + Math.cos(orbit) * S.orbitRadius,
+      y: S.orbitHeight + Math.sin(t * 0.62) * 10,
+      z: cz + Math.sin(orbit) * S.orbitRadius,
+    },
+    target: { x: cx, y: 6, z: cz },
+  };
+
+  // Build mesh
+  const mesh: (ScreenPt | null)[][] = [];
+  for (let row = 0; row < S.rows; row++) {
+    mesh[row] = [];
+    for (let col = 0; col < S.cols; col++) {
+      mesh[row][col] = project(latticeWorld(row, col, t), camera, w, h);
+    }
+  }
+
+  // Draw edges
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,1)';
+  for (let row = 0; row < S.rows; row++) {
+    for (let col = 0; col < S.cols; col++) {
+      const a = mesh[row][col];
+      if (!a) continue;
+      const drawEdge = (b: ScreenPt | null) => {
+        if (!b || !a.inEurope || !b.inEurope) return;
+        const near = (a.near + b.near) * 0.5;
+        ctx.globalAlpha = lerp(0.09, 0.72, near);
+        ctx.lineWidth = lerp(0.24, 1.18, near);
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+      };
+      drawEdge(mesh[row][col + 1]);
+      if (row < S.rows - 1) {
+        drawEdge(mesh[row + 1][col]);
+        drawEdge(row % 2 === 0 ? mesh[row + 1][col - 1] : mesh[row + 1][col + 1]);
+      }
+    }
+  }
+
+  // Draw dots
+  ctx.fillStyle = 'rgba(255,255,255,1)';
+  for (const row of mesh) {
+    for (const pt of row) {
+      if (!pt || pt.x < -30 || pt.x > w + 30 || pt.y < -30 || pt.y > h + 30) continue;
+      ctx.globalAlpha = lerp(0.10, 0.68, pt.near);
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, lerp(0.35, 1.65, pt.near), 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
+export default function IntroScreen({ onAuth }: Props) {
+  const [name, setName] = useState('');
+  const [code, setCode] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [phase, setPhase] = useState<Phase>('idle');
+  const [hexRot, setHexRot] = useState(0);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Canvas animation loop
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    let raf: number;
+    let t0: number | null = null;
+    const paint = (now: number) => {
+      if (t0 === null) t0 = now;
+      const t = (now - t0) / 1000;
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      if (canvas.width !== w || canvas.height !== h) {
+        canvas.width = w;
+        canvas.height = h;
+      }
+      const ctx = canvas.getContext('2d');
+      if (ctx) renderEmptySea(ctx, w, h, t);
+      raf = requestAnimationFrame(paint);
+    };
+    raf = requestAnimationFrame(paint);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  const canSubmit = name.trim().length > 0 && code.trim().length > 0 && phase === 'idle';
+
+  const handleSubmit = () => {
+    if (!canSubmit) return;
+    const user = USERS[name.trim().toLowerCase()];
+    if (!user || user.code !== code.trim().toUpperCase()) {
+      setError('Unbekannter Nutzer oder falscher Code');
+      return;
+    }
+    setError(null);
+    setPhase('confirming');
+
+    [1, 2, 3, 4].forEach((i) => {
+      setTimeout(() => setHexRot(i * 60), 620 + i * 180);
+    });
+
+    const spinEnd = 620 + 4 * 180;
+    setTimeout(() => setPhase('fading'), spinEnd);
+    setTimeout(() => onAuth(user.role), spinEnd + 520);
+  };
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%', boxSizing: 'border-box',
+    background: 'rgba(255,255,255,0.06)',
+    border: '1px solid rgba(255,255,255,0.18)',
+    borderRadius: 5, padding: '9px 12px',
+    color: '#ffffff', fontSize: 13, outline: 'none',
+    fontFamily: 'system-ui, sans-serif', marginBottom: 12,
+    transition: 'border-color 0.15s',
+  };
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 9999,
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      opacity: phase === 'fading' ? 0 : 1,
+      transition: phase === 'fading' ? 'opacity 520ms ease-in' : 'none',
+    }}>
+      <style>{CSS}</style>
+
+      {/* Canvas — Empty Sea mesh */}
+      <canvas ref={canvasRef} style={{
+        position: 'absolute', inset: 0,
+        width: '100%', height: '100%',
+        pointerEvents: 'none',
+      }} />
+
+      {/* Logo */}
+      <div style={{
+        position: 'relative', width: 292, height: 82, zIndex: 1,
+        animation: 'scim-bob 3s ease-in-out infinite',
+        marginBottom: 48,
+      }}>
+        <img src={logoBase} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} />
+        <img src={logoHex} alt="" style={{
+          position: 'absolute', inset: 0, width: '100%', height: '100%',
+          transformOrigin: HEX_ORIGIN,
+          transform: `rotate(${hexRot}deg)`,
+          transition: hexRot > 0 ? 'transform 180ms ease-in-out' : 'none',
+          animation: phase === 'idle' ? 'scim-pulse 2600ms 3000ms ease-in-out infinite' : 'none',
+        }} />
+      </div>
+
+      {/* Access dialog */}
+      <div style={{
+        position: 'relative', zIndex: 1, width: 320,
+        background: 'rgba(0, 0, 0, 0.60)',
+        border: '1px solid rgba(255, 255, 255, 0.12)',
+        borderRadius: 10, padding: '28px 32px',
+        backdropFilter: 'blur(22px)',
+        WebkitBackdropFilter: 'blur(22px)',
+        boxShadow: '0 12px 48px rgba(0,0,0,0.75), inset 0 1px 0 rgba(255,255,255,0.08)',
+      }}>
+        <div style={{
+          fontSize: 10, color: 'rgba(255,255,255,0.4)', fontFamily: 'monospace',
+          letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 22,
+        }}>
+          Zugang — SCIM3 V0.2
+        </div>
+
+        <input
+          placeholder="Name"
+          value={name}
+          onChange={(e) => { setName(e.target.value); setError(null); }}
+          onKeyDown={(e) => e.key === 'Enter' && canSubmit && handleSubmit()}
+          autoComplete="off"
+          className="scim-input"
+          style={inputStyle}
+        />
+        <input
+          type="password"
+          placeholder="Code"
+          value={code}
+          onChange={(e) => { setCode(e.target.value); setError(null); }}
+          onKeyDown={(e) => e.key === 'Enter' && canSubmit && handleSubmit()}
+          autoComplete="off"
+          className="scim-input"
+          style={{ ...inputStyle, marginBottom: error ? 8 : 18 }}
+        />
+
+        {error && (
+          <div style={{
+            fontSize: 11, color: '#fc8181', marginBottom: 14,
+            textAlign: 'center', fontFamily: 'system-ui',
+          }}>
+            {error}
+          </div>
+        )}
+
+        <button
+          onClick={handleSubmit}
+          disabled={!canSubmit}
+          style={{
+            width: '100%', padding: '10px 0', fontSize: 13, fontWeight: 600,
+            background: canSubmit ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.08)',
+            color: canSubmit ? '#000000' : 'rgba(255,255,255,0.22)',
+            border: `1px solid ${canSubmit ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.10)'}`,
+            borderRadius: 5,
+            cursor: canSubmit ? 'pointer' : 'default',
+            transition: 'background 0.18s, color 0.18s, border-color 0.18s',
+            fontFamily: 'system-ui, sans-serif',
+            letterSpacing: '0.04em',
+          }}
+        >
+          Eintreten
+        </button>
+      </div>
+
+      {/* Version tag */}
+      <div style={{
+        position: 'absolute', bottom: 20, right: 24, zIndex: 1,
+        fontSize: 10, color: 'rgba(255,255,255,0.15)',
+        fontFamily: 'monospace', letterSpacing: '0.06em',
+      }}>
+        SML-2 · client-only auth
+      </div>
+    </div>
+  );
+}
