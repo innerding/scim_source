@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { SystemAdjustState, RouteExceedanceBehavior } from '../../system-adjust/systemAdjust.types';
 import { mockSystemAdjustState } from '../../system-adjust/systemAdjust.mock';
+import { P01RepresentationSection } from './P01RepresentationSection';
 
 interface Props {
   state?: SystemAdjustState;
@@ -197,6 +198,10 @@ export default function P01SystemAdjustForm({ state }: Props) {
 
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 560 }}>
+
+      {/* Representation */}
+      <SectionTitle>Representation</SectionTitle>
+      <P01RepresentationSection />
 
       {/* Status banner */}
       <div style={{
