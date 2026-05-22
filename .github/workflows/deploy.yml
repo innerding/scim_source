@@ -18,12 +18,14 @@ jobs:
 
       - run: npm ci
 
+      - name: Create .env.production
+        run: |
+          echo "VITE_CODE_OPERATOR=${{ secrets.VITE_CODE_OPERATOR }}" >> .env.production
+          echo "VITE_CODE_ANALYST=${{ secrets.VITE_CODE_ANALYST }}" >> .env.production
+          echo "VITE_WORKER_URL=${{ secrets.VITE_WORKER_URL }}" >> .env.production
+          echo "VITE_UPLOAD_API_KEY=${{ secrets.VITE_UPLOAD_API_KEY }}" >> .env.production
+
       - run: npm run build
-        env:
-          VITE_CODE_OPERATOR: ${{ secrets.VITE_CODE_OPERATOR }}
-          VITE_CODE_ANALYST: ${{ secrets.VITE_CODE_ANALYST }}
-          VITE_WORKER_URL: ${{ secrets.VITE_WORKER_URL }}
-          VITE_UPLOAD_API_KEY: ${{ secrets.VITE_UPLOAD_API_KEY }}
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
