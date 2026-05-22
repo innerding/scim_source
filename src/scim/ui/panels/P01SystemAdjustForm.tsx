@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { SystemAdjustState, RouteExceedanceBehavior } from '../../system-adjust/systemAdjust.types';
 import { mockSystemAdjustState } from '../../system-adjust/systemAdjust.mock';
 import { P01RepresentationSection } from './P01RepresentationSection';
+import type { RepresentationValue } from './P01RepresentationSection';
 
 interface Props {
   state?: SystemAdjustState;
@@ -169,6 +170,7 @@ export default function P01SystemAdjustForm({ state }: Props) {
 
   const [params, setParams] = useState<Params>({ ...base.default_parameters });
   const [flags, setFlags] = useState<Flags>({ ...base.feature_flags });
+  const [representation, setRepresentation] = useState<RepresentationValue>({ name: 'Hochschwab', polygon: null });
   const [saved, setSaved] = useState(false);
   const [dirty, setDirty] = useState(false);
 
@@ -185,6 +187,7 @@ export default function P01SystemAdjustForm({ state }: Props) {
   };
 
   const handleSave = () => {
+    console.log('P01 gespeichert:', { params, flags, representation });
     setSaved(true);
     setDirty(false);
   };
@@ -201,7 +204,7 @@ export default function P01SystemAdjustForm({ state }: Props) {
 
       {/* Representation */}
       <SectionTitle>Representation</SectionTitle>
-      <P01RepresentationSection />
+      <P01RepresentationSection onChange={(v) => { setRepresentation(v); setDirty(true); setSaved(false); }} />
 
       {/* Status banner */}
       <div style={{
