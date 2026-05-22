@@ -20,8 +20,8 @@ jobs:
 
       - name: Create .env.production
         run: |
-          echo "VITE_CODE_OPERATOR=${{ secrets.VITE_CODE_OPERATOR }}" >> .env.production
-          echo "VITE_CODE_ANALYST=${{ secrets.VITE_CODE_ANALYST }}" >> .env.production
+          echo "VITE_CODE_OPERATOR=${{ vars.VITE_CODE_OPERATOR }}" >> .env.production
+          echo "VITE_CODE_ANALYST=${{ vars.VITE_CODE_ANALYST }}" >> .env.production
           echo "VITE_WORKER_URL=${{ secrets.VITE_WORKER_URL }}" >> .env.production
           echo "VITE_UPLOAD_API_KEY=${{ secrets.VITE_UPLOAD_API_KEY }}" >> .env.production
 
