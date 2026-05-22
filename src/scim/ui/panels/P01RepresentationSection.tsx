@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
+import QRCode from 'qrcode';
 import 'leaflet/dist/leaflet.css';
 import '@geoman-io/leaflet-geoman-free';
 import '@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css';
+
+const RUNTIME_URL = 'https://diesenpark.com';
 
 type LatLng = [number, number];
 
@@ -24,9 +27,18 @@ export function P01RepresentationSection({ onChange }: Props) {
 
   const [name, setName] = useState('Hochschwab');
   const [polygon, setPolygon] = useState<LatLng[] | null>(null);
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
 
   useEffect(() => {
     onChangeRef.current?.({ name, polygon });
+  }, [name, polygon]);
+
+  useEffect(() => {
+    if (!name.trim() || !polygon) { setQrDataUrl(null); return; }
+    const url = `${RUNTIME_URL}?r=${encodeURIComponent(name.trim())}`;
+    QRCode.toDataURL(url, { width: 180, margin: 1, color: { dark: '#1a202c', light: '#ffffff' } })
+      .then(setQrDataUrl)
+      .catch(() => setQrDataUrl(null));
   }, [name, polygon]);
 
   useEffect(() => {
@@ -131,9 +143,37 @@ export function P01RepresentationSection({ onChange }: Props) {
             ✓ Polygon gesetzt — {polygon.length - 1} Punkte
           </span>
         ) : (
-          <span style={{ color: '#a0aec0' }}>Kein Polygon definiert</span>
+          <span style={{ color: '#a0aec0' }}>Kein Polygon definiert — QR-Code erscheint nach dem Zeichnen</span>
         )}
       </div>
+
+      {/* QR Code */}
+      {qrDataUrl && (
+        <div style={{
+          marginTop: 16,
+          padding: '14px 16px',
+          background: '#f7fafc',
+          border: '1px solid #e2e8f0',
+          borderRadius: 8,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 16,
+        }}>
+          <img src={qrDataUrl} alt="QR Code" style={{ width: 90, height: 90, flexShrink: 0, borderRadius: 4 }} />
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: '#2d3748', marginBottom: 4 }}>
+              Runtime-Link für „{name}"
+            </div>
+            <div style={{ fontSize: 11, color: '#718096', lineHeight: 1.5 }}>
+              QR-Code scannen öffnet die Sensus-Core Runtime.<br />
+              Falls keine PWA installiert ist, wird sie beim ersten Aufruf angeboten.
+            </div>
+            <div style={{ fontSize: 10, color: '#a0aec0', marginTop: 6, fontFamily: 'monospace' }}>
+              {RUNTIME_URL}?r={encodeURIComponent(name.trim())}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
