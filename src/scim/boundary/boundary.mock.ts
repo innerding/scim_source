@@ -1,25 +1,25 @@
 import type { BoundaryState } from './boundary.types';
 
 export const mockBoundaryState: BoundaryState = {
-  boundary_id: 'bnd_hochwab_nord_001',
+  boundary_id: 'bnd_lichtenberg_001',
   computed_boundary: {
-    boundary_id: 'bnd_hochwab_nord_001',
+    boundary_id: 'bnd_lichtenberg_001',
     geometry: {
       type: 'Polygon',
       coordinates: [
         [
-          [14.998, 47.498],
-          [15.402, 47.498],
-          [15.402, 47.802],
-          [14.998, 47.802],
-          [14.998, 47.498],
+          [14.05, 48.22],
+          [14.35, 48.22],
+          [14.35, 48.42],
+          [14.05, 48.42],
+          [14.05, 48.22],
         ],
       ],
     },
-    bbox: [14.998, 47.498, 15.402, 47.802],
-    center: { type: 'Point', coordinates: [15.2, 47.65] },
-    area_sqkm: 1050,
-    related_region_id: 'reg_hochwab_nord',
+    bbox: [14.05, 48.22, 14.35, 48.42],
+    center: { type: 'Point', coordinates: [14.20, 48.32] },
+    area_sqkm: 380,
+    related_region_id: 'reg_lichtenberg',
     computed_at: '2026-05-21T00:01:00.000Z',
     source: 'regio_content_bbox',
   },
