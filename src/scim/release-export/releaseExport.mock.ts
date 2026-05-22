@@ -6,7 +6,7 @@ export const mockReleaseExportState: ReleaseExportState = {
   effect_check_id: 'lec_001',
   metadata: {
     released_by: 'scim_pipeline',
-    release_note: 'Hochschwab Nord — Mock-Release',
+    release_note: 'Lichtenberg — Mock-Release',
     target_format: 'sensus_core_json',
     schema_version: '3.0.0',
     privacy_verified: true,

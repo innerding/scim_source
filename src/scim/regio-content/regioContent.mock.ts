@@ -6,7 +6,7 @@ export const mockRegioContentState: RegioContentState = {
   loaded_at: '2026-05-21T00:00:00.000Z',
   region: {
     region_id: 'region_hochwab_nord',
-    region_name: 'Hochschwab Nord',
+    region_name: 'Lichtenberg',
     region_type: 'trail_area',
     country_code: 'AT',
     default_language: 'de',
