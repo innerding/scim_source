@@ -170,7 +170,7 @@ export default function P01SystemAdjustForm({ state }: Props) {
 
   const [params, setParams] = useState<Params>({ ...base.default_parameters });
   const [flags, setFlags] = useState<Flags>({ ...base.feature_flags });
-  const [representation, setRepresentation] = useState<RepresentationValue>({ name: 'Hochschwab', polygon: null });
+  const [representation, setRepresentation] = useState<RepresentationValue>({ name: 'Lichtenberg', polygon: null });
   const [saved, setSaved] = useState(false);
   const [dirty, setDirty] = useState(false);
 

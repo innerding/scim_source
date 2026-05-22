@@ -25,12 +25,24 @@ export function P01RepresentationSection({ onChange }: Props) {
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
 
-  const [name, setName] = useState('Hochschwab');
-  const [polygon, setPolygon] = useState<LatLng[] | null>(null);
+  const STORAGE_KEY = 'scim3_representation';
+
+  const loadStored = (): { name: string; polygon: LatLng[] | null } => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch { /* ignore */ }
+    return { name: 'Lichtenberg', polygon: null };
+  };
+
+  const stored = loadStored();
+  const [name, setName] = useState(stored.name);
+  const [polygon, setPolygon] = useState<LatLng[] | null>(stored.polygon);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
 
   useEffect(() => {
     onChangeRef.current?.({ name, polygon });
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ name, polygon })); } catch { /* ignore */ }
   }, [name, polygon]);
 
   useEffect(() => {
@@ -87,13 +99,22 @@ export function P01RepresentationSection({ onChange }: Props) {
       setPolygon(null);
     });
 
+    // Restore saved polygon
+    const initial = loadStored();
+    if (initial.polygon && initial.polygon.length >= 3) {
+      const latlngs = initial.polygon.map(([lat, lng]) => [lat, lng] as [number, number]);
+      const poly = L.polygon(latlngs, { color: '#0074d9' }).addTo(map);
+      layerRef.current = poly;
+      map.fitBounds(poly.getBounds(), { padding: [30, 30] });
+    }
+
     mapRef.current = map;
     return () => {
       map.remove();
       mapRef.current = null;
       layerRef.current = null;
     };
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div>
@@ -109,7 +130,7 @@ export function P01RepresentationSection({ onChange }: Props) {
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="z.B. Hochschwab"
+          placeholder="z.B. Lichtenberg"
           style={{
             width: '100%', boxSizing: 'border-box',
             padding: '6px 10px', fontSize: 13,
