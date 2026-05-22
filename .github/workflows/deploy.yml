@@ -19,6 +19,11 @@ jobs:
       - run: npm ci
 
       - run: npm run build
+        env:
+          VITE_CODE_OPERATOR: ${{ secrets.VITE_CODE_OPERATOR }}
+          VITE_CODE_ANALYST: ${{ secrets.VITE_CODE_ANALYST }}
+          VITE_WORKER_URL: ${{ secrets.VITE_WORKER_URL }}
+          VITE_UPLOAD_API_KEY: ${{ secrets.VITE_UPLOAD_API_KEY }}
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
