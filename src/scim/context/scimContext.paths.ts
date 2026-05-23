@@ -38,7 +38,8 @@ export type ScimContextPath =
   | 'context.status'
   | 'context.stay_zone_detector'
   | 'context.classification_mode'
-  | 'context.step2_activation_condition_met';
+  | 'context.step2_activation_condition_met'
+  | 'context.operator_decision';
 
 export const PANEL_WRITE_MAP: Record<ScimPanelId, ScimContextPath[]> = {
   panel_1_system_adjust_input: ['context.system_adjust', 'context.classification_mode'],
@@ -59,6 +60,7 @@ export const PANEL_WRITE_MAP: Record<ScimPanelId, ScimContextPath[]> = {
     'context.masking_model',
     'context.step2_activation_condition_met',
     'context.stay_zone_detector',
+    'context.operator_decision',
   ],
   panel_8_route_evaluation_display: [
     'context.route_model',

@@ -84,6 +84,7 @@ export interface GraphState { status: string; representation_id?: string }
 export interface BasisLayerState { status: string }
 export interface LeafletBasisCheckState { status: string }
 export interface StayZoneDetectorState { status: string }
+export interface OperatorDecisionState { status: string }
 export interface PoiModelState { status: string }
 export interface LoadProjectionState { status: string }
 export interface MovementModelState { status: string }
@@ -137,6 +138,7 @@ export interface ScimContext {
   leaflet_check?: LeafletBasisCheckState;
 
   stay_zone_detector?: StayZoneDetectorState;
+  operator_decision?: OperatorDecisionState;
   poi_model?: PoiModelState;
   load_model?: LoadProjectionState;
   movement_model?: MovementModelState;
