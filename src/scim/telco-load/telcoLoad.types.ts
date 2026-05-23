@@ -201,6 +201,9 @@ export interface TelcoLoadState {
   provider?: TelcoProviderInfo;
   time_window: LoadTimeWindow;
   spatial_scope: LoadSpatialScope;
+  // Transform Geometries — Phase 3
+  short_interval_window_seconds: number;
+  short_interval_enabled: boolean;
   load_signals: LoadSignalGroup[];
   aggregation_level: LoadAggregationLevel;
   signal_quality: LoadSignalQualitySummary;

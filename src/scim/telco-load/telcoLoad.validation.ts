@@ -178,6 +178,14 @@ export function validateTelcoLoad(
     }
   }
 
+  // Short interval
+  if (state.short_interval_enabled && state.short_interval_window_seconds < 5) {
+    warnings.push(warn('TELCO_SHORT_INTERVAL_TOO_SMALL', 'short_interval_window_seconds < 5s is unusually short for density analysis.', 'short_interval_window_seconds'));
+  }
+  if (state.short_interval_enabled && systemAdjust && state.short_interval_window_seconds > systemAdjust.default_parameters.default_measurement_interval_seconds * 3) {
+    warnings.push(warn('TELCO_SHORT_INTERVAL_EXCEEDS_SYSTEM', 'short_interval_window_seconds exceeds 3× system measurement interval — density results may be coarse.', 'short_interval_window_seconds'));
+  }
+
   // Optional warnings
   if (!regioContent) warnings.push(warn('TELCO_REGIO_CONTENT_MISSING', 'Regio-Content is not available.', 'regio_content'));
   if (!targetAppUi) warnings.push(warn('TELCO_TARGET_APP_UI_MISSING', 'Target-App-UI is not available.', 'target_app_ui'));

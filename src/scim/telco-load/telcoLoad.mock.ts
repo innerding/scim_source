@@ -12,6 +12,8 @@ export const mockTelcoLoadState: TelcoLoadState = {
     raw_signal_access: false,
     device_level_access: false,
   },
+  short_interval_window_seconds: 10,
+  short_interval_enabled: false,
   time_window: {
     start_at: '2026-05-21T09:00:00.000Z',
     end_at: '2026-05-21T09:05:00.000Z',
