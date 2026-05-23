@@ -24,16 +24,17 @@ export const WRITE_POLICIES: Record<ScimPanelId, ScimContextWritePolicy> = {
   panel_3_target_app_ui_input: policy('panel_3_target_app_ui_input'),
   panel_4_telco_load_input: policy('panel_4_telco_load_input'),
   panel_5_operator_zones: policy('panel_5_operator_zones'),
-  panel_6_boundary_extraction: policy('panel_6_boundary_extraction', {
+  panel_6_signal_interpretation: policy('panel_6_signal_interpretation'),
+  panel_7_boundary_extraction: policy('panel_7_boundary_extraction', {
     may_write_representation_id: true,
   }),
-  panel_7_graph_basislayer: policy('panel_7_graph_basislayer'),
-  panel_8_poi_load_movement: policy('panel_8_poi_load_movement'),
-  panel_9_route_evaluation_display: policy('panel_9_route_evaluation_display'),
-  panel_10_sensus_core_package_builder: policy('panel_10_sensus_core_package_builder'),
-  panel_11_sensus_core_local: policy('panel_11_sensus_core_local'),
-  panel_12_leaflet_effect_check: policy('panel_12_leaflet_effect_check'),
-  panel_13_release_export: policy('panel_13_release_export'),
+  panel_8_graph_basislayer: policy('panel_8_graph_basislayer'),
+  panel_9_poi_load_movement: policy('panel_9_poi_load_movement'),
+  panel_10_route_evaluation_display: policy('panel_10_route_evaluation_display'),
+  panel_11_sensus_core_package_builder: policy('panel_11_sensus_core_package_builder'),
+  panel_12_sensus_core_local: policy('panel_12_sensus_core_local'),
+  panel_13_leaflet_effect_check: policy('panel_13_leaflet_effect_check'),
+  panel_14_release_export: policy('panel_14_release_export'),
 };
 
 export function isPanelAllowedToWrite(

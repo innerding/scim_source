@@ -95,7 +95,7 @@ export function canRunBoundaryExtraction(context: ScimContext): ScimPanelGuardRe
     ['target_app_ui', 'context.target_app_ui'],
   ] as const) {
     const b = requireState(
-      'panel_6_boundary_extraction',
+      'panel_7_boundary_extraction',
       key,
       (context as Record<string, unknown>)[key],
       path
@@ -113,7 +113,7 @@ export function canRunGraphBasisLayer(context: ScimContext): ScimPanelGuardResul
     ['system_adjust', 'context.system_adjust'],
   ] as const) {
     const b = requireState(
-      'panel_7_graph_basislayer',
+      'panel_8_graph_basislayer',
       key,
       (context as Record<string, unknown>)[key],
       path
@@ -132,7 +132,7 @@ export function canRunPoiLoadMovement(context: ScimContext): ScimPanelGuardResul
     ['regio_content', 'context.regio_content'],
   ] as const) {
     const b = requireState(
-      'panel_8_poi_load_movement',
+      'panel_9_poi_load_movement',
       key,
       (context as Record<string, unknown>)[key],
       path
@@ -151,7 +151,7 @@ export function canRunRouteEvaluationDisplay(context: ScimContext): ScimPanelGua
     ['graph', 'context.graph'],
   ] as const) {
     const b = requireState(
-      'panel_9_route_evaluation_display',
+      'panel_10_route_evaluation_display',
       key,
       (context as Record<string, unknown>)[key],
       path
@@ -169,7 +169,7 @@ export function canRunSensusCorePackageBuilder(context: ScimContext): ScimPanelG
     ['system_adjust', 'context.system_adjust'],
   ] as const) {
     const b = requireState(
-      'panel_10_sensus_core_package_builder',
+      'panel_11_sensus_core_package_builder',
       key,
       (context as Record<string, unknown>)[key],
       path
@@ -181,7 +181,7 @@ export function canRunSensusCorePackageBuilder(context: ScimContext): ScimPanelG
 
 export function canRunSensusCoreLocal(context: ScimContext): ScimPanelGuardResult {
   const b = requireState(
-    'panel_11_sensus_core_local',
+    'panel_12_sensus_core_local',
     'sensus_core_package',
     context.sensus_core_package,
     'context.sensus_core_package'
@@ -196,7 +196,7 @@ export function canRunLeafletEffectCheck(context: ScimContext): ScimPanelGuardRe
     ['route_model', 'context.route_model'],
   ] as const) {
     const b = requireState(
-      'panel_12_leaflet_effect_check',
+      'panel_13_leaflet_effect_check',
       key,
       (context as Record<string, unknown>)[key],
       path
@@ -214,7 +214,7 @@ export function canRunReleaseExport(context: ScimContext): ScimPanelGuardResult 
     ['system_adjust', 'context.system_adjust'],
   ] as const) {
     const b = requireState(
-      'panel_13_release_export',
+      'panel_14_release_export',
       key,
       (context as Record<string, unknown>)[key],
       path
