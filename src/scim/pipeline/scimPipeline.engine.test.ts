@@ -15,6 +15,7 @@ import {
   computeLayerModel,
 } from './scimPipeline.compute';
 import { mockSystemAdjustState } from '../system-adjust/systemAdjust.mock';
+import { mockStayZoneDetectorState } from '../stay-zone-detector/stayZoneDetector.mock';
 import { mockRegioContentState } from '../regio-content/regioContent.mock';
 import { mockTargetAppUiState } from '../target-app-ui/targetAppUi.mock';
 import { mockTelcoLoadState } from '../telco-load/telcoLoad.mock';
@@ -23,7 +24,7 @@ import type { BoundaryState } from '../boundary/boundary.types';
 import type { ExtractionState } from '../extraction/extraction.types';
 import type { GraphState } from '../graph/graph.types';
 import type { BasisLayerState } from '../basis-layer/basisLayer.types';
-import type { PoiModelState } from '../poi-model/poiModel.types';
+import type { PoiModelState } from '../poi-output/poiOutput.types';
 import type { LoadProjectionState } from '../load-projection/loadProjection.types';
 import type { MovementModelState } from '../movement-model/movementModel.types';
 import type { MaskingModelState } from '../masking-model/maskingModel.types';
@@ -70,7 +71,7 @@ const basisLayer = computeBasisLayer(
   baseInputs,
 ) as BasisLayerState;
 
-const ctxSpatial = { ...ctx0, boundary, extracted_data: extraction, graph, basis_layer: basisLayer };
+const ctxSpatial = { ...ctx0, boundary, extracted_data: extraction, graph, basis_layer: basisLayer, stay_zone_detector: mockStayZoneDetectorState };
 
 // ── 52.1 PoiModel ─────────────────────────────────────────────────────────────
 
@@ -80,12 +81,12 @@ describe('Engine – 52.1 computePoiModel', () => {
     baseInputs,
   );
 
-  it('evaluates one PoiLoadState per extracted POI', () => {
-    expect(poiModel.evaluated_pois.length).toBe(extraction.extracted_pois.length);
+  it('evaluates one PoiLoadState per rast zone from detector', () => {
+    expect(poiModel.evaluated_pois.length).toBe(mockStayZoneDetectorState.detected_zones.filter(z => z.classification === 'rast').length);
   });
 
-  it('poi_model_id references extraction_id', () => {
-    expect(poiModel.poi_model_id).toContain(extraction.extraction_id);
+  it('poi_model_id references detector_id', () => {
+    expect(poiModel.poi_model_id).toContain(mockStayZoneDetectorState.detector_id);
   });
 
   it('metrics.evaluated_poi_count matches evaluated_pois length', () => {

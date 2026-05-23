@@ -18,7 +18,7 @@ import { validateExtraction } from '../extraction/extraction.validation';
 import { validateGraph } from '../graph/graph.validation';
 import { validateBasisLayer } from '../basis-layer/basisLayer.validation';
 import { validateLeafletBasisCheck } from '../leaflet-basis-check/leafletBasisCheck.validation';
-import { validatePoiModel } from '../poi-model/poiModel.validation';
+import { validatePoiModel } from '../poi-output/poiOutput.validation';
 import { validateLoadProjection } from '../load-projection/loadProjection.validation';
 import { validateMovementModel } from '../movement-model/movementModel.validation';
 import { validateStayZoneDetector } from '../stay-zone-detector/stayZoneDetector.validation';
@@ -43,7 +43,7 @@ import { applyExtractionToContext } from '../extraction/extraction.context';
 import { applyGraphToContext } from '../graph/graph.context';
 import { applyBasisLayerToContext } from '../basis-layer/basisLayer.context';
 import { applyLeafletBasisCheckToContext } from '../leaflet-basis-check/leafletBasisCheck.context';
-import { applyPoiModelToContext } from '../poi-model/poiModel.context';
+import { applyPoiModelToContext } from '../poi-output/poiOutput.context';
 import { applyLoadProjectionToContext } from '../load-projection/loadProjection.context';
 import { applyMovementModelToContext } from '../movement-model/movementModel.context';
 import { applyStayZoneDetectorToContext } from '../stay-zone-detector/stayZoneDetector.context';
@@ -308,22 +308,6 @@ export function runScimPipeline(inputs: ScimPipelineInputs): ScimPipelineResult 
     ctx = applyLeafletBasisCheckToContext(ctx, state as any);
   }
 
-  // ── Panel 7: PoiModel ─────────────────────────────────────────────────────
-  {
-    const t0 = Date.now();
-    const raw = computePoiModel(ctx, inputs);
-    const v = validatePoiModel(raw, ctx.extracted_data as any, ctx.system_adjust as any);
-    const state = {
-      ...raw,
-      validation: v,
-      status: stampStatus(v.is_valid, v.warnings.length > 0,
-        'poi_model_valid', 'poi_model_warning', 'poi_model_invalid'),
-    };
-    recordStep(tracker, 'panel_7_poi_model', v.errors.length, v.warnings.length, Date.now() - t0);
-    if (!v.is_valid) return failResult(run_id, started_at, ctx, tracker, 'panel_7_poi_model');
-    ctx = applyPoiModelToContext(ctx, state as any);
-  }
-
   // ── Panel 7: LoadProjection ───────────────────────────────────────────────
   {
     const t0 = Date.now();
@@ -369,6 +353,22 @@ export function runScimPipeline(inputs: ScimPipelineInputs): ScimPipelineResult 
     recordStep(tracker, 'panel_7_stay_zone_detector', v.errors.length, v.warnings.length, Date.now() - t0);
     if (!v.is_valid) return failResult(run_id, started_at, ctx, tracker, 'panel_7_stay_zone_detector');
     ctx = applyStayZoneDetectorToContext(ctx, state);
+  }
+
+  // ── Panel 7: PoiOutput (ehemals poi-model) ───────────────────────────────
+  {
+    const t0 = Date.now();
+    const raw = computePoiModel(ctx, inputs);
+    const v = validatePoiModel(raw, ctx.stay_zone_detector as any, ctx.system_adjust as any);
+    const state = {
+      ...raw,
+      validation: v,
+      status: stampStatus(v.is_valid, v.warnings.length > 0,
+        'poi_model_valid', 'poi_model_warning', 'poi_model_invalid'),
+    };
+    recordStep(tracker, 'panel_7_poi_model', v.errors.length, v.warnings.length, Date.now() - t0);
+    if (!v.is_valid) return failResult(run_id, started_at, ctx, tracker, 'panel_7_poi_model');
+    ctx = applyPoiModelToContext(ctx, state as any);
   }
 
   // ── Panel 7: MaskingModel ─────────────────────────────────────────────────

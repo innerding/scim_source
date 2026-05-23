@@ -55,7 +55,8 @@ import type {
   PoiModelMetrics,
   PoiLoadClass,
   StayClassification,
-} from '../poi-model/poiModel.types';
+} from '../poi-output/poiOutput.types';
+import type { StayZoneDetectorState } from '../stay-zone-detector/stayZoneDetector.types';
 import type {
   LoadProjectionState,
   EdgeLoadScore,
@@ -793,91 +794,57 @@ export function computeLeafletBasisCheck(
   };
 }
 
-// ── Panel 7: PoiModel ─────────────────────────────────────────────────────────
+// ── Panel 7: PoiOutput (ehemals poi-model) ────────────────────────────────────
 
 export function computePoiModel(
   context: ScimContext,
   inputs: ScimPipelineInputs,
 ): PoiModelState {
-  const extraction = context.extracted_data as ExtractionState;
+  const detector = context.stay_zone_detector as StayZoneDetectorState | undefined;
   const sa = inputs.system_adjust;
-  const rawSignals = inputs.telco_load.load_signals;
-  const blockedIds = new Set(inputs.telco_load.privacy_check?.blocked_group_ids ?? []);
   const now = new Date().toISOString();
 
-  const minDistinctDevices = sa.privacy_limits.min_distinct_devices_per_visible_aggregate;
-  const minSignalCount = sa.privacy_limits.min_signals_per_visible_aggregate;
-  const minForStay = sa.privacy_limits.min_signals_for_stay_classification;
+  // In movement_only mode or when detector is skipped: no stay zones → empty output
+  const activZones = detector?.detected_zones.filter(
+    z => (z.classification === 'rast' || z.operator_status === 'committed_full' || z.operator_status === 'committed_adapted')
+      && z.operator_status !== 'rejected_with_reason',
+  ) ?? [];
 
-  const evaluatedPois: PoiLoadState[] = extraction.extracted_pois.map((poi) => {
-    const effectiveRadius = poi.effective_comparison_radius_meters;
-    const [pLon, pLat] = poi.center.coordinates;
-
-    // Find raw signals within effective radius of this POI.
-    const nearby = rawSignals.filter((sg) => {
-      const c = sg.approximate_center;
-      if (!c) return false;
-      return geoDistMeters(c.coordinates[0], c.coordinates[1], pLon, pLat) <= effectiveRadius;
-    });
-
-    const contributing_ids = nearby.map((sg) => sg.signal_group_id);
-    const privacyMasked =
-      contributing_ids.some((id) => blockedIds.has(id)) ||
-      nearby.reduce((s, sg) => s + (sg.metrics.distinct_device_count ?? 0), 0) < minDistinctDevices ||
-      nearby.reduce((s, sg) => s + (sg.metrics.signal_count ?? 0), 0) < minSignalCount;
-
-    const totalSignals = nearby.reduce((s, sg) => s + (sg.metrics.signal_count ?? 0), 0);
-    const signal_count_sufficient = totalSignals >= minForStay;
-
-    const normalized_load_score =
-      nearby.length > 0
-        ? parseFloat((nearby.reduce((s, sg) => s + (sg.metrics.normalized_load_score ?? 0), 0) / nearby.length).toFixed(3))
-        : 0;
-
-    const load_class = privacyMasked ? 'unknown' : scoreToPoiLoadClass(normalized_load_score);
-
-    const stay_classification: StayClassification =
-      !signal_count_sufficient
-        ? 'unknown'
-        : normalized_load_score >= 0.6
-        ? 'confirmed_stay'
-        : normalized_load_score >= 0.4
-        ? 'likely_stay'
-        : normalized_load_score >= 0.2
-        ? 'possible_stay'
-        : 'transit';
-
-    const confidence_score =
-      nearby.length > 0
-        ? parseFloat((nearby.reduce((s, sg) => s + sg.quality.confidence_score, 0) / nearby.length).toFixed(3))
-        : 0;
+  const evaluatedPois: PoiLoadState[] = activZones.map((zone, i) => {
+    const normalized_load_score = parseFloat(Math.min(zone.confidence_score * 0.9, 1.0).toFixed(3));
+    const load_class: PoiLoadClass = scoreToPoiLoadClass(normalized_load_score);
+    const stay_classification: StayClassification = zone.classification === 'stau' ? 'possible_stay' : 'confirmed_stay';
 
     return {
-      poi_id: poi.poi_id,
-      name: poi.name,
+      poi_id: `poi_zone_${String(i + 1).padStart(3, '0')}`,
       load_class,
       normalized_load_score,
       stay_classification,
-      contributing_signal_group_ids: contributing_ids,
-      confidence_score,
-      privacy_masked: privacyMasked,
-      signal_count_sufficient,
+      contributing_signal_group_ids: [],
+      confidence_score: zone.confidence_score,
+      privacy_masked: false,
+      signal_count_sufficient: true,
+      zone_radius_meters: zone.radius_meters,
+      zone_center: zone.center,
+      is_off_path: zone.is_off_path,
+      operator_confirmed: zone.operator_status === 'committed_full' || zone.operator_status === 'committed_adapted',
+      overlap_flagged: zone.overlap_conflict,
     } satisfies PoiLoadState;
   });
 
-  const masked_poi_count = evaluatedPois.filter((p) => p.privacy_masked).length;
+  const masked_poi_count = evaluatedPois.filter(p => p.privacy_masked).length;
   const metrics: PoiModelMetrics = {
     evaluated_poi_count: evaluatedPois.length,
     masked_poi_count,
-    busy_poi_count: evaluatedPois.filter((p) => p.load_class === 'busy' || p.load_class === 'very_busy').length,
-    quiet_poi_count: evaluatedPois.filter((p) => p.load_class === 'quiet').length,
-    unknown_poi_count: evaluatedPois.filter((p) => p.load_class === 'unknown').length,
+    busy_poi_count: evaluatedPois.filter(p => p.load_class === 'busy' || p.load_class === 'very_busy').length,
+    quiet_poi_count: evaluatedPois.filter(p => p.load_class === 'quiet').length,
+    unknown_poi_count: evaluatedPois.filter(p => p.load_class === 'unknown').length,
   };
 
-  const extractionId = extraction.extraction_id;
+  const detectorId = detector?.detector_id ?? 'none';
   return {
-    poi_model_id: `pm_${extractionId}`,
-    extraction_id: extractionId,
+    poi_model_id: `po_${detectorId}`,
+    detector_id: detectorId,
     evaluated_pois: evaluatedPois,
     metrics,
     validation: {
@@ -885,7 +852,7 @@ export function computePoiModel(
       errors: [],
       warnings: [],
       checked_at: now,
-      checked_against_extraction_id: extractionId,
+      checked_against_detector_id: detectorId,
       checked_against_system_adjust_version: sa.system_adjust_version,
     },
     status: 'not_computed',

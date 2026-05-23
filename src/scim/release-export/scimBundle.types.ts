@@ -1,5 +1,5 @@
 import type { RouteScoreClass } from '../route-model/routeModel.types';
-import type { PoiLoadClass } from '../poi-model/poiModel.types';
+import type { PoiLoadClass } from '../poi-output/poiOutput.types';
 
 export interface ScimBundleRegion {
   id: string;
