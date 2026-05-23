@@ -14,7 +14,14 @@ export type GraphNodeType =
   | 'boundary_intersection'
   | 'trailhead'
   | 'endpoint'
-  | 'elevation_peak';
+  | 'elevation_peak'
+  | 'stay_boundary'
+  | 'entry_exit';
+
+export type GraphNodeSemanticRole =
+  | 'zone_boundary'
+  | 'routing_excluded'
+  | 'operator_entry_point';
 
 export type GraphEdgeType =
   | 'trail'
@@ -32,6 +39,8 @@ export interface GraphNode {
   elevation_meters?: number;
   connected_edge_ids: string[];
   poi_id?: string;
+  stay_zone_id?: string;
+  semantic_role?: GraphNodeSemanticRole;
 }
 
 export interface GraphEdge {
