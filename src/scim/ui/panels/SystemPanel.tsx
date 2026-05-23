@@ -122,6 +122,34 @@ function GapsTab() {
   );
 }
 
+const MANIFEST_PRINCIPLES = [
+  {
+    id: 'p1',
+    label: 'Lagedarstellung, keine Empfehlung',
+    content: 'SCIM bewertet Mobilfunksignale und erzeugt ein farbcodiertes Wegnetz. Die App zeigt Auslastung — sie empfiehlt keine Route. Der Nutzer entscheidet selbst.',
+  },
+  {
+    id: 'p2',
+    label: 'Einweg-Architektur',
+    content: 'SCIM → Paket → App. Der Nutzer speist SCIM nicht. Kein Rückkanal erforderlich — das Nutzerverhalten ist bereits als aggregiertes Telco-Signal in den Eingabedaten enthalten.',
+  },
+  {
+    id: 'p3',
+    label: 'Kein Personenbezug — Transparenz statt Einwilligung',
+    content: 'Die App verarbeitet keine personenbezogenen Daten. Slider-Position + grobe Tageszeit + Region-ID sind nicht rückführbar. Keine Einwilligung nötig — eine Einwilligung würde fälschlicherweise Identifikation suggerieren. Stattdessen: sichtbares (i) mit Erklärung.',
+  },
+  {
+    id: 'p4',
+    label: 'Heatmap lokal',
+    content: 'Die Heatmap wird auf dem Gerät des Nutzers berechnet — nicht im Paket vorberechnet. Das Paket liefert das Wegnetz mit Auslastungswerten; die visuelle Darstellung ist Sache der App.',
+  },
+  {
+    id: 'p5',
+    label: 'Paketrhythmus: 5 Minuten + Slider-Event',
+    content: 'Die App empfängt alle 5 Minuten unaufgefordert ein neues Paket. Zusätzlich wird bei Slider-Interaktion sofort lokal neu gefiltert. Das Paket ist statisch — die lokale Filterung ist dynamisch.',
+  },
+];
+
 function ManifestTab({ result }: { result: ScimPipelineResult }) {
   const manifest = {
     engine_version: '0.2.0',
@@ -130,17 +158,38 @@ function ManifestTab({ result }: { result: ScimPipelineResult }) {
     pipeline_steps: result.steps.length,
     pipeline_success: result.success,
     known_gaps: KNOWN_GAPS.map((g) => g.id),
+    principles: MANIFEST_PRINCIPLES.map((p) => p.id),
     timestamp: new Date().toISOString(),
   };
 
   return (
-    <pre style={{
-      background: '#1a202c', color: '#a0aec0', borderRadius: 6,
-      padding: 16, fontSize: 11, fontFamily: 'monospace',
-      overflowX: 'auto', whiteSpace: 'pre-wrap', margin: 0,
-    }}>
-      {JSON.stringify(manifest, null, 2)}
-    </pre>
+    <div style={{ fontFamily: 'system-ui, sans-serif' }}>
+      <div style={{ fontSize: 12, fontWeight: 600, color: '#4a5568', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        Leitprinzipien
+      </div>
+      {MANIFEST_PRINCIPLES.map((p) => (
+        <div key={p.id} style={{
+          background: '#f7fafc', border: '1px solid #e2e8f0',
+          borderLeft: '3px solid #4a5568',
+          borderRadius: 6, padding: '10px 14px', marginBottom: 8,
+        }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: '#2d3748', marginBottom: 4 }}>
+            {p.label}
+          </div>
+          <div style={{ fontSize: 11, color: '#718096', lineHeight: 1.6 }}>{p.content}</div>
+        </div>
+      ))}
+      <div style={{ fontSize: 12, fontWeight: 600, color: '#4a5568', margin: '16px 0 8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        Manifest JSON
+      </div>
+      <pre style={{
+        background: '#1a202c', color: '#a0aec0', borderRadius: 6,
+        padding: 16, fontSize: 11, fontFamily: 'monospace',
+        overflowX: 'auto', whiteSpace: 'pre-wrap', margin: 0,
+      }}>
+        {JSON.stringify(manifest, null, 2)}
+      </pre>
+    </div>
   );
 }
 

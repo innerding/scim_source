@@ -66,6 +66,66 @@ const SEED_ANNOTATIONS: Annotation[] = [
     related_panel: 'P01',
     date: '2026-05-21',
   },
+
+  // ── 2026-05-23: Ziel-App Schnittstelle und Systemcharakter ─────────────────
+
+  {
+    id: 'ann_006',
+    category: 'vocabulary',
+    label: 'SVG-Wegnetz (Sensus Core Overlay)',
+    content: 'Das Paket enthält kein klassisches Routensystem — es liefert ein Wegnetz aus farbcodierten Kanten, gewichtet nach Telco-Auslastung. Die kürzesten Kanten je Auslastungsklasse sind farblich markiert (grün → rot). Die App rendert dieses Netz als SVG-Overlay auf der Karte. Der Nutzer wählt seinen Weg selbst — die App macht keine Empfehlung.',
+    date: '2026-05-23',
+  },
+  {
+    id: 'ann_007',
+    category: 'vocabulary',
+    label: 'BCK / BAK (Broda Comfort Kernel / Avoidance Kernel)',
+    content: 'BCK: Lokaler Filteralgorithmus in der App. Filtert Routen nach movement_comfort_score und (wenn Step 2 aktiv) stay_comfort_score. Bei classification_mode=movement_only wird der Stay-Filter übersprungen. BAK: Sortiert und bewertet Treffer nach Wunschdauer und POI-Präferenzen. Beide Kernel laufen vollständig lokal auf dem Gerät — kein Server-Call.',
+    date: '2026-05-23',
+  },
+  {
+    id: 'ann_008',
+    category: 'adr',
+    label: 'Paketrhythmus: 5-Minuten-Push + Slider-Event',
+    content: 'Kontext: Die Auslastungslage ändert sich kontinuierlich. Entscheidung: Die App empfängt alle 5 Minuten automatisch ein neues Paket (Push). Bei Slider-Interaktion wird sofort lokal neu gefiltert — kein Server-Call. Konsequenz: Darstellung ist maximal 5 Minuten alt; Slider reagiert verzögerungsfrei.',
+    date: '2026-05-23',
+  },
+  {
+    id: 'ann_009',
+    category: 'adr',
+    label: 'Anonymer Feedback-Endpoint — separat von SCIM',
+    content: 'Kontext: SCIM kann aus Nutzungsmustern (Slider-Position, Tageszeit, Region) lernen. Entscheidung: Separater Aggregations-Endpoint empfängt gebündelte Datenpunkte (max. 1 pro 5-Min-Zyklus). Datenpunkte: Slider-Wert + grobe Tageszeit + Region-ID — kein Standort, kein Gerät. SCIM selbst bleibt ein deterministischer Batch-Prozess ohne Live-Daten. Konsequenz: Saubere Trennung; SCIM-Pipeline ändert sich nicht.',
+    date: '2026-05-23',
+  },
+  {
+    id: 'ann_010',
+    category: 'adr',
+    label: 'Schnittstellen-Lücken Paket → App (Stand 2026-05-23)',
+    content: 'A: route_comfort_metrics vorhanden, App zeigt simulierten Load statt echter Werte. B: public_warnings ignoriert, nie angezeigt. C: display_contract / allowed_local_controls min/max/defaults nicht durchgesetzt. D: expires_at nicht geprüft — abgelaufenes Paket bleibt nutzbar. E: public_layers GeoJSON nicht gerendert, Map nutzt direkt route_options. Priorität: A und D zuerst.',
+    date: '2026-05-23',
+  },
+  {
+    id: 'ann_011',
+    category: 'business_context',
+    label: 'Größenordnungen: Paket und Runtime',
+    content: 'Paket (~400 km², ohne Heatmap): ~150 KB gzipped. Mit vollständigem Layer-Overlay bis ~400 KB. Runtime-Bundle: 368 KB JS + 24 KB CSS roh; ~121 KB gzipped gesamt. Heatmap wird lokal berechnet — kein Einfluss auf Paketgröße.',
+    date: '2026-05-23',
+  },
+  {
+    id: 'ann_012',
+    category: 'invariant',
+    label: 'Heatmap immer lokal — nie im Paket',
+    content: 'Die Heatmap-Darstellung der Auslastung wird auf dem Gerät des Nutzers berechnet. Das Paket liefert Wegnetz-Kanten mit Auslastungswerten — nicht eine fertige Heatmap. Diese Trennung ist bewusst: Paketgröße bleibt kontrollierbar, Darstellung bleibt flexibel für verschiedene App-Versionen.',
+    date: '2026-05-23',
+  },
+  {
+    id: 'ann_013',
+    category: 'next_intent',
+    label: 'Schnittstelle Paket → App schließen',
+    content: 'Nächste Schritte in sensus-core-runtime: (A) route_comfort_metrics aus Paket für Slider-Load nutzen statt simulierter Werte. (B) public_warnings anzeigen (Footer oder Overlay). (D) expires_at prüfen und Paket nach Ablauf neu laden. Parallel: SVG-Overlay-Rendering klären — Format (fertiges SVG vs. GeoJSON-Segmente) und Leaflet-Integration.',
+    related_panel: 'P11',
+    date: '2026-05-23',
+  },
 ];
 
 function AnnotationsTab() {
@@ -152,6 +212,12 @@ function AnnotationsTab() {
 function BriefingTab({ result }: { result: ScimPipelineResult }) {
   const panels = PANEL_REGISTRY.map(p => `${p.id}: ${p.label} [${p.inputMode}]`).join('\n');
 
+  const vocabEntries = SEED_ANNOTATIONS.filter(a => a.category === 'vocabulary');
+  const adrEntries = SEED_ANNOTATIONS.filter(a => a.category === 'adr');
+  const invariantEntries = SEED_ANNOTATIONS.filter(a => a.category === 'invariant');
+  const nextEntries = SEED_ANNOTATIONS.filter(a => a.category === 'next_intent');
+  const contextEntries = SEED_ANNOTATIONS.filter(a => a.category === 'business_context');
+
   const briefing = `# SCIM Session Briefing
 Generiert: ${new Date().toISOString()}
 
@@ -167,10 +233,15 @@ ${panels}
 Neue Einstellmöglichkeiten = neue Felder in bestehenden Input-Typen (additiv).
 Neue Panel-Logik = neue Compute-Funktion die sich einfügt.
 
+## Leitprinzipien (Manifest)
+- Lagedarstellung, keine Empfehlung: SCIM erzeugt ein farbcodiertes Wegnetz — keine Routenempfehlung.
+- Einweg-Architektur: SCIM → Paket → App. Kein Rückkanal erforderlich.
+- Kein Personenbezug: Transparenz statt Einwilligung. Kein Consent-Dialog.
+- Heatmap lokal: Wird auf dem Gerät berechnet, nie im Paket vorberechnet.
+- Paketrhythmus: 5-Minuten-Push + sofortige lokale Filterung bei Slider-Event.
+
 ## Invarianten
-🔒 Privacy-Kette darf nicht gebrochen werden
-   privacy_masked → MaskingModel → ReleaseExport ist kritisch.
-   Bei Refactoring des Masking-Modells immer alle Nachfolger-Panels prüfen.
+${invariantEntries.map(a => `🔒 ${a.label}\n   ${a.content}`).join('\n\n')}
 
 ## Bekannte Lücken (SML-2)
 - stub_context_types: ScimContext { status: string } Stubs → SML-3
@@ -179,13 +250,16 @@ Neue Panel-Logik = neue Compute-Funktion die sich einfügt.
 - flat_earth_geo: cos-korrigierte Ebenenrechnung, keine Geodäsie → SML-3
 
 ## Glossar
-- Sensus Core: Standardisiertes Ausgabeformat (signiertes JSON-Bundle)
-- Signal Group: Gruppe zusammengehöriger Telco-Belastungssignale
+${vocabEntries.map(a => `- ${a.label}: ${a.content}`).join('\n')}
 
-## Nächste Absicht
-P01–P04 Eingabe-Formulare implementieren.
-Reihenfolge: P01 (SystemAdjust) → P02 (RegioContent) → P03 (TargetAppUi).
-P03 hat die reichste Konfigurationstiefe — additiv, kein Pipeline-Umbau.
+## Architekturentscheide
+${adrEntries.map(a => `• ${a.label} (${a.date})\n  ${a.content}`).join('\n\n')}
+
+## Geschäftskontext
+${contextEntries.map(a => `• ${a.label}: ${a.content}`).join('\n')}
+
+## Nächste Absichten
+${nextEntries.map(a => `→ ${a.label}${a.related_panel ? ` [${a.related_panel}]` : ''}\n  ${a.content}`).join('\n\n')}
 `;
 
   return (
