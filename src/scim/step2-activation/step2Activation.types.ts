@@ -2,7 +2,8 @@ import type { ScimClassificationMode } from '../context/scimContext.types';
 
 export type Step2ActivationStatus =
   | 'not_triggered'
-  | 'triggered_awaiting_operator'
+  | 'observation_running'          // Bedingung erfüllt, Beobachtungsfenster läuft noch
+  | 'triggered_awaiting_operator'  // Fenster abgeschlossen, wartet auf Operator-Bestätigung
   | 'operator_confirmed'
   | 'operator_deferred'
   | 'operator_rejected'
@@ -49,6 +50,19 @@ export interface Step2ActivationState {
   trigger: Step2ActivationTrigger;
   decision?: Step2ActivationDecision;
   resulting_classification_mode: ScimClassificationMode;
+  /**
+   * Anzahl aufeinanderfolgender Runs, in denen die Stau-Bedingung erfüllt war.
+   * Wird über Runs hinweg akkumuliert (via previous_step2_state in PipelineInputs).
+   * Zurückgesetzt auf 0 wenn die Bedingung nicht mehr erfüllt ist.
+   */
+  observation_run_count: number;
+  /**
+   * Zeitstempel der ersten Erkennung in der aktuellen Beobachtungssequenz.
+   * Null wenn Bedingung nicht erfüllt.
+   */
+  first_detected_at: string | null;
+  /** Abgeleitet: Minuten seit first_detected_at. 0 wenn nicht beobachtet. */
+  sustained_duration_minutes: number;
   validation: Step2ActivationValidationResult;
   status: Step2ActivationStatus;
   created_at: string;

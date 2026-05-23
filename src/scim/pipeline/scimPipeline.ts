@@ -30,6 +30,7 @@ import { validateMaskingModel } from '../masking-model/maskingModel.validation';
 import { validateRouteModel } from '../route-model/routeModel.validation';
 import { validateRouteLayerModel } from '../route-layer-model/routeLayerModel.validation';
 import { validateLayerModel } from '../layer-model/layerModel.validation';
+import { validateSvgOverlay } from '../svg-overlay/svgOverlay.validation';
 import { validateSensusCorePackage } from '../sensus-core-package/sensusCorePackage.validation';
 import { validateSensusCoreLocal } from '../sensus-core-local/sensusCoreLocal.validation';
 import { validateSensusCoreView } from '../sensus-core-view/sensusCoreView.validation';
@@ -59,6 +60,7 @@ import { applyMaskingModelToContext } from '../masking-model/maskingModel.contex
 import { applyRouteModelToContext } from '../route-model/routeModel.context';
 import { applyRouteLayerModelToContext } from '../route-layer-model/routeLayerModel.context';
 import { applyLayerModelToContext } from '../layer-model/layerModel.context';
+import { applySvgOverlayToContext } from '../svg-overlay/svgOverlay.context';
 import { applySensusCorePackageToContext } from '../sensus-core-package/sensusCorePackage.context';
 import { applySensusCoreLocalToContext } from '../sensus-core-local/sensusCoreLocal.context';
 import { applySensusCoreViewToContext } from '../sensus-core-view/sensusCoreView.context';
@@ -97,6 +99,7 @@ import {
   computeReleaseExport,
   computeScimRuntimeContext,
 } from './scimPipeline.compute';
+import { computeSvgOverlay } from '../svg-overlay/svgOverlay.compute';
 
 // ── Internal helpers ──────────────────────────────────────────────────────────
 
@@ -414,7 +417,12 @@ export function runScimPipeline(inputs: ScimPipelineInputs): ScimPipelineResult 
   }
   {
     const t0 = Date.now();
-    const raw = computeStep2Activation(ctx.stay_zone_detector as any, ctx.operator_decision as any);
+    const raw = computeStep2Activation(
+      ctx.stay_zone_detector as any,
+      ctx.operator_decision as any,
+      ctx.system_adjust as any,
+      inputs.previous_step2_state,
+    );
     const v = validateStep2Activation(raw);
     const state = { ...raw, validation: v };
     recordStep(tracker, 'P09_step2_activation', v.errors.length, v.warnings.length, Date.now() - t0);
@@ -483,6 +491,34 @@ export function runScimPipeline(inputs: ScimPipelineInputs): ScimPipelineResult 
     recordStep(tracker, 'P10_route_layer_model', v.errors.length, v.warnings.length, Date.now() - t0);
     if (!v.is_valid) return failResult(run_id, started_at, ctx, tracker, 'P10_route_layer_model');
     ctx = applyRouteLayerModelToContext(ctx, state as any);
+  }
+
+  // ── SVG Overlay (non-blocking) ────────────────────────────────────────────
+  {
+    const t0 = Date.now();
+    const boundary = ctx.boundary as any;
+    const bbox: [number, number, number, number] =
+      boundary?.bbox ?? [0, 0, 0, 0];
+    const raw = computeSvgOverlay(
+      ctx.route_layer_model as any,
+      ctx.route_model as any,
+      ctx.graph as any,
+      bbox,
+    );
+    const v = validateSvgOverlay(raw);
+    const state = {
+      ...raw,
+      validation: v,
+      status: v.is_valid
+        ? (v.warnings.length > 0 ? 'svg_overlay_warning' : 'svg_overlay_valid')
+        : (raw.visible_segment_count === 0 ? 'svg_overlay_empty' : 'svg_overlay_invalid'),
+    };
+    recordStep(tracker, 'P10_svg_overlay', v.errors.length, v.warnings.length, Date.now() - t0);
+    // Non-blocking: a warning overlay doesn't stop the package from building
+    for (const e of v.errors) {
+      tracker.warnings.push({ step_id: 'P10_svg_overlay', code: e.code, message: e.message });
+    }
+    ctx = applySvgOverlayToContext(ctx, state as any);
   }
 
   // ── Panel 8: LayerModel ───────────────────────────────────────────────────

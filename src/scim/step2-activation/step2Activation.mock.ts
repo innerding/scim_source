@@ -10,6 +10,9 @@ export const mockStep2ActivationNotTriggered: Step2ActivationState = {
     triggered_at: '2026-05-23T10:00:00.000Z',
   },
   resulting_classification_mode: 'movement_only',
+  observation_run_count: 0,
+  first_detected_at: null,
+  sustained_duration_minutes: 0,
   validation: {
     is_valid: true,
     errors: [],
@@ -35,6 +38,9 @@ export const mockStep2ActivationConfirmed: Step2ActivationState = {
     decided_at: '2026-05-23T11:05:00.000Z',
   },
   resulting_classification_mode: 'movement_and_stay',
+  observation_run_count: 3,
+  first_detected_at: '2026-05-23T10:45:00.000Z',
+  sustained_duration_minutes: 15,
   validation: {
     is_valid: true,
     errors: [],
@@ -56,6 +62,9 @@ export const mockStep2ActivationAwaiting: Step2ActivationState = {
     triggered_at: '2026-05-23T12:00:00.000Z',
   },
   resulting_classification_mode: 'movement_only',
+  observation_run_count: 3,
+  first_detected_at: '2026-05-23T11:45:00.000Z',
+  sustained_duration_minutes: 15,
   validation: {
     is_valid: true,
     errors: [],

@@ -111,27 +111,97 @@ describe('Step2Activation – 39.3 decision consistency', () => {
 
 // ── 39.5 computeStep2Activation ──────────────────────────────────────────────
 
+// Minimales SystemAdjust-Stub für Tests — Beobachtungsfenster bereits nach 1 Run erfüllt
+const saMinRuns1 = { default_parameters: { step2_min_observation_runs: 1 } } as any;
+
+// Previous state: Beobachtung läuft bereits (2 von 3 Runs)
+const prevObserving = {
+  observation_run_count: 2,
+  first_detected_at: '2026-05-23T09:50:00.000Z',
+  status: 'observation_running' as const,
+  resulting_classification_mode: 'movement_only' as const,
+};
+
+// Previous state: Fenster abgeschlossen, wartet auf Operator (3 von 3 Runs)
+const prevWindowComplete = {
+  observation_run_count: 3,
+  first_detected_at: '2026-05-23T09:45:00.000Z',
+  status: 'triggered_awaiting_operator' as const,
+  resulting_classification_mode: 'movement_only' as const,
+};
+
 describe('Step2Activation – 39.5 compute: kein Jam', () => {
   it('liefert not_triggered wenn kein Detector vorhanden', () => {
-    const state = computeStep2Activation(undefined, undefined);
+    const state = computeStep2Activation(undefined, undefined, undefined, undefined);
     expect(state.status).toBe('not_triggered');
   });
 
   it('liefert not_triggered wenn jam_count=0', () => {
-    // mockStayZoneDetectorState: jam_count=0, step2_activation_condition_met=false
-    const state = computeStep2Activation(mockStayZoneDetectorState, undefined);
+    const state = computeStep2Activation(mockStayZoneDetectorState, undefined, undefined, undefined);
     expect(state.status).toBe('not_triggered');
   });
 
   it('resulting_classification_mode ist movement_only ohne Jam', () => {
-    const state = computeStep2Activation(mockStayZoneDetectorState, undefined);
+    const state = computeStep2Activation(mockStayZoneDetectorState, undefined, undefined, undefined);
     expect(state.resulting_classification_mode).toBe('movement_only');
   });
 
   it('trigger.jam_count ist 0 ohne Jam', () => {
-    const state = computeStep2Activation(mockStayZoneDetectorState, undefined);
+    const state = computeStep2Activation(mockStayZoneDetectorState, undefined, undefined, undefined);
     expect(state.trigger.jam_count).toBe(0);
     expect(state.trigger.triggering_zone_ids).toHaveLength(0);
+  });
+
+  it('setzt observation_run_count auf 0 zurück wenn Jam wegfällt', () => {
+    // Vorheriger Run hatte Jam — jetzt nicht mehr
+    const state = computeStep2Activation(mockStayZoneDetectorState, undefined, undefined, prevObserving);
+    expect(state.observation_run_count).toBe(0);
+    expect(state.first_detected_at).toBeNull();
+  });
+});
+
+describe('Step2Activation – 39.5 compute: Beobachtungsfenster läuft', () => {
+  const detectorWithJam = {
+    ...mockStayZoneDetectorState,
+    detector_id: 'szd_jam',
+    jam_count: 1,
+    step2_activation_condition_met: true,
+    detected_zones: [
+      {
+        ...mockStayZoneDetectorState.detected_zones[0],
+        zone_id: 'zone_stau_001',
+        classification: 'stau' as const,
+      },
+    ],
+  };
+
+  it('erster Run mit Jam liefert observation_running (minRuns=3)', () => {
+    const state = computeStep2Activation(detectorWithJam, undefined, undefined, undefined);
+    expect(state.status).toBe('observation_running');
+    expect(state.observation_run_count).toBe(1);
+  });
+
+  it('zweiter Run akkumuliert den Zähler', () => {
+    const prev = {
+      observation_run_count: 1,
+      first_detected_at: '2026-05-23T09:55:00.000Z',
+      status: 'observation_running' as const,
+      resulting_classification_mode: 'movement_only' as const,
+    };
+    const state = computeStep2Activation(detectorWithJam, undefined, undefined, prev);
+    expect(state.status).toBe('observation_running');
+    expect(state.observation_run_count).toBe(2);
+  });
+
+  it('first_detected_at bleibt konstant während Beobachtung', () => {
+    const state = computeStep2Activation(detectorWithJam, undefined, undefined, prevObserving);
+    expect(state.first_detected_at).toBe(prevObserving.first_detected_at);
+    expect(state.observation_run_count).toBe(3);
+  });
+
+  it('classification_mode bleibt movement_only während Beobachtungsfenster', () => {
+    const state = computeStep2Activation(detectorWithJam, undefined, undefined, undefined);
+    expect(state.resulting_classification_mode).toBe('movement_only');
   });
 });
 
@@ -150,18 +220,24 @@ describe('Step2Activation – 39.5 compute: Jam, Operator ausstehend', () => {
     ],
   };
 
-  it('liefert triggered_awaiting_operator wenn Entscheidung aussteht', () => {
-    const state = computeStep2Activation(detectorWithJam, undefined);
+  it('liefert triggered_awaiting_operator nach abgeschlossenem Beobachtungsfenster', () => {
+    // Fenster abgeschlossen (count=3 >= minRuns=3), kein Operator-Input
+    const state = computeStep2Activation(detectorWithJam, undefined, undefined, prevWindowComplete);
     expect(state.status).toBe('triggered_awaiting_operator');
   });
 
-  it('classification_mode bleibt movement_only bis Entscheidung getroffen', () => {
-    const state = computeStep2Activation(detectorWithJam, undefined);
+  it('liefert triggered_awaiting_operator mit minRuns=1 im ersten Run', () => {
+    const state = computeStep2Activation(detectorWithJam, undefined, saMinRuns1, undefined);
+    expect(state.status).toBe('triggered_awaiting_operator');
+  });
+
+  it('classification_mode bleibt movement_only bis Operator-Bestätigung', () => {
+    const state = computeStep2Activation(detectorWithJam, undefined, undefined, prevWindowComplete);
     expect(state.resulting_classification_mode).toBe('movement_only');
   });
 
   it('trigger enthält die Jam-Zone-ID', () => {
-    const state = computeStep2Activation(detectorWithJam, undefined);
+    const state = computeStep2Activation(detectorWithJam, undefined, saMinRuns1, undefined);
     expect(state.trigger.triggering_zone_ids).toContain('zone_stau_001');
     expect(state.trigger.jam_count).toBe(1);
   });
@@ -183,32 +259,44 @@ describe('Step2Activation – 39.5 compute: Jam, Operator hat bestätigt', () =>
 
   const completedDecision = { ...mockOperatorDecisionState, status: 'completed' as const };
 
-  it('liefert operator_confirmed wenn Entscheidung completed', () => {
-    const state = computeStep2Activation(detectorWithJam, completedDecision);
+  it('liefert operator_confirmed wenn Fenster abgeschlossen und Entscheidung completed', () => {
+    const state = computeStep2Activation(detectorWithJam, completedDecision, undefined, prevWindowComplete);
     expect(state.status).toBe('operator_confirmed');
   });
 
   it('resulting_classification_mode ist movement_and_stay nach Bestätigung', () => {
-    const state = computeStep2Activation(detectorWithJam, completedDecision);
+    const state = computeStep2Activation(detectorWithJam, completedDecision, undefined, prevWindowComplete);
     expect(state.resulting_classification_mode).toBe('movement_and_stay');
+  });
+
+  it('liefert operator_confirmed mit minRuns=1', () => {
+    const state = computeStep2Activation(detectorWithJam, completedDecision, saMinRuns1, undefined);
+    expect(state.status).toBe('operator_confirmed');
   });
 });
 
 describe('Step2Activation – 39.5 compute: Struktur', () => {
   it('activation_id hat das erwartete Format (s2a_<timestamp>)', () => {
-    const state = computeStep2Activation(undefined, undefined);
+    const state = computeStep2Activation(undefined, undefined, undefined, undefined);
     expect(state.activation_id).toMatch(/^s2a_\d+$/);
   });
 
   it('validation.is_valid ist true', () => {
-    const state = computeStep2Activation(mockStayZoneDetectorState, undefined);
+    const state = computeStep2Activation(mockStayZoneDetectorState, undefined, undefined, undefined);
     expect(state.validation.is_valid).toBe(true);
     expect(state.validation.errors).toHaveLength(0);
   });
 
   it('trigger.detector_id ist "none" ohne Detector', () => {
-    const state = computeStep2Activation(undefined, undefined);
+    const state = computeStep2Activation(undefined, undefined, undefined, undefined);
     expect(state.trigger.detector_id).toBe('none');
+  });
+
+  it('neue Felder sind immer vorhanden', () => {
+    const state = computeStep2Activation(undefined, undefined, undefined, undefined);
+    expect(typeof state.observation_run_count).toBe('number');
+    expect(state.first_detected_at).toBeNull();
+    expect(typeof state.sustained_duration_minutes).toBe('number');
   });
 });
 

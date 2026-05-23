@@ -92,6 +92,12 @@ export interface DefaultParameters {
   default_min_compactness_ratio: number;
   default_min_observation_window_seconds: number;
   default_max_jam_throughput_ratio: number;
+  /**
+   * Mindestanzahl aufeinanderfolgender Pipeline-Runs, in denen die
+   * Stau-Bedingung erfüllt sein muss, bevor Step 2 dauerhaft aktiviert wird.
+   * Bei 5-Minuten-Refresh: 3 Runs = 15 Minuten Beobachtungsfenster.
+   */
+  step2_min_observation_runs: number;
 }
 
 export interface RuleVersions {

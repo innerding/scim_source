@@ -316,7 +316,7 @@ function LeistungsblattTab({ result }: { result: ScimPipelineResult }) {
       {[
         ['Auslastungslage statt Empfehlung', 'Das System empfiehlt keine Route. Es zeigt die aktuelle Auslastung des Wegnetzes — farbcodiert, alle 5 Min. aktualisiert. Der Nutzer entscheidet.'],
         ['Privacy-by-Design strukturell', 'Verbotene Datenklassen sind bauartbedingt unmöglich — nicht regelbasiert verhindert. Masking-Schicht + dedizierter Validator am Paket-Ausgang.'],
-        ['Zweistufige Klassifikation', 'Step 1: Bewegungsfluss. Step 2 (Aufenthaltskomfort) nur bei Operator-bestätigtem Stau aktiv. UI passt sich automatisch an (classification_mode).'],
+        ['Zweistufige Klassifikation', 'Step 1: Bewegungsfluss. Step 2 (Aufenthaltskomfort): Aktivierung nach beobachteter Stauindikation und Hochlastinterpretation.'],
         ['Selbst-dokumentierendes System', 'Glossar, Architekturentscheide, Invarianten und KI-Briefing direkt im Operator Tool — versioniert mit dem Code, nicht in externen Wikis.'],
       ].map(([titel, text]) => (
         <div key={titel} style={{

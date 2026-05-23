@@ -76,6 +76,7 @@ export const mockSystemAdjustState: SystemAdjustState = {
     default_min_compactness_ratio: 0.4,
     default_min_observation_window_seconds: 300,
     default_max_jam_throughput_ratio: 0.20,
+    step2_min_observation_runs: 3,
   },
   rule_versions: {
     system_rules: '1.0.0',

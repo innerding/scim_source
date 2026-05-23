@@ -95,6 +95,7 @@ export interface MaskingModelState { status: string }
 export interface RouteModelState { status: string }
 export interface RouteLayerModelState { status: string }
 export interface LayerModelState { status: string }
+export interface SvgOverlayState { status: string }
 export interface SensusCorePackageState { status: string }
 export interface SensusCoreLocalState { status: string }
 export interface SensusCoreViewState { status: string }
@@ -153,6 +154,7 @@ export interface ScimContext {
   route_model?: RouteModelState;
   route_layer_model?: RouteLayerModelState;
   layer_model?: LayerModelState;
+  svg_overlay?: SvgOverlayState;
 
   sensus_core_package?: SensusCorePackageState;
   local_user_context?: SensusCoreLocalState;

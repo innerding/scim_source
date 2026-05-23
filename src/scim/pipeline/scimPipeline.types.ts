@@ -64,6 +64,20 @@ export interface ScimPipelineInputs {
   run_id?: string;
   requested_at?: string;
   operator_id?: string;
+  /**
+   * Beobachtungszustand aus dem letzten Pipeline-Run.
+   * Die SCIM-Konsole persistiert diesen Wert und gibt ihn beim nächsten Run zurück,
+   * damit die Pipeline den Zähler über Runs hinweg akkumulieren kann.
+   * Fehlt das Feld (erster Run oder Reset), beginnt die Zählung bei 0.
+   */
+  previous_step2_state?: PreviousStep2ObservationState;
+}
+
+export interface PreviousStep2ObservationState {
+  observation_run_count: number;
+  first_detected_at: string | null;
+  status: import('../step2-activation/step2Activation.types').Step2ActivationStatus;
+  resulting_classification_mode: import('../context/scimContext.types').ScimClassificationMode;
 }
 
 // ── Per-step result ───────────────────────────────────────────────────────────
@@ -92,6 +106,7 @@ export type ScimPipelineStepId =
   // Group 3 — Route
   | 'P10_route_model'
   | 'P10_route_layer_model'
+  | 'P10_svg_overlay'
   | 'P10_layer_model'
   // Group 4 — Export
   | 'P11_sensus_core_package'
