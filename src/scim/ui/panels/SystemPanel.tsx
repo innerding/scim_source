@@ -200,7 +200,7 @@ const ARCHITEKTUR_ARTEFAKTE = [
   { id: 'tiger',    label: 'Tiger-Records-Swift-App',   art: 'Prototyp',           desc: 'Nativer iOS-Prototyp zur frühen Validierung der Nutzerschnittstelle und der Wegnetz-Visualisierung unter realen Gerätebedingungen.' },
   { id: 'abc',      label: 'ABC-App-Build-Console',     art: 'Prototyp',           desc: 'Build-Konsole zur Erarbeitung des Operator-Workflows: Paket-Zusammenstellung, Freigabe-Logik und Versions-Management.' },
   { id: 'scim2',    label: 'SCIM2-Focusmodel',          art: 'Vorläufer-Modell',   desc: 'Darstellung einer visuell steuerbaren Update-Maschine mit 33 Quellcode-Modulen — Komplexität nicht versteckt, sondern sichtbar und begreifbar gemacht.' },
-  { id: 'demo',     label: 'SCIM3-Boundary-Build-Demo', art: 'Demo',               desc: 'Lauffähige Demonstration der Boundary-Berechnung und des Graphen-Aufbaus. Erste vollständige Durchführung der Pipeline von Eingabe bis Paket-Output.' },
+  { id: 'demo',     label: 'SCIM3-Geometry-Study',      art: 'Build-Test',         desc: 'Erster Build-Test mit Claude (Anthropic): methodisch noch unstrukturiert, iterativ ohne klare Einstiegsprompts. Das Ergebnis zeigte das Potential, offenbarte aber: KI-gestützte Entwicklung braucht präzise Architektur als Führung.' },
 ];
 
 const METRIKEN = [
