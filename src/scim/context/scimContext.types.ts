@@ -85,6 +85,7 @@ export interface BasisLayerState { status: string }
 export interface LeafletBasisCheckState { status: string }
 export interface StayZoneDetectorState { status: string }
 export interface OperatorDecisionState { status: string }
+export interface Step2ActivationState { status: string }
 export interface PoiModelState { status: string }
 export interface LoadProjectionState { status: string }
 export interface MovementModelState { status: string }
@@ -139,6 +140,7 @@ export interface ScimContext {
 
   stay_zone_detector?: StayZoneDetectorState;
   operator_decision?: OperatorDecisionState;
+  step2_activation?: Step2ActivationState;
   poi_model?: PoiModelState;
   load_model?: LoadProjectionState;
   movement_model?: MovementModelState;
