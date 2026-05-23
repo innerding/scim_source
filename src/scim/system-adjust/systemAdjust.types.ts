@@ -56,6 +56,16 @@ export interface AllowedRanges {
   signal_validity_seconds: NumericRange;
   smoothing_strength: NumericRange;
   edge_weight_factor: NumericRange;
+  // Transform Geometries — Phase 2
+  density_threshold_persons_per_sqm: NumericRange;
+  measurement_interval_seconds: NumericRange;
+  slowdown_threshold_ratio: NumericRange;
+  standstill_threshold_ms: NumericRange;
+  min_standstill_duration_seconds: NumericRange;
+  min_throughput_ratio_for_rast: NumericRange;
+  min_compactness_ratio: NumericRange;
+  min_observation_window_seconds: NumericRange;
+  max_jam_throughput_ratio: NumericRange;
 }
 
 export interface DefaultParameters {
@@ -71,6 +81,16 @@ export interface DefaultParameters {
   default_smoothing_strength: number;
   default_edge_weight_factor: number;
   route_exceedance_default_behavior: RouteExceedanceBehavior;
+  // Transform Geometries — Phase 2
+  default_density_threshold_persons_per_sqm: number;
+  default_measurement_interval_seconds: number;
+  default_slowdown_threshold_ratio: number;
+  default_standstill_threshold_ms: number;
+  default_min_standstill_duration_seconds: number;
+  default_min_throughput_ratio_for_rast: number;
+  default_min_compactness_ratio: number;
+  default_min_observation_window_seconds: number;
+  default_max_jam_throughput_ratio: number;
 }
 
 export interface RuleVersions {
@@ -94,6 +114,9 @@ export interface SystemFeatureFlags {
   enable_leaflet_debug_layers: boolean;
   enable_sensus_core_export: boolean;
   enable_local_user_tolerances: boolean;
+  // Transform Geometries — Phase 2
+  enable_stay_zone_detection: boolean;
+  enable_step2_classification: boolean;
 }
 
 export interface SystemAdjustIssue {

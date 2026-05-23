@@ -101,7 +101,68 @@ describe('SystemAdjust validation — route logic inconsistent', () => {
   });
 });
 
-// ── 19.7 Context protection ───────────────────────────────────────────────────
+// ── 19.7 Transform Geometries — new parameters ────────────────────────────────
+
+describe('SystemAdjust validation — Transform Geometries parameters', () => {
+  it('mock state includes all new allowed_ranges fields', () => {
+    const r = mockSystemAdjustState.allowed_ranges;
+    expect(r.density_threshold_persons_per_sqm).toBeDefined();
+    expect(r.measurement_interval_seconds).toBeDefined();
+    expect(r.slowdown_threshold_ratio).toBeDefined();
+    expect(r.standstill_threshold_ms).toBeDefined();
+    expect(r.min_standstill_duration_seconds).toBeDefined();
+    expect(r.min_throughput_ratio_for_rast).toBeDefined();
+    expect(r.min_compactness_ratio).toBeDefined();
+    expect(r.min_observation_window_seconds).toBeDefined();
+    expect(r.max_jam_throughput_ratio).toBeDefined();
+  });
+
+  it('mock state includes all new default_parameters fields', () => {
+    const d = mockSystemAdjustState.default_parameters;
+    expect(d.default_density_threshold_persons_per_sqm).toBe(1.0);
+    expect(d.default_measurement_interval_seconds).toBe(10);
+    expect(d.default_slowdown_threshold_ratio).toBe(0.60);
+    expect(d.default_standstill_threshold_ms).toBe(0.3);
+    expect(d.default_min_standstill_duration_seconds).toBe(45);
+    expect(d.default_min_throughput_ratio_for_rast).toBe(0.60);
+    expect(d.default_min_compactness_ratio).toBe(0.4);
+    expect(d.default_min_observation_window_seconds).toBe(300);
+    expect(d.default_max_jam_throughput_ratio).toBe(0.20);
+  });
+
+  it('blocks max_jam_throughput_ratio >= min_throughput_ratio_for_rast', () => {
+    const state = cloneWith({
+      default_parameters: {
+        ...mockSystemAdjustState.default_parameters,
+        default_max_jam_throughput_ratio: 0.60,
+        default_min_throughput_ratio_for_rast: 0.60,
+      },
+    });
+    const result = validateSystemAdjust(state);
+    expect(result.is_valid).toBe(false);
+    expect(result.errors.some((e) => e.code === 'SYSADJ_JAM_THRESHOLD_EXCEEDS_RAST')).toBe(true);
+  });
+
+  it('warns when step2 is enabled but stay_zone_detection is not', () => {
+    const state = cloneWith({
+      feature_flags: {
+        ...mockSystemAdjustState.feature_flags,
+        enable_step2_classification: true,
+        enable_stay_zone_detection: false,
+      },
+    });
+    const result = validateSystemAdjust(state);
+    expect(result.warnings.some((w) => w.code === 'SYSADJ_STEP2_WITHOUT_DETECTOR')).toBe(true);
+  });
+
+  it('mock state feature_flags include enable_stay_zone_detection and enable_step2_classification', () => {
+    const f = mockSystemAdjustState.feature_flags;
+    expect(f.enable_stay_zone_detection).toBe(false);
+    expect(f.enable_step2_classification).toBe(false);
+  });
+});
+
+// ── 19.8 Context protection ───────────────────────────────────────────────────
 
 describe('SystemAdjust context apply', () => {
   it('writes only system_adjust and leaves other context keys intact', () => {
