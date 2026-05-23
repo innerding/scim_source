@@ -110,11 +110,17 @@ export type ScimContextAuditAction =
   | 'exported'
   | 'released';
 
+// ── Classification mode ───────────────────────────────────────────────────────
+
+export type ScimClassificationMode = 'movement_only' | 'movement_and_stay';
+
 // ── ScimContext ───────────────────────────────────────────────────────────────
 
 export interface ScimContext {
   representation_id?: string;
   run_mode?: ScimRunMode;
+  classification_mode: ScimClassificationMode;
+  step2_activation_condition_met: boolean;
 
   system_adjust?: SystemAdjustState;
   regio_content?: RegioContentState;
@@ -152,6 +158,8 @@ export interface ScimContext {
 export function makeEmptyContext(runMode: ScimRunMode = 'draft'): ScimContext {
   return {
     run_mode: runMode,
+    classification_mode: 'movement_only',
+    step2_activation_condition_met: false,
     status: 'not_started',
   };
 }
