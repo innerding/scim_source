@@ -1,4 +1,18 @@
-import type { MaskingModelState } from './maskingModel.types';
+import type { MaskingModelState, MaskedElement } from './maskingModel.types';
+
+export const mockStayZoneMaskedElement: MaskedElement = {
+  element_type: 'area',
+  element_id: 'zone_001',
+  masking_reason: 'stay_zone_confirmed',
+  rule_code: 'MASK_STAY_ZONE_CONFIRMED',
+};
+
+export const mockOffPathMaskedElement: MaskedElement = {
+  element_type: 'area',
+  element_id: 'zone_off_001',
+  masking_reason: 'off_path_zone_excluded',
+  rule_code: 'MASK_OFF_PATH_ZONE',
+};
 
 export const mockMaskingModelState: MaskingModelState = {
   masking_model_id: 'mask_001',

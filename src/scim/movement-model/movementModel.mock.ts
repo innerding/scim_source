@@ -14,6 +14,10 @@ export const mockMovementModelState: MovementModelState = {
       normalized_movement_score: 0.62,
       confidence_score: 0.82,
       privacy_masked: false,
+      density_score: 0.4,
+      throughput_ratio: 0.8,
+      jam_detected: false,
+      stay_candidate: false,
     },
     {
       edge_id: 'e_002',
@@ -24,6 +28,10 @@ export const mockMovementModelState: MovementModelState = {
       normalized_movement_score: 0.51,
       confidence_score: 0.77,
       privacy_masked: false,
+      density_score: 0.6,
+      throughput_ratio: 0.7,
+      jam_detected: false,
+      stay_candidate: false,
     },
     {
       edge_id: 'e_003',
@@ -34,6 +42,10 @@ export const mockMovementModelState: MovementModelState = {
       normalized_movement_score: 0.19,
       confidence_score: 0.55,
       privacy_masked: false,
+      density_score: 0.85,
+      throughput_ratio: 0.62,
+      jam_detected: false,
+      stay_candidate: true,
     },
   ],
   metrics: {
@@ -42,6 +54,9 @@ export const mockMovementModelState: MovementModelState = {
     static_edge_count: 0,
     masked_edge_count: 0,
     avg_movement_score: 0.44,
+    jam_edge_count: 0,
+    stay_candidate_edge_count: 1,
+    max_density_score: 0.85,
   },
   validation: {
     is_valid: true,

@@ -92,3 +92,54 @@ describe('Graph – 27.9 invalid status blocks context apply', () => {
     expect(() => applyGraphToContext(makeEmptyContext(), state)).toThrow();
   });
 });
+
+// ── 27.10 Stay-Boundary Nodes ─────────────────────────────────────────────────
+
+describe('Graph – 27.10 stay-boundary nodes', () => {
+  it('mock has a stay_boundary node with stay_zone_id and semantic_role', () => {
+    const stayNode = mockGraphState.nodes.find(n => n.node_type === 'stay_boundary');
+    expect(stayNode).toBeDefined();
+    expect(stayNode?.stay_zone_id).toBe('zone_001');
+    expect(stayNode?.semantic_role).toBe('zone_boundary');
+  });
+
+  it('mock passes validation with stay_boundary node', () => {
+    const result = validateGraph(mockGraphState, mockBoundaryState, mockExtractionState, mockSystemAdjustState);
+    expect(result.is_valid).toBe(true);
+    expect(result.warnings.some(w => w.code === 'GRAPH_STAY_NODE_MISSING_ZONE_ID')).toBe(false);
+  });
+
+  it('warns when stay_boundary node has no stay_zone_id', () => {
+    const state = {
+      ...mockGraphState,
+      nodes: [
+        ...mockGraphState.nodes.filter(n => n.node_type !== 'stay_boundary'),
+        {
+          node_id: 'n_bad',
+          geometry: { type: 'Point' as const, coordinates: [15.22, 47.65] },
+          node_type: 'stay_boundary' as const,
+          connected_edge_ids: ['e_002'],
+        },
+      ],
+    };
+    const result = validateGraph(state, mockBoundaryState);
+    expect(result.warnings.some(w => w.code === 'GRAPH_STAY_NODE_MISSING_ZONE_ID')).toBe(true);
+  });
+
+  it('warns when entry_exit node has no stay_zone_id', () => {
+    const state = {
+      ...mockGraphState,
+      nodes: [
+        ...mockGraphState.nodes,
+        {
+          node_id: 'n_entry',
+          geometry: { type: 'Point' as const, coordinates: [15.20, 47.64] },
+          node_type: 'entry_exit' as const,
+          connected_edge_ids: ['e_001'],
+        },
+      ],
+    };
+    const result = validateGraph(state, mockBoundaryState);
+    expect(result.warnings.some(w => w.code === 'GRAPH_STAY_NODE_MISSING_ZONE_ID')).toBe(true);
+  });
+});

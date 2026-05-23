@@ -124,6 +124,15 @@ export function validateSystemAdjust(state: SystemAdjustState): SystemAdjustVali
         [d.default_signal_validity_seconds, r.signal_validity_seconds, 'default_signal_validity_seconds'],
         [d.default_smoothing_strength, r.smoothing_strength, 'default_smoothing_strength'],
         [d.default_edge_weight_factor, r.edge_weight_factor, 'default_edge_weight_factor'],
+        [d.default_density_threshold_persons_per_sqm, r.density_threshold_persons_per_sqm, 'default_density_threshold_persons_per_sqm'],
+        [d.default_measurement_interval_seconds, r.measurement_interval_seconds, 'default_measurement_interval_seconds'],
+        [d.default_slowdown_threshold_ratio, r.slowdown_threshold_ratio, 'default_slowdown_threshold_ratio'],
+        [d.default_standstill_threshold_ms, r.standstill_threshold_ms, 'default_standstill_threshold_ms'],
+        [d.default_min_standstill_duration_seconds, r.min_standstill_duration_seconds, 'default_min_standstill_duration_seconds'],
+        [d.default_min_throughput_ratio_for_rast, r.min_throughput_ratio_for_rast, 'default_min_throughput_ratio_for_rast'],
+        [d.default_min_compactness_ratio, r.min_compactness_ratio, 'default_min_compactness_ratio'],
+        [d.default_min_observation_window_seconds, r.min_observation_window_seconds, 'default_min_observation_window_seconds'],
+        [d.default_max_jam_throughput_ratio, r.max_jam_throughput_ratio, 'default_max_jam_throughput_ratio'],
       ];
       for (const [value, range, field] of checks) {
         if (!inRange(value, range)) {
@@ -134,6 +143,10 @@ export function validateSystemAdjust(state: SystemAdjustState): SystemAdjustVali
 
     if (d.default_route_degrade_threshold > d.default_route_exclude_threshold) {
       errors.push(err('SYSADJ_DEGRADE_EXCEEDS_EXCLUDE', 'default_parameters', 'Route degrade threshold must be <= route exclude threshold.'));
+    }
+
+    if (d.default_max_jam_throughput_ratio >= d.default_min_throughput_ratio_for_rast) {
+      errors.push(err('SYSADJ_JAM_THRESHOLD_EXCEEDS_RAST', 'default_parameters', 'max_jam_throughput_ratio must be < min_throughput_ratio_for_rast (Stau threshold below Rast threshold).'));
     }
 
     if (d.default_comparison_margin_meters === 0) {
@@ -155,9 +168,12 @@ export function validateSystemAdjust(state: SystemAdjustState): SystemAdjustVali
     }
   }
 
-  // Feature flag warning
+  // Feature flag warnings
   if (state.feature_flags?.enable_leaflet_debug_layers) {
     warnings.push(warn('SYSADJ_DEBUG_ENABLED', 'feature_flags.enable_leaflet_debug_layers', 'Leaflet debug layers are enabled.'));
+  }
+  if (state.feature_flags?.enable_step2_classification && !state.feature_flags.enable_stay_zone_detection) {
+    warnings.push(warn('SYSADJ_STEP2_WITHOUT_DETECTOR', 'feature_flags.enable_step2_classification', 'Step-2 classification is enabled but stay_zone_detection is disabled — Step 2 will have no detector input.'));
   }
 
   return {

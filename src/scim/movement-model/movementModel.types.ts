@@ -4,6 +4,7 @@ export type MovementModelStatus =
   | 'movement_model_valid'
   | 'movement_model_invalid'
   | 'movement_model_warning'
+  | 'movement_model_jam_detected'
   | 'movement_model_error';
 
 export type MovementClass =
@@ -28,6 +29,11 @@ export interface EdgeMovementState {
   normalized_movement_score: number;
   confidence_score: number;
   privacy_masked: boolean;
+  // Transform Geometries — Phase 4
+  density_score: number;
+  throughput_ratio: number;
+  jam_detected: boolean;
+  stay_candidate: boolean;
 }
 
 export interface MovementModelMetrics {
@@ -36,6 +42,10 @@ export interface MovementModelMetrics {
   static_edge_count: number;
   masked_edge_count: number;
   avg_movement_score: number;
+  // Transform Geometries — Phase 4
+  jam_edge_count: number;
+  stay_candidate_edge_count: number;
+  max_density_score: number;
 }
 
 export interface MovementModelIssue {

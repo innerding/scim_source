@@ -38,6 +38,15 @@ export function validateMovementModel(
     if (edge.normalized_movement_score < 0 || edge.normalized_movement_score > 1) {
       errors.push(err('MM_MOVEMENT_SCORE_OUT_OF_RANGE', `Edge ${edge.edge_id}: normalized_movement_score ${edge.normalized_movement_score} must be in [0, 1].`, 'edge_movement_states', edge.edge_id));
     }
+    if (edge.density_score < 0) {
+      errors.push(err('MM_DENSITY_SCORE_INVALID', `Edge ${edge.edge_id}: density_score must be >= 0.`, 'edge_movement_states', edge.edge_id));
+    }
+    if (edge.throughput_ratio < 0 || edge.throughput_ratio > 1) {
+      errors.push(err('MM_THROUGHPUT_RATIO_OUT_OF_RANGE', `Edge ${edge.edge_id}: throughput_ratio ${edge.throughput_ratio} must be in [0, 1].`, 'edge_movement_states', edge.edge_id));
+    }
+    if (edge.jam_detected && edge.throughput_ratio > 0.5) {
+      warnings.push(warn('MM_JAM_THROUGHPUT_INCONSISTENT', `Edge ${edge.edge_id}: jam_detected=true but throughput_ratio=${edge.throughput_ratio} is high — expected low throughput for Stau.`, 'edge_movement_states', edge.edge_id));
+    }
   }
 
   if (state.edge_movement_states.length > 0 && state.edge_movement_states.every(e => e.movement_class === 'static')) {
@@ -47,6 +56,15 @@ export function validateMovementModel(
   const total = state.metrics.evaluated_edge_count;
   if (total > 0 && state.metrics.masked_edge_count / total > 0.5) {
     warnings.push(warn('MM_HIGH_MASKED_RATIO', `${state.metrics.masked_edge_count} of ${total} edges masked (>50%).`, 'metrics'));
+  }
+
+  const actualJamCount = state.edge_movement_states.filter(e => e.jam_detected).length;
+  if (actualJamCount !== state.metrics.jam_edge_count) {
+    errors.push(err('MM_JAM_EDGE_COUNT_MISMATCH', `metrics.jam_edge_count=${state.metrics.jam_edge_count} does not match actual jam_detected count=${actualJamCount}.`, 'metrics'));
+  }
+  const actualStayCount = state.edge_movement_states.filter(e => e.stay_candidate).length;
+  if (actualStayCount !== state.metrics.stay_candidate_edge_count) {
+    errors.push(err('MM_STAY_CANDIDATE_COUNT_MISMATCH', `metrics.stay_candidate_edge_count=${state.metrics.stay_candidate_edge_count} does not match actual count=${actualStayCount}.`, 'metrics'));
   }
 
   return {

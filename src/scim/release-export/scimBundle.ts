@@ -1,7 +1,7 @@
 import type { ScimContext } from '../context/scimContext.types';
 import type { GraphState } from '../graph/graph.types';
 import type { RouteLayerModelState } from '../route-layer-model/routeLayerModel.types';
-import type { PoiModelState } from '../poi-model/poiModel.types';
+import type { PoiModelState } from '../poi-output/poiOutput.types';
 import type { BasisLayerState } from '../basis-layer/basisLayer.types';
 import type { ReleaseExportState } from './releaseExport.types';
 import type { RegioContentState } from '../regio-content/regioContent.types';

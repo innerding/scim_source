@@ -80,6 +80,7 @@ export type ScimPipelineStepId =
   | 'panel_7_poi_model'
   | 'panel_7_load_projection'
   | 'panel_7_movement_model'
+  | 'panel_7_stay_zone_detector'
   | 'panel_7_masking_model'
   | 'panel_8_route_model'
   | 'panel_8_route_layer_model'

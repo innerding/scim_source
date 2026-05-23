@@ -34,6 +34,14 @@ export const mockGraphState: GraphState = {
       elevation_meters: 1520,
       connected_edge_ids: ['e_003'],
     },
+    {
+      node_id: 'n_005',
+      geometry: { type: 'Point', coordinates: [15.22, 47.65] },
+      node_type: 'stay_boundary',
+      connected_edge_ids: ['e_002'],
+      stay_zone_id: 'zone_001',
+      semantic_role: 'zone_boundary',
+    },
   ],
   edges: [
     {
@@ -68,7 +76,7 @@ export const mockGraphState: GraphState = {
     },
   ],
   metrics: {
-    node_count: 4,
+    node_count: 5,
     edge_count: 3,
     total_length_meters: 5900,
     connected_components: 1,

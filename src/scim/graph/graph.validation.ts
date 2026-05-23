@@ -71,6 +71,17 @@ export function validateGraph(
     warnings.push(warn('GRAPH_NO_POI_ANCHOR', 'Graph has no POI anchor nodes.', 'nodes'));
   }
 
+  for (const node of state.nodes) {
+    if ((node.node_type === 'stay_boundary' || node.node_type === 'entry_exit') && !node.stay_zone_id) {
+      warnings.push(warn(
+        'GRAPH_STAY_NODE_MISSING_ZONE_ID',
+        `Node ${node.node_id} has type '${node.node_type}' but no stay_zone_id.`,
+        'nodes',
+        node.node_id,
+      ));
+    }
+  }
+
   return {
     is_valid: errors.length === 0,
     errors,

@@ -13,7 +13,11 @@ export type MaskingReason =
   | 'edge_below_min_length'
   | 'stay_area_below_min_radius'
   | 'expired_signal'
-  | 'privacy_rule_violation';
+  | 'privacy_rule_violation'
+  | 'stay_zone_confirmed'
+  | 'stay_zone_overlap_conflict'
+  | 'jam_zone_flagged'
+  | 'off_path_zone_excluded';
 
 export type MaskedElementType = 'poi' | 'edge' | 'area';
 

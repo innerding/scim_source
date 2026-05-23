@@ -14,6 +14,20 @@ function stubState(_id: string): SystemAdjustState {
   return { status: 'system_adjust_valid' };
 }
 
+// ── Classification mode ───────────────────────────────────────────────────────
+
+describe('Classification mode', () => {
+  it('makeEmptyContext defaults to movement_only', () => {
+    const ctx = makeEmptyContext();
+    expect(ctx.classification_mode).toBe('movement_only');
+  });
+
+  it('makeEmptyContext sets step2_activation_condition_met to false', () => {
+    const ctx = makeEmptyContext();
+    expect(ctx.step2_activation_condition_met).toBe(false);
+  });
+});
+
 // ── Write policies ────────────────────────────────────────────────────────────
 
 describe('Write policies', () => {
@@ -35,6 +49,22 @@ describe('Write policies', () => {
 
   it('Panel 9 may NOT write route_model', () => {
     expect(isPanelAllowedToWrite('panel_9_sensus_core_package_builder', 'context.route_model')).toBe(false);
+  });
+
+  it('Panel 1 may write classification_mode', () => {
+    expect(isPanelAllowedToWrite('panel_1_system_adjust_input', 'context.classification_mode')).toBe(true);
+  });
+
+  it('Panel 7 may NOT write classification_mode', () => {
+    expect(isPanelAllowedToWrite('panel_7_poi_load_movement', 'context.classification_mode')).toBe(false);
+  });
+
+  it('Panel 7 may write step2_activation_condition_met', () => {
+    expect(isPanelAllowedToWrite('panel_7_poi_load_movement', 'context.step2_activation_condition_met')).toBe(true);
+  });
+
+  it('Panel 1 may NOT write step2_activation_condition_met', () => {
+    expect(isPanelAllowedToWrite('panel_1_system_adjust_input', 'context.step2_activation_condition_met')).toBe(false);
   });
 });
 

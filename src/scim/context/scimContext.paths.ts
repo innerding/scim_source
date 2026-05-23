@@ -35,10 +35,15 @@ export type ScimContextPath =
   | 'context.view_state'
   | 'context.leaflet_effect_check'
   | 'context.release'
-  | 'context.status';
+  | 'context.status'
+  | 'context.stay_zone_detector'
+  | 'context.classification_mode'
+  | 'context.step2_activation_condition_met'
+  | 'context.operator_decision'
+  | 'context.step2_activation';
 
 export const PANEL_WRITE_MAP: Record<ScimPanelId, ScimContextPath[]> = {
-  panel_1_system_adjust_input: ['context.system_adjust'],
+  panel_1_system_adjust_input: ['context.system_adjust', 'context.classification_mode'],
   panel_2_regio_content_input: ['context.regio_content'],
   panel_3_target_app_ui_input: ['context.target_app_ui'],
   panel_4_telco_load_input: ['context.telco_load'],
@@ -54,6 +59,10 @@ export const PANEL_WRITE_MAP: Record<ScimPanelId, ScimContextPath[]> = {
     'context.load_model',
     'context.movement_model',
     'context.masking_model',
+    'context.step2_activation_condition_met',
+    'context.stay_zone_detector',
+    'context.operator_decision',
+    'context.step2_activation',
   ],
   panel_8_route_evaluation_display: [
     'context.route_model',

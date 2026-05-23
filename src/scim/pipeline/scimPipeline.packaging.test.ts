@@ -29,7 +29,7 @@ import type { BoundaryState } from '../boundary/boundary.types';
 import type { ExtractionState } from '../extraction/extraction.types';
 import type { GraphState } from '../graph/graph.types';
 import type { BasisLayerState } from '../basis-layer/basisLayer.types';
-import type { PoiModelState } from '../poi-model/poiModel.types';
+import type { PoiModelState } from '../poi-output/poiOutput.types';
 import type { LoadProjectionState } from '../load-projection/loadProjection.types';
 import type { MovementModelState } from '../movement-model/movementModel.types';
 import type { MaskingModelState } from '../masking-model/maskingModel.types';

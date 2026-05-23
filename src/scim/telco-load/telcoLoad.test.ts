@@ -104,7 +104,26 @@ describe('TelcoLoad – 23.7 invalid status blocks context apply', () => {
   });
 });
 
-describe('TelcoLoad – 23.8 context protection', () => {
+describe('TelcoLoad – 23.8 short interval', () => {
+  it('mock state has short_interval_enabled false and window 10s', () => {
+    expect(mockTelcoLoadState.short_interval_enabled).toBe(false);
+    expect(mockTelcoLoadState.short_interval_window_seconds).toBe(10);
+  });
+
+  it('warns when short_interval_enabled and window < 5s', () => {
+    const state = { ...mockTelcoLoadState, short_interval_enabled: true, short_interval_window_seconds: 3 };
+    const result = validateTelcoLoad(state, mockSystemAdjustState);
+    expect(result.warnings.some(w => w.code === 'TELCO_SHORT_INTERVAL_TOO_SMALL')).toBe(true);
+  });
+
+  it('no warning when short_interval_enabled false even if window < 5s', () => {
+    const state = { ...mockTelcoLoadState, short_interval_enabled: false, short_interval_window_seconds: 2 };
+    const result = validateTelcoLoad(state, mockSystemAdjustState);
+    expect(result.warnings.some(w => w.code === 'TELCO_SHORT_INTERVAL_TOO_SMALL')).toBe(false);
+  });
+});
+
+describe('TelcoLoad – 23.9 context protection', () => {
   it('does not mutate other context keys', () => {
     const context = makeEmptyContext();
     const updated = applyTelcoLoadToContext(context, mockTelcoLoadState);
