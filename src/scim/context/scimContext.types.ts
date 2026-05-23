@@ -84,6 +84,7 @@ export interface GraphState { status: string; representation_id?: string }
 export interface BasisLayerState { status: string }
 export interface LeafletBasisCheckState { status: string }
 export interface StayZoneDetectorState { status: string }
+export interface OperatorZoneState { status: string }
 export interface OperatorDecisionState { status: string }
 export interface Step2ActivationState { status: string }
 export interface PoiModelState { status: string }
@@ -129,6 +130,7 @@ export interface ScimContext {
   regio_content?: RegioContentState;
   target_app_ui?: TargetAppUiState;
   telco_load?: TelcoLoadState;
+  operator_zones?: OperatorZoneState;
 
   boundary?: BoundaryState;
   extracted_data?: ExtractionState;

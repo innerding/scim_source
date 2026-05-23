@@ -58,6 +58,17 @@ const INVALIDATION_MAP: Record<ScimContextPath, ScimContextPath[]> = {
     'context.leaflet_effect_check',
     'context.release',
   ],
+  'context.operator_zones': [
+    'context.load_model',
+    'context.movement_model',
+    'context.masking_model',
+    'context.route_model',
+    'context.sensus_core_package',
+    'context.local_user_context',
+    'context.view_state',
+    'context.leaflet_effect_check',
+    'context.release',
+  ],
   'context.boundary': [
     'context.scim_context',
     'context.graph',
@@ -127,6 +138,11 @@ const INVALIDATION_MAP: Record<ScimContextPath, ScimContextPath[]> = {
   'context.leaflet_effect_check': [],
   'context.release': [],
   'context.status': [],
+  'context.stay_zone_detector': [],
+  'context.classification_mode': [],
+  'context.step2_activation_condition_met': [],
+  'context.operator_decision': [],
+  'context.step2_activation': [],
 };
 
 const PATH_TO_KEY: Record<ScimContextPath, keyof ScimContext | null> = {
@@ -153,6 +169,12 @@ const PATH_TO_KEY: Record<ScimContextPath, keyof ScimContext | null> = {
   'context.leaflet_effect_check': 'leaflet_effect_check',
   'context.release': 'release',
   'context.status': 'status',
+  'context.operator_zones': 'operator_zones',
+  'context.stay_zone_detector': 'stay_zone_detector',
+  'context.classification_mode': null,
+  'context.step2_activation_condition_met': null,
+  'context.operator_decision': 'operator_decision',
+  'context.step2_activation': 'step2_activation',
 };
 
 export function getInvalidationCascade(changedPath: ScimContextPath): ScimContextPath[] {

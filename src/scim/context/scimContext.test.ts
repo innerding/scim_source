@@ -40,15 +40,15 @@ describe('Write policies', () => {
   });
 
   it('Panel 7 may write poi_model', () => {
-    expect(isPanelAllowedToWrite('panel_7_poi_load_movement', 'context.poi_model')).toBe(true);
+    expect(isPanelAllowedToWrite('panel_8_poi_load_movement', 'context.poi_model')).toBe(true);
   });
 
   it('Panel 7 may NOT write route_model', () => {
-    expect(isPanelAllowedToWrite('panel_7_poi_load_movement', 'context.route_model')).toBe(false);
+    expect(isPanelAllowedToWrite('panel_8_poi_load_movement', 'context.route_model')).toBe(false);
   });
 
   it('Panel 9 may NOT write route_model', () => {
-    expect(isPanelAllowedToWrite('panel_9_sensus_core_package_builder', 'context.route_model')).toBe(false);
+    expect(isPanelAllowedToWrite('panel_10_sensus_core_package_builder', 'context.route_model')).toBe(false);
   });
 
   it('Panel 1 may write classification_mode', () => {
@@ -56,11 +56,11 @@ describe('Write policies', () => {
   });
 
   it('Panel 7 may NOT write classification_mode', () => {
-    expect(isPanelAllowedToWrite('panel_7_poi_load_movement', 'context.classification_mode')).toBe(false);
+    expect(isPanelAllowedToWrite('panel_8_poi_load_movement', 'context.classification_mode')).toBe(false);
   });
 
   it('Panel 7 may write step2_activation_condition_met', () => {
-    expect(isPanelAllowedToWrite('panel_7_poi_load_movement', 'context.step2_activation_condition_met')).toBe(true);
+    expect(isPanelAllowedToWrite('panel_8_poi_load_movement', 'context.step2_activation_condition_met')).toBe(true);
   });
 
   it('Panel 1 may NOT write step2_activation_condition_met', () => {
@@ -95,7 +95,7 @@ describe('applyPanelContextUpdate', () => {
 
   it('blocks panel 5 from writing system_adjust but allows boundary', () => {
     const ctx = makeEmptyContext();
-    const result = applyPanelContextUpdate(ctx, 'panel_5_boundary_extraction', {
+    const result = applyPanelContextUpdate(ctx, 'panel_6_boundary_extraction', {
       system_adjust: stubState('bad'),
       boundary: { ...stubState('b-1'), representation_id: 'rep-1' },
     });
@@ -105,7 +105,7 @@ describe('applyPanelContextUpdate', () => {
 
   it('panel 5 may write representation_id', () => {
     const ctx = makeEmptyContext();
-    const result = applyPanelContextUpdate(ctx, 'panel_5_boundary_extraction', {
+    const result = applyPanelContextUpdate(ctx, 'panel_6_boundary_extraction', {
       representation_id: 'rep-42',
     });
     expect(result.context.representation_id).toBe('rep-42');
