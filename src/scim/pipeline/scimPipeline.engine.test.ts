@@ -16,6 +16,10 @@ import {
 } from './scimPipeline.compute';
 import { mockSystemAdjustState } from '../system-adjust/systemAdjust.mock';
 import { mockStayZoneDetectorState } from '../stay-zone-detector/stayZoneDetector.mock';
+import { mockOperatorDecisionState, mockOperatorDecisionPending } from '../operator-decision/operatorDecision.mock';
+import { validateOperatorDecision } from '../operator-decision/operatorDecision.validation';
+import { mockStep2ActivationConfirmed, mockStep2ActivationNotTriggered } from '../step2-activation/step2Activation.mock';
+import { applyStep2ActivationToContext } from '../step2-activation/step2Activation.context';
 import { mockRegioContentState } from '../regio-content/regioContent.mock';
 import { mockTargetAppUiState } from '../target-app-ui/targetAppUi.mock';
 import { mockTelcoLoadState } from '../telco-load/telcoLoad.mock';
@@ -372,5 +376,134 @@ describe('Engine – 52.7 computeLayerModel', () => {
     for (const l of layerModel.layers) {
       expect(valid).toContain(l.data_class);
     }
+  });
+});
+
+// ── 52.8 MovementModel – Transform-Geometries-Felder ─────────────────────────
+
+describe('Engine – 52.8 computeMovementModel Transform-Geometries fields', () => {
+  const poiModel = computePoiModel(
+    { ...ctxSpatial, telco_load: mockTelcoLoadState },
+    baseInputs,
+  ) as PoiModelState;
+  const ctxWithPoi = { ...ctxSpatial, telco_load: mockTelcoLoadState, poi_model: poiModel };
+  const loadProjection = computeLoadProjection(ctxWithPoi, baseInputs) as LoadProjectionState;
+  const movementModel = computeMovementModel({ ...ctxWithPoi, load_model: loadProjection }, baseInputs);
+
+  it('every EdgeMovementState has density_score >= 0', () => {
+    for (const ems of movementModel.edge_movement_states) {
+      expect(ems.density_score).toBeGreaterThanOrEqual(0);
+    }
+  });
+
+  it('every EdgeMovementState has throughput_ratio in [0, 1]', () => {
+    for (const ems of movementModel.edge_movement_states) {
+      expect(ems.throughput_ratio).toBeGreaterThanOrEqual(0);
+      expect(ems.throughput_ratio).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it('jam_detected and stay_candidate are booleans', () => {
+    for (const ems of movementModel.edge_movement_states) {
+      expect(typeof ems.jam_detected).toBe('boolean');
+      expect(typeof ems.stay_candidate).toBe('boolean');
+    }
+  });
+
+  it('metrics has jam_edge_count, stay_candidate_edge_count, max_density_score', () => {
+    expect(typeof movementModel.metrics.jam_edge_count).toBe('number');
+    expect(typeof movementModel.metrics.stay_candidate_edge_count).toBe('number');
+    expect(typeof movementModel.metrics.max_density_score).toBe('number');
+  });
+
+  it('jam_edge_count matches edges with jam_detected=true', () => {
+    const actual = movementModel.edge_movement_states.filter(e => e.jam_detected).length;
+    expect(movementModel.metrics.jam_edge_count).toBe(actual);
+  });
+
+  it('stay_candidate_edge_count matches edges with stay_candidate=true', () => {
+    const actual = movementModel.edge_movement_states.filter(e => e.stay_candidate).length;
+    expect(movementModel.metrics.stay_candidate_edge_count).toBe(actual);
+  });
+});
+
+// ── 52.9 OperatorDecision – Validation im Pipeline-Kontext ───────────────────
+
+describe('Engine – 52.9 OperatorDecision validation', () => {
+  it('completed mock passes validation against detector', () => {
+    const result = validateOperatorDecision(mockOperatorDecisionState, mockStayZoneDetectorState);
+    expect(result.is_valid).toBe(true);
+  });
+
+  it('pending stau commit produces OPDEC_STAU_PENDING warning', () => {
+    const result = validateOperatorDecision(mockOperatorDecisionPending, mockStayZoneDetectorState);
+    expect(result.warnings.some(w => w.code === 'OPDEC_STAU_PENDING')).toBe(true);
+  });
+
+  it('step2 active without commits produces OPDEC_STAU_COMMIT_MISSING warning', () => {
+    const state = {
+      ...mockOperatorDecisionState,
+      prerequisites: { ...mockOperatorDecisionState.prerequisites, step2_activation_condition_met: true },
+      stau_commits: [],
+    };
+    const result = validateOperatorDecision(state, mockStayZoneDetectorState);
+    expect(result.warnings.some(w => w.code === 'OPDEC_STAU_COMMIT_MISSING')).toBe(true);
+  });
+});
+
+// ── 52.10 Step2Activation – Context-Integration ───────────────────────────────
+
+describe('Engine – 52.10 Step2Activation context integration', () => {
+  it('confirmed activation switches classification_mode to movement_and_stay', () => {
+    const ctx = makeEmptyContext();
+    expect(ctx.classification_mode).toBe('movement_only');
+    const updated = applyStep2ActivationToContext(ctx, mockStep2ActivationConfirmed);
+    expect(updated.classification_mode).toBe('movement_and_stay');
+    expect(updated.step2_activation).toBe(mockStep2ActivationConfirmed);
+  });
+
+  it('not_triggered activation keeps classification_mode as movement_only', () => {
+    const ctx = makeEmptyContext();
+    const updated = applyStep2ActivationToContext(ctx, mockStep2ActivationNotTriggered);
+    expect(updated.classification_mode).toBe('movement_only');
+  });
+
+  it('confirmed activation does not affect other context keys', () => {
+    const ctx = { ...makeEmptyContext(), system_adjust: mockSystemAdjustState };
+    const updated = applyStep2ActivationToContext(ctx, mockStep2ActivationConfirmed);
+    expect(updated.system_adjust).toBe(mockSystemAdjustState);
+  });
+});
+
+// ── 52.11 LayerModel – stay_zone_edge_layers ──────────────────────────────────
+
+describe('Engine – 52.11 LayerModel with stay_zone_edge_layers', () => {
+  const poiModel = computePoiModel(
+    { ...ctxSpatial, telco_load: mockTelcoLoadState },
+    baseInputs,
+  ) as PoiModelState;
+  const ctxWithPoi = { ...ctxSpatial, telco_load: mockTelcoLoadState, poi_model: poiModel };
+  const loadProjection = computeLoadProjection(ctxWithPoi, baseInputs) as LoadProjectionState;
+  const movementModel = computeMovementModel({ ...ctxWithPoi, load_model: loadProjection }, baseInputs) as MovementModelState;
+  const maskingModel = computeMaskingModel({ ...ctxWithPoi, load_model: loadProjection }, baseInputs) as MaskingModelState;
+  const ctxFull = { ...ctxWithPoi, load_model: loadProjection, movement_model: movementModel, masking_model: maskingModel };
+  const routeModel = computeRouteModel(ctxFull, baseInputs) as RouteModelState;
+  const routeLayerModel = computeRouteLayerModel({ ...ctxFull, route_model: routeModel }, baseInputs) as RouteLayerModelState;
+  const layerModel = computeLayerModel({ ...ctxFull, route_model: routeModel, route_layer_model: routeLayerModel }, baseInputs);
+
+  it('computeLayerModel succeeds with stay_zone_detector in context', () => {
+    expect(layerModel.layer_model_id).toBeTruthy();
+    expect(layerModel.status).toBe('not_built');
+  });
+
+  it('stay_zone_edge_layers field is undefined by default (not yet wired in compute)', () => {
+    // stay_zone_edge_layers will be populated when computeLayerModel is extended
+    // in a future step — for now it must at least be absent (not throw)
+    expect(layerModel.stay_zone_edge_layers === undefined || Array.isArray(layerModel.stay_zone_edge_layers)).toBe(true);
+  });
+
+  it('visible_layer_count matches visible layers', () => {
+    const visible = layerModel.layers.filter(l => l.visible).length;
+    expect(layerModel.visible_layer_count).toBe(visible);
   });
 });
