@@ -1,6 +1,8 @@
-// Specific result views for all auto_computed panels (P05–P12).
+// Specific result views for all auto_computed panels (P05–P14).
 // Each view reads the real pipeline context and renders meaningful data.
 import type { ScimPipelineResult } from '../../pipeline/scimPipeline.types';
+import type { OperatorZoneState, OperatorDefinedZone } from '../../operator-zone/operatorZone.types';
+import type { SignalInterpretationState } from '../../signal-interpretation/signalInterpretation.types';
 import type { BoundaryState } from '../../boundary/boundary.types';
 import type { ExtractionState } from '../../extraction/extraction.types';
 import type { GraphState } from '../../graph/graph.types';
@@ -106,9 +108,206 @@ function scoreColor(v: number): string {
   return '#ff4136';
 }
 
-// ─── P05: Boundary + Extraction ──────────────────────────────────────────────
+// ─── P05: OperatorZones ───────────────────────────────────────────────────────
+
+function zoneStatus(zone: OperatorDefinedZone, now: string): 'active' | 'pending' | 'expired' {
+  const t = new Date(now);
+  if (zone.valid_until && new Date(zone.valid_until) < t) return 'expired';
+  if (zone.valid_from && new Date(zone.valid_from) > t) return 'pending';
+  return 'active';
+}
+
+const ZONE_STATUS_STYLE: Record<string, { color: string; bg: string; label: string }> = {
+  active:  { color: '#276749', bg: '#f0fff4', label: '● aktiv' },
+  pending: { color: '#975a16', bg: '#fffbeb', label: '◌ ausstehend' },
+  expired: { color: '#718096', bg: '#f7fafc', label: '○ abgelaufen' },
+};
+
+const SEMANTIC_ICON: Record<string, string> = {
+  rest_area: '🏚', viewpoint: '🔭', gathering_point: '👥',
+  event_area: '🎌', custom: '⊙',
+};
 
 export function P05Result({ result }: { result: ScimPipelineResult }) {
+  if (!result.success) return noData();
+  const ctx = result.context as unknown as Record<string, unknown>;
+  const oz = ctx.operator_zones as OperatorZoneState | undefined;
+  if (!oz) return noData();
+
+  const now = new Date().toISOString();
+
+  return (
+    <div style={{ fontFamily: 'system-ui, sans-serif' }}>
+      <Section title="Übersicht">
+        <div style={{ display: 'flex', gap: 10, marginBottom: 4 }}>
+          {[
+            { label: 'aktiv', count: oz.active_zone_count, color: '#276749', bg: '#f0fff4' },
+            { label: 'ausstehend', count: oz.pending_zone_count, color: '#975a16', bg: '#fffbeb' },
+            { label: 'abgelaufen', count: oz.expired_zone_count, color: '#718096', bg: '#f7fafc' },
+          ].map(({ label, count, color, bg }) => (
+            <div key={label} style={{
+              flex: 1, textAlign: 'center', padding: '8px',
+              borderRadius: 6, background: bg, border: `1px solid ${color}20`,
+            }}>
+              <div style={{ fontSize: 20, fontWeight: 700, color }}>{count}</div>
+              <div style={{ fontSize: 10, color }}>{label}</div>
+            </div>
+          ))}
+        </div>
+        <Row label="Nur Operator-Basis" value={oz.operator_only_basis ? '⚠ Ja' : '✓ Nein'} />
+        <Row label="Status" value={oz.status} mono />
+      </Section>
+
+      <Section title={`Zonen (${oz.zones.length})`}>
+        {oz.zones.map((zone) => {
+          const st = ZONE_STATUS_STYLE[zoneStatus(zone, now)];
+          return (
+            <div key={zone.zone_id} style={{
+              display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px',
+              borderBottom: '1px solid #edf2f7', fontSize: 12,
+            }}>
+              <span>{SEMANTIC_ICON[zone.semantic_type] ?? '⊙'}</span>
+              <span style={{ flex: 1, color: '#2d3748' }}>{zone.label}</span>
+              <span style={{
+                fontSize: 10, padding: '1px 6px', borderRadius: 3,
+                background: st.bg, color: st.color,
+              }}>
+                {st.label}
+              </span>
+              <span style={{ fontSize: 10, color: '#718096', fontFamily: 'monospace' }}>
+                {zone.radius_meters} m
+              </span>
+              {zone.exclude_from_routing && (
+                <Badge text="kein Routing" color="#c53030" bg="#fff5f5" />
+              )}
+            </div>
+          );
+        })}
+      </Section>
+    </div>
+  );
+}
+
+// ─── P06: SignalInterpretation ────────────────────────────────────────────────
+
+const SIGNAL_CAT_STYLE = {
+  flow:        { color: '#276749', bg: '#f0fff4', label: 'flow' },
+  accumulation:{ color: '#c53030', bg: '#fff5f5', label: 'accumulation' },
+  ambiguous:   { color: '#718096', bg: '#f7fafc', label: 'ambiguous' },
+};
+
+const REASON_LABEL: Record<string, string> = {
+  high_throughput_ratio:       'Hoher Durchsatz',
+  low_throughput_high_density: 'Niedr. Durchsatz / hohe Dichte',
+  operator_zone_forced:        'Operator-Zone erzwungen',
+  below_threshold_ambiguous:   'Unter Schwellenwert',
+  conflicting_signals:         'Widersprüchliche Signale',
+  permanent_zone_forced:       'Permanente Zone erzwungen',
+};
+
+export function P06Result({ result }: { result: ScimPipelineResult }) {
+  if (!result.success) return noData();
+  const ctx = result.context as unknown as Record<string, unknown>;
+  const si = ctx.signal_interpretation as SignalInterpretationState | undefined;
+  if (!si) return noData();
+
+  const total = si.classified_points.length;
+  const s = si.summary;
+
+  return (
+    <div style={{ fontFamily: 'system-ui, sans-serif' }}>
+      <Section title="Klassifikations-Zusammenfassung">
+        <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+          {(
+            [
+              ['flow', s.flow_count],
+              ['accumulation', s.accumulation_count],
+              ['ambiguous', s.ambiguous_count],
+            ] as [keyof typeof SIGNAL_CAT_STYLE, number][]
+          ).map(([cat, count]) => {
+            const st = SIGNAL_CAT_STYLE[cat];
+            const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+            return (
+              <div key={cat} style={{
+                flex: 1, textAlign: 'center', padding: '10px 8px',
+                borderRadius: 6, background: st.bg, border: `1px solid ${st.color}30`,
+              }}>
+                <div style={{ fontSize: 20, fontWeight: 700, color: st.color }}>{count}</div>
+                <div style={{ fontSize: 10, color: st.color, fontFamily: 'monospace' }}>
+                  {st.label}
+                </div>
+                <div style={{ fontSize: 10, color: '#a0aec0', marginTop: 2 }}>{pct}%</div>
+              </div>
+            );
+          })}
+        </div>
+        {s.forced_by_zone_count > 0 && (
+          <div style={{
+            padding: '6px 10px', borderRadius: 5,
+            background: '#fffbeb', border: '1px solid #f6e05e',
+            fontSize: 11, color: '#975a16',
+          }}>
+            {s.forced_by_zone_count} Punkte durch Operator-Zone als accumulation erzwungen
+          </div>
+        )}
+      </Section>
+
+      <Section title="Schwellenwerte">
+        <Row label="Min. Durchsatz (flow)" value={si.thresholds.min_throughput_for_flow.toFixed(2)} mono />
+        <Row label="Max. Durchsatz (accumulation)" value={si.thresholds.max_throughput_for_accumulation.toFixed(2)} mono />
+        <Row label="Min. Dichte (accumulation)" value={si.thresholds.min_density_for_accumulation.toFixed(2)} mono />
+      </Section>
+
+      <Section title={`Signalpunkte (${total})`}>
+        <div style={{ border: '1px solid #e2e8f0', borderRadius: 6, overflow: 'hidden' }}>
+          {si.classified_points.slice(0, 20).map((pt) => {
+            const st = SIGNAL_CAT_STYLE[pt.category];
+            return (
+              <div key={pt.point_id} style={{
+                display: 'flex', alignItems: 'center', gap: 8, padding: '5px 10px',
+                borderBottom: '1px solid #edf2f7', fontSize: 11,
+              }}>
+                <span style={{
+                  display: 'inline-block', width: 8, height: 8, borderRadius: '50%',
+                  background: st.color, flexShrink: 0,
+                }} />
+                <span style={{ fontFamily: 'monospace', color: '#4a5568', minWidth: 80 }}>
+                  {pt.point_id}
+                </span>
+                <Badge text={st.label} color={st.color} bg={st.bg} />
+                <span style={{ color: '#a0aec0', fontSize: 10 }}>
+                  {REASON_LABEL[pt.reason] ?? pt.reason}
+                </span>
+                <span style={{ marginLeft: 'auto', color: '#718096', fontFamily: 'monospace', fontSize: 10 }}>
+                  d={pt.density_score.toFixed(2)} t={pt.throughput_ratio.toFixed(2)}
+                </span>
+                {pt.forced_by_zone_id && (
+                  <span style={{ fontSize: 10, color: '#975a16' }}>⊙ {pt.forced_by_zone_id}</span>
+                )}
+              </div>
+            );
+          })}
+          {total > 20 && (
+            <div style={{ padding: '4px 10px', fontSize: 11, color: '#a0aec0', fontStyle: 'italic' }}>
+              … {total - 20} weitere Punkte
+            </div>
+          )}
+        </div>
+      </Section>
+
+      <div style={{
+        marginTop: 4, padding: '8px 12px', borderRadius: 5,
+        background: '#ebf8ff', border: '1px solid #bee3f8',
+        fontSize: 11, color: '#2b6cb0',
+      }}>
+        Karte mit Punktfärbung folgt in SML-3. Accumulation-Punkte (rot) fließen
+        nicht in die Lastprojektion (P09) ein.
+      </div>
+    </div>
+  );
+}
+
+export function P07Result({ result }: { result: ScimPipelineResult }) {
   if (!result.success) return noData();
   const ctx = result.context as unknown as Record<string, unknown>;
   const boundary = ctx.boundary as BoundaryState | undefined;
@@ -170,9 +369,9 @@ export function P05Result({ result }: { result: ScimPipelineResult }) {
   );
 }
 
-// ─── P06: Graph + BasisLayer ──────────────────────────────────────────────────
+// ─── P08: Graph + BasisLayer ──────────────────────────────────────────────────
 
-export function P06Result({ result }: { result: ScimPipelineResult }) {
+export function P08Result({ result }: { result: ScimPipelineResult }) {
   if (!result.success) return noData();
   const ctx = result.context as unknown as Record<string, unknown>;
   const graph = ctx.graph as GraphState | undefined;
@@ -230,7 +429,7 @@ export function P06Result({ result }: { result: ScimPipelineResult }) {
   );
 }
 
-// ─── P07: Engine (4 Modelle) ─────────────────────────────────────────────────
+// ─── P09: Engine (4 Modelle) ─────────────────────────────────────────────────
 
 const LOAD_CLASS_STYLE: Record<string, { color: string; bg: string }> = {
   quiet:     { color: '#276749', bg: '#f0fff4' },
@@ -240,7 +439,7 @@ const LOAD_CLASS_STYLE: Record<string, { color: string; bg: string }> = {
   unknown:   { color: '#718096', bg: '#f7fafc' },
 };
 
-export function P07Result({ result }: { result: ScimPipelineResult }) {
+export function P09Result({ result }: { result: ScimPipelineResult }) {
   if (!result.success) return noData();
   const ctx = result.context as unknown as Record<string, unknown>;
   const poiModel = ctx.poi_model as PoiModelState | undefined;
@@ -351,7 +550,7 @@ export function P07Result({ result }: { result: ScimPipelineResult }) {
   );
 }
 
-// ─── P08: Route + Layer ───────────────────────────────────────────────────────
+// ─── P10: Route + Layer ───────────────────────────────────────────────────────
 
 const ROUTE_SCORE_STYLE: Record<string, { color: string; bg: string }> = {
   green:   { color: '#276749', bg: '#f0fff4' },
@@ -362,7 +561,7 @@ const ROUTE_SCORE_STYLE: Record<string, { color: string; bg: string }> = {
   unknown: { color: '#718096', bg: '#f7fafc' },
 };
 
-export function P08Result({ result }: { result: ScimPipelineResult }) {
+export function P10Result({ result }: { result: ScimPipelineResult }) {
   if (!result.success) return noData();
   const ctx = result.context as unknown as Record<string, unknown>;
   const routeModel = ctx.route_model as RouteModelState | undefined;
@@ -455,9 +654,9 @@ export function P08Result({ result }: { result: ScimPipelineResult }) {
   );
 }
 
-// ─── P09: Package ─────────────────────────────────────────────────────────────
+// ─── P11: Package ─────────────────────────────────────────────────────────────
 
-export function P09Result({ result }: { result: ScimPipelineResult }) {
+export function P11Result({ result }: { result: ScimPipelineResult }) {
   if (!result.success) return noData();
   const ctx = result.context as unknown as Record<string, unknown>;
   const pkg = ctx.sensus_core_package as SensusCorePackageState | undefined;
@@ -483,9 +682,9 @@ export function P09Result({ result }: { result: ScimPipelineResult }) {
   );
 }
 
-// ─── P10: Local ───────────────────────────────────────────────────────────────
+// ─── P12: Local ───────────────────────────────────────────────────────────────
 
-export function P10Result({ result }: { result: ScimPipelineResult }) {
+export function P12Result({ result }: { result: ScimPipelineResult }) {
   if (!result.success) return noData();
   const ctx = result.context as unknown as Record<string, unknown>;
   const local = ctx.sensus_core_local as { status: string; [k: string]: unknown } | undefined;
@@ -515,9 +714,9 @@ export function P10Result({ result }: { result: ScimPipelineResult }) {
   );
 }
 
-// ─── P11: EffectCheck ─────────────────────────────────────────────────────────
+// ─── P13: EffectCheck ─────────────────────────────────────────────────────────
 
-export function P11Result({ result }: { result: ScimPipelineResult }) {
+export function P13Result({ result }: { result: ScimPipelineResult }) {
   if (!result.success) return noData();
   const ctx = result.context as unknown as Record<string, unknown>;
   const check = ctx.leaflet_effect_check as LeafletEffectCheckState | undefined;
@@ -550,9 +749,9 @@ export function P11Result({ result }: { result: ScimPipelineResult }) {
   );
 }
 
-// ─── P12: Release ─────────────────────────────────────────────────────────────
+// ─── P14: Release ─────────────────────────────────────────────────────────────
 
-export function P12Result({ result }: { result: ScimPipelineResult }) {
+export function P14Result({ result }: { result: ScimPipelineResult }) {
   if (!result.success) return noData();
   const ctx = result.context as unknown as Record<string, unknown>;
   const release = ctx.release as ReleaseExportState | undefined;

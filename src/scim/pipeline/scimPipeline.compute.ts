@@ -924,6 +924,7 @@ export function computeLoadProjection(
       confidence_score,
       method,
       privacy_masked: privacyMasked,
+      signal_filtered: false,
     } satisfies EdgeLoadScore;
   });
 
@@ -940,6 +941,7 @@ export function computeLoadProjection(
     unprojected_edge_count: unprojected.length,
     avg_load_score: avgScore,
     max_load_score: maxScore,
+    excluded_accumulation_point_count: 0,  // Filterung folgt in Phase C Pipeline-Integration
   };
 
   return {

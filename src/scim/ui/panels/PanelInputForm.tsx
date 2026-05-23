@@ -7,8 +7,9 @@ import P01SystemAdjustForm from './P01SystemAdjustForm';
 import P02RegioContentForm from './P02RegioContentForm';
 import P03TargetAppUiForm from './P03TargetAppUiForm';
 import P04TelcoLoadForm from './P04TelcoLoadForm';
-import P08RouteLayerForm from './P08RouteLayerForm';
-import P10LocalForm from './P10LocalForm';
+import P05OperatorZonesForm from './P05OperatorZonesForm';
+import P10RouteLayerForm from './P08RouteLayerForm';
+import P12LocalForm from './P10LocalForm';
 import type { RouteModelState } from '../../route-model/routeModel.types';
 import type { RouteLayerModelState } from '../../route-layer-model/routeLayerModel.types';
 import type { SensusCoreLocalState } from '../../sensus-core-local/sensusCoreLocal.types';
@@ -33,15 +34,18 @@ export default function PanelInputForm({ panel, result }: Props) {
   if (panel.id === 'P04') {
     return <P04TelcoLoadForm state={ctx?.telco_load as import('../../telco-load/telcoLoad.types').TelcoLoadState | undefined} />;
   }
-  if (panel.id === 'P08') {
-    return <P08RouteLayerForm
+  if (panel.id === 'P05') {
+    return <P05OperatorZonesForm state={ctx?.operator_zones as import('../../operator-zone/operatorZone.types').OperatorZoneState | undefined} />;
+  }
+  if (panel.id === 'P10') {
+    return <P10RouteLayerForm
       routeModel={ctx?.route_model as RouteModelState | undefined}
       routeLayerModel={ctx?.route_layer_model as RouteLayerModelState | undefined}
     />;
   }
-  if (panel.id === 'P10') {
+  if (panel.id === 'P12') {
     const local = ctx?.sensus_core_local as SensusCoreLocalState | undefined;
-    return <P10LocalForm
+    return <P12LocalForm
       enabled={local != null && local.status !== 'not_loaded'}
       tolerances={local?.tolerances}
     />;

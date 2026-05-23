@@ -1,8 +1,9 @@
 import type { PanelDescriptor } from '../panelRegistry';
 import type { ScimPipelineResult } from '../../pipeline/scimPipeline.types';
 import {
-  P05Result, P06Result, P07Result, P08Result,
-  P09Result, P10Result, P11Result, P12Result,
+  P05Result, P06Result,
+  P07Result, P08Result, P09Result, P10Result,
+  P11Result, P12Result, P13Result, P14Result,
 } from './PanelResultContent';
 
 interface Props {
@@ -73,6 +74,8 @@ export default function PanelResult({ panel, result }: Props) {
     case 'P10': return <P10Result result={result} />;
     case 'P11': return <P11Result result={result} />;
     case 'P12': return <P12Result result={result} />;
+    case 'P13': return <P13Result result={result} />;
+    case 'P14': return <P14Result result={result} />;
     default:    return <GenericResult panel={panel} result={result} />;
   }
 }
