@@ -8,6 +8,8 @@ import P02RegioContentForm from './P02RegioContentForm';
 import P03TargetAppUiForm from './P03TargetAppUiForm';
 import P04TelcoLoadForm from './P04TelcoLoadForm';
 import P05OperatorZonesForm from './P05OperatorZonesForm';
+import P06SignalInterpretationForm from './P06SignalInterpretationForm';
+import type { SignalInterpretationState } from '../../signal-interpretation/signalInterpretation.types';
 import P10RouteLayerForm from './P08RouteLayerForm';
 import P12LocalForm from './P10LocalForm';
 import type { RouteModelState } from '../../route-model/routeModel.types';
@@ -36,6 +38,9 @@ export default function PanelInputForm({ panel, result }: Props) {
   }
   if (panel.id === 'P05') {
     return <P05OperatorZonesForm state={ctx?.operator_zones as import('../../operator-zone/operatorZone.types').OperatorZoneState | undefined} />;
+  }
+  if (panel.id === 'P06') {
+    return <P06SignalInterpretationForm state={ctx?.signal_interpretation as SignalInterpretationState | undefined} />;
   }
   if (panel.id === 'P10') {
     return <P10RouteLayerForm

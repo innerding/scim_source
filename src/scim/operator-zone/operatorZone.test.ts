@@ -7,6 +7,7 @@ import {
 } from './operatorZone.mock';
 import { validateOperatorZones } from './operatorZone.validation';
 import { applyOperatorZonesToContext } from './operatorZone.context';
+import { computeOperatorZones } from './operatorZone.compute';
 import { makeEmptyContext } from '../context/scimContext.types';
 
 // Festes Datum für reproduzierbare Tests (vor dem Event-Datum 2026-06-06)
@@ -107,6 +108,42 @@ describe('OperatorZone – 40.4 state-level warnings', () => {
     const state = { ...mockOperatorZoneState, zones: manyZones, active_zone_count: 51 };
     const result = validateOperatorZones(state, NOW);
     expect(result.warnings.some(w => w.code === 'OZ_HIGH_ZONE_COUNT')).toBe(true);
+  });
+});
+
+// ── 40.6 computeOperatorZones ────────────────────────────────────────────────
+
+describe('OperatorZone – 40.6 computeOperatorZones baseline state', () => {
+  it('returns an empty zone list with not_evaluated status', () => {
+    const state = computeOperatorZones();
+    expect(state.zones).toHaveLength(0);
+    expect(state.active_zone_count).toBe(0);
+    expect(state.expired_zone_count).toBe(0);
+    expect(state.pending_zone_count).toBe(0);
+    expect(state.status).toBe('not_evaluated');
+  });
+
+  it('returns a valid validation block with no errors or warnings', () => {
+    const state = computeOperatorZones();
+    expect(state.validation.is_valid).toBe(true);
+    expect(state.validation.errors).toHaveLength(0);
+    expect(state.validation.warnings).toHaveLength(0);
+  });
+
+  it('operator_only_basis is false', () => {
+    const state = computeOperatorZones();
+    expect(state.operator_only_basis).toBe(false);
+  });
+
+  it('zone_set_id hat das erwartete Format (ozs_<timestamp>)', () => {
+    const state = computeOperatorZones();
+    expect(state.zone_set_id).toMatch(/^ozs_\d+$/);
+  });
+
+  it('evaluated_at is a valid ISO date string', () => {
+    const state = computeOperatorZones();
+    expect(() => new Date(state.evaluated_at)).not.toThrow();
+    expect(state.evaluated_at).toMatch(/^\d{4}-\d{2}-\d{2}T/);
   });
 });
 

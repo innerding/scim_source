@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import type { SystemAdjustState, RouteExceedanceBehavior } from '../../system-adjust/systemAdjust.types';
+import type { SystemAdjustState, RouteExceedanceBehavior, GraphEdgeType } from '../../system-adjust/systemAdjust.types';
+import { ALL_GRAPH_EDGE_TYPES } from '../../system-adjust/systemAdjust.types';
 import { mockSystemAdjustState } from '../../system-adjust/systemAdjust.mock';
 import { P01RepresentationSection } from './P01RepresentationSection';
 import type { RepresentationValue } from './P01RepresentationSection';
@@ -170,6 +171,9 @@ export default function P01SystemAdjustForm({ state }: Props) {
 
   const [params, setParams] = useState<Params>({ ...base.default_parameters });
   const [flags, setFlags] = useState<Flags>({ ...base.feature_flags });
+  const [excludedEdgeTypes, setExcludedEdgeTypes] = useState<GraphEdgeType[]>(
+    base.svg_overlay?.excluded_edge_types ?? []
+  );
   const [representation, setRepresentation] = useState<RepresentationValue>({ name: 'Lichtenberg', polygon: null });
   const [saved, setSaved] = useState(false);
   const [dirty, setDirty] = useState(false);
@@ -192,9 +196,19 @@ export default function P01SystemAdjustForm({ state }: Props) {
     setDirty(false);
   };
 
+  const toggleEdgeType = (type: GraphEdgeType) => {
+    setExcludedEdgeTypes((prev) => {
+      const next = prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type];
+      setDirty(true);
+      setSaved(false);
+      return next;
+    });
+  };
+
   const handleReset = () => {
     setParams({ ...base.default_parameters });
     setFlags({ ...base.feature_flags });
+    setExcludedEdgeTypes(base.svg_overlay?.excluded_edge_types ?? []);
     setDirty(false);
     setSaved(false);
   };
@@ -360,6 +374,58 @@ export default function P01SystemAdjustForm({ state }: Props) {
         description="Aktiviert P09–P12 (Package, EffectCheck, Release)"
         onChange={(v) => setFlag('enable_sensus_core_export', v)}
       />
+
+      {/* SVG Overlay Filter */}
+      <SectionTitle>SVG-Overlay — Kantentypen</SectionTitle>
+      <div style={{ fontSize: 11, color: '#718096', marginBottom: 10 }}>
+        Ausgeschlossene Kantentypen erscheinen nicht im SVG-Overlay.
+        Mindestens ein Typ muss aktiv bleiben.
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+        {ALL_GRAPH_EDGE_TYPES.map((type) => {
+          const excluded = excludedEdgeTypes.includes(type);
+          const wouldExcludeAll = !excluded && excludedEdgeTypes.length >= ALL_GRAPH_EDGE_TYPES.length - 1;
+          return (
+            <label
+              key={type}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                padding: '5px 12px', borderRadius: 5, cursor: 'pointer',
+                fontSize: 12, fontFamily: 'monospace',
+                background: excluded ? '#fff5f5' : '#f0fff4',
+                border: `1px solid ${excluded ? '#fed7d7' : '#9ae6b4'}`,
+                color: excluded ? '#c53030' : '#276749',
+                opacity: wouldExcludeAll ? 0.5 : 1,
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={!excluded}
+                disabled={wouldExcludeAll}
+                onChange={() => toggleEdgeType(type)}
+                style={{ accentColor: '#38a169' }}
+              />
+              {type}
+            </label>
+          );
+        })}
+      </div>
+      {excludedEdgeTypes.length > 0 && (
+        <div style={{
+          fontSize: 11, color: '#c53030', padding: '4px 10px',
+          background: '#fff5f5', border: '1px solid #fed7d7', borderRadius: 4, marginBottom: 8,
+        }}>
+          Ausgeschlossen: {excludedEdgeTypes.join(', ')}
+        </div>
+      )}
+      {excludedEdgeTypes.length === 0 && (
+        <div style={{
+          fontSize: 11, color: '#276749', padding: '4px 10px',
+          background: '#f0fff4', border: '1px solid #9ae6b4', borderRadius: 4, marginBottom: 8,
+        }}>
+          Alle Kantentypen aktiv
+        </div>
+      )}
 
       {/* Button bar */}
       <div style={{

@@ -19,6 +19,7 @@ export const mockRouteLayerModelState: RouteLayerModelState = {
     {
       segment_id: 'seg_e_001',
       edge_id: 'e_001',
+      edge_type: 'trail',
       score_class: 'yellow',
       decision: 'include',
       style: styleFor('yellow'),
@@ -27,6 +28,7 @@ export const mockRouteLayerModelState: RouteLayerModelState = {
     {
       segment_id: 'seg_e_002',
       edge_id: 'e_002',
+      edge_type: 'path',
       score_class: 'green',
       decision: 'include',
       style: styleFor('green'),
@@ -35,6 +37,7 @@ export const mockRouteLayerModelState: RouteLayerModelState = {
     {
       segment_id: 'seg_e_003',
       edge_id: 'e_003',
+      edge_type: 'road',
       score_class: 'green',
       decision: 'include',
       style: styleFor('green'),
@@ -43,6 +46,7 @@ export const mockRouteLayerModelState: RouteLayerModelState = {
   ],
   score_class_styles: scoreClassStyles,
   visible_segment_count: 3,
+  excluded_edge_types: [],
   validation: {
     is_valid: true,
     errors: [],

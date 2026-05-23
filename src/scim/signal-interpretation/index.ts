@@ -10,6 +10,7 @@ export type {
 } from './signalInterpretation.types';
 export { validateSignalInterpretation } from './signalInterpretation.validation';
 export { applySignalInterpretationToContext } from './signalInterpretation.context';
+export { computeSignalInterpretation } from './signalInterpretation.compute';
 export {
   mockPointFlow,
   mockPointAccumulation,

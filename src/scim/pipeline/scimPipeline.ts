@@ -22,6 +22,10 @@ import { validatePoiModel } from '../poi-output/poiOutput.validation';
 import { validateLoadProjection } from '../load-projection/loadProjection.validation';
 import { validateMovementModel } from '../movement-model/movementModel.validation';
 import { validateStayZoneDetector } from '../stay-zone-detector/stayZoneDetector.validation';
+import { validateOperatorZones } from '../operator-zone/operatorZone.validation';
+import { validateSignalInterpretation } from '../signal-interpretation/signalInterpretation.validation';
+import { validateOperatorDecision } from '../operator-decision/operatorDecision.validation';
+import { validateStep2Activation } from '../step2-activation/step2Activation.validation';
 import { validateMaskingModel } from '../masking-model/maskingModel.validation';
 import { validateRouteModel } from '../route-model/routeModel.validation';
 import { validateRouteLayerModel } from '../route-layer-model/routeLayerModel.validation';
@@ -47,6 +51,10 @@ import { applyPoiModelToContext } from '../poi-output/poiOutput.context';
 import { applyLoadProjectionToContext } from '../load-projection/loadProjection.context';
 import { applyMovementModelToContext } from '../movement-model/movementModel.context';
 import { applyStayZoneDetectorToContext } from '../stay-zone-detector/stayZoneDetector.context';
+import { applyOperatorZonesToContext } from '../operator-zone/operatorZone.context';
+import { applySignalInterpretationToContext } from '../signal-interpretation/signalInterpretation.context';
+import { applyOperatorDecisionToContext } from '../operator-decision/operatorDecision.context';
+import { applyStep2ActivationToContext } from '../step2-activation/step2Activation.context';
 import { applyMaskingModelToContext } from '../masking-model/maskingModel.context';
 import { applyRouteModelToContext } from '../route-model/routeModel.context';
 import { applyRouteLayerModelToContext } from '../route-layer-model/routeLayerModel.context';
@@ -60,6 +68,10 @@ import { applyScimRuntimeContextToContext } from '../scim-runtime-context/scimRu
 
 // Compute functions — all panels real (Steps B–E)
 import { computeStayZoneDetector } from '../stay-zone-detector/stayZoneDetector.compute';
+import { computeOperatorZones } from '../operator-zone/operatorZone.compute';
+import { computeSignalInterpretation } from '../signal-interpretation/signalInterpretation.compute';
+import { computeOperatorDecision } from '../operator-decision/operatorDecision.compute';
+import { computeStep2Activation } from '../step2-activation/step2Activation.compute';
 
 import {
   computeSystemAdjust,
@@ -175,8 +187,8 @@ export function runScimPipeline(inputs: ScimPipelineInputs): ScimPipelineResult 
       status: stampStatus(v.is_valid, v.warnings.length > 0,
         'system_adjust_valid', 'system_adjust_warning', 'system_adjust_invalid'),
     };
-    recordStep(tracker, 'panel_1_system_adjust', v.errors.length, v.warnings.length, Date.now() - t0);
-    if (!v.is_valid) return failResult(run_id, started_at, ctx, tracker, 'panel_1_system_adjust');
+    recordStep(tracker, 'P01_system_adjust', v.errors.length, v.warnings.length, Date.now() - t0);
+    if (!v.is_valid) return failResult(run_id, started_at, ctx, tracker, 'P01_system_adjust');
     ctx = applySystemAdjustToContext(ctx, state as any);
   }
 
@@ -191,8 +203,8 @@ export function runScimPipeline(inputs: ScimPipelineInputs): ScimPipelineResult 
       status: stampStatus(v.is_valid, v.warnings.length > 0,
         'regio_content_valid', 'regio_content_warning', 'regio_content_invalid'),
     };
-    recordStep(tracker, 'panel_2_regio_content', v.errors.length, v.warnings.length, Date.now() - t0);
-    if (!v.is_valid) return failResult(run_id, started_at, ctx, tracker, 'panel_2_regio_content');
+    recordStep(tracker, 'P02_regio_content', v.errors.length, v.warnings.length, Date.now() - t0);
+    if (!v.is_valid) return failResult(run_id, started_at, ctx, tracker, 'P02_regio_content');
     ctx = applyRegioContentToContext(ctx, state as any);
   }
 
@@ -207,8 +219,8 @@ export function runScimPipeline(inputs: ScimPipelineInputs): ScimPipelineResult 
       status: stampStatus(v.is_valid, v.warnings.length > 0,
         'target_app_ui_valid', 'target_app_ui_warning', 'target_app_ui_invalid'),
     };
-    recordStep(tracker, 'panel_3_target_app_ui', v.errors.length, v.warnings.length, Date.now() - t0);
-    if (!v.is_valid) return failResult(run_id, started_at, ctx, tracker, 'panel_3_target_app_ui');
+    recordStep(tracker, 'P03_target_app_ui', v.errors.length, v.warnings.length, Date.now() - t0);
+    if (!v.is_valid) return failResult(run_id, started_at, ctx, tracker, 'P03_target_app_ui');
     ctx = applyTargetAppUiToContext(ctx, state as any);
   }
 
@@ -223,12 +235,28 @@ export function runScimPipeline(inputs: ScimPipelineInputs): ScimPipelineResult 
       status: stampStatus(v.is_valid, v.warnings.length > 0,
         'telco_load_valid', 'telco_load_warning', 'telco_load_invalid'),
     };
-    recordStep(tracker, 'panel_4_telco_load', v.errors.length, v.warnings.length, Date.now() - t0);
-    if (!v.is_valid) return failResult(run_id, started_at, ctx, tracker, 'panel_4_telco_load');
+    recordStep(tracker, 'P04_telco_load', v.errors.length, v.warnings.length, Date.now() - t0);
+    if (!v.is_valid) return failResult(run_id, started_at, ctx, tracker, 'P04_telco_load');
     ctx = applyTelcoLoadToContext(ctx, state as any);
   }
 
-  // ── Panel 5: Boundary ─────────────────────────────────────────────────────
+  // ── P05: OperatorZones ────────────────────────────────────────────────────
+  {
+    const t0 = Date.now();
+    const raw = computeOperatorZones();
+    const v = validateOperatorZones(raw);
+    const state = {
+      ...raw,
+      validation: v,
+      status: stampStatus(v.is_valid, v.warnings.length > 0,
+        'operator_zone_valid', 'operator_zone_warning', 'operator_zone_invalid'),
+    };
+    recordStep(tracker, 'P05_operator_zones', v.errors.length, v.warnings.length, Date.now() - t0);
+    if (!v.is_valid) return failResult(run_id, started_at, ctx, tracker, 'P05_operator_zones');
+    ctx = applyOperatorZonesToContext(ctx, state as any);
+  }
+
+  // ── Panel 5 (old 5): Boundary ─────────────────────────────────────────────
   {
     const t0 = Date.now();
     const raw = computeBoundary(ctx, inputs);
@@ -239,8 +267,8 @@ export function runScimPipeline(inputs: ScimPipelineInputs): ScimPipelineResult 
       status: stampStatus(v.is_valid, v.warnings.length > 0,
         'boundary_valid', 'boundary_warning', 'boundary_invalid'),
     };
-    recordStep(tracker, 'panel_5_boundary', v.errors.length, v.warnings.length, Date.now() - t0);
-    if (!v.is_valid) return failResult(run_id, started_at, ctx, tracker, 'panel_5_boundary');
+    recordStep(tracker, 'P07_boundary', v.errors.length, v.warnings.length, Date.now() - t0);
+    if (!v.is_valid) return failResult(run_id, started_at, ctx, tracker, 'P07_boundary');
     ctx = applyBoundaryToContext(ctx, state as any);
   }
 
@@ -255,8 +283,8 @@ export function runScimPipeline(inputs: ScimPipelineInputs): ScimPipelineResult 
       status: stampStatus(v.is_valid, v.warnings.length > 0,
         'extraction_valid', 'extraction_warning', 'extraction_invalid'),
     };
-    recordStep(tracker, 'panel_5_extraction', v.errors.length, v.warnings.length, Date.now() - t0);
-    if (!v.is_valid) return failResult(run_id, started_at, ctx, tracker, 'panel_5_extraction');
+    recordStep(tracker, 'P07_extraction', v.errors.length, v.warnings.length, Date.now() - t0);
+    if (!v.is_valid) return failResult(run_id, started_at, ctx, tracker, 'P07_extraction');
     ctx = applyExtractionToContext(ctx, state as any);
   }
 
@@ -271,8 +299,8 @@ export function runScimPipeline(inputs: ScimPipelineInputs): ScimPipelineResult 
       status: stampStatus(v.is_valid, v.warnings.length > 0,
         'graph_valid', 'graph_warning', 'graph_invalid'),
     };
-    recordStep(tracker, 'panel_6_graph', v.errors.length, v.warnings.length, Date.now() - t0);
-    if (!v.is_valid) return failResult(run_id, started_at, ctx, tracker, 'panel_6_graph');
+    recordStep(tracker, 'P08_graph', v.errors.length, v.warnings.length, Date.now() - t0);
+    if (!v.is_valid) return failResult(run_id, started_at, ctx, tracker, 'P08_graph');
     ctx = applyGraphToContext(ctx, state as any);
   }
 
@@ -287,8 +315,8 @@ export function runScimPipeline(inputs: ScimPipelineInputs): ScimPipelineResult 
       status: stampStatus(v.is_valid, v.warnings.length > 0,
         'basis_layer_valid', 'basis_layer_warning', 'basis_layer_invalid'),
     };
-    recordStep(tracker, 'panel_6_basis_layer', v.errors.length, v.warnings.length, Date.now() - t0);
-    if (!v.is_valid) return failResult(run_id, started_at, ctx, tracker, 'panel_6_basis_layer');
+    recordStep(tracker, 'P08_basis_layer', v.errors.length, v.warnings.length, Date.now() - t0);
+    if (!v.is_valid) return failResult(run_id, started_at, ctx, tracker, 'P08_basis_layer');
     ctx = applyBasisLayerToContext(ctx, state as any);
   }
 
@@ -303,24 +331,44 @@ export function runScimPipeline(inputs: ScimPipelineInputs): ScimPipelineResult 
         'leaflet_basis_ok', 'leaflet_basis_warning', 'leaflet_basis_failed'),
     };
     for (const w of v.warnings) {
-      tracker.warnings.push({ step_id: 'panel_6_basis_layer', code: w.code, message: w.message });
+      tracker.warnings.push({ step_id: 'P08_basis_layer', code: w.code, message: w.message });
     }
     ctx = applyLeafletBasisCheckToContext(ctx, state as any);
   }
 
-  // ── Panel 7: LoadProjection ───────────────────────────────────────────────
+  // ── P06: SignalInterpretation ─────────────────────────────────────────────
+  {
+    const t0 = Date.now();
+    const raw = computeSignalInterpretation(
+      ctx.movement_model as any,
+      ctx.operator_zones as any,
+    );
+    const v = validateSignalInterpretation(raw);
+    const state = {
+      ...raw,
+      validation: v,
+      status: v.is_valid
+        ? (v.warnings.length > 0 ? 'signal_interpretation_warning' : 'signal_interpretation_valid')
+        : 'signal_interpretation_invalid',
+    };
+    recordStep(tracker, 'P06_signal_interpretation', v.errors.length, v.warnings.length, Date.now() - t0);
+    // Non-blocking: pipeline continues even if signal interpretation has issues
+    ctx = applySignalInterpretationToContext(ctx, state as any);
+  }
+
+  // ── P09: LoadProjection ───────────────────────────────────────────────────
   {
     const t0 = Date.now();
     const raw = computeLoadProjection(ctx, inputs);
-    const v = validateLoadProjection(raw, ctx.graph as any, ctx.extracted_data as any);
+    const v = validateLoadProjection(raw, ctx.graph as any, ctx.extracted_data as any, ctx.signal_interpretation as any);
     const state = {
       ...raw,
       validation: v,
       status: stampStatus(v.is_valid, v.warnings.length > 0,
         'load_projection_valid', 'load_projection_warning', 'load_projection_invalid'),
     };
-    recordStep(tracker, 'panel_7_load_projection', v.errors.length, v.warnings.length, Date.now() - t0);
-    if (!v.is_valid) return failResult(run_id, started_at, ctx, tracker, 'panel_7_load_projection');
+    recordStep(tracker, 'P09_load_projection', v.errors.length, v.warnings.length, Date.now() - t0);
+    if (!v.is_valid) return failResult(run_id, started_at, ctx, tracker, 'P09_load_projection');
     ctx = applyLoadProjectionToContext(ctx, state as any);
   }
 
@@ -335,8 +383,8 @@ export function runScimPipeline(inputs: ScimPipelineInputs): ScimPipelineResult 
       status: stampStatus(v.is_valid, v.warnings.length > 0,
         'movement_model_valid', 'movement_model_warning', 'movement_model_invalid'),
     };
-    recordStep(tracker, 'panel_7_movement_model', v.errors.length, v.warnings.length, Date.now() - t0);
-    if (!v.is_valid) return failResult(run_id, started_at, ctx, tracker, 'panel_7_movement_model');
+    recordStep(tracker, 'P09_movement_model', v.errors.length, v.warnings.length, Date.now() - t0);
+    if (!v.is_valid) return failResult(run_id, started_at, ctx, tracker, 'P09_movement_model');
     ctx = applyMovementModelToContext(ctx, state as any);
   }
 
@@ -350,12 +398,30 @@ export function runScimPipeline(inputs: ScimPipelineInputs): ScimPipelineResult 
     );
     const v = validateStayZoneDetector(raw);
     const state = { ...raw, validation: v };
-    recordStep(tracker, 'panel_7_stay_zone_detector', v.errors.length, v.warnings.length, Date.now() - t0);
-    if (!v.is_valid) return failResult(run_id, started_at, ctx, tracker, 'panel_7_stay_zone_detector');
+    recordStep(tracker, 'P09_stay_zone_detector', v.errors.length, v.warnings.length, Date.now() - t0);
+    if (!v.is_valid) return failResult(run_id, started_at, ctx, tracker, 'P09_stay_zone_detector');
     ctx = applyStayZoneDetectorToContext(ctx, state);
   }
 
-  // ── Panel 7: PoiOutput (ehemals poi-model) ───────────────────────────────
+  // ── P09: OperatorDecision + Step2Activation ──────────────────────────────
+  {
+    const t0 = Date.now();
+    const raw = computeOperatorDecision(ctx.stay_zone_detector as any);
+    const v = validateOperatorDecision(raw, ctx.stay_zone_detector as any);
+    const state = { ...raw, validation: v };
+    recordStep(tracker, 'P09_operator_decision', v.errors.length, v.warnings.length, Date.now() - t0);
+    ctx = applyOperatorDecisionToContext(ctx, state);
+  }
+  {
+    const t0 = Date.now();
+    const raw = computeStep2Activation(ctx.stay_zone_detector as any, ctx.operator_decision as any);
+    const v = validateStep2Activation(raw);
+    const state = { ...raw, validation: v };
+    recordStep(tracker, 'P09_step2_activation', v.errors.length, v.warnings.length, Date.now() - t0);
+    ctx = applyStep2ActivationToContext(ctx, state);
+  }
+
+  // ── P09: PoiOutput (ehemals poi-model) ───────────────────────────────────
   {
     const t0 = Date.now();
     const raw = computePoiModel(ctx, inputs);
@@ -366,8 +432,8 @@ export function runScimPipeline(inputs: ScimPipelineInputs): ScimPipelineResult 
       status: stampStatus(v.is_valid, v.warnings.length > 0,
         'poi_model_valid', 'poi_model_warning', 'poi_model_invalid'),
     };
-    recordStep(tracker, 'panel_7_poi_model', v.errors.length, v.warnings.length, Date.now() - t0);
-    if (!v.is_valid) return failResult(run_id, started_at, ctx, tracker, 'panel_7_poi_model');
+    recordStep(tracker, 'P09_poi_model', v.errors.length, v.warnings.length, Date.now() - t0);
+    if (!v.is_valid) return failResult(run_id, started_at, ctx, tracker, 'P09_poi_model');
     ctx = applyPoiModelToContext(ctx, state as any);
   }
 
@@ -382,8 +448,8 @@ export function runScimPipeline(inputs: ScimPipelineInputs): ScimPipelineResult 
       status: stampStatus(v.is_valid, v.warnings.length > 0,
         'masking_model_valid', 'masking_model_warning', 'masking_model_invalid'),
     };
-    recordStep(tracker, 'panel_7_masking_model', v.errors.length, v.warnings.length, Date.now() - t0);
-    if (!v.is_valid) return failResult(run_id, started_at, ctx, tracker, 'panel_7_masking_model');
+    recordStep(tracker, 'P09_masking_model', v.errors.length, v.warnings.length, Date.now() - t0);
+    if (!v.is_valid) return failResult(run_id, started_at, ctx, tracker, 'P09_masking_model');
     ctx = applyMaskingModelToContext(ctx, state as any);
   }
 
@@ -398,8 +464,8 @@ export function runScimPipeline(inputs: ScimPipelineInputs): ScimPipelineResult 
       status: stampStatus(v.is_valid, v.warnings.length > 0,
         'route_model_valid', 'route_model_warning', 'route_model_invalid'),
     };
-    recordStep(tracker, 'panel_8_route_model', v.errors.length, v.warnings.length, Date.now() - t0);
-    if (!v.is_valid) return failResult(run_id, started_at, ctx, tracker, 'panel_8_route_model');
+    recordStep(tracker, 'P10_route_model', v.errors.length, v.warnings.length, Date.now() - t0);
+    if (!v.is_valid) return failResult(run_id, started_at, ctx, tracker, 'P10_route_model');
     ctx = applyRouteModelToContext(ctx, state as any);
   }
 
@@ -414,8 +480,8 @@ export function runScimPipeline(inputs: ScimPipelineInputs): ScimPipelineResult 
       status: stampStatus(v.is_valid, v.warnings.length > 0,
         'route_layer_model_valid', 'route_layer_model_warning', 'route_layer_model_invalid'),
     };
-    recordStep(tracker, 'panel_8_route_layer_model', v.errors.length, v.warnings.length, Date.now() - t0);
-    if (!v.is_valid) return failResult(run_id, started_at, ctx, tracker, 'panel_8_route_layer_model');
+    recordStep(tracker, 'P10_route_layer_model', v.errors.length, v.warnings.length, Date.now() - t0);
+    if (!v.is_valid) return failResult(run_id, started_at, ctx, tracker, 'P10_route_layer_model');
     ctx = applyRouteLayerModelToContext(ctx, state as any);
   }
 
@@ -430,8 +496,8 @@ export function runScimPipeline(inputs: ScimPipelineInputs): ScimPipelineResult 
       status: stampStatus(v.is_valid, v.warnings.length > 0,
         'layer_model_valid', 'layer_model_warning', 'layer_model_invalid'),
     };
-    recordStep(tracker, 'panel_8_layer_model', v.errors.length, v.warnings.length, Date.now() - t0);
-    if (!v.is_valid) return failResult(run_id, started_at, ctx, tracker, 'panel_8_layer_model');
+    recordStep(tracker, 'P10_layer_model', v.errors.length, v.warnings.length, Date.now() - t0);
+    if (!v.is_valid) return failResult(run_id, started_at, ctx, tracker, 'P10_layer_model');
     ctx = applyLayerModelToContext(ctx, state as any);
   }
 
@@ -446,8 +512,8 @@ export function runScimPipeline(inputs: ScimPipelineInputs): ScimPipelineResult 
       status: stampStatus(v.is_valid, v.warnings.length > 0,
         'package_valid', 'package_warning', 'package_invalid'),
     };
-    recordStep(tracker, 'panel_9_sensus_core_package', v.errors.length, v.warnings.length, Date.now() - t0);
-    if (!v.is_valid) return failResult(run_id, started_at, ctx, tracker, 'panel_9_sensus_core_package');
+    recordStep(tracker, 'P11_sensus_core_package', v.errors.length, v.warnings.length, Date.now() - t0);
+    if (!v.is_valid) return failResult(run_id, started_at, ctx, tracker, 'P11_sensus_core_package');
     ctx = applySensusCorePackageToContext(ctx, state as any);
   }
 
@@ -463,8 +529,8 @@ export function runScimPipeline(inputs: ScimPipelineInputs): ScimPipelineResult 
         status: stampStatus(v.is_valid, false,
           'local_context_valid', 'local_context_valid', 'local_context_invalid'),
       };
-      recordStep(tracker, 'panel_10_sensus_core_local', v.errors.length, v.warnings.length, Date.now() - t0);
-      if (!v.is_valid) return failResult(run_id, started_at, ctx, tracker, 'panel_10_sensus_core_local');
+      recordStep(tracker, 'P12_sensus_core_local', v.errors.length, v.warnings.length, Date.now() - t0);
+      if (!v.is_valid) return failResult(run_id, started_at, ctx, tracker, 'P12_sensus_core_local');
       ctx = applySensusCoreLocalToContext(ctx, state as any);
     }
   }
@@ -479,7 +545,7 @@ export function runScimPipeline(inputs: ScimPipelineInputs): ScimPipelineResult 
       status: v.is_valid ? 'view_active' : 'view_error',
     };
     for (const w of v.warnings) {
-      tracker.warnings.push({ step_id: 'panel_9_sensus_core_package', code: w.code, message: w.message });
+      tracker.warnings.push({ step_id: 'P11_sensus_core_package', code: w.code, message: w.message });
     }
     ctx = applySensusCoreViewToContext(ctx, state as any);
   }
@@ -495,8 +561,8 @@ export function runScimPipeline(inputs: ScimPipelineInputs): ScimPipelineResult 
       status: stampStatus(v.is_valid, v.warnings.length > 0,
         'effect_check_ok', 'effect_check_warning', 'effect_check_failed'),
     };
-    recordStep(tracker, 'panel_11_leaflet_effect_check', v.errors.length, v.warnings.length, Date.now() - t0);
-    if (!v.is_valid) return failResult(run_id, started_at, ctx, tracker, 'panel_11_leaflet_effect_check');
+    recordStep(tracker, 'P13_leaflet_effect_check', v.errors.length, v.warnings.length, Date.now() - t0);
+    if (!v.is_valid) return failResult(run_id, started_at, ctx, tracker, 'P13_leaflet_effect_check');
     ctx = applyLeafletEffectCheckToContext(ctx, state as any);
   }
 
@@ -510,8 +576,8 @@ export function runScimPipeline(inputs: ScimPipelineInputs): ScimPipelineResult 
       validation: v,
       status: v.is_valid ? 'released' : 'release_failed',
     };
-    recordStep(tracker, 'panel_12_release_export', v.errors.length, v.warnings.length, Date.now() - t0);
-    if (!v.is_valid) return failResult(run_id, started_at, ctx, tracker, 'panel_12_release_export');
+    recordStep(tracker, 'P14_release_export', v.errors.length, v.warnings.length, Date.now() - t0);
+    if (!v.is_valid) return failResult(run_id, started_at, ctx, tracker, 'P14_release_export');
     ctx = applyReleaseExportToContext(ctx, state as any);
   }
 
@@ -521,7 +587,7 @@ export function runScimPipeline(inputs: ScimPipelineInputs): ScimPipelineResult 
     const v = validateScimRuntimeContext(raw);
     const state = { ...raw, validation: v };
     for (const w of v.warnings) {
-      tracker.warnings.push({ step_id: 'panel_12_release_export', code: w.code, message: w.message });
+      tracker.warnings.push({ step_id: 'P14_release_export', code: w.code, message: w.message });
     }
     ctx = applyScimRuntimeContextToContext(ctx, state as any);
   }

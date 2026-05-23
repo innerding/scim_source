@@ -9,6 +9,7 @@ export type {
 } from './step2Activation.types';
 export { validateStep2Activation } from './step2Activation.validation';
 export { applyStep2ActivationToContext } from './step2Activation.context';
+export { computeStep2Activation } from './step2Activation.compute';
 export {
   mockStep2ActivationNotTriggered,
   mockStep2ActivationConfirmed,

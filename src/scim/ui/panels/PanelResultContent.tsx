@@ -11,6 +11,8 @@ import type { PoiModelState } from '../../poi-model/poiModel.types';
 import type { LoadProjectionState } from '../../load-projection/loadProjection.types';
 import type { MovementModelState } from '../../movement-model/movementModel.types';
 import type { MaskingModelState } from '../../masking-model/maskingModel.types';
+import type { StayZoneDetectorState } from '../../stay-zone-detector/stayZoneDetector.types';
+import type { OperatorDecisionState } from '../../operator-decision/operatorDecision.types';
 import type { RouteModelState } from '../../route-model/routeModel.types';
 import type { RouteLayerModelState } from '../../route-layer-model/routeLayerModel.types';
 import type { LayerModelState } from '../../layer-model/layerModel.types';
@@ -546,7 +548,200 @@ export function P09Result({ result }: { result: ScimPipelineResult }) {
           <Row label="Status" value={masking.status} mono />
         </Section>
       )}
+
+      <P09StayZoneDetectorSection result={result} />
+      <P09OperatorDecisionSection result={result} />
     </div>
+  );
+}
+
+// ─── P09 sub-sections: StayZoneDetector + OperatorDecision ───────────────────
+
+const ZONE_CLASS_STYLE: Record<string, { color: string; bg: string }> = {
+  rast:      { color: '#276749', bg: '#f0fff4' },
+  stau:      { color: '#c53030', bg: '#fff5f5' },
+  undecided: { color: '#975a16', bg: '#fffbeb' },
+};
+
+const OP_STATUS_STYLE: Record<string, { color: string; bg: string }> = {
+  pending:              { color: '#975a16', bg: '#fffbeb' },
+  committed_full:       { color: '#276749', bg: '#f0fff4' },
+  committed_adapted:    { color: '#2b6cb0', bg: '#ebf8ff' },
+  rejected_with_reason: { color: '#c53030', bg: '#fff5f5' },
+};
+
+function P09StayZoneDetectorSection({ result }: { result: ScimPipelineResult }) {
+  if (!result.success) return null;
+  const ctx = result.context as unknown as Record<string, unknown>;
+  const detector = ctx.stay_zone_detector as StayZoneDetectorState | undefined;
+  if (!detector) return null;
+
+  if (detector.status === 'stay_zone_skipped') {
+    return (
+      <Section title="Stay-Zone-Detektor">
+        <div style={{
+          fontSize: 12, color: '#718096', fontStyle: 'italic',
+          padding: '8px 12px', background: '#f7fafc',
+          border: '1px solid #e2e8f0', borderRadius: 5,
+        }}>
+          Übersprungen — Modus: movement_only (Step-2 inaktiv)
+        </div>
+      </Section>
+    );
+  }
+
+  return (
+    <Section title={`Stay-Zone-Detektor — ${detector.detected_zones.length} Zone(n)`}>
+      <div style={{ display: 'flex', gap: 12, marginBottom: 10 }}>
+        {[
+          { label: 'Rast-Zonen', count: detector.rast_count, style: ZONE_CLASS_STYLE['rast'] },
+          { label: 'Stau-Zonen', count: detector.jam_count,  style: ZONE_CLASS_STYLE['stau'] },
+        ].map(({ label, count, style }) => (
+          <div key={label} style={{
+            padding: '6px 14px', borderRadius: 6, textAlign: 'center',
+            background: style.bg, border: `1px solid ${style.color}40`, minWidth: 80,
+          }}>
+            <div style={{ fontSize: 20, fontWeight: 700, color: style.color }}>{count}</div>
+            <div style={{ fontSize: 11, color: style.color }}>{label}</div>
+          </div>
+        ))}
+        <div style={{
+          padding: '6px 14px', borderRadius: 6, textAlign: 'center',
+          background: detector.step2_activation_condition_met ? '#ebf8ff' : '#f7fafc',
+          border: `1px solid ${detector.step2_activation_condition_met ? '#90cdf4' : '#e2e8f0'}`,
+          minWidth: 100,
+        }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: detector.step2_activation_condition_met ? '#2b6cb0' : '#a0aec0' }}>
+            {detector.step2_activation_condition_met ? '✓' : '✗'}
+          </div>
+          <div style={{ fontSize: 11, color: '#718096' }}>Step-2 Bedingung</div>
+        </div>
+      </div>
+
+      {detector.detected_zones.length > 0 && (
+        <div style={{ border: '1px solid #e2e8f0', borderRadius: 6, overflow: 'hidden', marginBottom: 8 }}>
+          {detector.detected_zones.map((zone) => {
+            const cs = ZONE_CLASS_STYLE[zone.classification] ?? ZONE_CLASS_STYLE['undecided'];
+            const os = OP_STATUS_STYLE[zone.operator_status] ?? OP_STATUS_STYLE['pending'];
+            return (
+              <div key={zone.zone_id} style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                padding: '6px 10px', borderBottom: '1px solid #edf2f7', fontSize: 11,
+              }}>
+                <span style={{ fontFamily: 'monospace', color: '#4a5568', minWidth: 80 }}>
+                  {zone.zone_id}
+                </span>
+                <Badge text={zone.classification} color={cs.color} bg={cs.bg} />
+                <span style={{ color: '#718096', minWidth: 60 }}>{zone.radius_meters} m</span>
+                <MiniBar value={zone.throughput_ratio} color="#4299e1" />
+                <span style={{ color: '#a0aec0', fontSize: 10 }}>
+                  confidence: {zone.confidence_score.toFixed(2)}
+                </span>
+                <Badge text={zone.operator_status} color={os.color} bg={os.bg} />
+                {zone.overlap_conflict && <Badge text="⚠ Overlap" color="#c53030" bg="#fff5f5" />}
+                {zone.is_off_path   && <Badge text="off-path"  color="#975a16" bg="#fffbeb" />}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {detector.overlap_conflicts.length > 0 && (
+        <Row label="Überlappende Zonen" value={detector.overlap_conflicts.join(', ')} mono />
+      )}
+      <Row label="Detektor-ID" value={detector.detector_id} mono />
+      <Row label="Status" value={detector.status} mono />
+    </Section>
+  );
+}
+
+const DECISION_STATUS_STYLE: Record<string, { color: string; bg: string }> = {
+  not_started:              { color: '#a0aec0', bg: '#f7fafc' },
+  awaiting_input:           { color: '#975a16', bg: '#fffbeb' },
+  in_progress:              { color: '#2b6cb0', bg: '#ebf8ff' },
+  completed:                { color: '#276749', bg: '#f0fff4' },
+  operator_decision_invalid:{ color: '#c53030', bg: '#fff5f5' },
+};
+
+function P09OperatorDecisionSection({ result }: { result: ScimPipelineResult }) {
+  if (!result.success) return null;
+  const ctx = result.context as unknown as Record<string, unknown>;
+  const dec = ctx.operator_decision as OperatorDecisionState | undefined;
+  if (!dec) return null;
+
+  const ds = DECISION_STATUS_STYLE[dec.status] ?? DECISION_STATUS_STYLE['not_started'];
+
+  return (
+    <Section title="Operator-Entscheid (Step 2)">
+      <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 10 }}>
+        <Badge text={dec.status.replace(/_/g, ' ')} color={ds.color} bg={ds.bg} />
+        <span style={{ fontSize: 11, color: '#718096' }}>
+          Jam erkannt: {dec.prerequisites.jam_detected ? '✓ Ja' : '✗ Nein'} ·
+          Step-2 Bedingung: {dec.prerequisites.step2_activation_condition_met ? '✓' : '✗'}
+        </span>
+      </div>
+
+      {dec.overlap_resolutions.length > 0 && (
+        <>
+          <div style={{ fontSize: 11, color: '#718096', marginBottom: 4, fontWeight: 600 }}>
+            Überlappungs-Auflösungen ({dec.overlap_resolutions.length})
+          </div>
+          {dec.overlap_resolutions.map((r) => (
+            <div key={r.resolution_id} style={{
+              fontSize: 11, padding: '4px 8px', background: '#f7fafc',
+              border: '1px solid #e2e8f0', borderRadius: 4, marginBottom: 4,
+              fontFamily: 'monospace',
+            }}>
+              {r.method} — Zonen: {r.zone_ids.join(', ')}
+              {r.resolved_by && <span style={{ color: '#718096' }}> · {r.resolved_by}</span>}
+            </div>
+          ))}
+        </>
+      )}
+
+      {dec.off_path_decisions.length > 0 && (
+        <>
+          <div style={{ fontSize: 11, color: '#718096', marginBottom: 4, fontWeight: 600, marginTop: 8 }}>
+            Off-Path-Entscheide ({dec.off_path_decisions.length})
+          </div>
+          {dec.off_path_decisions.map((d) => (
+            <div key={d.decision_id} style={{
+              fontSize: 11, padding: '4px 8px', background: '#f7fafc',
+              border: '1px solid #e2e8f0', borderRadius: 4, marginBottom: 4,
+              fontFamily: 'monospace',
+            }}>
+              {d.zone_id}: <strong>{d.result.replace(/_/g, ' ')}</strong>
+              {d.override_reason && <span style={{ color: '#718096' }}> — {d.override_reason}</span>}
+            </div>
+          ))}
+        </>
+      )}
+
+      {dec.stau_commits.length > 0 && (
+        <>
+          <div style={{ fontSize: 11, color: '#718096', marginBottom: 4, fontWeight: 600, marginTop: 8 }}>
+            Stau-Commits ({dec.stau_commits.length})
+          </div>
+          {dec.stau_commits.map((sc) => {
+            const pending = sc.result === 'pending';
+            return (
+              <div key={sc.commit_id} style={{
+                fontSize: 11, padding: '4px 8px',
+                background: pending ? '#fffbeb' : '#f7fafc',
+                border: `1px solid ${pending ? '#f6e05e' : '#e2e8f0'}`,
+                borderRadius: 4, marginBottom: 4, fontFamily: 'monospace',
+              }}>
+                {sc.zone_id}: <strong>{sc.result}</strong>
+                {sc.rejection_reason && <span style={{ color: '#c53030' }}> — {sc.rejection_reason}</span>}
+              </div>
+            );
+          })}
+        </>
+      )}
+
+      <Row label="Entscheid-ID" value={dec.decision_id} mono />
+      {dec.updated_at && <Row label="Zuletzt aktualisiert" value={new Date(dec.updated_at).toLocaleString('de-AT')} />}
+    </Section>
   );
 }
 

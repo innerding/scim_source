@@ -1,9 +1,9 @@
 import type { BoundaryState } from './boundary.types';
 
 export const mockBoundaryState: BoundaryState = {
-  boundary_id: 'bnd_lichtenberg_001',
+  boundary_id: 'bnd_hochwab_nord_001',
   computed_boundary: {
-    boundary_id: 'bnd_lichtenberg_001',
+    boundary_id: 'bnd_hochwab_nord_001',
     geometry: {
       type: 'Polygon',
       coordinates: [

@@ -12,6 +12,7 @@ export type {
 } from './operatorZone.types';
 export { validateOperatorZones } from './operatorZone.validation';
 export { applyOperatorZonesToContext } from './operatorZone.context';
+export { computeOperatorZones } from './operatorZone.compute';
 export {
   mockZoneRestArea,
   mockZoneViewpoint,

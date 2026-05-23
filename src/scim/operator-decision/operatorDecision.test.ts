@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { mockOperatorDecisionState, mockOperatorDecisionPending } from './operatorDecision.mock';
 import { validateOperatorDecision } from './operatorDecision.validation';
 import { applyOperatorDecisionToContext } from './operatorDecision.context';
-import { mockStayZoneDetectorState } from '../stay-zone-detector/stayZoneDetector.mock';
+import { computeOperatorDecision } from './operatorDecision.compute';
+import { mockStayZoneDetectorState, mockStayZoneDetectorSkipped } from '../stay-zone-detector/stayZoneDetector.mock';
 import { makeEmptyContext } from '../context/scimContext.types';
 
 // ── 38.1 Valid mock ───────────────────────────────────────────────────────────
@@ -113,6 +114,75 @@ describe('OperatorDecision – 38.5 stau commits', () => {
     };
     const result = validateOperatorDecision(state, mockStayZoneDetectorState);
     expect(result.warnings.some(w => w.code === 'OPDEC_STAU_REJECTED_NO_REASON')).toBe(true);
+  });
+});
+
+// ── 38.7 computeOperatorDecision ─────────────────────────────────────────────
+
+describe('OperatorDecision – 38.7 compute: kein Jam', () => {
+  it('liefert status not_started wenn kein Detector übergeben', () => {
+    const state = computeOperatorDecision(undefined);
+    expect(state.status).toBe('not_started');
+  });
+
+  it('liefert status not_started wenn kein Jam erkannt (step2_activation_condition_met=false)', () => {
+    // mockStayZoneDetectorState: jam_count=0, step2_activation_condition_met=false
+    const state = computeOperatorDecision(mockStayZoneDetectorState);
+    expect(state.status).toBe('not_started');
+  });
+
+  it('prerequisites.jam_detected ist false wenn jam_count=0', () => {
+    const state = computeOperatorDecision(mockStayZoneDetectorState);
+    expect(state.prerequisites.jam_detected).toBe(false);
+  });
+
+  it('detector_id wird korrekt übernommen', () => {
+    const state = computeOperatorDecision(mockStayZoneDetectorState);
+    expect(state.detector_id).toBe('szd_001');
+    expect(state.prerequisites.detector_id).toBe('szd_001');
+  });
+});
+
+describe('OperatorDecision – 38.7 compute: Jam erkannt', () => {
+  const detectorWithJam = {
+    ...mockStayZoneDetectorState,
+    jam_count: 2,
+    step2_activation_condition_met: true,
+  };
+
+  it('liefert status awaiting_input wenn step2_activation_condition_met=true', () => {
+    const state = computeOperatorDecision(detectorWithJam);
+    expect(state.status).toBe('awaiting_input');
+  });
+
+  it('prerequisites.step2_activation_condition_met ist true', () => {
+    const state = computeOperatorDecision(detectorWithJam);
+    expect(state.prerequisites.step2_activation_condition_met).toBe(true);
+    expect(state.prerequisites.jam_detected).toBe(true);
+  });
+});
+
+describe('OperatorDecision – 38.7 compute: Struktur', () => {
+  it('erzeugte Listen sind initial leer', () => {
+    const state = computeOperatorDecision(mockStayZoneDetectorState);
+    expect(state.overlap_resolutions).toHaveLength(0);
+    expect(state.off_path_decisions).toHaveLength(0);
+    expect(state.stau_commits).toHaveLength(0);
+  });
+
+  it('validation.is_valid ist true', () => {
+    const state = computeOperatorDecision(mockStayZoneDetectorState);
+    expect(state.validation.is_valid).toBe(true);
+  });
+
+  it('decision_id hat das erwartete Format (opdec_<timestamp>)', () => {
+    const state = computeOperatorDecision(mockStayZoneDetectorState);
+    expect(state.decision_id).toMatch(/^opdec_\d+$/);
+  });
+
+  it('detector_id ist "none" wenn kein Detector übergeben', () => {
+    const state = computeOperatorDecision(undefined);
+    expect(state.detector_id).toBe('none');
   });
 });
 

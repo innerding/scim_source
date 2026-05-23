@@ -100,6 +100,9 @@ export const mockSystemAdjustState: SystemAdjustState = {
     enable_stay_zone_detection: false,
     enable_step2_classification: false,
   },
+  svg_overlay: {
+    excluded_edge_types: [],  // Standard: alle Kantentypen im Overlay aktiv
+  },
   validation: {
     is_valid: true,
     errors: [],

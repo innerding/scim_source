@@ -86,6 +86,7 @@ import type {
   RouteLayerSegment,
   ScoreClassStyle,
 } from '../route-layer-model/routeLayerModel.types';
+import { applyEdgeTypeFilter } from '../route-layer-model/routeLayerModel.compute';
 import type { LayerModelState, ScimLayer } from '../layer-model/layerModel.types';
 import type {
   SensusCorePackageState,
@@ -1244,15 +1245,22 @@ export function computeRouteLayerModel(
   _inputs: ScimPipelineInputs,
 ): RouteLayerModelState {
   const routeModel = context.route_model as RouteModelState;
+  const graph = context.graph as GraphState | undefined;
+  const systemAdjust = context.system_adjust as SystemAdjustState | undefined;
   const now = new Date().toISOString();
 
   const styleMap = new Map(SCORE_CLASS_STYLES.map((s) => [s.score_class, s]));
+  // Build edge_type lookup from graph so segments carry the type denormalized.
+  const edgeTypeMap = new Map(
+    (graph?.edges ?? []).map((e) => [e.edge_id, e.edge_type]),
+  );
 
   const segments: RouteLayerSegment[] = routeModel.edge_evaluations.map((ev) => {
     const style = styleMap.get(ev.score_class) ?? styleMap.get('unknown')!;
     return {
       segment_id: `seg_${ev.edge_id}`,
       edge_id: ev.edge_id,
+      edge_type: edgeTypeMap.get(ev.edge_id) ?? 'trail',
       score_class: ev.score_class,
       decision: ev.decision,
       style,
@@ -1260,12 +1268,13 @@ export function computeRouteLayerModel(
     } satisfies RouteLayerSegment;
   });
 
-  return {
+  const base: RouteLayerModelState = {
     route_layer_model_id: `rlm_${routeModel.route_model_id}`,
     route_model_id: routeModel.route_model_id,
     segments,
     score_class_styles: SCORE_CLASS_STYLES,
     visible_segment_count: segments.filter((s) => s.visible).length,
+    excluded_edge_types: [],
     validation: {
       is_valid: true,
       errors: [],
@@ -1276,6 +1285,10 @@ export function computeRouteLayerModel(
     status: 'not_built',
     built_at: now,
   };
+
+  // Apply SVG overlay edge-type filter from SystemAdjust.
+  const excluded = systemAdjust?.svg_overlay?.excluded_edge_types ?? [];
+  return applyEdgeTypeFilter(base, excluded);
 }
 
 // ── Panel 8: LayerModel ───────────────────────────────────────────────────────

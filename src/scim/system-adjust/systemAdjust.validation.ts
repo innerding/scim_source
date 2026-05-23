@@ -4,6 +4,7 @@ import type {
   SystemAdjustIssue,
   AllowedRanges,
 } from './systemAdjust.types';
+import { ALL_GRAPH_EDGE_TYPES } from './systemAdjust.types';
 import type { NumericRange } from '../context/scimContext.types';
 
 function err(code: string, field: string, message: string): SystemAdjustIssue {
@@ -165,6 +166,20 @@ export function validateSystemAdjust(state: SystemAdjustState): SystemAdjustVali
       if (!value || value.trim() === '') {
         errors.push(err('SYSADJ_RULE_VERSION_EMPTY', `rule_versions.${key}`, `Rule version '${key}' is empty.`));
       }
+    }
+  }
+
+  // SVG Overlay Filter
+  if (state.svg_overlay) {
+    const excluded = state.svg_overlay.excluded_edge_types;
+    const unknown = excluded.filter(t => !ALL_GRAPH_EDGE_TYPES.includes(t));
+    if (unknown.length > 0) {
+      errors.push(err('SA_OVERLAY_UNKNOWN_EDGE_TYPE', 'svg_overlay.excluded_edge_types',
+        `Unknown edge types in SVG overlay filter: ${unknown.join(', ')}.`));
+    }
+    if (excluded.length >= ALL_GRAPH_EDGE_TYPES.length) {
+      errors.push(err('SA_OVERLAY_ALL_TYPES_EXCLUDED', 'svg_overlay.excluded_edge_types',
+        'All edge types are excluded — SVG overlay would be empty.'));
     }
   }
 

@@ -162,7 +162,53 @@ describe('SystemAdjust validation — Transform Geometries parameters', () => {
   });
 });
 
-// ── 19.8 Context protection ───────────────────────────────────────────────────
+// ── 19.8 SVG Overlay Filter ───────────────────────────────────────────────────
+
+describe('SystemAdjust SVG overlay filter validation', () => {
+  it('mock state has empty excluded_edge_types — no error', () => {
+    const result = validateSystemAdjust(mockSystemAdjustState);
+    expect(result.errors.some((e) => e.code === 'SA_OVERLAY_UNKNOWN_EDGE_TYPE')).toBe(false);
+    expect(result.errors.some((e) => e.code === 'SA_OVERLAY_ALL_TYPES_EXCLUDED')).toBe(false);
+  });
+
+  it('no error when svg_overlay is absent', () => {
+    const state = cloneWith({ svg_overlay: undefined });
+    const result = validateSystemAdjust(state);
+    expect(result.errors.some((e) => e.code === 'SA_OVERLAY_UNKNOWN_EDGE_TYPE')).toBe(false);
+    expect(result.errors.some((e) => e.code === 'SA_OVERLAY_ALL_TYPES_EXCLUDED')).toBe(false);
+  });
+
+  it('no error when a subset of valid edge types is excluded', () => {
+    const state = cloneWith({ svg_overlay: { excluded_edge_types: ['trail', 'connector'] } });
+    const result = validateSystemAdjust(state);
+    expect(result.errors.some((e) => e.code === 'SA_OVERLAY_UNKNOWN_EDGE_TYPE')).toBe(false);
+    expect(result.errors.some((e) => e.code === 'SA_OVERLAY_ALL_TYPES_EXCLUDED')).toBe(false);
+  });
+
+  it('error when an unknown edge type is listed', () => {
+    const state = cloneWith({ svg_overlay: { excluded_edge_types: ['highway' as never] } });
+    const result = validateSystemAdjust(state);
+    expect(result.errors.some((e) => e.code === 'SA_OVERLAY_UNKNOWN_EDGE_TYPE')).toBe(true);
+  });
+
+  it('error when all 5 edge types are excluded', () => {
+    const state = cloneWith({
+      svg_overlay: { excluded_edge_types: ['trail', 'path', 'road', 'connector', 'boundary_edge'] },
+    });
+    const result = validateSystemAdjust(state);
+    expect(result.errors.some((e) => e.code === 'SA_OVERLAY_ALL_TYPES_EXCLUDED')).toBe(true);
+  });
+
+  it('no error when 4 of 5 edge types are excluded (one remains)', () => {
+    const state = cloneWith({
+      svg_overlay: { excluded_edge_types: ['trail', 'path', 'road', 'connector'] },
+    });
+    const result = validateSystemAdjust(state);
+    expect(result.errors.some((e) => e.code === 'SA_OVERLAY_ALL_TYPES_EXCLUDED')).toBe(false);
+  });
+});
+
+// ── 19.9 Context protection ───────────────────────────────────────────────────
 
 describe('SystemAdjust context apply', () => {
   it('writes only system_adjust and leaves other context keys intact', () => {

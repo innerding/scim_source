@@ -1,4 +1,5 @@
 import type { NumericRange } from '../context/scimContext.types';
+import type { GraphEdgeType } from '../graph/graph.types';
 
 export type SystemAdjustSource = 'scim3_atlas_console' | 'mock' | 'local_json' | 'api';
 
@@ -105,6 +106,22 @@ export interface RuleVersions {
   sensus_core_export_rules: string;
 }
 
+// ── SVG-Overlay-Filter ────────────────────────────────────────────────────────
+// Steuert, welche Kantentypen aus dem Leaflet-Graph in das SVG-Overlay
+// übernommen werden. Nicht genannte Typen bleiben aktiv.
+
+export { GraphEdgeType };
+
+/** Alle möglichen Kantentypen (Konvenienz-Konstante für UI und Validierung). */
+export const ALL_GRAPH_EDGE_TYPES: GraphEdgeType[] = [
+  'trail', 'path', 'road', 'connector', 'boundary_edge',
+];
+
+export interface SvgOverlaySettings {
+  /** Kantentypen die vom SVG-Overlay ausgeschlossen werden. Leer = alle einbeziehen. */
+  excluded_edge_types: GraphEdgeType[];
+}
+
 export interface SystemFeatureFlags {
   enable_poi_candidate_suggestions: boolean;
   enable_stay_classification: boolean;
@@ -144,6 +161,8 @@ export interface SystemAdjustState {
   default_parameters: DefaultParameters;
   rule_versions: RuleVersions;
   feature_flags: SystemFeatureFlags;
+  /** SVG-Overlay-Filter: welche Kantentypen ins Overlay übernommen werden. */
+  svg_overlay?: SvgOverlaySettings;
   validation: SystemAdjustValidationResult;
   status: SystemAdjustStatus;
 }

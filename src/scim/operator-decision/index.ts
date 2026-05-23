@@ -13,4 +13,5 @@ export type {
 } from './operatorDecision.types';
 export { validateOperatorDecision } from './operatorDecision.validation';
 export { applyOperatorDecisionToContext } from './operatorDecision.context';
+export { computeOperatorDecision } from './operatorDecision.compute';
 export { mockOperatorDecisionState, mockOperatorDecisionPending } from './operatorDecision.mock';

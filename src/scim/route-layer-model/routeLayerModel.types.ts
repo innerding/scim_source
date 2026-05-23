@@ -1,4 +1,5 @@
 import type { RouteScoreClass, RouteDecision } from '../route-model/routeModel.types';
+import type { GraphEdgeType } from '../graph/graph.types';
 
 export type RouteLayerModelStatus =
   | 'not_built'
@@ -18,6 +19,7 @@ export interface ScoreClassStyle {
 export interface RouteLayerSegment {
   segment_id: string;
   edge_id: string;
+  edge_type: GraphEdgeType;
   score_class: RouteScoreClass;
   decision: RouteDecision;
   style: ScoreClassStyle;
@@ -46,6 +48,8 @@ export interface RouteLayerModelState {
   segments: RouteLayerSegment[];
   score_class_styles: ScoreClassStyle[];
   visible_segment_count: number;
+  /** Edge types excluded from SVG overlay rendering (from SystemAdjust svg_overlay). */
+  excluded_edge_types: GraphEdgeType[];
   validation: RouteLayerModelValidationResult;
   status: RouteLayerModelStatus;
   built_at: string;

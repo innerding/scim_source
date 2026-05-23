@@ -69,26 +69,35 @@ export interface ScimPipelineInputs {
 // ── Per-step result ───────────────────────────────────────────────────────────
 
 export type ScimPipelineStepId =
-  | 'panel_1_system_adjust'
-  | 'panel_2_regio_content'
-  | 'panel_3_target_app_ui'
-  | 'panel_4_telco_load'
-  | 'panel_5_boundary'
-  | 'panel_5_extraction'
-  | 'panel_6_graph'
-  | 'panel_6_basis_layer'
-  | 'panel_7_poi_model'
-  | 'panel_7_load_projection'
-  | 'panel_7_movement_model'
-  | 'panel_7_stay_zone_detector'
-  | 'panel_7_masking_model'
-  | 'panel_8_route_model'
-  | 'panel_8_route_layer_model'
-  | 'panel_8_layer_model'
-  | 'panel_9_sensus_core_package'
-  | 'panel_10_sensus_core_local'
-  | 'panel_11_leaflet_effect_check'
-  | 'panel_12_release_export';
+  // Group 1 — Inputs
+  | 'P01_system_adjust'
+  | 'P02_regio_content'
+  | 'P03_target_app_ui'
+  | 'P04_telco_load'
+  | 'P05_operator_zones'
+  | 'P06_signal_interpretation'
+  // Group 2 — Boundary + Graph
+  | 'P07_boundary'
+  | 'P07_extraction'
+  | 'P08_graph'
+  | 'P08_basis_layer'
+  // Group 3 — Engine
+  | 'P09_load_projection'
+  | 'P09_movement_model'
+  | 'P09_stay_zone_detector'
+  | 'P09_operator_decision'
+  | 'P09_step2_activation'
+  | 'P09_poi_model'
+  | 'P09_masking_model'
+  // Group 3 — Route
+  | 'P10_route_model'
+  | 'P10_route_layer_model'
+  | 'P10_layer_model'
+  // Group 4 — Export
+  | 'P11_sensus_core_package'
+  | 'P12_sensus_core_local'
+  | 'P13_leaflet_effect_check'
+  | 'P14_release_export';
 
 export interface ScimPipelineStepResult {
   step_id: ScimPipelineStepId;
