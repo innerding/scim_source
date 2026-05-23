@@ -21,6 +21,7 @@ import { validateLeafletBasisCheck } from '../leaflet-basis-check/leafletBasisCh
 import { validatePoiModel } from '../poi-model/poiModel.validation';
 import { validateLoadProjection } from '../load-projection/loadProjection.validation';
 import { validateMovementModel } from '../movement-model/movementModel.validation';
+import { validateStayZoneDetector } from '../stay-zone-detector/stayZoneDetector.validation';
 import { validateMaskingModel } from '../masking-model/maskingModel.validation';
 import { validateRouteModel } from '../route-model/routeModel.validation';
 import { validateRouteLayerModel } from '../route-layer-model/routeLayerModel.validation';
@@ -45,6 +46,7 @@ import { applyLeafletBasisCheckToContext } from '../leaflet-basis-check/leafletB
 import { applyPoiModelToContext } from '../poi-model/poiModel.context';
 import { applyLoadProjectionToContext } from '../load-projection/loadProjection.context';
 import { applyMovementModelToContext } from '../movement-model/movementModel.context';
+import { applyStayZoneDetectorToContext } from '../stay-zone-detector/stayZoneDetector.context';
 import { applyMaskingModelToContext } from '../masking-model/maskingModel.context';
 import { applyRouteModelToContext } from '../route-model/routeModel.context';
 import { applyRouteLayerModelToContext } from '../route-layer-model/routeLayerModel.context';
@@ -57,6 +59,8 @@ import { applyReleaseExportToContext } from '../release-export/releaseExport.con
 import { applyScimRuntimeContextToContext } from '../scim-runtime-context/scimRuntimeContext.context';
 
 // Compute functions — all panels real (Steps B–E)
+import { computeStayZoneDetector } from '../stay-zone-detector/stayZoneDetector.compute';
+
 import {
   computeSystemAdjust,
   computeRegioContent,
@@ -350,6 +354,21 @@ export function runScimPipeline(inputs: ScimPipelineInputs): ScimPipelineResult 
     recordStep(tracker, 'panel_7_movement_model', v.errors.length, v.warnings.length, Date.now() - t0);
     if (!v.is_valid) return failResult(run_id, started_at, ctx, tracker, 'panel_7_movement_model');
     ctx = applyMovementModelToContext(ctx, state as any);
+  }
+
+  // ── Panel 7: StayZoneDetector ─────────────────────────────────────────────
+  {
+    const t0 = Date.now();
+    const raw = computeStayZoneDetector(
+      ctx.movement_model as any,
+      ctx.system_adjust as any,
+      ctx.classification_mode,
+    );
+    const v = validateStayZoneDetector(raw);
+    const state = { ...raw, validation: v };
+    recordStep(tracker, 'panel_7_stay_zone_detector', v.errors.length, v.warnings.length, Date.now() - t0);
+    if (!v.is_valid) return failResult(run_id, started_at, ctx, tracker, 'panel_7_stay_zone_detector');
+    ctx = applyStayZoneDetectorToContext(ctx, state);
   }
 
   // ── Panel 7: MaskingModel ─────────────────────────────────────────────────

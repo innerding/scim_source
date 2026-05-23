@@ -36,6 +36,7 @@ export type ScimContextPath =
   | 'context.leaflet_effect_check'
   | 'context.release'
   | 'context.status'
+  | 'context.stay_zone_detector'
   | 'context.classification_mode'
   | 'context.step2_activation_condition_met';
 
@@ -57,6 +58,7 @@ export const PANEL_WRITE_MAP: Record<ScimPanelId, ScimContextPath[]> = {
     'context.movement_model',
     'context.masking_model',
     'context.step2_activation_condition_met',
+    'context.stay_zone_detector',
   ],
   panel_8_route_evaluation_display: [
     'context.route_model',

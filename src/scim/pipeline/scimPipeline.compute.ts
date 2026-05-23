@@ -1017,6 +1017,15 @@ export function computeMovementModel(
       ? 'bidirectional'
       : 'from_to_dominant';
 
+    const density_score = parseFloat((score * 1.5).toFixed(3));
+    const throughput_ratio = parseFloat(Math.min(movement_ratio * 1.1, 1.0).toFixed(3));
+    const sa = context.system_adjust as import('../system-adjust/systemAdjust.types').SystemAdjustState | undefined;
+    const jamThreshold = sa?.default_parameters.default_max_jam_throughput_ratio ?? 0.20;
+    const rastThreshold = sa?.default_parameters.default_min_throughput_ratio_for_rast ?? 0.60;
+    const isStatic = stillness_ratio > 0.7;
+    const jam_detected = isStatic && throughput_ratio <= jamThreshold;
+    const stay_candidate = isStatic && !jam_detected && throughput_ratio >= rastThreshold;
+
     return {
       edge_id: els.edge_id,
       movement_class: els.privacy_masked ? 'unknown' : scoreToMovementClass(score),
@@ -1026,6 +1035,10 @@ export function computeMovementModel(
       normalized_movement_score: score,
       confidence_score: els.confidence_score,
       privacy_masked: els.privacy_masked,
+      density_score,
+      throughput_ratio,
+      jam_detected,
+      stay_candidate,
     } satisfies EdgeMovementState;
   });
 
@@ -1037,12 +1050,21 @@ export function computeMovementModel(
       ? parseFloat((edgeMovementStates.reduce((s, e) => s + e.normalized_movement_score, 0) / edgeMovementStates.length).toFixed(3))
       : 0;
 
+  const jamEdges = edgeMovementStates.filter(e => e.jam_detected);
+  const stayCandidates = edgeMovementStates.filter(e => e.stay_candidate);
+  const maxDensity = edgeMovementStates.length > 0
+    ? parseFloat(Math.max(...edgeMovementStates.map(e => e.density_score)).toFixed(3))
+    : 0;
+
   const metrics: MovementModelMetrics = {
     evaluated_edge_count: edgeMovementStates.length,
     high_flow_edge_count: highFlow.length,
     static_edge_count: staticEdges.length,
     masked_edge_count: masked.length,
     avg_movement_score: avgMovement,
+    jam_edge_count: jamEdges.length,
+    stay_candidate_edge_count: stayCandidates.length,
+    max_density_score: maxDensity,
   };
 
   return {
