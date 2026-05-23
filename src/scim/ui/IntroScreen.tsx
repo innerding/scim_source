@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import type { Role } from './RoleContext';
-import logoBase from '../../assets/logo-base.svg';
-import logoHex from '../../assets/logo-hex.svg';
+import logoBaseRaw from '../../assets/logo-base.svg?raw';
+import logoHexRaw from '../../assets/logo-hex.svg?raw';
 
 interface Props {
   onAuth: (role: Role) => void;
@@ -221,6 +221,11 @@ function renderEmptySea(ctx: CanvasRenderingContext2D, w: number, h: number, t: 
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
+// Pre-encode SVG data URLs so mask-image never needs an HTTP request
+// (avoids CORS / CSP issues on Cloudflare Pages entirely)
+const LOGO_BASE_MASK = `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(logoBaseRaw)}")`;
+const LOGO_HEX_MASK  = `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(logoHexRaw)}")`;
+
 export default function IntroScreen({ onAuth }: Props) {
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
@@ -410,16 +415,14 @@ export default function IntroScreen({ onAuth }: Props) {
             position: 'absolute', inset: 0,
             backgroundImage: 'linear-gradient(90deg, rgba(65,50,195,0.90) 0%, rgba(65,50,195,0.90) 20%, rgba(245,158,11,0.92) 50%, rgba(65,50,195,0.90) 80%, rgba(65,50,195,0.90) 100%)',
             backgroundSize: '200% 100%',
-            WebkitMaskImage: `url(${logoBase})`,
-            maskImage: `url(${logoBase})`,
+            WebkitMaskImage: LOGO_BASE_MASK,
+            maskImage: LOGO_BASE_MASK,
             WebkitMaskSize: 'contain',
             maskSize: 'contain',
             WebkitMaskRepeat: 'no-repeat',
             maskRepeat: 'no-repeat',
             WebkitMaskPosition: 'center',
             maskPosition: 'center',
-            // Force alpha-channel mask (default 'match-source' uses luminance for SVG,
-            // which renders the SVG on white → entire rect visible)
             WebkitMaskMode: 'alpha',
             maskMode: 'alpha',
             animation: 'scim-wave-blue 7s ease-in-out infinite alternate',
@@ -430,8 +433,8 @@ export default function IntroScreen({ onAuth }: Props) {
             position: 'absolute', inset: 0,
             backgroundImage: 'linear-gradient(90deg, rgba(65,50,195,0.90) 0%, rgba(65,50,195,0.90) 20%, rgba(245,158,11,0.92) 50%, rgba(65,50,195,0.90) 80%, rgba(65,50,195,0.90) 100%)',
             backgroundSize: '200% 100%',
-            WebkitMaskImage: `url(${logoHex})`,
-            maskImage: `url(${logoHex})`,
+            WebkitMaskImage: LOGO_HEX_MASK,
+            maskImage: LOGO_HEX_MASK,
             WebkitMaskSize: 'contain',
             maskSize: 'contain',
             WebkitMaskRepeat: 'no-repeat',
