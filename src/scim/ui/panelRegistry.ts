@@ -3,7 +3,7 @@
 
 export type InputMode = 'user_form' | 'auto_computed' | 'semi_auto' | 'optional';
 
-export type TabId = 'input' | 'result' | 'validation' | 'raw';
+export type TabId = 'input' | 'result' | 'validation' | 'raw' | 'leistungsblatt';
 
 export interface TabDescriptor {
   id: TabId;
@@ -359,10 +359,11 @@ export const SYSTEM_DESCRIPTOR: SystemDescriptor = {
   label: 'System',
   icon: '⊙',
   tabs: [
-    { id: 'input',      label: 'Übersicht', icon: 'ℹ' },
-    { id: 'result',     label: 'Bekannte Lücken', icon: '⚑' },
-    { id: 'validation', label: 'Manifest', icon: '{}' },
-    { id: 'raw',        label: 'Rohdaten', icon: '{}' },
+    { id: 'input',          label: 'Übersicht',      icon: 'ℹ' },
+    { id: 'result',         label: 'Bekannte Lücken', icon: '⚑' },
+    { id: 'validation',     label: 'Manifest',        icon: '{}' },
+    { id: 'leistungsblatt', label: 'Leistungsblatt',  icon: '◈' },
+    { id: 'raw',            label: 'Rohdaten',        icon: '{}' },
   ],
 };
 

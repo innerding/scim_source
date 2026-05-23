@@ -19,7 +19,7 @@ interface Props {
   result: ScimPipelineResult;
 }
 
-const TAB_ORDER: TabId[] = ['input', 'result', 'validation', 'raw'];
+const TAB_ORDER: TabId[] = ['input', 'result', 'validation', 'leistungsblatt', 'raw'];
 
 function TabBar({
   tabs, active, onSelect,

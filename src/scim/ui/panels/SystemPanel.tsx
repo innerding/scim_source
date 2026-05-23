@@ -193,12 +193,183 @@ function ManifestTab({ result }: { result: ScimPipelineResult }) {
   );
 }
 
+// ─── Leistungsblatt ───────────────────────────────────────────────────────────
+
+const ARCHITEKTUR_ARTEFAKTE = [
+  { id: 'beacon',   label: 'Beacon-Dossier',            art: 'Architektur-Deck',   desc: 'Konzeptionelles Fundament. Erstmalige Formalisierung der Leitprinzipien, Domänenabgrenzung und des Zweistufenmodells (Bewegung / Aufenthalt).' },
+  { id: 'tiger',    label: 'Tiger-Records-Swift-App',   art: 'Prototyp',           desc: 'Nativer iOS-Prototyp zur frühen Validierung der Nutzerschnittstelle und der Wegnetz-Visualisierung unter realen Gerätebedingungen.' },
+  { id: 'abc',      label: 'ABC-App-Build-Console',     art: 'Prototyp',           desc: 'Build-Konsole zur Erarbeitung des Operator-Workflows: Paket-Zusammenstellung, Freigabe-Logik und Versions-Management.' },
+  { id: 'scim2',    label: 'SCIM2-Focusmodel',          art: 'Vorläufer-Modell',   desc: 'Zweite Iterationsstufe des SCIM-Konzepts. Fokussierung auf das Signalklassifikations-Modell und die Pipeline-Architektur als deterministischen Batch-Prozess.' },
+  { id: 'demo',     label: 'SCIM3-Boundary-Build-Demo', art: 'Demo',               desc: 'Lauffähige Demonstration der Boundary-Berechnung und des Graphen-Aufbaus. Erste vollständige Durchführung der Pipeline von Eingabe bis Paket-Output.' },
+];
+
+const METRIKEN = [
+  { label: 'Quellcode gesamt',         wert: '~26.400 Zeilen',    detail: '248 Dateien · SCIM3 + Runtime' },
+  { label: 'Automatisierte Tests',      wert: '1.096 Tests',       detail: '87 Test-Suiten · 100 % grün' },
+  { label: 'Pipeline-Module',           wert: '31 Module',         detail: '14 Panels (P01–P14) · 7 Compute-Funktionen' },
+  { label: 'Runtime Bundle',            wert: '~113 KB gzipped',   detail: 'Paket ~150 KB · Heatmap lokal' },
+  { label: 'Implementierungsdauer',     wert: '~1 Woche',          detail: 'Mai 2026 · auf Basis 8 Monate Architekturdesign' },
+  { label: 'Architekturdesign seit',    wert: '1. Sept. 2025',     detail: 'Beacon-Dossier → 5 Prototypen → SCIM3 v0.2' },
+];
+
+const ZIELGRUPPEN = [
+  {
+    label: 'Forschungsförderung (F+E)',
+    color: '#2b6cb0', bg: '#ebf8ff',
+    punkte: [
+      'Privacy-by-Design als Strukturprinzip — nicht als nachträgliche Maßnahme',
+      'Telco-Signal-Klassifikation als anonyme Mobilitätsmessung (reproduzierbar, deterministisch)',
+      'Zweistufiges Aktivierungsmodell für kontextsensitive UI (Step 1 / Step 2)',
+      'Vollständige Typ-Sicherheit + 1.096 automatisierte Tests als wissenschaftliche Grundlage',
+    ],
+  },
+  {
+    label: 'Tourismusverbände',
+    color: '#276749', bg: '#f0fff4',
+    punkte: [
+      'Kein Gäste-Tracking, kein Empfehlungsalgorithmus — keine Haftungsfragen',
+      'Operator behält volle Kontrolle (Zonen, Schwellenwerte, Freigabe-Entscheid)',
+      'Paketgröße ~150 KB gzipped für 400 km² — mobiltauglich auch bei schwacher Verbindung',
+      'Alle 5 Minuten aktualisiert · kein Login · kein App-Store erforderlich',
+    ],
+  },
+  {
+    label: 'Kooperationspartner Informatik / Universität',
+    color: '#553c9a', bg: '#faf5ff',
+    punkte: [
+      'Saubere Modularchitektur mit definierten Schnittstellen (Compute / Validate / Apply / Context)',
+      'Offene Erweiterbarkeit: Echtdaten, alternative Signalquellen, Geodäsie-Upgrade (SML-3)',
+      'Selbst-dokumentierendes System: Glossar, ADRs, Invarianten im Operator Tool versioniert',
+      '37 Git-Commits · vollständige Entwicklungshistorie nachvollziehbar',
+    ],
+  },
+];
+
+function LeistungsblattTab({ result }: { result: ScimPipelineResult }) {
+  return (
+    <div style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 720 }}>
+
+      {/* Titel */}
+      <div style={{
+        background: 'linear-gradient(135deg, #1a365d 0%, #2b6cb0 100%)',
+        borderRadius: 8, padding: '18px 22px', marginBottom: 20, color: '#fff',
+      }}>
+        <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: '-0.02em' }}>
+          SCIM3 v0.2 — Leistungsblatt
+        </div>
+        <div style={{ fontSize: 12, opacity: 0.8, marginTop: 4 }}>
+          Sensus Core <strong>Integration</strong> Model · Operator Tool & Ziel-App Runtime · Stand Mai 2026
+        </div>
+        <div style={{ fontSize: 11, opacity: 0.65, marginTop: 6, fontFamily: 'monospace' }}>
+          Pipeline: {result.steps.length} Schritte · {result.success ? '✓ OK' : '✗ FEHLER'} · SML-2 Functional Core
+        </div>
+      </div>
+
+      {/* Metriken-Grid */}
+      <div style={{ fontSize: 12, fontWeight: 600, color: '#4a5568', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        Kennzahlen
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 22 }}>
+        {METRIKEN.map((m) => (
+          <div key={m.label} style={{
+            background: '#f7fafc', border: '1px solid #e2e8f0',
+            borderRadius: 6, padding: '10px 14px',
+          }}>
+            <div style={{ fontSize: 11, color: '#a0aec0', marginBottom: 2 }}>{m.label}</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: '#1a365d', letterSpacing: '-0.02em' }}>{m.wert}</div>
+            <div style={{ fontSize: 10, color: '#718096', marginTop: 2 }}>{m.detail}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Architekturdesign & Artefakte */}
+      <div style={{ fontSize: 12, fontWeight: 600, color: '#4a5568', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        Architekturdesign · Sept. 2025 – Mai 2026
+      </div>
+      <div style={{
+        background: '#fffbeb', border: '1px solid #f6e05e',
+        borderRadius: 6, padding: '10px 14px', marginBottom: 12, fontSize: 12, color: '#744210',
+      }}>
+        8 Monate präzises Architekturdesign — nicht theoretisch, sondern empirisch durch fünf aufeinanderfolgende Prototyp-Generationen. Das Ergebnis: eine Implementierungswoche für ~26.400 Zeilen produktionsreifen Code.
+      </div>
+      {ARCHITEKTUR_ARTEFAKTE.map((a) => (
+        <div key={a.id} style={{
+          display: 'flex', gap: 12, alignItems: 'flex-start',
+          padding: '8px 12px', borderRadius: 5, marginBottom: 6,
+          background: '#f7fafc', border: '1px solid #e2e8f0',
+        }}>
+          <div style={{ flexShrink: 0, minWidth: 110 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#2d3748' }}>{a.label}</div>
+            <div style={{
+              fontSize: 9, color: '#2b6cb0', background: '#ebf8ff',
+              padding: '1px 5px', borderRadius: 3, display: 'inline-block', marginTop: 2, fontFamily: 'monospace',
+            }}>{a.art}</div>
+          </div>
+          <div style={{ fontSize: 11, color: '#718096', lineHeight: 1.5 }}>{a.desc}</div>
+        </div>
+      ))}
+
+      {/* Kerninnovationen */}
+      <div style={{ fontSize: 12, fontWeight: 600, color: '#4a5568', margin: '20px 0 10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        Kerninnovationen
+      </div>
+      {[
+        ['Auslastungslage statt Empfehlung', 'Das System empfiehlt keine Route. Es zeigt die aktuelle Auslastung des Wegnetzes — farbcodiert, alle 5 Min. aktualisiert. Der Nutzer entscheidet.'],
+        ['Privacy-by-Design strukturell', 'Verbotene Datenklassen sind bauartbedingt unmöglich — nicht regelbasiert verhindert. Masking-Schicht + dedizierter Validator am Paket-Ausgang.'],
+        ['Zweistufige Klassifikation', 'Step 1: Bewegungsfluss. Step 2 (Aufenthaltskomfort) nur bei Operator-bestätigtem Stau aktiv. UI passt sich automatisch an (classification_mode).'],
+        ['Selbst-dokumentierendes System', 'Glossar, Architekturentscheide, Invarianten und KI-Briefing direkt im Operator Tool — versioniert mit dem Code, nicht in externen Wikis.'],
+      ].map(([titel, text]) => (
+        <div key={titel} style={{
+          borderLeft: '3px solid #2b6cb0', paddingLeft: 12,
+          marginBottom: 10,
+        }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: '#2d3748', marginBottom: 2 }}>{titel}</div>
+          <div style={{ fontSize: 11, color: '#718096', lineHeight: 1.5 }}>{text}</div>
+        </div>
+      ))}
+
+      {/* Zielgruppen */}
+      <div style={{ fontSize: 12, fontWeight: 600, color: '#4a5568', margin: '20px 0 10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        Relevanz nach Zielgruppe
+      </div>
+      {ZIELGRUPPEN.map((z) => (
+        <div key={z.label} style={{
+          background: z.bg, border: `1px solid ${z.color}30`,
+          borderLeft: `3px solid ${z.color}`,
+          borderRadius: 6, padding: '12px 16px', marginBottom: 10,
+        }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: z.color, marginBottom: 8 }}>{z.label}</div>
+          {z.punkte.map((p) => (
+            <div key={p} style={{ fontSize: 11, color: '#4a5568', lineHeight: 1.5, marginBottom: 4, display: 'flex', gap: 6 }}>
+              <span style={{ color: z.color, flexShrink: 0 }}>·</span>
+              <span>{p}</span>
+            </div>
+          ))}
+        </div>
+      ))}
+
+      {/* Footer */}
+      <div style={{
+        marginTop: 20, padding: '10px 14px',
+        background: '#f7fafc', borderRadius: 6,
+        fontSize: 10, color: '#a0aec0', fontFamily: 'monospace',
+        display: 'flex', justifyContent: 'space-between',
+      }}>
+        <span>SCIM3 v0.2 · Sensus Core Integration Model · Dietmar Broda</span>
+        <span>{new Date().toLocaleDateString('de-AT', { year: 'numeric', month: 'long' })}</span>
+      </div>
+
+    </div>
+  );
+}
+
 export default function SystemPanel({ activeTab, result }: Props) {
   switch (activeTab) {
-    case 'input':      return <OverviewTab result={result} />;
-    case 'result':     return <GapsTab />;
-    case 'validation': return <ManifestTab result={result} />;
-    case 'raw':        return <ManifestTab result={result} />;
-    default:           return null;
+    case 'input':          return <OverviewTab result={result} />;
+    case 'result':         return <GapsTab />;
+    case 'validation':     return <ManifestTab result={result} />;
+    case 'leistungsblatt': return <LeistungsblattTab result={result} />;
+    case 'raw':            return <ManifestTab result={result} />;
+    default:               return null;
   }
 }
