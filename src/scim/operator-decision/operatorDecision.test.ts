@@ -3,7 +3,7 @@ import { mockOperatorDecisionState, mockOperatorDecisionPending } from './operat
 import { validateOperatorDecision } from './operatorDecision.validation';
 import { applyOperatorDecisionToContext } from './operatorDecision.context';
 import { computeOperatorDecision } from './operatorDecision.compute';
-import { mockStayZoneDetectorState, mockStayZoneDetectorSkipped } from '../stay-zone-detector/stayZoneDetector.mock';
+import { mockStayZoneDetectorState } from '../stay-zone-detector/stayZoneDetector.mock';
 import { makeEmptyContext } from '../context/scimContext.types';
 
 // ── 38.1 Valid mock ───────────────────────────────────────────────────────────

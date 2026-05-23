@@ -116,7 +116,7 @@ describe('Graph – 27.10 stay-boundary nodes', () => {
         ...mockGraphState.nodes.filter(n => n.node_type !== 'stay_boundary'),
         {
           node_id: 'n_bad',
-          geometry: { type: 'Point' as const, coordinates: [15.22, 47.65] },
+          geometry: { type: 'Point' as const, coordinates: [15.22, 47.65] as [number, number] },
           node_type: 'stay_boundary' as const,
           connected_edge_ids: ['e_002'],
         },
@@ -133,7 +133,7 @@ describe('Graph – 27.10 stay-boundary nodes', () => {
         ...mockGraphState.nodes,
         {
           node_id: 'n_entry',
-          geometry: { type: 'Point' as const, coordinates: [15.20, 47.64] },
+          geometry: { type: 'Point' as const, coordinates: [15.20, 47.64] as [number, number] },
           node_type: 'entry_exit' as const,
           connected_edge_ids: ['e_001'],
         },

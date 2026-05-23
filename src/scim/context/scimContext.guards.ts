@@ -97,7 +97,7 @@ export function canRunBoundaryExtraction(context: ScimContext): ScimPanelGuardRe
     const b = requireState(
       'panel_7_boundary_extraction',
       key,
-      (context as Record<string, unknown>)[key],
+      (context as unknown as Record<string, unknown>)[key],
       path
     );
     if (b) blockers.push(b);
@@ -115,7 +115,7 @@ export function canRunGraphBasisLayer(context: ScimContext): ScimPanelGuardResul
     const b = requireState(
       'panel_8_graph_basislayer',
       key,
-      (context as Record<string, unknown>)[key],
+      (context as unknown as Record<string, unknown>)[key],
       path
     );
     if (b) blockers.push(b);
@@ -134,7 +134,7 @@ export function canRunPoiLoadMovement(context: ScimContext): ScimPanelGuardResul
     const b = requireState(
       'panel_9_poi_load_movement',
       key,
-      (context as Record<string, unknown>)[key],
+      (context as unknown as Record<string, unknown>)[key],
       path
     );
     if (b) blockers.push(b);
@@ -153,7 +153,7 @@ export function canRunRouteEvaluationDisplay(context: ScimContext): ScimPanelGua
     const b = requireState(
       'panel_10_route_evaluation_display',
       key,
-      (context as Record<string, unknown>)[key],
+      (context as unknown as Record<string, unknown>)[key],
       path
     );
     if (b) blockers.push(b);
@@ -171,7 +171,7 @@ export function canRunSensusCorePackageBuilder(context: ScimContext): ScimPanelG
     const b = requireState(
       'panel_11_sensus_core_package_builder',
       key,
-      (context as Record<string, unknown>)[key],
+      (context as unknown as Record<string, unknown>)[key],
       path
     );
     if (b) blockers.push(b);
@@ -198,7 +198,7 @@ export function canRunLeafletEffectCheck(context: ScimContext): ScimPanelGuardRe
     const b = requireState(
       'panel_13_leaflet_effect_check',
       key,
-      (context as Record<string, unknown>)[key],
+      (context as unknown as Record<string, unknown>)[key],
       path
     );
     if (b) blockers.push(b);
@@ -216,7 +216,7 @@ export function canRunReleaseExport(context: ScimContext): ScimPanelGuardResult 
     const b = requireState(
       'panel_14_release_export',
       key,
-      (context as Record<string, unknown>)[key],
+      (context as unknown as Record<string, unknown>)[key],
       path
     );
     if (b) blockers.push(b);

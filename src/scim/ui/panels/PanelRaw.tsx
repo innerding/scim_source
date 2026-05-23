@@ -8,7 +8,7 @@ interface Props {
 
 export default function PanelRaw({ panel, result }: Props) {
   const ctx = result.success ? result.context : null;
-  const raw = ctx ? (ctx as Record<string, unknown>)[panel.contextKey] : null;
+  const raw = ctx ? (ctx as unknown as Record<string, unknown>)[panel.contextKey] : null;
 
   return (
     <pre style={{
