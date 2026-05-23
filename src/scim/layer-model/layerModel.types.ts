@@ -11,7 +11,26 @@ export type ScimLayerType =
   | 'movement_flow_layer'
   | 'masking_overlay'
   | 'debug_layer'
-  | 'basis_tile_layer';
+  | 'basis_tile_layer'
+  | 'stay_zone_edge_layer';
+
+export type StayZoneClassification = 'rast' | 'stau' | 'undecided';
+
+export interface TransitionGradient {
+  from_color: string;
+  to_color: string;
+  transition_width_meters: number;
+}
+
+export interface StayZoneEdgeLayer {
+  layer_id: string;
+  zone_id: string;
+  classification: StayZoneClassification;
+  gradient: TransitionGradient;
+  edge_ids: string[];
+  visible: boolean;
+  opacity: number;
+}
 
 export type LayerDataClass =
   | 'public_aggregate'
@@ -54,6 +73,7 @@ export interface LayerModelState {
   route_layer_model_id?: string;
   basis_layer_id?: string;
   layers: ScimLayer[];
+  stay_zone_edge_layers?: StayZoneEdgeLayer[];
   visible_layer_count: number;
   validation: LayerModelValidationResult;
   status: LayerModelStatus;

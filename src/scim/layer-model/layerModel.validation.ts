@@ -43,6 +43,21 @@ export function validateLayerModel(
     }
   }
 
+  for (const szel of state.stay_zone_edge_layers ?? []) {
+    if (szel.opacity < 0 || szel.opacity > 1) {
+      errors.push(err('LM_SZEL_OPACITY_INVALID', `StayZoneEdgeLayer '${szel.layer_id}': opacity ${szel.opacity} must be in [0, 1].`, 'stay_zone_edge_layers'));
+    }
+    if (szel.gradient.transition_width_meters <= 0) {
+      errors.push(err('LM_SZEL_GRADIENT_WIDTH_INVALID', `StayZoneEdgeLayer '${szel.layer_id}': transition_width_meters must be > 0.`, 'stay_zone_edge_layers'));
+    }
+    if (szel.edge_ids.length === 0) {
+      warnings.push(warn('LM_SZEL_NO_EDGES', `StayZoneEdgeLayer '${szel.layer_id}' has no edge_ids — nothing will be rendered.`, 'stay_zone_edge_layers'));
+    }
+    if (szel.classification === 'stau') {
+      warnings.push(warn('LM_SZEL_STAU_PENDING_OPERATOR', `StayZoneEdgeLayer '${szel.layer_id}' is classified as stau — operator confirmation may still be pending.`, 'stay_zone_edge_layers'));
+    }
+  }
+
   if (!routeLayerModel) {
     warnings.push(warn('LM_ROUTE_LAYER_MISSING', 'Route-Layer-Model is not available.', 'route_layer_model'));
   }

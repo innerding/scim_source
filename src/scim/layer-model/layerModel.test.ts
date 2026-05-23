@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mockLayerModelState } from './layerModel.mock';
+import { mockLayerModelState, mockStayZoneEdgeLayer } from './layerModel.mock';
 import { validateLayerModel } from './layerModel.validation';
 import { applyLayerModelToContext } from './layerModel.context';
 import { mockRouteLayerModelState } from '../route-layer-model/routeLayerModel.mock';
@@ -82,5 +82,65 @@ describe('LayerModel – 35.8 invalid status blocks apply', () => {
   it('throws when status is layer_model_invalid', () => {
     const state = { ...mockLayerModelState, status: 'layer_model_invalid' as const };
     expect(() => applyLayerModelToContext(makeEmptyContext(), state)).toThrow();
+  });
+});
+
+// ── 35.9 StayZoneEdgeLayer ────────────────────────────────────────────────────
+
+describe('LayerModel – 35.9 stay_zone_edge_layers', () => {
+  it('mock has one StayZoneEdgeLayer for zone_001 (rast)', () => {
+    expect(mockStayZoneEdgeLayer.zone_id).toBe('zone_001');
+    expect(mockStayZoneEdgeLayer.classification).toBe('rast');
+    expect(mockStayZoneEdgeLayer.gradient.transition_width_meters).toBeGreaterThan(0);
+  });
+
+  it('mock passes validation with stay_zone_edge_layers', () => {
+    const result = validateLayerModel(mockLayerModelState, mockRouteLayerModelState, mockBasisLayerState);
+    expect(result.is_valid).toBe(true);
+    expect(result.errors).toHaveLength(0);
+  });
+
+  it('blocks when opacity is out of range', () => {
+    const state = {
+      ...mockLayerModelState,
+      stay_zone_edge_layers: [{ ...mockStayZoneEdgeLayer, opacity: 1.5 }],
+    };
+    const result = validateLayerModel(state, mockRouteLayerModelState, mockBasisLayerState);
+    expect(result.is_valid).toBe(false);
+    expect(result.errors.some(e => e.code === 'LM_SZEL_OPACITY_INVALID')).toBe(true);
+  });
+
+  it('blocks when transition_width_meters is 0', () => {
+    const state = {
+      ...mockLayerModelState,
+      stay_zone_edge_layers: [{ ...mockStayZoneEdgeLayer, gradient: { ...mockStayZoneEdgeLayer.gradient, transition_width_meters: 0 } }],
+    };
+    const result = validateLayerModel(state, mockRouteLayerModelState, mockBasisLayerState);
+    expect(result.is_valid).toBe(false);
+    expect(result.errors.some(e => e.code === 'LM_SZEL_GRADIENT_WIDTH_INVALID')).toBe(true);
+  });
+
+  it('warns when edge_ids is empty', () => {
+    const state = {
+      ...mockLayerModelState,
+      stay_zone_edge_layers: [{ ...mockStayZoneEdgeLayer, edge_ids: [] }],
+    };
+    const result = validateLayerModel(state, mockRouteLayerModelState, mockBasisLayerState);
+    expect(result.warnings.some(w => w.code === 'LM_SZEL_NO_EDGES')).toBe(true);
+  });
+
+  it('warns when classification is stau (operator pending)', () => {
+    const state = {
+      ...mockLayerModelState,
+      stay_zone_edge_layers: [{ ...mockStayZoneEdgeLayer, classification: 'stau' as const }],
+    };
+    const result = validateLayerModel(state, mockRouteLayerModelState, mockBasisLayerState);
+    expect(result.warnings.some(w => w.code === 'LM_SZEL_STAU_PENDING_OPERATOR')).toBe(true);
+  });
+
+  it('state without stay_zone_edge_layers is also valid', () => {
+    const state = { ...mockLayerModelState, stay_zone_edge_layers: undefined };
+    const result = validateLayerModel(state, mockRouteLayerModelState, mockBasisLayerState);
+    expect(result.is_valid).toBe(true);
   });
 });

@@ -1,4 +1,18 @@
-import type { LayerModelState } from './layerModel.types';
+import type { LayerModelState, StayZoneEdgeLayer } from './layerModel.types';
+
+export const mockStayZoneEdgeLayer: StayZoneEdgeLayer = {
+  layer_id: 'szel_zone_001',
+  zone_id: 'zone_001',
+  classification: 'rast',
+  gradient: {
+    from_color: '#4CAF50',
+    to_color: '#FFC107',
+    transition_width_meters: 15,
+  },
+  edge_ids: ['e_003'],
+  visible: true,
+  opacity: 0.8,
+};
 
 export const mockLayerModelState: LayerModelState = {
   layer_model_id: 'lm_001',
@@ -42,6 +56,7 @@ export const mockLayerModelState: LayerModelState = {
       data_class: 'operator_internal',
     },
   ],
+  stay_zone_edge_layers: [mockStayZoneEdgeLayer],
   visible_layer_count: 3,
   validation: {
     is_valid: true,
