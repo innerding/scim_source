@@ -199,7 +199,7 @@ const ARCHITEKTUR_ARTEFAKTE = [
   { id: 'beacon',   label: 'Beacon-Dossier',            art: 'Architektur-Deck',   desc: 'Konzeptionelles Fundament. Erstmalige Formalisierung der Leitprinzipien, Domänenabgrenzung und des Zweistufenmodells (Bewegung / Aufenthalt).' },
   { id: 'tiger',    label: 'Tiger-Records-Swift-App',   art: 'Prototyp',           desc: 'Nativer iOS-Prototyp zur frühen Validierung der Nutzerschnittstelle und der Wegnetz-Visualisierung unter realen Gerätebedingungen.' },
   { id: 'abc',      label: 'ABC-App-Build-Console',     art: 'Prototyp',           desc: 'Build-Konsole zur Erarbeitung des Operator-Workflows: Paket-Zusammenstellung, Freigabe-Logik und Versions-Management.' },
-  { id: 'scim2',    label: 'SCIM2-Focusmodel',          art: 'Vorläufer-Modell',   desc: 'Zweite Iterationsstufe des SCIM-Konzepts. Fokussierung auf das Signalklassifikations-Modell und die Pipeline-Architektur als deterministischen Batch-Prozess.' },
+  { id: 'scim2',    label: 'SCIM2-Focusmodel',          art: 'Build-Test',         desc: 'Visuell überzeugender Build-Test mit Claude (Anthropic) — methodisch jedoch noch unstrukturiert. Iterative Arbeit ohne klare Einstiegsprompts, keine durchgehende Linie. Das Ergebnis zeigte das Potential, offenbarte aber: KI-gestützte Entwicklung braucht präzise Architektur als Führung.' },
   { id: 'demo',     label: 'SCIM3-Boundary-Build-Demo', art: 'Demo',               desc: 'Lauffähige Demonstration der Boundary-Berechnung und des Graphen-Aufbaus. Erste vollständige Durchführung der Pipeline von Eingabe bis Paket-Output.' },
 ];
 
