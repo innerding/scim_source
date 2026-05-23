@@ -418,6 +418,10 @@ export default function IntroScreen({ onAuth }: Props) {
             maskRepeat: 'no-repeat',
             WebkitMaskPosition: 'center',
             maskPosition: 'center',
+            // Force alpha-channel mask (default 'match-source' uses luminance for SVG,
+            // which renders the SVG on white → entire rect visible)
+            WebkitMaskMode: 'alpha',
+            maskMode: 'alpha',
             animation: 'scim-wave-blue 7s ease-in-out infinite alternate',
           } as React.CSSProperties} />
 
@@ -434,6 +438,8 @@ export default function IntroScreen({ onAuth }: Props) {
             maskRepeat: 'no-repeat',
             WebkitMaskPosition: 'center',
             maskPosition: 'center',
+            WebkitMaskMode: 'alpha',
+            maskMode: 'alpha',
             transformOrigin: HEX_ORIGIN,
             transform: `rotate(${hexRot}deg)`,
             transition: hexRot > 0 ? 'transform 180ms ease-in-out' : 'none',
