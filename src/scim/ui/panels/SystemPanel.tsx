@@ -196,7 +196,7 @@ function ManifestTab({ result }: { result: ScimPipelineResult }) {
 // ─── Leistungsblatt ───────────────────────────────────────────────────────────
 
 const ARCHITEKTUR_ARTEFAKTE = [
-  { id: 'beacon',   label: 'Beacon-Dossier',            art: 'Architektur-Deck',   desc: 'Konzeptionelles Fundament. Erstmalige Formalisierung der Leitprinzipien, Domänenabgrenzung und des Zweistufenmodells (Bewegung / Aufenthalt).' },
+  { id: 'beacon',   label: 'Beacon-Dossier',            art: 'Architektur-Deck',   desc: 'Umfassende konzeptionell-narrative Darstellung von Sensus Core zur sanften Besucherlenkung mit Regio-Dashboards, Governance, Path Works und ABC.' },
   { id: 'tiger',    label: 'Tiger-Records-Swift-App',   art: 'Prototyp',           desc: 'Nativer iOS-Prototyp zur frühen Validierung der Nutzerschnittstelle und der Wegnetz-Visualisierung unter realen Gerätebedingungen.' },
   { id: 'abc',      label: 'ABC-App-Build-Console',     art: 'Prototyp',           desc: 'Build-Konsole zur Erarbeitung des Operator-Workflows: Paket-Zusammenstellung, Freigabe-Logik und Versions-Management.' },
   { id: 'scim2',    label: 'SCIM2-Focusmodel',          art: 'Vorläufer-Modell',   desc: 'Darstellung einer visuell steuerbaren Update-Maschine mit 33 Quellcode-Modulen — Komplexität nicht versteckt, sondern sichtbar und begreifbar gemacht.' },
