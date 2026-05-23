@@ -19,6 +19,14 @@ export interface SensusCorePackageContent {
   raw_signals_present: false;
   device_ids_present: false;
   debug_data_present: false;
+  /**
+   * Klassifikations-Modus zum Zeitpunkt der Package-Erstellung.
+   * Steuert in der Ziel-App ob Step-2-Features (BCK-Rest, Comfort-Slider)
+   * sichtbar und aktiv sind.
+   *   'movement_only'    → kein Stau bestätigt, Step-2-UI ausgeblendet
+   *   'movement_and_stay' → Stau bestätigt, BCK-Rest + Comfort-Slider aktiv
+   */
+  classification_mode: 'movement_only' | 'movement_and_stay';
 }
 
 export interface SensusCorePackageIssue {

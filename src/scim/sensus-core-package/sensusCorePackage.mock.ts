@@ -15,6 +15,7 @@ export const mockSensusCorePackageState: SensusCorePackageState = {
     raw_signals_present: false,
     device_ids_present: false,
     debug_data_present: false,
+    classification_mode: 'movement_only',
   },
   validation: {
     is_valid: true,

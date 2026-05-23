@@ -1399,6 +1399,7 @@ export function computeSensusCorePackage(
     raw_signals_present: false,
     device_ids_present: false,
     debug_data_present: false,
+    classification_mode: context.classification_mode ?? 'movement_only',
   };
 
   const packageId = `pkg_${layerModel.layer_model_id}`;

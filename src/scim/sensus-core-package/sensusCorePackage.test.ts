@@ -79,6 +79,28 @@ describe('SensusCorePackage – 38.7 context protection', () => {
   });
 });
 
+describe('SensusCorePackage – 38.9 classification_mode im Package', () => {
+  it('Standard-Mock hat classification_mode movement_only', () => {
+    expect(mockSensusCorePackageState.content.classification_mode).toBe('movement_only');
+  });
+
+  it('movement_and_stay wird korrekt gesetzt', () => {
+    const state = {
+      ...mockSensusCorePackageState,
+      content: { ...mockSensusCorePackageState.content, classification_mode: 'movement_and_stay' as const },
+    };
+    const result = validateSensusCorePackage(state, mockLayerModelState, mockSystemAdjustState);
+    expect(result.is_valid).toBe(true);
+    expect(state.content.classification_mode).toBe('movement_and_stay');
+  });
+
+  it('classification_mode ist im Pipeline-Run movement_only ohne Jam', () => {
+    // Dieser Test wird durch den Pipeline-Integrationstest (50.6) abgedeckt:
+    // ctx.step2_activation.status === 'not_triggered' → classification_mode === 'movement_only'
+    expect(mockSensusCorePackageState.content.classification_mode).toBe('movement_only');
+  });
+});
+
 describe('SensusCorePackage – 38.8 invalid status blocks apply', () => {
   it('throws when status is package_invalid', () => {
     const state = { ...mockSensusCorePackageState, status: 'package_invalid' as const };

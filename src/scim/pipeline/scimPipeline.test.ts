@@ -7,6 +7,7 @@ import { mockTargetAppUiState } from '../target-app-ui/targetAppUi.mock';
 import { mockTelcoLoadState } from '../telco-load/telcoLoad.mock';
 import { mockGraphState } from '../graph/graph.mock';
 import type { RouteLayerModelState } from '../route-layer-model/routeLayerModel.types';
+import type { SensusCorePackageState } from '../sensus-core-package/sensusCorePackage.types';
 
 // Minimal mock road network derived from mockGraphState
 const mockRoadNetwork: ScimPipelineInputs['road_network'] = {
@@ -262,6 +263,22 @@ describe('Pipeline – 50.7 excluded_edge_types propagiert bis route_layer_model
     const rlm = result.context.route_layer_model as RouteLayerModelState | undefined;
     // Alle Segmente sind sichtbar
     expect((rlm?.segments ?? []).every((s) => s.visible)).toBe(true);
+  });
+});
+
+// ── 50.8 classification_mode im Sensus Core Package ──────────────────────────
+
+describe('Pipeline – 50.8 classification_mode wird ins Package eingebaut', () => {
+  it('Package enthält classification_mode movement_only im Standard-Run', () => {
+    const result = runScimPipeline(validInputs);
+    const pkg = result.context.sensus_core_package as SensusCorePackageState | undefined;
+    expect(pkg?.content.classification_mode).toBe('movement_only');
+  });
+
+  it('classification_mode ist defined (nicht undefined)', () => {
+    const result = runScimPipeline(validInputs);
+    const pkg = result.context.sensus_core_package as SensusCorePackageState | undefined;
+    expect(pkg?.content.classification_mode).toBeDefined();
   });
 });
 
