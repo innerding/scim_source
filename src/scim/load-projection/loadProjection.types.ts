@@ -23,6 +23,8 @@ export interface EdgeLoadScore {
   confidence_score: number;
   method: EdgeLoadProjectionMethod;
   privacy_masked: boolean;
+  /** true wenn nur flow+ambiguous-Punkte eingeflossen sind (accumulation gefiltert). */
+  signal_filtered: boolean;
 }
 
 export interface LoadProjectionMetrics {
@@ -31,6 +33,8 @@ export interface LoadProjectionMetrics {
   unprojected_edge_count: number;
   avg_load_score: number;
   max_load_score: number;
+  /** Anzahl Signalpunkte die als accumulation eingestuft und ausgeschlossen wurden. */
+  excluded_accumulation_point_count: number;
 }
 
 export interface LoadProjectionIssue {
@@ -55,6 +59,8 @@ export interface LoadProjectionState {
   load_projection_id: string;
   graph_id: string;
   extraction_id: string;
+  /** ID der SignalInterpretation die für die Filterung verwendet wurde. */
+  signal_interpretation_id?: string;
   edge_load_scores: EdgeLoadScore[];
   metrics: LoadProjectionMetrics;
   validation: LoadProjectionValidationResult;
