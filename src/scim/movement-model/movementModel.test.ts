@@ -59,7 +59,73 @@ describe('MovementModel – 31.5 all static triggers warning', () => {
   });
 });
 
-describe('MovementModel – 31.6 context protection', () => {
+describe('MovementModel – 31.6 Transform Geometries fields', () => {
+  it('mock edges have density_score, throughput_ratio, jam_detected, stay_candidate', () => {
+    const edges = mockMovementModelState.edge_movement_states;
+    for (const e of edges) {
+      expect(e.density_score).toBeGreaterThanOrEqual(0);
+      expect(e.throughput_ratio).toBeGreaterThanOrEqual(0);
+      expect(e.throughput_ratio).toBeLessThanOrEqual(1);
+      expect(typeof e.jam_detected).toBe('boolean');
+      expect(typeof e.stay_candidate).toBe('boolean');
+    }
+  });
+
+  it('mock metrics include jam_edge_count, stay_candidate_edge_count, max_density_score', () => {
+    const m = mockMovementModelState.metrics;
+    expect(m.jam_edge_count).toBe(0);
+    expect(m.stay_candidate_edge_count).toBe(1);
+    expect(m.max_density_score).toBe(0.85);
+  });
+
+  it('blocks density_score < 0', () => {
+    const state = {
+      ...mockMovementModelState,
+      edge_movement_states: [
+        { ...mockMovementModelState.edge_movement_states[0], density_score: -0.1 },
+      ],
+      metrics: { ...mockMovementModelState.metrics, stay_candidate_edge_count: 0 },
+    };
+    const result = validateMovementModel(state, mockGraphState, mockLoadProjectionState);
+    expect(result.errors.some(e => e.code === 'MM_DENSITY_SCORE_INVALID')).toBe(true);
+  });
+
+  it('blocks throughput_ratio outside [0, 1]', () => {
+    const state = {
+      ...mockMovementModelState,
+      edge_movement_states: [
+        { ...mockMovementModelState.edge_movement_states[0], throughput_ratio: 1.5 },
+      ],
+      metrics: { ...mockMovementModelState.metrics, stay_candidate_edge_count: 0 },
+    };
+    const result = validateMovementModel(state, mockGraphState, mockLoadProjectionState);
+    expect(result.errors.some(e => e.code === 'MM_THROUGHPUT_RATIO_OUT_OF_RANGE')).toBe(true);
+  });
+
+  it('blocks jam_edge_count mismatch', () => {
+    const state = {
+      ...mockMovementModelState,
+      metrics: { ...mockMovementModelState.metrics, jam_edge_count: 2 },
+    };
+    const result = validateMovementModel(state, mockGraphState, mockLoadProjectionState);
+    expect(result.errors.some(e => e.code === 'MM_JAM_EDGE_COUNT_MISMATCH')).toBe(true);
+  });
+
+  it('warns when jam_detected=true but throughput_ratio is high', () => {
+    const state = {
+      ...mockMovementModelState,
+      edge_movement_states: [
+        { ...mockMovementModelState.edge_movement_states[0], jam_detected: true, throughput_ratio: 0.8 },
+        ...mockMovementModelState.edge_movement_states.slice(1),
+      ],
+      metrics: { ...mockMovementModelState.metrics, jam_edge_count: 1 },
+    };
+    const result = validateMovementModel(state, mockGraphState, mockLoadProjectionState);
+    expect(result.warnings.some(w => w.code === 'MM_JAM_THROUGHPUT_INCONSISTENT')).toBe(true);
+  });
+});
+
+describe('MovementModel – 31.7 context protection', () => {
   it('writes only movement_model', () => {
     const context = makeEmptyContext();
     const updated = applyMovementModelToContext(context, mockMovementModelState);
@@ -68,7 +134,7 @@ describe('MovementModel – 31.6 context protection', () => {
   });
 });
 
-describe('MovementModel – 31.7 invalid status blocks apply', () => {
+describe('MovementModel – 31.8 invalid status blocks apply', () => {
   it('throws when status is movement_model_invalid', () => {
     const state = { ...mockMovementModelState, status: 'movement_model_invalid' as const };
     expect(() => applyMovementModelToContext(makeEmptyContext(), state)).toThrow();
