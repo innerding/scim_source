@@ -8,20 +8,23 @@ Vite backt `VITE_*` Variablen beim Build ein. GitHub Actions hat keinen Zugriff 
 
 ## Lokaler Deploy (Standard)
 
+Werte liegen in `~/scim_source/.env.local` (nicht im Repo). Build & Deploy:
+
 ```bash
-VITE_CODE_OPERATOR=OPERATOR \
-VITE_CODE_ANALYST=ANALYST \
-VITE_WORKER_URL=https://scim3-bundle-worker.jkygrbh6md.workers.dev \
-VITE_UPLOAD_API_KEY=eb65a7ec526b222f6baf4c407a8d69ced02e69be \
+set -a; source ../../.env.local; set +a
 npm run build && npx wrangler pages deploy dist --project-name=scim3-operator --branch=main
 ```
+
+Pfad zur `.env.local` ggf. anpassen je nach Working Directory.
 
 ## Login-Zugangsdaten
 
 | Name | Code | Rolle |
 |------|------|-------|
-| dietmar broda | OPERATOR | operator |
-| michael moser | ANALYST | analyst |
+| dietmar       | siehe `.env.local` (`VITE_CODE_OPERATOR`) | operator |
+| michael moser | siehe `.env.local` (`VITE_CODE_ANALYST`)  | analyst  |
+
+Operator-Login zusätzlich per Touch ID (Passkey), wenn auf dem Gerät registriert.
 
 ## URLs
 

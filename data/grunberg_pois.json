@@ -1,0 +1,711 @@
+{
+  "type": "FeatureCollection",
+  "properties": {
+    "region": "Grünberg",
+    "source": "OSM Overpass mit Polygon-Filter aus grunberg_polygon.json",
+    "generated_at": "2026-05-24",
+    "filters_applied": [
+      "Pizzeria Bella Italia entfernt (außerhalb Wandergebiet)",
+      "Wasser-Features ohne Namen entfernt (nur Laudachsee behalten)",
+      "Information-Features ohne Namen bereits in Query gefiltert",
+      "Grünberg-Seilbahn Tal- und Bergstation manuell ergänzt aus aerialway=cable_car way 48231263"
+    ]
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "osm_id": "node/403901524",
+        "category": "peak",
+        "name": "Katzenstein",
+        "ele": "1349",
+        "osm_tags": {
+          "alt_name": "Schrattenstein",
+          "ele": "1349",
+          "name": "Katzenstein",
+          "natural": "peak",
+          "summit:cross": "yes",
+          "summit:register": "yes",
+          "wikidata": "Q1736918"
+        }
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.8592910,
+          47.8745443
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "osm_id": "node/983639761",
+        "category": "peak",
+        "name": "Hochgschirr",
+        "ele": "981",
+        "osm_tags": {
+          "ele": "981",
+          "name": "Hochgschirr",
+          "natural": "peak",
+          "source": "geoimage, survey"
+        }
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.8307506,
+          47.8963537
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "osm_id": "node/1222222168",
+        "category": "shelter",
+        "name": "Holzknecht Unterstand",
+        "ele": null,
+        "osm_tags": {
+          "amenity": "shelter",
+          "name": "Holzknecht Unterstand",
+          "shelter_type": "Wetterpilz"
+        }
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.8379059,
+          47.8899705
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "osm_id": "node/1350658253",
+        "category": "restaurant",
+        "name": "Ramsaualm",
+        "ele": null,
+        "osm_tags": {
+          "alt_name": "Ramsau Alm",
+          "amenity": "restaurant",
+          "cuisine": "regional",
+          "diet:vegetarian": "yes",
+          "email": "office@laudachsee.com",
+          "horse": "yes",
+          "indoor_seating": "yes",
+          "name": "Ramsaualm",
+          "opening_hours": "Apr Mo-Su 09:00-17:00; May Mo-Su 09:00-19:00; Jun-Aug Mo-Su 09:00-20:00; Sep Mo-Su 09:00-19:00; Oct Mo-Su 09:00-17:00",
+          "outdoor_seating": "yes",
+          "phone": "+43 7203 16847",
+          "smoking": "outside",
+          "website": "https://www.laudachsee.com/",
+          "wheelchair": "no"
+        }
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.8498753,
+          47.8806194
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "osm_id": "node/1681746990",
+        "category": "peak",
+        "name": "Schlosskogel",
+        "ele": "649",
+        "osm_tags": {
+          "ele": "649",
+          "name": "Schlosskogel",
+          "natural": "peak",
+          "summit:cross": "no",
+          "summit:register": "no"
+        }
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.8187328,
+          47.8794980
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "osm_id": "node/1804243862",
+        "category": "peak",
+        "name": "Grünberg",
+        "ele": "986",
+        "osm_tags": {
+          "ele": "986",
+          "name": "Grünberg",
+          "natural": "peak",
+          "source:ele": "LiDAR Geländehöhe von doris.ooe.gv.at",
+          "wikidata": "Q1551824",
+          "wikipedia": "de:Grünberg (Oberösterreichische Voralpen)"
+        }
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.8195778,
+          47.8983989
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "osm_id": "node/3023212857",
+        "category": "information",
+        "name": "Grünberg-Wanderkarte",
+        "ele": null,
+        "osm_tags": {
+          "information": "map",
+          "name": "Grünberg-Wanderkarte",
+          "tourism": "information",
+          "wheelchair": "yes"
+        }
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.8215823,
+          47.8981200
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "osm_id": "node/3023224478",
+        "category": "viewpoint",
+        "name": "Hochgeschirr",
+        "ele": null,
+        "osm_tags": {
+          "name": "Hochgeschirr",
+          "tourism": "viewpoint"
+        }
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.8307773,
+          47.8963659
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "osm_id": "node/3023224479",
+        "category": "information",
+        "name": "Hochgschirr 10min.",
+        "ele": null,
+        "osm_tags": {
+          "information": "guidepost",
+          "name": "Hochgschirr 10min.",
+          "tourism": "information"
+        }
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.8281338,
+          47.8970313
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "osm_id": "node/3023243669",
+        "category": "information",
+        "name": "Hochgschirr",
+        "ele": null,
+        "osm_tags": {
+          "information": "guidepost",
+          "name": "Hochgschirr",
+          "tourism": "information"
+        }
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.8314623,
+          47.8948026
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "osm_id": "node/3023245547",
+        "category": "viewpoint",
+        "name": "Traunseeblick",
+        "ele": null,
+        "osm_tags": {
+          "name": "Traunseeblick",
+          "tourism": "viewpoint"
+        }
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.8302855,
+          47.8956487
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "osm_id": "node/3023336019",
+        "category": "information",
+        "name": "Gmunden",
+        "ele": null,
+        "osm_tags": {
+          "information": "guidepost",
+          "name": "Gmunden",
+          "tourism": "information"
+        }
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.8345719,
+          47.9009362
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "osm_id": "node/3023408607",
+        "category": "viewpoint",
+        "name": null,
+        "ele": null,
+        "osm_tags": {
+          "tourism": "viewpoint"
+        }
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.8275961,
+          47.8973377
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "osm_id": "node/3089025834",
+        "category": "information",
+        "name": "Baum - Lehrtafeln",
+        "ele": null,
+        "osm_tags": {
+          "board_type": "plants",
+          "check_date": "2025-11-23",
+          "information": "board",
+          "name": "Baum - Lehrtafeln",
+          "tourism": "information"
+        }
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.8380798,
+          47.8901725
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "osm_id": "node/3307231430",
+        "category": "peak",
+        "name": "Adlerhorst",
+        "ele": null,
+        "osm_tags": {
+          "name": "Adlerhorst",
+          "natural": "peak",
+          "old_name": "Beilstein"
+        }
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.8197051,
+          47.8808177
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "osm_id": "node/3546089982",
+        "category": "peak",
+        "name": "Freundschaftshöhe",
+        "ele": "1020",
+        "osm_tags": {
+          "ele": "1020",
+          "name": "Freundschaftshöhe",
+          "natural": "peak",
+          "source": "survey",
+          "summit:cross": "no",
+          "summit:register": "yes"
+        }
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.8394690,
+          47.8808623
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "osm_id": "node/4209056839",
+        "category": "peak",
+        "name": "Überraschung",
+        "ele": "789",
+        "osm_tags": {
+          "ele": "789",
+          "name": "Überraschung",
+          "natural": "peak",
+          "summit:cross": "yes",
+          "tourism": "viewpoint"
+        }
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.8223568,
+          47.8797526
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "osm_id": "node/4210326559",
+        "category": "restaurant",
+        "name": "das TRAUNSTEIN",
+        "ele": null,
+        "osm_tags": {
+          "addr:city": "Gmunden",
+          "addr:country": "AT",
+          "addr:housenumber": "259",
+          "addr:postcode": "4810",
+          "addr:street": "Traunsteinstraße",
+          "amenity": "restaurant",
+          "check_date": "2023-12-23",
+          "name": "das TRAUNSTEIN"
+        }
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.8084960,
+          47.8835152
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "osm_id": "node/4210998104",
+        "category": "picnic_table",
+        "name": null,
+        "ele": null,
+        "osm_tags": {
+          "leisure": "picnic_table"
+        }
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.8070759,
+          47.9029581
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "osm_id": "node/4250178239",
+        "category": "peak",
+        "name": "Dürrenberg",
+        "ele": "687",
+        "osm_tags": {
+          "ele": "687",
+          "name": "Dürrenberg",
+          "natural": "peak"
+        }
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.8189124,
+          47.8893456
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "osm_id": "node/5844722563",
+        "category": "viewpoint",
+        "name": null,
+        "ele": null,
+        "osm_tags": {
+          "tourism": "viewpoint",
+          "wheelchair": "yes"
+        }
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.8176155,
+          47.8981771
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "osm_id": "node/7074525580",
+        "category": "information",
+        "name": "Der Riese Erla und die Nixe vom Laudachsee",
+        "ele": null,
+        "osm_tags": {
+          "check_date": "2024-04-28",
+          "information": "board",
+          "name": "Der Riese Erla und die Nixe vom Laudachsee",
+          "tourism": "information"
+        }
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.8501669,
+          47.8847323
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "osm_id": "node/7158213539",
+        "category": "peak",
+        "name": "Kleiner Adlerhorst",
+        "ele": null,
+        "osm_tags": {
+          "name": "Kleiner Adlerhorst",
+          "natural": "peak",
+          "old_name": "Kleiner Beilstein"
+        }
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.8199787,
+          47.8807911
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "osm_id": "node/9992431042",
+        "category": "viewpoint",
+        "name": null,
+        "ele": null,
+        "osm_tags": {
+          "tourism": "viewpoint"
+        }
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.8166863,
+          47.8893630
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "osm_id": "node/11922230777",
+        "category": "viewpoint",
+        "name": null,
+        "ele": null,
+        "osm_tags": {
+          "tourism": "viewpoint"
+        }
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.8209539,
+          47.8803479
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "osm_id": "node/11922230782",
+        "category": "viewpoint",
+        "name": null,
+        "ele": null,
+        "osm_tags": {
+          "tourism": "viewpoint"
+        }
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.8185710,
+          47.8792344
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "osm_id": "node/13811177439",
+        "category": "picnic_table",
+        "name": null,
+        "ele": null,
+        "osm_tags": {
+          "amenity": "bench",
+          "leisure": "picnic_table"
+        }
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.8083902,
+          47.9080227
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "osm_id": "node/13811177440",
+        "category": "picnic_table",
+        "name": null,
+        "ele": null,
+        "osm_tags": {
+          "amenity": "bench",
+          "leisure": "picnic_table"
+        }
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.8083325,
+          47.9079742
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "osm_id": "node/13811177441",
+        "category": "picnic_table",
+        "name": null,
+        "ele": null,
+        "osm_tags": {
+          "amenity": "bench",
+          "leisure": "picnic_table"
+        }
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.8082735,
+          47.9079175
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "osm_id": "way/29194352",
+        "category": "water",
+        "name": "Laudachsee",
+        "ele": null,
+        "osm_tags": {
+          "boat": "no",
+          "name": "Laudachsee",
+          "natural": "water",
+          "source": "geoimage",
+          "water": "lake",
+          "wikidata": "Q877014",
+          "wikipedia": "de:Laudachsee"
+        }
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.8533433,
+          47.8791353
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "osm_id": "way/48231263#start",
+        "category": "aerialway_station",
+        "name": "Grünbergseilbahn Talstation",
+        "ele": null,
+        "osm_tags": {
+          "aerialway": "station",
+          "role": "valley_station",
+          "line": "Grünberg-Seilbahn"
+        }
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.8080206,
+          47.9133908
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "osm_id": "way/48231263#end",
+        "category": "aerialway_station",
+        "name": "Grünbergseilbahn Bergstation",
+        "ele": null,
+        "osm_tags": {
+          "aerialway": "station",
+          "role": "top_station",
+          "line": "Grünberg-Seilbahn"
+        }
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.8215572,
+          47.8983187
+        ]
+      }
+    }
+  ]
+}

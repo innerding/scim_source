@@ -5,6 +5,7 @@ import {
 } from './panelRegistry';
 import logoBase from '../../assets/logo-base.svg';
 import logoHex from '../../assets/logo-hex.svg';
+import { useRole } from './RoleContext';
 
 interface Props {
   activeId: string;
@@ -101,6 +102,7 @@ function SectionDivider() {
 
 export default function Navigator({ activeId, onSelect, panelStatus = {} }: Props) {
   const pipelineGroups = [1, 2, 3, 4] as const;
+  const role = useRole();
 
   return (
     <nav style={{
@@ -205,14 +207,16 @@ export default function Navigator({ activeId, onSelect, panelStatus = {} }: Prop
         isActive={activeId === SYSTEM_DESCRIPTOR.id}
         onClick={() => onSelect(SYSTEM_DESCRIPTOR.id)}
       />
-      <NavItem
-        id={AI_INTERFACE_DESCRIPTOR.id}
-        icon={AI_INTERFACE_DESCRIPTOR.icon}
-        label={AI_INTERFACE_DESCRIPTOR.label}
-        status="grey"
-        isActive={activeId === AI_INTERFACE_DESCRIPTOR.id}
-        onClick={() => onSelect(AI_INTERFACE_DESCRIPTOR.id)}
-      />
+      {role === 'operator' && (
+        <NavItem
+          id={AI_INTERFACE_DESCRIPTOR.id}
+          icon={AI_INTERFACE_DESCRIPTOR.icon}
+          label={AI_INTERFACE_DESCRIPTOR.label}
+          status="grey"
+          isActive={activeId === AI_INTERFACE_DESCRIPTOR.id}
+          onClick={() => onSelect(AI_INTERFACE_DESCRIPTOR.id)}
+        />
+      )}
     </nav>
   );
 }

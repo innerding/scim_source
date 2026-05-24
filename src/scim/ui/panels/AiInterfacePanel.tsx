@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { TabId } from '../panelRegistry';
 import { PANEL_REGISTRY } from '../panelRegistry';
+import { useRole } from '../RoleContext';
 
 interface Props {
   activeTab: TabId;
@@ -192,6 +193,80 @@ OSM-TILES (vom Tile-Server, nicht im Bundle): Leaflet lädt sie zur Laufzeit auf
 TELCO-LOAD ist keine App-Einheit sondern die SCIM-interne Datenquelle die alle 5 Minuten verarbeitet wird um den ColourMesh zu erzeugen.
 
 Ladereihenfolge: Representation zuerst (Karte + POIs), ColourMesh danach (Overlay). Bestandsnutzer erhalten nur den ColourMesh alle 5 Minuten; Representation nur bei Neuaufbau. Der ColourMesh trägt poi_anchors damit die App zur Laufzeit einen vollständigen Graphen aufbauen und clientseitiges Routing betreiben kann — Kernfeature.`,
+    date: '2026-05-24',
+  },
+
+  // ── 2026-05-24: UMBAUPLAN-Auslagerung (MVP Grünberg) ─────────────────────────
+
+  {
+    id: 'ann_035',
+    category: 'invariant',
+    label: 'Schichten-Laufzeiten der Bundle-Architektur',
+    content: `Drei Liefereinheiten mit eigenen Laufzeiten und Aktualisierungsrhythmen. Laufzeit = Gültigkeitsdauer einer Einheit, nicht Ausführungsumgebung — Ausführung läuft immer in der App-Shell.
+
+App-Shell (Körper): Laufzeit Monate, Rhythmus beim Deploy (manuell), Herkunft Cloudflare Pages (diesenpark.com), eine Instanz für alle Representations. Enthält React/Vite PWA, BCK/BAK-Kernel, Service Worker, Manifest, Leaflet-Bibliothek.
+
+Representation (Charakter): Laufzeit Wochen–Monate, Rhythmus bei SCIM-Rebuild (Operator-ausgelöst), Herkunft R2 → cdn.diesenpark.com/rep/{id}/current.json, eine Instanz pro Gebiet (Grünberg, Lichtenberg, …). Enthält POIs, Leaflet-Config, Viewport/Bbox, Systemrouten.
+
+ColourMesh (Atem): Laufzeit 5 Minuten, Rhythmus automatisch (Telco-Zyklus), Herkunft R2 → cdn.diesenpark.com/mesh/{rep_id}/current.json, eine Instanz pro Representation, wird überschrieben. Enthält bewertete Kanten, POI-Anker, Privacy, Timing.
+
+OSM-Tiles (Untergrund): nicht im Bundle, Leaflet lädt sie zur Laufzeit vom Tile-Server gemäß Leaflet-Config der Representation. Cache im Browser/Service Worker.
+
+Das Repository sensus-core-runtime trägt diesen Namen weil es den Körper enthält — die Runtime, in der Charakter und Atem zur Laufzeit laden. Ergänzt ann_034.`,
+    date: '2026-05-24',
+  },
+  {
+    id: 'ann_036',
+    category: 'adr',
+    label: 'Datenschemata ScimRepresentation + ScimColourMesh',
+    content: `Die zwei SCIM-Exporte sind vertraglich fixiert. Pipeline P14 schreibt beide.
+
+ScimRepresentation (schema: 'scim3_representation_v1'): representation_id, region? ({id, name}), generated_at, leaflet ({tile_url, attribution, min_zoom, max_zoom}), viewport ({center: [lon,lat], zoom, bbox: [minLon,minLat,maxLon,maxLat]}), pois (FeatureCollection<Point> inkl. image_url, description, category), system_routes (ScimSystemRoute[] mit fertigen Geometrien, Name, Dauer, POI-IDs).
+
+ScimColourMesh (schema: 'scim3_colourmesh_v1'): representation_id, package_id, generated_at, expires_at, edges (FeatureCollection<LineString> inkl. from_node_id, to_node_id), poi_anchors ({poi_id, node_id, coordinate}[]), privacy ({verified, raw_signals_excluded: true, device_ids_excluded: true}).
+
+Der Charakter braucht keinen Graphen — der war nur zur Erzeugung der Systemrouten in SCIM nötig und muss nicht ausgeliefert werden. poi_anchors im ColourMesh sind das Bindeglied für clientseitiges Routing (siehe ann_034). region ist optional gemäß ann_033.`,
+    date: '2026-05-24',
+  },
+  {
+    id: 'ann_037',
+    category: 'adr',
+    label: 'R2-Keys + Worker-Endpoints für Representation + ColourMesh',
+    content: `Kontext: Die bestehenden packages-Endpoints (ann_030) behandeln ein Bundle als monolithisches Paket. Die Bundle-Architektur (ann_034) trennt Representation und ColourMesh — sie brauchen eigene Endpoints und R2-Keys mit eigenen Lebenszyklen (ann_035).
+
+R2-Keys:
+  rep/{representation_id}/current.json       Charakter — aktuell
+  rep/{representation_id}/{version}.json     Charakter — Versionshistorie
+  mesh/{representation_id}/current.json      Atem — wird alle 5 min überschrieben
+
+Worker-Endpoints (neu):
+  PUT  /api/representations/upload           R2 + D1
+  GET  /api/representations/:id              aktueller Charakter
+  PUT  /api/colourmesh/upload                R2 + D1
+  GET  /api/colourmesh/:rep_id               aktueller Atem
+
+D1-Tabellen (neu):
+  representations (rep_id, version, status, cdn_url, generated_at, activated_at)
+  colourmesh      (rep_id, version, cdn_url, generated_at, expires_at)
+
+Konsequenz: BundlePublisher.tsx wird in RepresentationPublisher + ColourMeshPublisher aufgeteilt. Die bestehende packages-Tabelle und ihre Endpoints bleiben während der Migration parallel aktiv. Nach Migrationsende lösen diese Endpoints jene aus ann_030 ab.`,
+    date: '2026-05-24',
+  },
+  {
+    id: 'ann_038',
+    category: 'invariant',
+    label: 'Graceful Degradation der Ladephasen',
+    content: `Die App lädt zweistufig (Representation, dann ColourMesh). Verhalten je Zustand ist verbindlich:
+
+  Representation da, ColourMesh fehlt    → Karte + POIs sichtbar, kein Overlay, kein Routing
+  Representation fehlt                   → App nicht startbar
+  ColourMesh abgelaufen (expires_at)     → Overlay ausgegraut, Hinweis
+
+State-Machine-Konsequenz (useAppMachine.ts):
+  loadRepresentation(url) → State 'representation_loaded'
+  loadColourMesh(url)     → State 'ready'
+  5-Minuten-Timer startet nach erstem ColourMesh-Load.
+  SensusCorePackage-Typ wird in RepresentationPackage + ColourMeshPackage aufgeteilt.`,
     date: '2026-05-24',
   },
 ];
@@ -400,6 +475,8 @@ function NoteTab({ tabKey }: { tabKey: string }) {
 }
 
 export default function AiInterfacePanel({ activeTab }: Props) {
+  const role = useRole();
+  if (role !== 'operator') return null;
   switch (activeTab) {
     case 'input':      return <AnnotationsTab />;
     case 'result':     return <BriefingTab />;

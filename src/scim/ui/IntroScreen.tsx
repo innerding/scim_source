@@ -2,13 +2,17 @@ import { useState, useRef, useEffect } from 'react';
 import type { Role } from './RoleContext';
 import logoBaseRaw from '../../assets/logo-base.svg?raw';
 import logoHexRaw from '../../assets/logo-hex.svg?raw';
+import {
+  isPasskeySupported, getStoredPasskey, tryPasskeyLogin,
+  registerPasskey, clearPasskey,
+} from './passkey';
 
 interface Props {
   onAuth: (role: Role) => void;
 }
 
 const USERS: Record<string, { code: string; role: Role }> = {
-  'dietmar broda': { code: import.meta.env.VITE_CODE_OPERATOR ?? '', role: 'operator' },
+  'dietmar': { code: import.meta.env.VITE_CODE_OPERATOR ?? '', role: 'operator' },
   'michael moser': { code: import.meta.env.VITE_CODE_ANALYST  ?? '', role: 'analyst'  },
 };
 
@@ -233,6 +237,10 @@ export default function IntroScreen({ onAuth }: Props) {
   const [phase, setPhase] = useState<Phase>('idle');
   const [hexRot, setHexRot] = useState(0);
   const [panelVisible, setPanelVisible] = useState(false);
+  const [offerRegister, setOfferRegister] = useState<{ role: Role; userName: string } | null>(null);
+  const [passkeyBusy, setPasskeyBusy] = useState(false);
+  const passkeyAttempted = useRef(false);
+  const hasStoredPasskey = isPasskeySupported() && getStoredPasskey() !== null;
   const flashLevelRef = useRef(0);
   const flashActive   = useRef(true);
   const logoRef       = useRef<HTMLDivElement>(null);
@@ -352,13 +360,7 @@ export default function IntroScreen({ onAuth }: Props) {
 
   const canSubmit = name.trim().length > 0 && code.trim().length > 0 && phase === 'idle';
 
-  const handleSubmit = () => {
-    if (!canSubmit) return;
-    const user = USERS[name.trim().toLowerCase()];
-    if (!user || user.code !== code.trim().toUpperCase()) {
-      setError('Unbekannter Nutzer oder falscher Code');
-      return;
-    }
+  const runSuccessAnimation = (role: Role) => {
     setError(null);
     setPhase('confirming');
     [1, 2, 3, 4].forEach((i) => {
@@ -366,7 +368,65 @@ export default function IntroScreen({ onAuth }: Props) {
     });
     const spinEnd = 620 + 4 * 180;
     setTimeout(() => setPhase('fading'), spinEnd);
-    setTimeout(() => onAuth(user.role), spinEnd + 520);
+    setTimeout(() => onAuth(role), spinEnd + 520);
+  };
+
+  const handleSubmit = () => {
+    if (!canSubmit) return;
+    const userKey = name.trim().toLowerCase();
+    const user = USERS[userKey];
+    if (!user || user.code !== code.trim().toUpperCase()) {
+      setError('Unbekannter Nutzer oder falscher Code');
+      return;
+    }
+    if (isPasskeySupported() && getStoredPasskey() === null) {
+      setError(null);
+      setOfferRegister({ role: user.role, userName: userKey });
+      return;
+    }
+    runSuccessAnimation(user.role);
+  };
+
+  // Auto-Passkey-Versuch sobald das Panel geöffnet wird (nur wenn registriert)
+  useEffect(() => {
+    if (!panelVisible || passkeyAttempted.current) return;
+    if (!hasStoredPasskey) return;
+    passkeyAttempted.current = true;
+    setPasskeyBusy(true);
+    tryPasskeyLogin().then((role) => {
+      setPasskeyBusy(false);
+      if (role) runSuccessAnimation(role);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [panelVisible]);
+
+  const handleRegisterAndEnter = async () => {
+    if (!offerRegister) return;
+    setPasskeyBusy(true);
+    const ok = await registerPasskey(offerRegister.role, offerRegister.userName);
+    setPasskeyBusy(false);
+    if (!ok) {
+      setError('Touch ID nicht eingerichtet — Login dennoch erfolgreich');
+    }
+    const role = offerRegister.role;
+    setOfferRegister(null);
+    runSuccessAnimation(role);
+  };
+
+  const handleSkipRegister = () => {
+    if (!offerRegister) return;
+    const role = offerRegister.role;
+    setOfferRegister(null);
+    runSuccessAnimation(role);
+  };
+
+  const handleRetryPasskey = () => {
+    if (!hasStoredPasskey) return;
+    setPasskeyBusy(true);
+    tryPasskeyLogin().then((role) => {
+      setPasskeyBusy(false);
+      if (role) runSuccessAnimation(role);
+    });
   };
 
   const inputStyle: React.CSSProperties = {
@@ -473,52 +533,130 @@ export default function IntroScreen({ onAuth }: Props) {
           Zugang — SCIM3 V0.2
         </div>
 
-        <input
-          placeholder="Name"
-          value={name}
-          onChange={(e) => { setName(e.target.value); setError(null); }}
-          onKeyDown={(e) => e.key === 'Enter' && canSubmit && handleSubmit()}
-          autoComplete="off"
-          className="scim-input"
-          style={inputStyle}
-        />
-        <input
-          type="password"
-          placeholder="Code"
-          value={code}
-          onChange={(e) => { setCode(e.target.value); setError(null); }}
-          onKeyDown={(e) => e.key === 'Enter' && canSubmit && handleSubmit()}
-          autoComplete="off"
-          className="scim-input"
-          style={{ ...inputStyle, marginBottom: error ? 8 : 18 }}
-        />
+        {offerRegister ? (
+          <>
+            <div style={{
+              fontSize: 12, color: '#e8e6ff', marginBottom: 18, lineHeight: 1.5,
+              fontFamily: 'system-ui, sans-serif',
+            }}>
+              Touch ID auf diesem Gerät einrichten? Beim nächsten Besuch genügt
+              dann der Fingerabdruck.
+            </div>
+            {error && (
+              <div style={{
+                fontSize: 11, color: 'rgba(245,158,11,0.85)', marginBottom: 14,
+                textAlign: 'center', fontFamily: 'system-ui',
+              }}>
+                {error}
+              </div>
+            )}
+            <button
+              onClick={handleRegisterAndEnter}
+              disabled={passkeyBusy}
+              style={{
+                width: '100%', padding: '10px 0', fontSize: 13, fontWeight: 500,
+                background: 'rgba(65,50,195,0.88)', color: '#e8e6ff',
+                border: '1px solid rgba(65,50,195,0.70)',
+                borderRadius: 5, cursor: passkeyBusy ? 'wait' : 'pointer',
+                fontFamily: 'system-ui, sans-serif', letterSpacing: '0.06em',
+                marginBottom: 8,
+              }}
+            >
+              Touch ID einrichten & eintreten
+            </button>
+            <button
+              onClick={handleSkipRegister}
+              disabled={passkeyBusy}
+              style={{
+                width: '100%', padding: '8px 0', fontSize: 12,
+                background: 'transparent', color: 'rgba(150,140,255,0.65)',
+                border: '1px solid rgba(65,50,195,0.20)', borderRadius: 5,
+                cursor: passkeyBusy ? 'wait' : 'pointer',
+                fontFamily: 'system-ui, sans-serif',
+              }}
+            >
+              Überspringen
+            </button>
+          </>
+        ) : (
+          <>
+            <input
+              placeholder="Name"
+              value={name}
+              onChange={(e) => { setName(e.target.value); setError(null); }}
+              onKeyDown={(e) => e.key === 'Enter' && canSubmit && handleSubmit()}
+              autoComplete="off"
+              className="scim-input"
+              style={inputStyle}
+            />
+            <input
+              type="password"
+              placeholder="Code"
+              value={code}
+              onChange={(e) => { setCode(e.target.value); setError(null); }}
+              onKeyDown={(e) => e.key === 'Enter' && canSubmit && handleSubmit()}
+              autoComplete="off"
+              className="scim-input"
+              style={{ ...inputStyle, marginBottom: error ? 8 : 18 }}
+            />
 
-        {error && (
-          <div style={{
-            fontSize: 11, color: 'rgba(245,158,11,0.85)', marginBottom: 14,
-            textAlign: 'center', fontFamily: 'system-ui',
-          }}>
-            {error}
-          </div>
+            {error && (
+              <div style={{
+                fontSize: 11, color: 'rgba(245,158,11,0.85)', marginBottom: 14,
+                textAlign: 'center', fontFamily: 'system-ui',
+              }}>
+                {error}
+              </div>
+            )}
+
+            <button
+              onClick={handleSubmit}
+              disabled={!canSubmit}
+              style={{
+                width: '100%', padding: '10px 0', fontSize: 13, fontWeight: 500,
+                background: canSubmit ? 'rgba(65,50,195,0.88)' : 'rgba(65,50,195,0.10)',
+                color: canSubmit ? '#e8e6ff' : 'rgba(150,140,255,0.25)',
+                border: `1px solid ${canSubmit ? 'rgba(65,50,195,0.70)' : 'rgba(65,50,195,0.14)'}`,
+                borderRadius: 5,
+                cursor: canSubmit ? 'pointer' : 'default',
+                transition: 'background 0.18s, color 0.18s, border-color 0.18s',
+                fontFamily: 'system-ui, sans-serif',
+                letterSpacing: '0.06em',
+              }}
+            >
+              Eintreten
+            </button>
+
+            {hasStoredPasskey && (
+              <button
+                onClick={handleRetryPasskey}
+                disabled={passkeyBusy}
+                style={{
+                  width: '100%', padding: '8px 0', marginTop: 10, fontSize: 12,
+                  background: 'transparent', color: 'rgba(150,140,255,0.75)',
+                  border: '1px solid rgba(65,50,195,0.25)', borderRadius: 5,
+                  cursor: passkeyBusy ? 'wait' : 'pointer',
+                  fontFamily: 'system-ui, sans-serif',
+                }}
+              >
+                {passkeyBusy ? 'Warte auf Touch ID …' : '👆  Mit Touch ID anmelden'}
+              </button>
+            )}
+            {hasStoredPasskey && (
+              <button
+                onClick={() => { clearPasskey(); passkeyAttempted.current = true; location.reload(); }}
+                style={{
+                  width: '100%', padding: '4px 0', marginTop: 6, fontSize: 10,
+                  background: 'transparent', color: 'rgba(150,140,255,0.35)',
+                  border: 'none', cursor: 'pointer',
+                  fontFamily: 'system-ui, sans-serif',
+                }}
+              >
+                Passkey auf diesem Gerät vergessen
+              </button>
+            )}
+          </>
         )}
-
-        <button
-          onClick={handleSubmit}
-          disabled={!canSubmit}
-          style={{
-            width: '100%', padding: '10px 0', fontSize: 13, fontWeight: 500,
-            background: canSubmit ? 'rgba(65,50,195,0.88)' : 'rgba(65,50,195,0.10)',
-            color: canSubmit ? '#e8e6ff' : 'rgba(150,140,255,0.25)',
-            border: `1px solid ${canSubmit ? 'rgba(65,50,195,0.70)' : 'rgba(65,50,195,0.14)'}`,
-            borderRadius: 5,
-            cursor: canSubmit ? 'pointer' : 'default',
-            transition: 'background 0.18s, color 0.18s, border-color 0.18s',
-            fontFamily: 'system-ui, sans-serif',
-            letterSpacing: '0.06em',
-          }}
-        >
-          Eintreten
-        </button>
       </div>
 
       {/* Version tag */}

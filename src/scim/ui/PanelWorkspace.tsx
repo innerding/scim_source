@@ -13,6 +13,7 @@ import PanelValidation from './panels/PanelValidation';
 import PanelRaw from './panels/PanelRaw';
 import SystemPanel from './panels/SystemPanel';
 import AiInterfacePanel from './panels/AiInterfacePanel';
+import { useRole } from './RoleContext';
 import V01PackagesPanel from './panels/V01PackagesPanel';
 import V02RegionDetailPanel from './panels/V02RegionDetailPanel';
 import V03ActiveMonitorPanel from './panels/V03ActiveMonitorPanel';
@@ -113,10 +114,12 @@ function PanelContent({ activeId, activeTab, result }: {
   activeTab: TabId;
   result: ScimPipelineResult;
 }) {
+  const role = useRole();
   if (activeId === SYSTEM_DESCRIPTOR.id) {
     return <SystemPanel activeTab={activeTab} result={result} />;
   }
   if (activeId === AI_INTERFACE_DESCRIPTOR.id) {
+    if (role !== 'operator') return null;
     return <AiInterfacePanel activeTab={activeTab} />;
   }
 

@@ -3,7 +3,7 @@ import type {
   RegioContentState, RegionalParameters, RegioPoi,
   RegionalRestriction, FallbackRoutePolicy, RouteExceedanceBehavior,
 } from '../../regio-content/regioContent.types';
-import { mockRegioContentState } from '../../regio-content/regioContent.mock';
+import { grunbergRegioContentState } from '../../regio-content/regioContent.grunberg';
 
 interface Props {
   state?: RegioContentState;
@@ -159,7 +159,7 @@ type EditableParams = Pick<RegionalParameters,
 > & { smoothing_strength: number };
 
 export default function P02RegioContentForm({ state }: Props) {
-  const base = state ?? mockRegioContentState;
+  const base = state ?? grunbergRegioContentState;
   const p = base.regional_parameters;
 
   const [params, setParams] = useState<EditableParams>({
