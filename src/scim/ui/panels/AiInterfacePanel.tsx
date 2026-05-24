@@ -123,13 +123,6 @@ const SEED_ANNOTATIONS: Annotation[] = [
     date: '2026-05-24',
   },
   {
-    id: 'ann_021',
-    category: 'business_context',
-    label: 'Diesenpark als stille Herkunftsmarke',
-    content: 'Diesenpark bezeichnet die Herstellerfirma — nicht die App, nicht die Plattform. Die App trägt den Regionsnamen (Salzkammergut). Diesenpark erscheint ausschließlich als "powered by diesenpark.com" rechts unten — dezent, nicht navigierbar. Endnutzer sehen keine Diesenpark-Marke im eigentlichen Sinne. Diese Trennung ist bewusst: Regionsidentität steht im Vordergrund.',
-    date: '2026-05-24',
-  },
-  {
     id: 'ann_022',
     category: 'next_intent',
     label: 'SKG-App: Geolocation noch offen',
