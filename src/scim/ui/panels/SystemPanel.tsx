@@ -355,7 +355,7 @@ function LeistungsblattTab({ result }: { result: ScimPipelineResult }) {
         fontSize: 10, color: '#a0aec0', fontFamily: 'monospace',
         display: 'flex', justifyContent: 'space-between',
       }}>
-        <span>SCIM3 v0.2 · Sensus Core Integration Model · Dietmar Broda</span>
+        <span>SCIM3 v0.2 · Sensus Core Integration Model 3 · Dietmar Broda</span>
         <span>{new Date().toLocaleDateString('de-AT', { year: 'numeric', month: 'long' })}</span>
       </div>
 
