@@ -117,7 +117,7 @@ function PanelContent({ activeId, activeTab, result }: {
     return <SystemPanel activeTab={activeTab} result={result} />;
   }
   if (activeId === AI_INTERFACE_DESCRIPTOR.id) {
-    return <AiInterfacePanel activeTab={activeTab} result={result} />;
+    return <AiInterfacePanel activeTab={activeTab} />;
   }
 
   const runtimeModule = RUNTIME_BUILDER_REGISTRY.find((m) => m.id === activeId);

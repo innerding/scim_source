@@ -1,11 +1,9 @@
 import { useState } from 'react';
 import type { TabId } from '../panelRegistry';
-import type { ScimPipelineResult } from '../../pipeline/scimPipeline.types';
 import { PANEL_REGISTRY } from '../panelRegistry';
 
 interface Props {
   activeTab: TabId;
-  result: ScimPipelineResult;
 }
 
 type AnnotationCategory = 'vocabulary' | 'adr' | 'business_context' | 'invariant' | 'next_intent';
@@ -286,21 +284,20 @@ function AnnotationsTab() {
   );
 }
 
-function BriefingTab({ result }: { result: ScimPipelineResult }) {
+function BriefingTab() {
   const panels = PANEL_REGISTRY.map(p => `${p.id}: ${p.label} [${p.inputMode}]`).join('\n');
 
-  const vocabEntries = SEED_ANNOTATIONS.filter(a => a.category === 'vocabulary');
-  const adrEntries = SEED_ANNOTATIONS.filter(a => a.category === 'adr');
+  const vocabEntries     = SEED_ANNOTATIONS.filter(a => a.category === 'vocabulary');
+  const adrEntries       = SEED_ANNOTATIONS.filter(a => a.category === 'adr');
   const invariantEntries = SEED_ANNOTATIONS.filter(a => a.category === 'invariant');
-  const nextEntries = SEED_ANNOTATIONS.filter(a => a.category === 'next_intent');
-  const contextEntries = SEED_ANNOTATIONS.filter(a => a.category === 'business_context');
+  const nextEntries      = SEED_ANNOTATIONS.filter(a => a.category === 'next_intent');
+  const contextEntries   = SEED_ANNOTATIONS.filter(a => a.category === 'business_context');
 
   const briefing = `# SCIM Session Briefing
 Generiert: ${new Date().toISOString()}
 
 ## System-Übersicht
 Engine: SCIM v0.2 | Reifegrad: SML-2 (Functional Core)
-Pipeline: ${result.steps.length} Schritte | Status: ${result.success ? 'OK' : 'FEHLER'}
 
 ## Panels
 ${panels}
@@ -360,12 +357,61 @@ ${nextEntries.map(a => `→ ${a.label}${a.related_panel ? ` [${a.related_panel}]
   );
 }
 
-export default function AiInterfacePanel({ activeTab, result }: Props) {
+function NoteTab({ tabKey }: { tabKey: string }) {
+  const storageKey = `scim_note_${tabKey}`;
+  const [note, setNote]   = useState(() => localStorage.getItem(storageKey) ?? '');
+  const [saved, setSaved] = useState(false);
+
+  const handleSave = () => {
+    localStorage.setItem(storageKey, note);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  return (
+    <div style={{ fontFamily: 'system-ui, sans-serif' }}>
+      <div style={{
+        background: '#f7fafc', border: '1px solid #e2e8f0',
+        borderRadius: 6, padding: '10px 14px', fontSize: 12, color: '#718096',
+        marginBottom: 14,
+      }}>
+        Dieser Tab ist für Notizen reserviert — kein Pipeline-Output.
+      </div>
+      <textarea
+        value={note}
+        onChange={e => setNote(e.target.value)}
+        placeholder="Notiz eingeben…"
+        style={{
+          width: '100%', minHeight: 180, resize: 'vertical',
+          padding: '10px 12px', fontSize: 12, fontFamily: 'system-ui, sans-serif',
+          border: '1px solid #e2e8f0', borderRadius: 6, background: '#fff',
+          color: '#2d3748', outline: 'none', boxSizing: 'border-box',
+          lineHeight: 1.6,
+        }}
+      />
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
+        <button
+          onClick={handleSave}
+          style={{
+            padding: '7px 18px', fontSize: 12, fontWeight: 600,
+            background: saved ? '#38a169' : '#2d3748',
+            color: '#fff', border: 'none', borderRadius: 5, cursor: 'pointer',
+            transition: 'background 0.15s',
+          }}
+        >
+          {saved ? '✓ Gespeichert' : 'Speichern'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export default function AiInterfacePanel({ activeTab }: Props) {
   switch (activeTab) {
     case 'input':      return <AnnotationsTab />;
-    case 'result':     return <BriefingTab result={result} />;
-    case 'validation': return <BriefingTab result={result} />;
-    case 'raw':        return <BriefingTab result={result} />;
+    case 'result':     return <BriefingTab />;
+    case 'validation': return <NoteTab tabKey="validation" />;
+    case 'raw':        return <NoteTab tabKey="raw" />;
     default:           return null;
   }
 }
