@@ -274,6 +274,28 @@ const SEED_ANNOTATIONS: Annotation[] = [
     content: 'Weil keine Representation zwingend eine Region braucht, muss das region-Feld in ScimBundle und SensusCorePackage optional werden: region?: { id: string; name: string }. Aktuell ist region Pflichtfeld — das führt zu Problemen sobald Representations ohne Region exportiert werden. Betroffene Stellen: (1) ScimBundle-Schema: region → region? (2) SensusCorePackage-Typ: region → region? (3) AppHeader: pkg.region.name schlägt fehl wenn region undefined — Fallback auf pkg.representation.name nötig. (4) REPRESENTATION_TO_REGION Lookup-Tabelle in scimBundle.ts ist konzeptuell falsch — eine Representation kennt ihre Region nicht von sich aus, die Region wird von einer Authority zugewiesen. Lookup ersatzlos entfernen sobald region optional ist. (5) ann_029-ADR: region als Pflichtfeld-Annahme ist historisch. Technische Schuld — kein Breaking Change, aber vor dem nächsten echten Paket-Export zu klären.',
     date: '2026-05-24',
   },
+
+  // ── 2026-05-24: Bundle-Architektur ───────────────────────────────────────────
+
+  {
+    id: 'ann_034',
+    category: 'adr',
+    label: 'Bundle-Architektur: App-Shell + Representation + ColourMesh',
+    content: `Ein Bundle ist das vollständige Auslieferungspaket für Erstnutzer. Es besteht aus drei unabhängig versionierten Teilen:
+
+APP-SHELL (einmal installiert, selten aktualisiert): React/Vite PWA, UI, State Machine, BCK/BAK-Kernel, Service Worker, Manifest. Leaflet als Bibliothek ist Teil der App-Shell.
+
+REPRESENTATION (stabil, nur bei SCIM-Neuaufbau): (1) Leaflet-Konfiguration — Tile-Provider-URL, Attribution, Zoom-Grenzen; definiert welche OSM-Tiles geladen werden. (2) Viewport — center, zoom, bbox. (3) POIs — poi_id, name, category, coordinate, Pixelbilder, Beschreibung, Metadaten — der schwergewichtige Teil. (4) Systemrouten — vorberechnete Routen: Geometrie, Name, Dauer, enthaltene POIs — Basis für nutzerseitige Veränderung.
+
+COLOURMESH (alle 5 Minuten, erzeugt aus Telco-Auslastungsdaten): (1) Kanten — edge_id, from_node_id, to_node_id, Geometrie LineString, score_class, color, weight, opacity, decision, visible. (2) POI-Anker — poi_id, node_id, coordinate — verknüpft Representation-POIs mit konkreten Mesh-Knoten für clientseitiges Routing. (3) Referenz — representation_id. (4) Privacy — verified, raw_signals_excluded, device_ids_excluded. (5) Timing — generated_at, expires_at.
+
+OSM-TILES (vom Tile-Server, nicht im Bundle): Leaflet lädt sie zur Laufzeit auf Basis der Leaflet-Konfiguration der Representation. Cache liegt im Browser/Service Worker.
+
+TELCO-LOAD ist keine App-Einheit sondern die SCIM-interne Datenquelle die alle 5 Minuten verarbeitet wird um den ColourMesh zu erzeugen.
+
+Ladereihenfolge: Representation zuerst (Karte + POIs), ColourMesh danach (Overlay). Bestandsnutzer erhalten nur den ColourMesh alle 5 Minuten; Representation nur bei Neuaufbau. Der ColourMesh trägt poi_anchors damit die App zur Laufzeit einen vollständigen Graphen aufbauen und clientseitiges Routing betreiben kann — Kernfeature.`,
+    date: '2026-05-24',
+  },
 ];
 
 function AnnotationsTab() {
