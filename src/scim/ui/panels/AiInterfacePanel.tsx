@@ -133,7 +133,7 @@ const SEED_ANNOTATIONS: Annotation[] = [
     id: 'ann_014',
     category: 'vocabulary',
     label: 'Representation',
-    content: 'Eine Representation ist das Ausgabepaket für eine spezifische Region — enthält bewertetes Wegnetz + POIs als signiertes JSON-Bundle. Jede App-Instanz ist an eine Region gebunden. Die erste Instanz ist Salzkammergut (SKG). "Representation" und "Paket" werden synonym verwendet; "Representation" betont den Bezug zur Region, "Paket" die technische Einheit.',
+    content: 'Eine Representation ist das deploybare Ausgabepaket für ein bestimmtes Gebiet — enthält bewertetes Wegnetz + POIs als signiertes JSON-Bundle. Die erste Instanz ist Salzkammergut (SKG / Grünberg). Eine Representation kann optional einer Region zugewiesen werden, braucht aber keine. "Representation" und "Paket" werden synonym verwendet; "Representation" betont die inhaltliche Darstellung, "Paket" die technische Einheit.',
     date: '2026-05-24',
   },
   {
@@ -146,8 +146,8 @@ const SEED_ANNOTATIONS: Annotation[] = [
   {
     id: 'ann_016',
     category: 'adr',
-    label: 'App ist eine Region-Instanz, kein generischer Container',
-    content: 'Kontext: Ein generischer App-Name ("Path Works") wurde erwogen. Entscheidung: Jede App-Instanz trägt den Regionsnamen — erste Instanz: Salzkammergut (SKG). App-Name, Icon und Branding sind regionsspezifisch. Die Marke "Diesenpark" (Herstellerfirma) erscheint ausschließlich als dezenter Herkunftshinweis ("powered by diesenpark.com") — keine sichtbare Marke für Endnutzer. Konsequenz: Nutzer identifizieren sich mit der Region, nicht mit einer Plattform.',
+    label: 'App trägt Representationsnamen — regionsspezifisches Branding',
+    content: 'Kontext: Ein generischer App-Name ("Path Works") wurde erwogen. Entscheidung: Jede App-Instanz trägt den Namen der Representation bzw. des Gebiets — erste Instanz: Salzkammergut (SKG). App-Name, Icon und Branding sind gebietsspezifisch. Die Marke "Diesenpark" (Herstellerfirma) erscheint ausschließlich als dezenter Herkunftshinweis ("powered by diesenpark.com") — keine sichtbare Marke für Endnutzer. Konsequenz: Nutzer identifizieren sich mit dem Gebiet, nicht mit einer Plattform.',
     date: '2026-05-24',
   },
   {
@@ -197,7 +197,7 @@ const SEED_ANNOTATIONS: Annotation[] = [
     id: 'ann_023',
     category: 'adr',
     label: 'Multi-Representation: Region-Index als Datenbasis',
-    content: 'Kontext: Jede Region hat mehrere Representations (Pakete). Entscheidung: Ein Region-Index (JSON) listet alle verfügbaren Representations mit label, pkg_url, available, version. Einstieg via ?region=URL (lädt Index) oder ?pkg=URL (Direkteinstieg, kein Index). QR-Code und Link können beides tragen. Konsequenz: Der Index entkoppelt die App von fixen Paket-URLs — neue Representations erscheinen automatisch.',
+    content: 'Kontext: Eine Region (als organisatorischer Zusammenschluss) oder ein Gebiet kann mehrere Representations anbieten. Entscheidung: Ein Region-Index (JSON) listet alle verfügbaren Representations mit label, pkg_url, available, version. Einstieg via ?region=URL (lädt Index) oder ?pkg=URL (Direkteinstieg, kein Index). QR-Code und Link können beides tragen. Konsequenz: Der Index entkoppelt die App von fixen Paket-URLs — neue Representations erscheinen automatisch.',
     related_panel: 'P03',
     date: '2026-05-24',
   },
@@ -234,20 +234,13 @@ const SEED_ANNOTATIONS: Annotation[] = [
     date: '2026-05-24',
   },
 
-  // ── 2026-05-24: Paket-Infrastruktur, Region/Representation-Hierarchie ────────
+  // ── 2026-05-24: Paket-Infrastruktur ──────────────────────────────────────────
 
-  {
-    id: 'ann_028',
-    category: 'vocabulary',
-    label: 'Region / Representation — Hierarchie',
-    content: 'Region = übergeordnete geografische Einheit (SKG/Salzkammergut, Böhmerwald, Salzburg). Representation = spezifisches Paket innerhalb einer Region (Grünberg → SKG, Lichtenberg → Böhmerwald, Gaisberg → Salzburg). Aktuell hat jede Region genau eine Representation. Die Erweiterung auf mehrere Representations pro Region ist vorgesehen aber noch nicht gebaut. "Paket" und "Representation" werden in der Pipeline synonym verwendet — "Representation" betont den Regionsbezug.',
-    date: '2026-05-24',
-  },
   {
     id: 'ann_029',
     category: 'adr',
-    label: 'ScimBundle: region + representation als getrennte Felder',
-    content: 'Kontext: region.id war zweideutig — es war unklar ob es die übergeordnete Region (SKG) oder die Representation (Grünberg) bezeichnete. Entscheidung: ScimBundle trägt jetzt zwei explizite Felder: region { id, name } = übergeordnete Region; representation { id, name, bbox } = spezifisches Paket. bbox gehört zur Representation (räumliche Ausdehnung des Pakets), nicht zur Region. SensusCorePackage (sensus-core-runtime) wurde parallel angepasst: representation_id: string → representation { id, name, bbox }. Lookup-Tabelle in scimBundle.ts leitet übergeordnete Region aus Representation ab, bis RegioRegion ein parent_region_id-Feld bekommt.',
+    label: 'ScimBundle: region und representation als getrennte Felder',
+    content: 'Kontext: region.id war zweideutig — unklar ob übergeordnete Region (SKG) oder Representation (Grünberg). Entscheidung: ScimBundle trägt zwei explizite Felder: region?: { id, name } = optionaler organisatorischer Zusammenschluss; representation { id, name, bbox } = das spezifische Paket. bbox gehört zur Representation (räumliche Ausdehnung), nicht zur Region. region ist optional — Representations ohne Region sind gültig. SensusCorePackage parallel angepasst: representation_id: string → representation { id, name, bbox }. Code-Implikationen: siehe ann_033.',
     date: '2026-05-24',
   },
   {
@@ -262,6 +255,23 @@ const SEED_ANNOTATIONS: Annotation[] = [
     category: 'next_intent',
     label: 'Offene Punkte — Stand 2026-05-24',
     content: 'Priorität 1 — sensus-core-runtime Schnittstellen-Lücken (ann_010): (A) route_comfort_metrics für Slider-Load nutzen statt Simulation. (B) public_warnings anzeigen. (D) expires_at prüfen + Paket neu laden. Priorität 2 — SKG-App Umbau (ann_022): IntroScreen entfernen, SKG-Startseite, ?pkg= Handling, localStorage, PWA Manifest. Priorität 3 — Multi-Representation Phase A→E (ann_026): Region-Index, packages[]-State, Header-Dropdown. Organisatorisch offen: Feratel/TVB API-Zugang. Noch nicht gebaut: Gaisberg-Inhalte (Salzburg-Representation hat noch keine echten Paket-Daten). Global-Index CDN-URL (ann_027): Mock läuft, CDN-URL noch nicht eingetragen.',
+    date: '2026-05-24',
+  },
+
+  // ── 2026-05-24: Region-Definition (überarbeitete Fassung) ─────────────────
+
+  {
+    id: 'ann_032',
+    category: 'vocabulary',
+    label: 'Region (verbindliche Definition)',
+    content: 'Eine Region ist ein optionaler organisatorischer Zusammenschluss mehrerer Representations — kein geografischer Parent. Metapher: der "Schweif" einer Representation, über den mehrere Representations zusammengeknotet werden. Keine Representation braucht zwingend eine Region. Eine Authority (z.B. ein Tourismusverband) entscheidet nach dem Bau einer Representation, ob sie diese unter ihrer Region führen möchte. Representations können saisonal auf Ghost gesetzt werden. Eine Authority muss nicht auf regionalem Boden liegen — sie könnte theoretisch von überall führen. Region ist also ein Gruppenname / Ordnungsprinzip, keine geografische Hierarchieebene. Ersetzt die historische Definition in ann_028.',
+    date: '2026-05-24',
+  },
+  {
+    id: 'ann_033',
+    category: 'adr',
+    label: 'Region: Code-Implikationen der neuen Definition',
+    content: 'Weil keine Representation zwingend eine Region braucht, muss das region-Feld in ScimBundle und SensusCorePackage optional werden: region?: { id: string; name: string }. Aktuell ist region Pflichtfeld — das führt zu Problemen sobald Representations ohne Region exportiert werden. Betroffene Stellen: (1) ScimBundle-Schema: region → region? (2) SensusCorePackage-Typ: region → region? (3) AppHeader: pkg.region.name schlägt fehl wenn region undefined — Fallback auf pkg.representation.name nötig. (4) REPRESENTATION_TO_REGION Lookup-Tabelle in scimBundle.ts ist konzeptuell falsch — eine Representation kennt ihre Region nicht von sich aus, die Region wird von einer Authority zugewiesen. Lookup ersatzlos entfernen sobald region optional ist. (5) ann_029-ADR: region als Pflichtfeld-Annahme ist historisch. Technische Schuld — kein Breaking Change, aber vor dem nächsten echten Paket-Export zu klären.',
     date: '2026-05-24',
   },
 ];
