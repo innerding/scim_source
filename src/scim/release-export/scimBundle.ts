@@ -5,7 +5,17 @@ import type { PoiModelState } from '../poi-output/poiOutput.types';
 import type { BasisLayerState } from '../basis-layer/basisLayer.types';
 import type { ReleaseExportState } from './releaseExport.types';
 import type { RegioContentState } from '../regio-content/regioContent.types';
-import type { ScimBundle, ScimRouteFeature, ScimPoiFeature } from './scimBundle.types';
+import type { ScimBundle, ScimRouteFeature, ScimPoiFeature, ScimBundleRegion } from './scimBundle.types';
+
+// Statische Zuordnung Representation → übergeordnete Region.
+// Wird durch explizite parent_region_id in RegioRegion ersetzt sobald das Datenmodell es trägt.
+const REPRESENTATION_TO_REGION: Record<string, ScimBundleRegion> = {
+  gruenberg:   { id: 'skg',        name: 'Salzkammergut' },
+  grünberg:    { id: 'skg',        name: 'Salzkammergut' },
+  lichtenberg: { id: 'böhmerwald', name: 'Böhmerwald' },
+  gaisberg:    { id: 'salzburg',   name: 'Salzburg' },
+  salzburg:    { id: 'salzburg',   name: 'Salzburg' },
+};
 
 /**
  * Assembles the full pipeline context into a self-contained Ziel-App bundle.
@@ -78,13 +88,18 @@ export function generateScimBundle(
       return acc;
     }, []);
 
-  // ── Region + Viewport ────────────────────────────────────────────────────────
-  const bbox = basisLayer?.viewport.bbox ?? [0, 0, 0, 0];
+  // ── Region + Representation + Viewport ───────────────────────────────────────
+  const bbox   = basisLayer?.viewport.bbox ?? [0, 0, 0, 0];
   const center = basisLayer?.viewport.center.coordinates ?? [0, 0];
   const zoom   = basisLayer?.viewport.default_zoom ?? 13;
 
-  const regionId   = regioContent?.region?.region_id ?? 'unknown';
-  const regionName = regioContent?.region?.region_name ?? regionId;
+  const representationId   = regioContent?.region?.region_id ?? 'unknown';
+  const representationName = regioContent?.region?.region_name ?? representationId;
+
+  const lookupKey = representationId.toLowerCase().replace(/[^a-z]/g, '');
+  const parentRegion =
+    Object.entries(REPRESENTATION_TO_REGION).find(([k]) => lookupKey.includes(k))?.[1]
+    ?? { id: representationId, name: representationName };
 
   return {
     schema:       'scim3_bundle_v1',
@@ -92,9 +107,10 @@ export function generateScimBundle(
     release_id:   release.release_id,
     generated_at: release.released_at,
     expires_at:   release.expires_at,
-    region: {
-      id:   regionId,
-      name: regionName,
+    region: parentRegion,
+    representation: {
+      id:   representationId,
+      name: representationName,
       bbox: bbox as [number, number, number, number],
     },
     viewport: {
@@ -119,7 +135,7 @@ export function generateScimBundle(
 
 /** Triggers a browser download of the bundle as a .json file. */
 export function downloadScimBundle(bundle: ScimBundle): void {
-  const filename = `scim3_${bundle.region.id}_${bundle.package_id}.json`;
+  const filename = `scim3_${bundle.representation.id}_${bundle.package_id}.json`;
   const json     = JSON.stringify(bundle, null, 2);
   const blob     = new Blob([json], { type: 'application/json' });
   const url      = URL.createObjectURL(blob);

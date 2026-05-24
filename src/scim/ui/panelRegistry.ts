@@ -332,21 +332,21 @@ export interface VersionenDescriptor {
 
 export const VERSIONEN_REGISTRY: VersionenDescriptor[] = [
   {
-    kind: 'versionen', id: 'V01', icon: '📋',
+    kind: 'versionen', id: 'V01', icon: '⬡',
     label: 'Pakete',
-    shortDescription: 'Veröffentlichte Pakete, Status und Ablauf',
+    shortDescription: 'Alle veröffentlichten Pakete — Status, Version, Region',
     tabs: [{ id: 'input', label: 'Übersicht', icon: 'ℹ' }],
   },
   {
-    kind: 'versionen', id: 'V02', icon: '⊞',
-    label: 'Runtime-Versionen',
-    shortDescription: 'Runtime-Builds und Deploy-Status',
+    kind: 'versionen', id: 'V02', icon: '◫',
+    label: 'Region-Detail',
+    shortDescription: 'Versionshistorie und Aktivierung je Region',
     tabs: [{ id: 'input', label: 'Übersicht', icon: 'ℹ' }],
   },
   {
-    kind: 'versionen', id: 'V03', icon: '⊟',
-    label: 'Kompatibilität',
-    shortDescription: 'Paket- und Runtime-Kompatibilitätsmatrix',
+    kind: 'versionen', id: 'V03', icon: '◈',
+    label: 'Aktiv-Monitor',
+    shortDescription: 'Aktive Pakete je Region — CDN-URL und QR-Code',
     tabs: [{ id: 'input', label: 'Übersicht', icon: 'ℹ' }],
   },
 ];

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="kbc-s3-preview-iconset" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+  <g>
+    <rect x="20.776" y="15.589" width="2.78" height="2.78" transform="translate(-2.534 3.958) rotate(-9.655)" fill="#ffe2b0" stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width=".875"/>
+    <path d="M4,21.393c0,1.131.917,2.048,2.048,2.048s2.048-.917,2.048-2.048-.917-2.048-2.048-2.048-2.048.917-2.048,2.048M13.218,21.393c0,1.131.917,2.048,2.048,2.048s2.048-.917,2.048-2.048-.917-2.048-2.048-2.048-2.048.917-2.048,2.048M8.097,21.393h5.121M4,21.393v-6.145h13.314v6.145M6.048,15.248v-3.073h3.804M27.22,18.805l-6.892.978-1.438-10.14M17.314,17.296h2.26" fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.458"/>
+    <rect x="25.007" y="15.073" width="2.78" height="2.78" transform="translate(-2.387 4.66) rotate(-9.655)" fill="#ffe2b0" stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width=".875"/>
+    <rect x="21.69" y="12.252" width="2.78" height="2.78" transform="translate(1.197 -1.848) rotate(4.708)" fill="#ffe2b0" stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width=".875"/>
+    <path d="M10.145,15.248v-6.145h4.097l3.073,6.145" fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.167"/>
+    <rect x="20.062" y="8.668" width="2.78" height="2.78" transform="translate(43.658 18.322) rotate(175.292)" fill="#ffe2b0" stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width=".875"/>
+  </g>
+  <path d="M0,0h32v32H0V0Z" fill="none"/>
+</svg>

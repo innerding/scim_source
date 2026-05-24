@@ -2,8 +2,13 @@ import type { RouteScoreClass } from '../route-model/routeModel.types';
 import type { PoiLoadClass } from '../poi-output/poiOutput.types';
 
 export interface ScimBundleRegion {
-  id: string;
-  name: string;
+  id: string;   // top-level geographic region, e.g. "skg"
+  name: string; // e.g. "Salzkammergut"
+}
+
+export interface ScimBundleRepresentation {
+  id: string;   // specific representation within the region, e.g. "gruenberg"
+  name: string; // e.g. "Grünberg"
   bbox: [number, number, number, number]; // [minLon, minLat, maxLon, maxLat]
 }
 
@@ -58,6 +63,7 @@ export interface ScimBundle {
   generated_at: string;
   expires_at?: string;
   region: ScimBundleRegion;
+  representation: ScimBundleRepresentation;
   viewport: ScimBundleViewport;
   routes: {
     type: 'FeatureCollection';

@@ -13,6 +13,9 @@ import PanelValidation from './panels/PanelValidation';
 import PanelRaw from './panels/PanelRaw';
 import SystemPanel from './panels/SystemPanel';
 import AiInterfacePanel from './panels/AiInterfacePanel';
+import V01PackagesPanel from './panels/V01PackagesPanel';
+import V02RegionDetailPanel from './panels/V02RegionDetailPanel';
+import V03ActiveMonitorPanel from './panels/V03ActiveMonitorPanel';
 
 interface Props {
   activeId: string;
@@ -121,6 +124,10 @@ function PanelContent({ activeId, activeTab, result }: {
   if (runtimeModule) {
     return <StubPanel id={runtimeModule.id} description={runtimeModule.shortDescription} />;
   }
+
+  if (activeId === 'V01') return <V01PackagesPanel />;
+  if (activeId === 'V02') return <V02RegionDetailPanel />;
+  if (activeId === 'V03') return <V03ActiveMonitorPanel />;
 
   const versionenEntry = VERSIONEN_REGISTRY.find((v) => v.id === activeId);
   if (versionenEntry) {

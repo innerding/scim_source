@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="kbc-s3-preview-iconset" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+  <rect width="32" height="32" fill="none"/>
+  <g>
+    <polyline points="16 26 20.444 26 26 13.778 26 10.444 22.667 6 20.444 6 23.778 10.444 8.222 10.444 11.556 6 9.333 6 6 10.444 6 13.778 11.556 26 16 26" fill="#ffeb33"/>
+    <path d="M10.444,19.333h12.222M10.444,23.778h11.111M6,12.667h20M16,26h4.444l5.556-12.222v-3.333l-3.333-4.444h-2.222l3.333,4.444h-15.556l3.333-4.444h-2.222l-3.333,4.444v3.333l5.556,12.222h4.444M16,12.667v4.444M16,19.333v4.444" fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

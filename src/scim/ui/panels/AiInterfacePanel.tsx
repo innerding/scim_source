@@ -233,6 +233,37 @@ const SEED_ANNOTATIONS: Annotation[] = [
     related_panel: 'P03',
     date: '2026-05-24',
   },
+
+  // ── 2026-05-24: Paket-Infrastruktur, Region/Representation-Hierarchie ────────
+
+  {
+    id: 'ann_028',
+    category: 'vocabulary',
+    label: 'Region / Representation — Hierarchie',
+    content: 'Region = übergeordnete geografische Einheit (SKG/Salzkammergut, Böhmerwald, Salzburg). Representation = spezifisches Paket innerhalb einer Region (Grünberg → SKG, Lichtenberg → Böhmerwald, Gaisberg → Salzburg). Aktuell hat jede Region genau eine Representation. Die Erweiterung auf mehrere Representations pro Region ist vorgesehen aber noch nicht gebaut. "Paket" und "Representation" werden in der Pipeline synonym verwendet — "Representation" betont den Regionsbezug.',
+    date: '2026-05-24',
+  },
+  {
+    id: 'ann_029',
+    category: 'adr',
+    label: 'ScimBundle: region + representation als getrennte Felder',
+    content: 'Kontext: region.id war zweideutig — es war unklar ob es die übergeordnete Region (SKG) oder die Representation (Grünberg) bezeichnete. Entscheidung: ScimBundle trägt jetzt zwei explizite Felder: region { id, name } = übergeordnete Region; representation { id, name, bbox } = spezifisches Paket. bbox gehört zur Representation (räumliche Ausdehnung des Pakets), nicht zur Region. SensusCorePackage (sensus-core-runtime) wurde parallel angepasst: representation_id: string → representation { id, name, bbox }. Lookup-Tabelle in scimBundle.ts leitet übergeordnete Region aus Representation ab, bis RegioRegion ein parent_region_id-Feld bekommt.',
+    date: '2026-05-24',
+  },
+  {
+    id: 'ann_030',
+    category: 'adr',
+    label: 'Paket-Infrastruktur: R2 + D1 + Worker',
+    content: 'Cloudflare R2 Bucket "diesenpark-packages", Custom Domain cdn.diesenpark.com. Cloudflare D1 Datenbank "scim3-packages-db" verwaltet Versionshistorie: packages-Tabelle mit region_id, representation_id, version, status (draft/active/archived), cdn_url, created_at, activated_at. Worker "scim3-package-worker" Endpoints: PUT /api/packages/upload (R2+D1), GET /api/packages (filter: region_id, representation_id, status), POST /api/packages/:id/activate, DELETE /api/packages/:id (archivieren), GET /api/packages/active/:region_id. SCIM-Konsole: V01 Pakete (Übersicht), V02 Region-Detail (Versionen je Region), V03 Aktiv-Monitor (CDN-URL + QR je Representation). VITE_WORKER_URL + VITE_UPLOAD_API_KEY als Env-Vars in .env.local.',
+    date: '2026-05-24',
+  },
+  {
+    id: 'ann_031',
+    category: 'next_intent',
+    label: 'Offene Punkte — Stand 2026-05-24',
+    content: 'Priorität 1 — sensus-core-runtime Schnittstellen-Lücken (ann_010): (A) route_comfort_metrics für Slider-Load nutzen statt Simulation. (B) public_warnings anzeigen. (D) expires_at prüfen + Paket neu laden. Priorität 2 — SKG-App Umbau (ann_022): IntroScreen entfernen, SKG-Startseite, ?pkg= Handling, localStorage, PWA Manifest. Priorität 3 — Multi-Representation Phase A→E (ann_026): Region-Index, packages[]-State, Header-Dropdown. Organisatorisch offen: Feratel/TVB API-Zugang. Noch nicht gebaut: Gaisberg-Inhalte (Salzburg-Representation hat noch keine echten Paket-Daten). Global-Index CDN-URL (ann_027): Mock läuft, CDN-URL noch nicht eingetragen.',
+    date: '2026-05-24',
+  },
 ];
 
 function AnnotationsTab() {

@@ -4,8 +4,7 @@ import type { ScimBundle } from './scimBundle.types';
 
 interface UploadResult {
   url: string;
-  id: string;
-  expires_at: string;
+  key: string;
 }
 
 type Phase = 'idle' | 'uploading' | 'published' | 'error';
@@ -13,18 +12,47 @@ type Phase = 'idle' | 'uploading' | 'published' | 'error';
 const WORKER_URL    = import.meta.env.VITE_WORKER_URL    as string | undefined;
 const UPLOAD_API_KEY = import.meta.env.VITE_UPLOAD_API_KEY as string | undefined;
 
+function derivePackageKey(bundle: ScimBundle): string {
+  return `${bundle.representation.id}_${bundle.package_id}`
+    .replace(/[^a-z0-9_-]/gi, '_')
+    .toLowerCase();
+}
+
 async function uploadBundle(bundle: ScimBundle): Promise<UploadResult> {
-  if (!WORKER_URL)    throw new Error('VITE_WORKER_URL nicht konfiguriert');
+  if (!WORKER_URL)     throw new Error('VITE_WORKER_URL nicht konfiguriert');
   if (!UPLOAD_API_KEY) throw new Error('VITE_UPLOAD_API_KEY nicht konfiguriert');
 
-  const res = await fetch(`${WORKER_URL}/bundle`, {
-    method: 'POST',
+  const key = derivePackageKey(bundle);
+  const body = {
+    ...bundle,
+    key,
+    region_id:         bundle.region.id,
+    representation_id: bundle.representation.id,
+  };
+  const res = await fetch(`${WORKER_URL}/api/packages/upload`, {
+    method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
       'X-Scim-Key':   UPLOAD_API_KEY,
     },
-    body: JSON.stringify(bundle),
+    body: JSON.stringify(body),
   });
+
+  if (res.status === 409) {
+    const retry = await fetch(`${WORKER_URL}/api/packages/upload?overwrite=true`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Scim-Key':   UPLOAD_API_KEY,
+      },
+      body: JSON.stringify(body),
+    });
+    if (!retry.ok) {
+      const msg = await retry.text().catch(() => retry.statusText);
+      throw new Error(`Worker ${retry.status}: ${msg}`);
+    }
+    return retry.json() as Promise<UploadResult>;
+  }
 
   if (!res.ok) {
     const msg = await res.text().catch(() => res.statusText);
@@ -81,7 +109,7 @@ export default function BundlePublisher({ bundle }: Props) {
     if (!qrDataUrl || !result) return;
     const a = document.createElement('a');
     a.href     = qrDataUrl;
-    a.download = `scim3_qr_${bundle.region.id}_${result.id.slice(0, 8)}.png`;
+    a.download = `scim3_qr_${result.key}.png`;
     a.click();
   };
 
@@ -198,7 +226,7 @@ export default function BundlePublisher({ bundle }: Props) {
             Ziel-App scannt diesen Code und lädt das Bundle direkt.
           </div>
           <div style={{ fontSize: 10, color: '#718096', fontFamily: 'monospace', marginBottom: 12 }}>
-            Gültig bis: {new Date(result!.expires_at).toLocaleDateString('de-AT')}
+            cdn.diesenpark.com · dauerhaft
           </div>
           <button
             onClick={handleQrDownload}
