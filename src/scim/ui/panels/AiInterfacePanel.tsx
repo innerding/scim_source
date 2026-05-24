@@ -125,20 +125,6 @@ const SEED_ANNOTATIONS: Annotation[] = [
     date: '2026-05-24',
   },
   {
-    id: 'ann_019',
-    category: 'adr',
-    label: 'localStorage: letzte Region persistieren',
-    content: 'Kontext: PWA-Nutzer und Bookmark-Rückkehrer öffnen die App ohne URL-Parameter. Entscheidung: Letzte geladene Paket-URL wird in localStorage gespeichert und bei erneutem Öffnen als Vorschlag angeboten. Konsequenz: Kein erneutes QR-Scannen für Stammnutzer. Datenschutz: localStorage ist gerätlokal, kein Server-Call.',
-    date: '2026-05-24',
-  },
-  {
-    id: 'ann_020',
-    category: 'adr',
-    label: 'PWA: installierbar ab sofort, Offline-Tiles später',
-    content: 'Kontext: Wanderapp muss am Homescreen installierbar sein; vollständige Offline-Fähigkeit ist langfristig nötig. Entscheidung: Service Worker macht die App installierbar (PWA-Manifest: Name = Salzkammergut, Icon = SKG-Logo). Install-Prompt erscheint nach erstem Paketladen — nicht beim ersten Öffnen (kein Kontext). Offline-Vollsupport (Leaflet-Tile-Cache, Paket-Cache) kommt in SML-4. Konsequenz: Nutzer können die App am Homescreen installieren; Tile-Offline ist noch nicht verfügbar.',
-    date: '2026-05-24',
-  },
-  {
     id: 'ann_021',
     category: 'business_context',
     label: 'Diesenpark als stille Herkunftsmarke',
@@ -148,8 +134,8 @@ const SEED_ANNOTATIONS: Annotation[] = [
   {
     id: 'ann_022',
     category: 'next_intent',
-    label: 'SKG-App Umbau (sensus-core-runtime) — bereit zum Bauen',
-    content: 'Voraussetzungen: Icons (Bundle, Paket, Geöffnetes Paket, SKG-Salzfass) werden als SVG geliefert. Umbau-Reihenfolge: (1) IntroScreen entfernen. (2) Package-Screen durch SKG-Startseite ersetzen: Off-White #f8f8f6, Bundle/Paket/Geöffnetes-Paket Icons, minimale Beschriftung (Region · Representation · Version), "powered by diesenpark.com" rechts unten. (3) ?pkg= URL-Handling absichern. (4) localStorage für letzte Region. (5) Geolocation-Logik. (6) PWA Manifest + Service Worker. (7) Install-Prompt nach erstem Paketladen. Detailspezifikation im BACKLOG Abschnitt 6.',
+    label: 'SKG-App: Geolocation noch offen',
+    content: 'Erledigt: IntroScreen entfernt, SKG-Startseite gebaut, ?pkg= URL-Handling, localStorage (saveLastPkg), PWA Manifest + Service Worker, Install-Prompt nach erstem Paketladen. Noch offen: Geolocation-Logik — Standortabfrage für Regionsvorschlag wenn kein URL-Parameter vorhanden.',
     related_panel: 'P03',
     date: '2026-05-24',
   },
@@ -162,34 +148,10 @@ const SEED_ANNOTATIONS: Annotation[] = [
     date: '2026-05-24',
   },
   {
-    id: 'ann_024',
-    category: 'adr',
-    label: 'Multi-Representation: State Machine hält packages[]',
-    content: 'Kontext: App soll mehrere Representations gleichzeitig halten und zwischen ihnen wechseln. Entscheidung: AppState erhält packages: SensusCorePackage[] + activePackageIndex: number. Alle Compute-Funktionen (BCK, BAK, Guidance) referenzieren immer packages[activePackageIndex]. setActivePackage(index) wechselt das aktive Paket — kein Reload nötig. Konsequenz: Saubere Trennung zwischen geladen und aktiv.',
-    related_panel: 'P03',
-    date: '2026-05-24',
-  },
-  {
-    id: 'ann_025',
-    category: 'adr',
-    label: 'Multi-Representation: Header-Dropdown als primärer Switcher',
-    content: 'Kontext: User soll in der laufenden App zwischen Representations wechseln können. Entscheidung: TopBar zeigt Region-Icon + Regionsname + Subline mit aktiver Representation + Chevron. Chevron öffnet Dropdown-Sheet mit allen geladenen Representations inkl. Auslastungsindikator. Unavailable (saisonal): abgedimmt, nicht wählbar. Tap → setActivePackage → Map/Routen/POIs wechseln sofort. Konsequenz: Kein Screen-Wechsel für Representation-Switch — bleibt in der Karten-Ansicht.',
-    related_panel: 'P03',
-    date: '2026-05-24',
-  },
-  {
-    id: 'ann_026',
-    category: 'next_intent',
-    label: 'Multi-Representation Ausbau — Phase A→E',
-    content: 'Reihenfolge: A) Region-Index-Typ + Mock für SKG. B) State Machine: packages[] + activePackageIndex + loadRegionIndex() + setActivePackage(). C) StartScreen: Representationsname + Chevron + Multi-Select-Liste + sequenzielles Laden. D) TopBar: Region-Icon + Name + Subline + Dropdown-Switcher + Auslastungsindikator. E) Regionen-Wechsel via Dropdown-Eintrag oder separaten Screen. A+B sind Voraussetzung für C, D, E. C und D parallel baubar. Details: BACKLOG Abschnitt 7.',
-    related_panel: 'P03',
-    date: '2026-05-24',
-  },
-  {
     id: 'ann_027',
-    category: 'adr',
-    label: 'Global-Index: Mock jetzt, CDN-URL später',
-    content: 'Der Haupt-Index aller Regionen (GlobalIndex) wird zunächst als hardcodierter Mock geführt (mock:global → mock.global-index.ts). Dieses Muster ist konsistent mit mock:valid und mock:skg. Sobald Cloudflare R2 / CDN eingerichtet ist, wird mock:global durch eine echte URL ersetzt (z.B. https://cdn.diesenpark.com/index.json). Die App-Logik ändert sich dabei nicht — nur der Ref-String. GlobalIndex-Schema: { schema_version, regions: [{ id, name, icon, index_url, available }], generated_at }.',
+    category: 'next_intent',
+    label: 'Global-Index: CDN-URL noch nicht eingetragen',
+    content: 'GlobalIndex-Schema: { schema_version, regions: [{ id, name, icon, index_url, available }], generated_at }. Mock läuft (mock:global → mock.global-index.ts). CDN (cdn.diesenpark.com) ist eingerichtet — mock:global muss noch durch echte URL ersetzt werden. App-Logik ändert sich dabei nicht.',
     related_panel: 'P03',
     date: '2026-05-24',
   },
@@ -197,28 +159,13 @@ const SEED_ANNOTATIONS: Annotation[] = [
   // ── 2026-05-24: Paket-Infrastruktur ──────────────────────────────────────────
 
   {
-    id: 'ann_029',
-    category: 'adr',
-    label: 'ScimBundle: region und representation als getrennte Felder',
-    content: 'Kontext: region.id war zweideutig — unklar ob übergeordnete Region (SKG) oder Representation (Grünberg). Entscheidung: ScimBundle trägt zwei explizite Felder: region?: { id, name } = optionaler organisatorischer Zusammenschluss; representation { id, name, bbox } = das spezifische Paket. bbox gehört zur Representation (räumliche Ausdehnung), nicht zur Region. region ist optional — Representations ohne Region sind gültig. SensusCorePackage parallel angepasst: representation_id: string → representation { id, name, bbox }. Code-Implikationen: siehe ann_033.',
-    date: '2026-05-24',
-  },
-  {
     id: 'ann_030',
     category: 'adr',
     label: 'Paket-Infrastruktur: R2 + D1 + Worker',
     content: 'Cloudflare R2 Bucket "diesenpark-packages", Custom Domain cdn.diesenpark.com. Cloudflare D1 Datenbank "scim3-packages-db" verwaltet Versionshistorie: packages-Tabelle mit region_id, representation_id, version, status (draft/active/archived), cdn_url, created_at, activated_at. Worker "scim3-package-worker" Endpoints: PUT /api/packages/upload (R2+D1), GET /api/packages (filter: region_id, representation_id, status), POST /api/packages/:id/activate, DELETE /api/packages/:id (archivieren), GET /api/packages/active/:region_id. SCIM-Konsole: V01 Pakete (Übersicht), V02 Region-Detail (Versionen je Region), V03 Aktiv-Monitor (CDN-URL + QR je Representation). VITE_WORKER_URL + VITE_UPLOAD_API_KEY als Env-Vars in .env.local.',
     date: '2026-05-24',
   },
-  {
-    id: 'ann_031',
-    category: 'next_intent',
-    label: 'Offene Punkte — Stand 2026-05-24',
-    content: 'Priorität 1 — sensus-core-runtime Schnittstellen-Lücken (ann_010): (A) route_comfort_metrics für Slider-Load nutzen statt Simulation. (B) public_warnings anzeigen. (D) expires_at prüfen + Paket neu laden. Priorität 2 — SKG-App Umbau (ann_022): IntroScreen entfernen, SKG-Startseite, ?pkg= Handling, localStorage, PWA Manifest. Priorität 3 — Multi-Representation Phase A→E (ann_026): Region-Index, packages[]-State, Header-Dropdown. Organisatorisch offen: Feratel/TVB API-Zugang. Noch nicht gebaut: Gaisberg-Inhalte (Salzburg-Representation hat noch keine echten Paket-Daten). Global-Index CDN-URL (ann_027): Mock läuft, CDN-URL noch nicht eingetragen.',
-    date: '2026-05-24',
-  },
-
-  // ── 2026-05-24: Region-Definition (überarbeitete Fassung) ─────────────────
+  // ── 2026-05-24: Region-Definition ────────────────────────────────────────────
 
   {
     id: 'ann_032',
