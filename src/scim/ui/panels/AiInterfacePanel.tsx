@@ -126,6 +126,73 @@ const SEED_ANNOTATIONS: Annotation[] = [
     related_panel: 'P11',
     date: '2026-05-23',
   },
+
+  // ── 2026-05-24: SKG-App Architektur — Startseite, Branding, Einstieg ────────
+
+  {
+    id: 'ann_014',
+    category: 'vocabulary',
+    label: 'Representation',
+    content: 'Eine Representation ist das Ausgabepaket für eine spezifische Region — enthält bewertetes Wegnetz + POIs als signiertes JSON-Bundle. Jede App-Instanz ist an eine Region gebunden. Die erste Instanz ist Salzkammergut (SKG). "Representation" und "Paket" werden synonym verwendet; "Representation" betont den Bezug zur Region, "Paket" die technische Einheit.',
+    date: '2026-05-24',
+  },
+  {
+    id: 'ann_015',
+    category: 'vocabulary',
+    label: 'Bundle (App + Representation)',
+    content: 'Ein Bundle ist das kombinierte Angebot für Neunutzer: die installierbare Runtime-App und eine Representation als gemeinsames Download-Paket. Grafisch dargestellt als großes Paket (App) + kleines Paket (Representation). Relevant für QR-Code-Einstieg ohne vorinstallierte App. Bestandsnutzer mit installierter App erhalten stattdessen nur die Representation als Einzelpaket.',
+    date: '2026-05-24',
+  },
+  {
+    id: 'ann_016',
+    category: 'adr',
+    label: 'App ist eine Region-Instanz, kein generischer Container',
+    content: 'Kontext: Ein generischer App-Name ("Path Works") wurde erwogen. Entscheidung: Jede App-Instanz trägt den Regionsnamen — erste Instanz: Salzkammergut (SKG). App-Name, Icon und Branding sind regionsspezifisch. Die Marke "Diesenpark" (Herstellerfirma) erscheint ausschließlich als dezenter Herkunftshinweis ("powered by diesenpark.com") — keine sichtbare Marke für Endnutzer. Konsequenz: Nutzer identifizieren sich mit der Region, nicht mit einer Plattform.',
+    date: '2026-05-24',
+  },
+  {
+    id: 'ann_017',
+    category: 'adr',
+    label: 'Einstiegs-URL-Schema: ?pkg= als primärer Kontextträger',
+    content: 'Kontext: Nutzer kommen via QR-Code, Link, Direktaufruf oder PWA. Entscheidung: QR-Codes und Links tragen ?pkg=URL als Parameter — die App zeigt sofort das richtige Paket ohne Standort- oder Nutzerabfrage. Reihenfolge ohne Parameter: (1) localStorage prüfen → letzte Region vorschlagen, (2) Geolocation anfragen → Region ableiten. Konsequenz: Minimale Interaktion für den häufigsten Fall (QR-Scan). QR-Code und Link sind technisch gleichwertig.',
+    date: '2026-05-24',
+  },
+  {
+    id: 'ann_018',
+    category: 'adr',
+    label: 'Geolocation: spät und kontextgebunden',
+    content: 'Kontext: Standort-Permission früh zu fragen erzeugt Widerstand und ist ohne Kontext unverständlich. Entscheidung: Bei QR/Link-Einstieg (?pkg= vorhanden) keine Standortabfrage. Ohne Kontext: Standort anfragen für Regionsvorschlag. Bei Navigationsstart: Standort mit klarem Nutzerkontext (Nutzer versteht den Zweck). Browser-Geolocation API nutzt intern GPS + WLAN + Zellmasten — für Regionsebene ist Zelldaten-Genauigkeit ausreichend. Konsequenz: Permission wird genau dann beantragt, wenn der Nutzer den Zweck versteht.',
+    date: '2026-05-24',
+  },
+  {
+    id: 'ann_019',
+    category: 'adr',
+    label: 'localStorage: letzte Region persistieren',
+    content: 'Kontext: PWA-Nutzer und Bookmark-Rückkehrer öffnen die App ohne URL-Parameter. Entscheidung: Letzte geladene Paket-URL wird in localStorage gespeichert und bei erneutem Öffnen als Vorschlag angeboten. Konsequenz: Kein erneutes QR-Scannen für Stammnutzer. Datenschutz: localStorage ist gerätlokal, kein Server-Call.',
+    date: '2026-05-24',
+  },
+  {
+    id: 'ann_020',
+    category: 'adr',
+    label: 'PWA: installierbar ab sofort, Offline-Tiles später',
+    content: 'Kontext: Wanderapp muss am Homescreen installierbar sein; vollständige Offline-Fähigkeit ist langfristig nötig. Entscheidung: Service Worker macht die App installierbar (PWA-Manifest: Name = Salzkammergut, Icon = SKG-Logo). Install-Prompt erscheint nach erstem Paketladen — nicht beim ersten Öffnen (kein Kontext). Offline-Vollsupport (Leaflet-Tile-Cache, Paket-Cache) kommt in SML-4. Konsequenz: Nutzer können die App am Homescreen installieren; Tile-Offline ist noch nicht verfügbar.',
+    date: '2026-05-24',
+  },
+  {
+    id: 'ann_021',
+    category: 'business_context',
+    label: 'Diesenpark als stille Herkunftsmarke',
+    content: 'Diesenpark bezeichnet die Herstellerfirma — nicht die App, nicht die Plattform. Die App trägt den Regionsnamen (Salzkammergut). Diesenpark erscheint ausschließlich als "powered by diesenpark.com" rechts unten — dezent, nicht navigierbar. Endnutzer sehen keine Diesenpark-Marke im eigentlichen Sinne. Diese Trennung ist bewusst: Regionsidentität steht im Vordergrund.',
+    date: '2026-05-24',
+  },
+  {
+    id: 'ann_022',
+    category: 'next_intent',
+    label: 'SKG-App Umbau (sensus-core-runtime) — bereit zum Bauen',
+    content: 'Voraussetzungen: Icons (Bundle, Paket, Geöffnetes Paket, SKG-Salzfass) werden als SVG geliefert. Umbau-Reihenfolge: (1) IntroScreen entfernen. (2) Package-Screen durch SKG-Startseite ersetzen: Off-White #f8f8f6, Bundle/Paket/Geöffnetes-Paket Icons, minimale Beschriftung (Region · Representation · Version), "powered by diesenpark.com" rechts unten. (3) ?pkg= URL-Handling absichern. (4) localStorage für letzte Region. (5) Geolocation-Logik. (6) PWA Manifest + Service Worker. (7) Install-Prompt nach erstem Paketladen. Detailspezifikation im BACKLOG Abschnitt 6.',
+    related_panel: 'P03',
+    date: '2026-05-24',
+  },
 ];
 
 function AnnotationsTab() {
