@@ -193,6 +193,38 @@ const SEED_ANNOTATIONS: Annotation[] = [
     related_panel: 'P03',
     date: '2026-05-24',
   },
+  {
+    id: 'ann_023',
+    category: 'adr',
+    label: 'Multi-Representation: Region-Index als Datenbasis',
+    content: 'Kontext: Jede Region hat mehrere Representations (Pakete). Entscheidung: Ein Region-Index (JSON) listet alle verfügbaren Representations mit label, pkg_url, available, version. Einstieg via ?region=URL (lädt Index) oder ?pkg=URL (Direkteinstieg, kein Index). QR-Code und Link können beides tragen. Konsequenz: Der Index entkoppelt die App von fixen Paket-URLs — neue Representations erscheinen automatisch.',
+    related_panel: 'P03',
+    date: '2026-05-24',
+  },
+  {
+    id: 'ann_024',
+    category: 'adr',
+    label: 'Multi-Representation: State Machine hält packages[]',
+    content: 'Kontext: App soll mehrere Representations gleichzeitig halten und zwischen ihnen wechseln. Entscheidung: AppState erhält packages: SensusCorePackage[] + activePackageIndex: number. Alle Compute-Funktionen (BCK, BAK, Guidance) referenzieren immer packages[activePackageIndex]. setActivePackage(index) wechselt das aktive Paket — kein Reload nötig. Konsequenz: Saubere Trennung zwischen geladen und aktiv.',
+    related_panel: 'P03',
+    date: '2026-05-24',
+  },
+  {
+    id: 'ann_025',
+    category: 'adr',
+    label: 'Multi-Representation: Header-Dropdown als primärer Switcher',
+    content: 'Kontext: User soll in der laufenden App zwischen Representations wechseln können. Entscheidung: TopBar zeigt Region-Icon + Regionsname + Subline mit aktiver Representation + Chevron. Chevron öffnet Dropdown-Sheet mit allen geladenen Representations inkl. Auslastungsindikator. Unavailable (saisonal): abgedimmt, nicht wählbar. Tap → setActivePackage → Map/Routen/POIs wechseln sofort. Konsequenz: Kein Screen-Wechsel für Representation-Switch — bleibt in der Karten-Ansicht.',
+    related_panel: 'P03',
+    date: '2026-05-24',
+  },
+  {
+    id: 'ann_026',
+    category: 'next_intent',
+    label: 'Multi-Representation Ausbau — Phase A→E',
+    content: 'Reihenfolge: A) Region-Index-Typ + Mock für SKG. B) State Machine: packages[] + activePackageIndex + loadRegionIndex() + setActivePackage(). C) StartScreen: Representationsname + Chevron + Multi-Select-Liste + sequenzielles Laden. D) TopBar: Region-Icon + Name + Subline + Dropdown-Switcher + Auslastungsindikator. E) Regionen-Wechsel via Dropdown-Eintrag oder separaten Screen. A+B sind Voraussetzung für C, D, E. C und D parallel baubar. Details: BACKLOG Abschnitt 7.',
+    related_panel: 'P03',
+    date: '2026-05-24',
+  },
 ];
 
 function AnnotationsTab() {
