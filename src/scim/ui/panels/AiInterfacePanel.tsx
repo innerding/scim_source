@@ -225,6 +225,14 @@ const SEED_ANNOTATIONS: Annotation[] = [
     related_panel: 'P03',
     date: '2026-05-24',
   },
+  {
+    id: 'ann_027',
+    category: 'adr',
+    label: 'Global-Index: Mock jetzt, CDN-URL später',
+    content: 'Der Haupt-Index aller Regionen (GlobalIndex) wird zunächst als hardcodierter Mock geführt (mock:global → mock.global-index.ts). Dieses Muster ist konsistent mit mock:valid und mock:skg. Sobald Cloudflare R2 / CDN eingerichtet ist, wird mock:global durch eine echte URL ersetzt (z.B. https://cdn.diesenpark.com/index.json). Die App-Logik ändert sich dabei nicht — nur der Ref-String. GlobalIndex-Schema: { schema_version, regions: [{ id, name, icon, index_url, available }], generated_at }.',
+    related_panel: 'P03',
+    date: '2026-05-24',
+  },
 ];
 
 function AnnotationsTab() {
