@@ -1,14 +1,20 @@
-name            = "scim3-bundle-worker"
-main            = "src/index.ts"
+name               = "scim3-package-worker"
+main               = "src/index.ts"
 compatibility_date = "2024-01-01"
 compatibility_flags = ["nodejs_compat"]
 
-# KV-Namespace für Bundle-Speicherung.
-# Nach `wrangler kv namespace create BUNDLES` die IDs eintragen.
-[[kv_namespaces]]
-binding    = "BUNDLES"
-id         = "0ded19f001c2452ba2bc615c4be31ac9"
-preview_id = "0ded19f001c2452ba2bc615c4be31ac9"
+# R2-Bucket für permanente Paket-Speicherung.
+# Custom Domain: cdn.diesenpark.com → gesetzt im Cloudflare Dashboard (R2 → Bucket → Public Access)
+[[r2_buckets]]
+binding     = "PACKAGES"
+bucket_name = "diesenpark-packages"
+
+# D1-Datenbank für Versionsverwaltung.
+# Nach `wrangler d1 create scim3-packages-db` die ID eintragen.
+[[d1_databases]]
+binding      = "DB"
+database_name = "scim3-packages-db"
+database_id  = "54767142-9b36-4922-a52f-af66b52f73d4"
 
 # Geheimnis UPLOAD_API_KEY per `wrangler secret put UPLOAD_API_KEY` setzen.
 # Wird niemals in diese Datei eingetragen.
