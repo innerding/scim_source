@@ -29,19 +29,50 @@ const CATEGORY_META: Record<AnnotationCategory, { label: string; color: string; 
 
 // Initial seed annotations — operator extends these in the UI
 const SEED_ANNOTATIONS: Annotation[] = [
+
+  // ── Kernbegriffe ──────────────────────────────────────────────────────────────
+
   {
     id: 'ann_001',
     category: 'vocabulary',
     label: 'Sensus Core',
-    content: 'Das standardisierte Ausgabeformat der SCIM-Pipeline. Enthält das vollständige bewertete Wegenetz + POIs in einem signierten JSON-Bundle das von der Ziel-App konsumiert wird.',
+    content: 'Sensus Core ist der Rechenkern der App. Er besteht aus BCK (Broda Comfort Kernel), BAK-Path und BAK-Rest (Broda Avoidance Kernel — Path/Rest) und setzt direkt auf dem ColourMesh auf — dem bei Bedarf oder in kurzen Intervallen aktualisierten Netz mit Telco-Auslastungsdaten.',
     date: '2026-05-21',
   },
   {
-    id: 'ann_002',
+    id: 'ann_006',
     category: 'vocabulary',
-    label: 'Signal Group',
-    content: 'Eine Gruppe von Telco-Belastungssignalen die thematisch zusammengehören (z.B. alle Signale eines Betreibers für eine Region). Definiert in RegioContent, referenziert in TelcoLoad.',
-    date: '2026-05-21',
+    label: 'ColourMesh (Sensus Core Overlay)',
+    content: 'Der ColourMesh ist das farbcodierte Comfort-Netz das die App auf Leaflet rendert. Er wird alle 5 Minuten aus aktuellen Telco-Auslastungsdaten neu erzeugt. Jede Kante trägt edge_id, from_node_id, to_node_id, Geometrie, score_class, color, weight, opacity. POI-Anker (poi_id, node_id, coordinate) verknüpfen die Representation-POIs mit konkreten Mesh-Knoten für clientseitiges Routing. Der Nutzer sieht das Netz als Overlay auf der Karte — keine Routenempfehlung, eigene Wegwahl.',
+    date: '2026-05-23',
+  },
+  {
+    id: 'ann_007',
+    category: 'vocabulary',
+    label: 'BCK · BAK-Path · BAK-Rest',
+    content: 'BCK (Broda Comfort Kernel): Filtert das ColourMesh nach movement_comfort_score und (bei classification_mode=movement_and_stay) stay_comfort_score. Ergebnis: das dem Nutzer verfügbare Restnetz. BAK-Path (Broda Avoidance Kernel — Path): Berechnet clientseitig Routen durch das Restnetz auf Basis von Zeiteinstellung und gewählten POIs. BAK-Rest (Broda Avoidance Kernel — Rest): Bewertet Raststellen und POIs nach Auslastung und Nutzerpräferenz. Alle drei Kernel laufen vollständig lokal auf dem Gerät — kein Server-Call.',
+    date: '2026-05-23',
+  },
+  {
+    id: 'ann_008',
+    category: 'adr',
+    label: 'Paketrhythmus: 5-Minuten-Push + Slider-Event',
+    content: 'Kontext: Die Auslastungslage ändert sich kontinuierlich. Entscheidung: Die App empfängt alle 5 Minuten automatisch einen neuen ColourMesh (Push). Bei Slider-Interaktion wird sofort lokal neu gefiltert — kein Server-Call. Konsequenz: Darstellung ist maximal 5 Minuten alt; Slider reagiert verzögerungsfrei.',
+    date: '2026-05-23',
+  },
+  {
+    id: 'ann_009',
+    category: 'adr',
+    label: 'Anonymer Feedback-Endpoint — separat von SCIM',
+    content: 'Kontext: SCIM kann aus Nutzungsmustern (Slider-Position, Tageszeit, Region) lernen. Entscheidung: Separater Aggregations-Endpoint empfängt gebündelte Datenpunkte (max. 1 pro 5-Min-Zyklus). Datenpunkte: Slider-Wert + grobe Tageszeit + Region-ID — kein Standort, kein Gerät. SCIM selbst bleibt ein deterministischer Batch-Prozess ohne Live-Daten. Konsequenz: Saubere Trennung; SCIM-Pipeline ändert sich nicht.',
+    date: '2026-05-23',
+  },
+  {
+    id: 'ann_012',
+    category: 'invariant',
+    label: 'Heatmap immer lokal — nie im Paket',
+    content: 'Die Heatmap-Darstellung der Auslastung wird auf dem Gerät des Nutzers berechnet. Der ColourMesh liefert Kanten mit Auslastungswerten — nicht eine fertige Heatmap. Diese Trennung ist bewusst: Paketgröße bleibt kontrollierbar, Darstellung bleibt flexibel für verschiedene App-Versionen.',
+    date: '2026-05-23',
   },
   {
     id: 'ann_003',
@@ -58,110 +89,39 @@ const SEED_ANNOTATIONS: Annotation[] = [
     content: 'Kontext: Persistenz wurde als SML-4-Feature klassifiziert. Entscheidung: Jeder Pipeline-Lauf ist vollständig in sich — kein State überlebt Neustart. Konsequenz: Schnell und deterministisch; keine Migrations-Probleme; kein Offline-Modus ohne SML-4.',
     date: '2026-05-21',
   },
-  {
-    id: 'ann_005',
-    category: 'next_intent',
-    label: 'P01–P04 Eingabe-Formulare',
-    content: 'Die vier user_form-Panels sollen echte Eingabe-Formulare erhalten. Reihenfolge: P01 (SystemAdjust) zuerst, dann P02 RegioContent. P03 TargetAppUi hat die reichste Konfigurationstiefe — additiv, kein Umbau der Pipeline.',
-    related_panel: 'P01',
-    date: '2026-05-21',
-  },
 
-  // ── 2026-05-23: Ziel-App Schnittstelle und Systemcharakter ─────────────────
+  // ── Offene Schnittstellen ─────────────────────────────────────────────────────
 
-  {
-    id: 'ann_006',
-    category: 'vocabulary',
-    label: 'SVG-Wegnetz (Sensus Core Overlay)',
-    content: 'Das Paket enthält kein klassisches Routensystem — es liefert ein Wegnetz aus farbcodierten Kanten, gewichtet nach Telco-Auslastung. Die kürzesten Kanten je Auslastungsklasse sind farblich markiert (grün → rot). Die App rendert dieses Netz als SVG-Overlay auf der Karte. Der Nutzer wählt seinen Weg selbst — die App macht keine Empfehlung.',
-    date: '2026-05-23',
-  },
-  {
-    id: 'ann_007',
-    category: 'vocabulary',
-    label: 'BCK / BAK (Broda Comfort Kernel / Avoidance Kernel)',
-    content: 'BCK: Lokaler Filteralgorithmus in der App. Filtert Routen nach movement_comfort_score und (wenn Step 2 aktiv) stay_comfort_score. Bei classification_mode=movement_only wird der Stay-Filter übersprungen. BAK: Sortiert und bewertet Treffer nach Wunschdauer und POI-Präferenzen. Beide Kernel laufen vollständig lokal auf dem Gerät — kein Server-Call.',
-    date: '2026-05-23',
-  },
-  {
-    id: 'ann_008',
-    category: 'adr',
-    label: 'Paketrhythmus: 5-Minuten-Push + Slider-Event',
-    content: 'Kontext: Die Auslastungslage ändert sich kontinuierlich. Entscheidung: Die App empfängt alle 5 Minuten automatisch ein neues Paket (Push). Bei Slider-Interaktion wird sofort lokal neu gefiltert — kein Server-Call. Konsequenz: Darstellung ist maximal 5 Minuten alt; Slider reagiert verzögerungsfrei.',
-    date: '2026-05-23',
-  },
-  {
-    id: 'ann_009',
-    category: 'adr',
-    label: 'Anonymer Feedback-Endpoint — separat von SCIM',
-    content: 'Kontext: SCIM kann aus Nutzungsmustern (Slider-Position, Tageszeit, Region) lernen. Entscheidung: Separater Aggregations-Endpoint empfängt gebündelte Datenpunkte (max. 1 pro 5-Min-Zyklus). Datenpunkte: Slider-Wert + grobe Tageszeit + Region-ID — kein Standort, kein Gerät. SCIM selbst bleibt ein deterministischer Batch-Prozess ohne Live-Daten. Konsequenz: Saubere Trennung; SCIM-Pipeline ändert sich nicht.',
-    date: '2026-05-23',
-  },
   {
     id: 'ann_010',
     category: 'adr',
-    label: 'Schnittstellen-Lücken Paket → App (Stand 2026-05-23)',
-    content: 'A: route_comfort_metrics vorhanden, App zeigt simulierten Load statt echter Werte. B: public_warnings ignoriert, nie angezeigt. C: display_contract / allowed_local_controls min/max/defaults nicht durchgesetzt. D: expires_at nicht geprüft — abgelaufenes Paket bleibt nutzbar. E: public_layers GeoJSON nicht gerendert, Map nutzt direkt route_options. Priorität: A und D zuerst.',
-    date: '2026-05-23',
-  },
-  {
-    id: 'ann_011',
-    category: 'business_context',
-    label: 'Größenordnungen: Paket und Runtime',
-    content: 'Paket (~400 km², ohne Heatmap): ~150 KB gzipped. Mit vollständigem Layer-Overlay bis ~400 KB. Runtime-Bundle: 368 KB JS + 24 KB CSS roh; ~121 KB gzipped gesamt. Heatmap wird lokal berechnet — kein Einfluss auf Paketgröße.',
-    date: '2026-05-23',
-  },
-  {
-    id: 'ann_012',
-    category: 'invariant',
-    label: 'Heatmap immer lokal — nie im Paket',
-    content: 'Die Heatmap-Darstellung der Auslastung wird auf dem Gerät des Nutzers berechnet. Das Paket liefert Wegnetz-Kanten mit Auslastungswerten — nicht eine fertige Heatmap. Diese Trennung ist bewusst: Paketgröße bleibt kontrollierbar, Darstellung bleibt flexibel für verschiedene App-Versionen.',
+    label: 'Schnittstellen-Lücken Paket → App — offen',
+    content: 'C: display_contract / allowed_local_controls — min/max/defaults aus dem Paket werden nicht durchgesetzt, App nutzt eigene Defaults. E: public_layers GeoJSON nicht gerendert — Map-Rendering läuft noch über route_options statt über das ColourMesh-Overlay. Erledigt: A (route_comfort_metrics → computeLoadFromMetrics), B (public_warnings → WarningBanner), D (expires_at → package.loader.ts).',
     date: '2026-05-23',
   },
   {
     id: 'ann_013',
     category: 'next_intent',
-    label: 'Schnittstelle Paket → App schließen',
-    content: 'Nächste Schritte in sensus-core-runtime: (A) route_comfort_metrics aus Paket für Slider-Load nutzen statt simulierter Werte. (B) public_warnings anzeigen (Footer oder Overlay). (D) expires_at prüfen und Paket nach Ablauf neu laden. Parallel: SVG-Overlay-Rendering klären — Format (fertiges SVG vs. GeoJSON-Segmente) und Leaflet-Integration.',
+    label: 'ColourMesh-Rendering in Leaflet',
+    content: 'Offen: ColourMesh-Kanten als SVG/Canvas-Overlay in Leaflet rendern statt über route_options. Format klären (fertiges SVG vs. GeoJSON-Segmente mit Leaflet-Polylines) und Leaflet-Integration implementieren. Schließt Schnittstellen-Lücke E aus ann_010.',
     related_panel: 'P11',
     date: '2026-05-23',
   },
 
-  // ── 2026-05-24: SKG-App Architektur — Startseite, Branding, Einstieg ────────
+  // ── SKG-App Architektur ───────────────────────────────────────────────────────
 
-  {
-    id: 'ann_014',
-    category: 'vocabulary',
-    label: 'Representation',
-    content: 'Eine Representation ist das deploybare Ausgabepaket für ein bestimmtes Gebiet — enthält bewertetes Wegnetz + POIs als signiertes JSON-Bundle. Die erste Instanz ist Salzkammergut (SKG / Grünberg). Eine Representation kann optional einer Region zugewiesen werden, braucht aber keine. "Representation" und "Paket" werden synonym verwendet; "Representation" betont die inhaltliche Darstellung, "Paket" die technische Einheit.',
-    date: '2026-05-24',
-  },
   {
     id: 'ann_015',
     category: 'vocabulary',
-    label: 'Bundle (App + Representation)',
-    content: 'Ein Bundle ist das kombinierte Angebot für Neunutzer: die installierbare Runtime-App und eine Representation als gemeinsames Download-Paket. Grafisch dargestellt als großes Paket (App) + kleines Paket (Representation). Relevant für QR-Code-Einstieg ohne vorinstallierte App. Bestandsnutzer mit installierter App erhalten stattdessen nur die Representation als Einzelpaket.',
-    date: '2026-05-24',
-  },
-  {
-    id: 'ann_016',
-    category: 'adr',
-    label: 'App trägt Representationsnamen — regionsspezifisches Branding',
-    content: 'Kontext: Ein generischer App-Name ("Path Works") wurde erwogen. Entscheidung: Jede App-Instanz trägt den Namen der Representation bzw. des Gebiets — erste Instanz: Salzkammergut (SKG). App-Name, Icon und Branding sind gebietsspezifisch. Die Marke "Diesenpark" (Herstellerfirma) erscheint ausschließlich als dezenter Herkunftshinweis ("powered by diesenpark.com") — keine sichtbare Marke für Endnutzer. Konsequenz: Nutzer identifizieren sich mit dem Gebiet, nicht mit einer Plattform.',
+    label: 'Bundle (Erstnutzer-Paket)',
+    content: 'Ein Bundle ist das vollständige Auslieferungspaket für Erstnutzer: App-Shell + Representation + ColourMesh. Bestandsnutzer erhalten nur den ColourMesh alle 5 Minuten; Representation nur bei Neuaufbau durch SCIM. Vollständige Architektur: siehe ann_034.',
     date: '2026-05-24',
   },
   {
     id: 'ann_017',
     category: 'adr',
-    label: 'Einstiegs-URL-Schema: ?pkg= als primärer Kontextträger',
-    content: 'Kontext: Nutzer kommen via QR-Code, Link, Direktaufruf oder PWA. Entscheidung: QR-Codes und Links tragen ?pkg=URL als Parameter — die App zeigt sofort das richtige Paket ohne Standort- oder Nutzerabfrage. Reihenfolge ohne Parameter: (1) localStorage prüfen → letzte Region vorschlagen, (2) Geolocation anfragen → Region ableiten. Konsequenz: Minimale Interaktion für den häufigsten Fall (QR-Scan). QR-Code und Link sind technisch gleichwertig.',
-    date: '2026-05-24',
-  },
-  {
-    id: 'ann_018',
-    category: 'adr',
-    label: 'Geolocation: spät und kontextgebunden',
-    content: 'Kontext: Standort-Permission früh zu fragen erzeugt Widerstand und ist ohne Kontext unverständlich. Entscheidung: Bei QR/Link-Einstieg (?pkg= vorhanden) keine Standortabfrage. Ohne Kontext: Standort anfragen für Regionsvorschlag. Bei Navigationsstart: Standort mit klarem Nutzerkontext (Nutzer versteht den Zweck). Browser-Geolocation API nutzt intern GPS + WLAN + Zellmasten — für Regionsebene ist Zelldaten-Genauigkeit ausreichend. Konsequenz: Permission wird genau dann beantragt, wenn der Nutzer den Zweck versteht.',
+    label: 'App-Einstieg: URL-Schema + Geolocation',
+    content: 'Einstiegswege: (1) ?pkg=URL — direkter Paket-Einstieg via QR-Code oder Link, keine Standortabfrage. (2) ?region=URL — lädt Region-Index, Nutzer wählt Representation. (3) Kein Parameter: localStorage prüfen → letzte Representation vorschlagen; sonst Geolocation anfragen. Geolocation wird bewusst spät eingeholt — nie beim ersten Öffnen, nur wenn kein Kontext vorhanden oder beim Navigationsstart (Nutzer versteht den Zweck). Browser-Geolocation (GPS + WLAN + Zellmasten) ist für Regionsebene ausreichend genau. QR-Code und Link sind technisch gleichwertig.',
     date: '2026-05-24',
   },
   {
