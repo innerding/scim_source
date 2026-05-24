@@ -22,8 +22,8 @@ export type FallbackRoutePolicy =
   | 'profile_dependent';
 
 export interface RegioRegion {
-  region_id: string;
-  region_name: string;
+  region_id: string;    // = representation_id in neuer Sprache
+  region_name: string;  // = representation_name
   region_type: 'admin_area' | 'park' | 'trail_area' | 'custom_region' | 'representation_area';
   country_code?: string;
   admin_code?: string;
@@ -31,6 +31,8 @@ export interface RegioRegion {
   timezone?: string;
   region_geometry?: GeoJsonGeometry;
   bbox?: [number, number, number, number];
+  parent_region_id?: string;    // optionaler organisatorischer Zusammenschluss (Region)
+  parent_region_name?: string;
 }
 
 export type PoiSource = 'osm' | 'manual' | 'import' | 'regional_dataset' | 'system_suggestion';

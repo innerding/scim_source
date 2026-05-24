@@ -26,7 +26,7 @@ async function uploadBundle(bundle: ScimBundle): Promise<UploadResult> {
   const body = {
     ...bundle,
     key,
-    region_id:         bundle.region.id,
+    region_id:         bundle.region?.id,
     representation_id: bundle.representation.id,
   };
   const res = await fetch(`${WORKER_URL}/api/packages/upload`, {

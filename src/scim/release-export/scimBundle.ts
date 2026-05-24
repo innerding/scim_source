@@ -5,17 +5,7 @@ import type { PoiModelState } from '../poi-output/poiOutput.types';
 import type { BasisLayerState } from '../basis-layer/basisLayer.types';
 import type { ReleaseExportState } from './releaseExport.types';
 import type { RegioContentState } from '../regio-content/regioContent.types';
-import type { ScimBundle, ScimRouteFeature, ScimPoiFeature, ScimBundleRegion } from './scimBundle.types';
-
-// Statische Zuordnung Representation → übergeordnete Region.
-// Wird durch explizite parent_region_id in RegioRegion ersetzt sobald das Datenmodell es trägt.
-const REPRESENTATION_TO_REGION: Record<string, ScimBundleRegion> = {
-  gruenberg:   { id: 'skg',        name: 'Salzkammergut' },
-  grünberg:    { id: 'skg',        name: 'Salzkammergut' },
-  lichtenberg: { id: 'böhmerwald', name: 'Böhmerwald' },
-  gaisberg:    { id: 'salzburg',   name: 'Salzburg' },
-  salzburg:    { id: 'salzburg',   name: 'Salzburg' },
-};
+import type { ScimBundle, ScimRouteFeature, ScimPoiFeature } from './scimBundle.types';
 
 /**
  * Assembles the full pipeline context into a self-contained Ziel-App bundle.
@@ -96,10 +86,12 @@ export function generateScimBundle(
   const representationId   = regioContent?.region?.region_id ?? 'unknown';
   const representationName = regioContent?.region?.region_name ?? representationId;
 
-  const lookupKey = representationId.toLowerCase().replace(/[^a-z]/g, '');
-  const parentRegion =
-    Object.entries(REPRESENTATION_TO_REGION).find(([k]) => lookupKey.includes(k))?.[1]
-    ?? { id: representationId, name: representationName };
+  // Region ist optional — wird nur gesetzt wenn RegioRegion ein parent_region_id-Feld trägt.
+  const parentRegionId   = regioContent?.region?.parent_region_id;
+  const parentRegionName = regioContent?.region?.parent_region_name;
+  const parentRegion = parentRegionId
+    ? { id: parentRegionId, name: parentRegionName ?? parentRegionId }
+    : undefined;
 
   return {
     schema:       'scim3_bundle_v1',
