@@ -38,6 +38,8 @@ export const GEOMETRIES: Geometry[] = [
     fill_role: 'fill',
     // Apex oben, Halbkreis unten, symmetrische Bezier-Seiten.
     shape: { kind: 'path', d: 'M 24 4 C 20 12, 9 22, 9 29 A 15 15 0 0 0 39 29 C 39 22, 28 12, 24 4 Z' },
+    // Icon nach unten in die bauchige Hälfte verschieben — nicht auf die Spitze.
+    icon_offset_y: 5,
   },
   {
     id: 'geo_4_rectangle_high',
@@ -60,6 +62,8 @@ export const GEOMETRIES: Geometry[] = [
     fill_role: 'fill',
     // Apex 3 px nach unten verschoben gegen optisches "zu hoch"-Empfinden.
     shape: { kind: 'polygon', points: [[24, 7], [44, 41], [4, 41]] },
+    // Dreieck-Schwerpunkt liegt unter der geometrischen Mitte; Icon mitziehen.
+    icon_offset_y: 4,
   },
   {
     id: 'geo_special_hexagon_ring',

@@ -87,6 +87,19 @@ function buildDigitsSvgString(value: number): string {
   return parts.join('');
 }
 
+// Auflösung des Icon-Referenz-Strings aus dem Plan:
+//   - Exakter Treffer in der Registry → unverändert verwenden, Meta optional
+//   - Trailing "+" (z.B. "Fernglas+") → fallback auf Basis-Icon ("Fernglas"),
+//     Elevation-Decoration wird erzwungen (Konvention: "+" = Summit-Variante)
+function resolveIcon(name: string): { iconId: string; forceElevation: boolean } {
+  if (iconById(name)) return { iconId: name, forceElevation: false };
+  if (name.endsWith('+')) {
+    const base = name.slice(0, -1);
+    if (iconById(base)) return { iconId: base, forceElevation: true };
+  }
+  return { iconId: name, forceElevation: false };  // nichts gefunden — Composite zeichnet nur Container
+}
+
 function buildPoiComposite(
   iconId: string,
   text: string,
@@ -95,22 +108,29 @@ function buildPoiComposite(
   size: number,
 ): string {
   const container = buildContainerSvgString(geo, containerColor);
-  const iconEntry = iconById(iconId);
+  const { iconId: resolvedId, forceElevation } = resolveIcon(iconId);
+  const iconEntry = iconById(resolvedId);
   const iconInner = iconEntry ? extractIconInner(iconEntry.svg_cleaned) : '';
 
-  const meta = iconMeta(iconId);
-  const elevation =
-    meta.decoration_below === 'elevation' && iconEntry ? extractElevation(text) : null;
+  const meta = iconMeta(resolvedId);
+  const showElevation = (forceElevation || meta.decoration_below === 'elevation') && iconEntry;
+  const elevation = showElevation ? extractElevation(text) : null;
 
   if (elevation == null) {
-    // Standard-Composite: Container füllt 48×48, Icon liegt deckungsgleich drüber.
-    return `<svg viewBox="0 0 48 48" width="${size}" height="${size}">${container}` +
-      (iconInner ? `<svg viewBox="0 0 48 48">${iconInner}</svg>` : '') +
-      `</svg>`;
+    // Standard-Composite: Container füllt 48×48, Icon liegt darüber.
+    // icon_offset_y verschiebt das Icon im Container nach unten (Droplet, Triangle).
+    const offsetY = geo.icon_offset_y ?? 0;
+    const iconPart = !iconInner
+      ? ''
+      : offsetY === 0
+        ? iconInner
+        : `<g transform="translate(0,${offsetY})">${iconInner}</g>`;
+    return `<svg viewBox="0 0 48 48" width="${size}" height="${size}">${container}${iconPart}</svg>`;
   }
 
   // Summit-Composite nach ann_044: Icon hochgeschoben + Ziffern unten.
-  const layout = summitLayout(4);  // p=4 — feste Wahl, gibt komfortable Maße
+  // icon_offset_y greift hier NICHT — der summitLayout positioniert explizit.
+  const layout = summitLayout(4);
   const digitCount = String(elevation).length;
   return `<svg viewBox="0 0 48 48" width="${size}" height="${size}">` +
     container +

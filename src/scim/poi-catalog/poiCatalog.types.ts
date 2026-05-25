@@ -41,6 +41,12 @@ export interface Geometry {
   viewBox: string;                  // meist '0 0 48 48', Hexagon '0 0 46 50'
   fill_role: 'fill' | 'stroke';     // 'stroke' nur beim Hexagon-Ring
   shape: GeometryShape;
+  // Pixel-Y-Versatz für das innenliegende Icon, gegenüber der geometrischen
+  // Mitte (24,24). Positiv = Icon nach unten; nutzt der Composite-Renderer
+  // im Standard-Modus (nicht im Summit-Modus, dort positioniert summitLayout).
+  // Default 0. Beispiele: Droplet=5 (Icon in den bauchigen Teil), Triangle=4
+  // (Schwerpunkts-Versatz nach unten).
+  icon_offset_y?: number;
 }
 
 export type CoordStatus = 'exact' | 'estimated' | 'missing';
