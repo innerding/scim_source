@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRole } from '../RoleContext';
 import { parsePoiCatalog } from '../../poi-catalog/poiCatalog.parser';
-import { CONTAINER_SYSTEM, containerOf } from '../../poi-catalog/poiCatalog.containerSystem';
+import { CONTAINER_SYSTEM, containerOf, geometryOf } from '../../poi-catalog/poiCatalog.containerSystem';
 import {
   addNewPoi, clearEditState, deletePoi, hasEdits, loadEditState,
   mergeEdits, patchPoi, resetPoi, saveEditState, undeletePoi,
@@ -35,36 +35,42 @@ const SUBCATEGORIES_NON_CLUSTER: Subcategory[] = CONTAINER_SYSTEM
 
 const STATUS_OPTIONS: CoordStatus[] = ['exact', 'estimated', 'missing'];
 
-// ─── Container-Geometrie als kleines SVG-Glyph (Vor-Test der Visuallogik) ─────
+// ─── Container-Glyph: generischer Renderer für alle Geometrien (ann_042) ─────
+// Liest die Form aus GEOMETRIES (diskriminierte Union) und emittiert das
+// passende native SVG-Primitive. Eine Funktion ersetzt die alten switch-cases.
 
-function GeometryGlyph({ subcategory, size = 16 }: { subcategory: Subcategory; size?: number }) {
+function ContainerGlyph({ subcategory, size = 16 }: { subcategory: Subcategory; size?: number }) {
   const spec = containerOf(subcategory);
   if (!spec) return null;
-  const stroke = '#1a202c';
-  const fill = spec.color;
+  const geo = geometryOf(spec.geometry_id);
+  if (!geo) return null;
 
-  switch (spec.geometry) {
-    case 'Kreis':
-      return <svg width={size} height={size}><circle cx={size/2} cy={size/2} r={size/2 - 1.5} fill={fill} stroke={stroke} strokeWidth={1.5}/></svg>;
-    case 'Quadrat':
-      return <svg width={size} height={size}><rect x={1.5} y={1.5} width={size-3} height={size-3} fill={fill} stroke={stroke} strokeWidth={1.5}/></svg>;
-    case 'Tropfen':
-      return <svg width={size} height={size} viewBox="0 0 16 16"><path d="M8 2 C5 6 3.5 8.5 3.5 9.5 a4.5 4.5 0 0 0 9 0 C12.5 8.5 11 6 8 2 z" fill={fill} stroke={stroke} strokeWidth={1.2}/></svg>;
-    case 'Rechteck hoch':
-      return <svg width={size} height={size}><rect x={size*0.22} y={1.5} width={size*0.56} height={size-3} fill={fill} stroke={stroke} strokeWidth={1.5}/></svg>;
-    case 'Rechteck breit':
-      return <svg width={size} height={size}><rect x={1.5} y={size*0.28} width={size-3} height={size*0.44} fill={fill} stroke={stroke} strokeWidth={1.5} rx={1}/></svg>;
-    case 'Dreieck':
-      return <svg width={size} height={size}><polygon points={`${size/2},2 ${size-1.5},${size-1.5} 1.5,${size-1.5}`} fill={fill} stroke={stroke} strokeWidth={1.5}/></svg>;
-    case 'Hexagon-Ring':
-      return (
-        <svg width={size} height={size} viewBox="0 0 16 16">
-          <polygon points="8,1 14,4.5 14,11.5 8,15 2,11.5 2,4.5" fill="none" stroke={fill} strokeWidth={2}/>
-        </svg>
-      );
-    default:
-      return null;
+  const isStroke = geo.fill_role === 'stroke';
+  const fill = isStroke ? 'none' : spec.color;
+  const stroke = isStroke ? spec.color : '#000';
+  // Stroke-Dicke: Cluster (skaliert) bekommt sichtbarere Linie auch im kleinen Glyph,
+  // sonst universell 1 px. Für die Vorschau bei size=16 leicht hochgezogen für Lesbarkeit.
+  const strokeWidth = isStroke ? 2 : 1.2;
+  const common = { fill, stroke, strokeWidth, strokeLinejoin: 'round' as const };
+
+  const shape = geo.shape;
+  let element: JSX.Element | null = null;
+  switch (shape.kind) {
+    case 'circle':
+      element = <circle cx={shape.cx} cy={shape.cy} r={shape.r} {...common} />;
+      break;
+    case 'rect':
+      element = <rect x={shape.x} y={shape.y} width={shape.width} height={shape.height} rx={shape.rx} {...common} />;
+      break;
+    case 'polygon':
+      element = <polygon points={shape.points.map((p) => p.join(',')).join(' ')} {...common} />;
+      break;
+    case 'path':
+      element = <path d={shape.d} {...common} />;
+      break;
   }
+
+  return <svg width={size} height={size} viewBox={geo.viewBox}>{element}</svg>;
 }
 
 // ─── Status-Glyph ─────────────────────────────────────────────────────────────
@@ -285,12 +291,12 @@ function SubcategorySection({
       <div style={{
         display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6,
       }}>
-        <GeometryGlyph subcategory={subcategory} size={18} />
+        <ContainerGlyph subcategory={subcategory} size={18} />
         <span style={{ fontSize: 13, fontWeight: 600, fontFamily: 'system-ui, sans-serif', color: '#1a365d' }}>
           {subcategory}
         </span>
         <span style={{ fontSize: 11, color: '#718096', fontFamily: 'monospace' }}>
-          · {spec.geometry} · {spec.color_label} · {pois.filter((p) => !p._isDeleted).length}
+          · {geometryOf(spec.geometry_id)?.name_display ?? spec.geometry_id} · {spec.color_label} · {pois.filter((p) => !p._isDeleted).length}
         </span>
       </div>
       <table style={{ width: '100%', fontSize: 12, fontFamily: 'system-ui, sans-serif', borderCollapse: 'collapse' }}>
@@ -384,10 +390,10 @@ function ContainerSystemSection() {
         <tbody>
           {CONTAINER_SYSTEM.map((c) => (
             <tr key={c.subcategory} style={{ borderBottom: '1px solid #f0f4f8' }}>
-              <td style={{ padding: '4px 8px' }}><GeometryGlyph subcategory={c.subcategory} size={18} /></td>
+              <td style={{ padding: '4px 8px' }}><ContainerGlyph subcategory={c.subcategory} size={18} /></td>
               <td style={{ padding: '4px 8px', color: '#4a5568' }}>{c.bucket}</td>
               <td style={{ padding: '4px 8px', fontFamily: 'monospace', color: '#2d3748' }}>{c.subcategory}</td>
-              <td style={{ padding: '4px 8px', color: '#4a5568' }}>{c.geometry}</td>
+              <td style={{ padding: '4px 8px', color: '#4a5568' }}>{geometryOf(c.geometry_id)?.name_display ?? c.geometry_id}</td>
               <td style={{ padding: '4px 8px', color: '#4a5568' }}>{c.color_label}</td>
               <td style={{ padding: '4px 8px', color: '#718096', fontSize: 11 }}>{c.description}</td>
             </tr>

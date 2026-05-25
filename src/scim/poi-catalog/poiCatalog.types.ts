@@ -27,14 +27,21 @@ export type Subcategory =
   | 'Help_emergency'
   | 'Cluster';
 
-export type Geometry =
-  | 'Kreis'
-  | 'Quadrat'
-  | 'Tropfen'
-  | 'Rechteck hoch'
-  | 'Rechteck breit'
-  | 'Dreieck'
-  | 'Hexagon-Ring';
+// Geometrie-Shape (ann_042 — diskriminierte Union).
+// Pro Variante die einfachstmögliche SVG-native Form.
+export type GeometryShape =
+  | { kind: 'circle';  cx: number; cy: number; r: number }
+  | { kind: 'rect';    x: number; y: number; width: number; height: number; rx?: number }
+  | { kind: 'polygon'; points: [number, number][] }
+  | { kind: 'path';    d: string };
+
+export interface Geometry {
+  id: string;                       // 'geo_1_circle' …
+  name_display: string;             // 'Kreis', 'Tropfen', … (für UI-Anzeige)
+  viewBox: string;                  // meist '0 0 48 48', Hexagon '0 0 46 50'
+  fill_role: 'fill' | 'stroke';     // 'stroke' nur beim Hexagon-Ring
+  shape: GeometryShape;
+}
 
 export type CoordStatus = 'exact' | 'estimated' | 'missing';
 
