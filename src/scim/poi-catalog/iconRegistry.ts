@@ -46,9 +46,16 @@ function liteValidate(svg: string): string[] {
   // Als gültige Stroke-Elemente zählen: <path>, <polyline>, <line>, <polygon>.
   const hasGroup = /<g\s+[^>]*\bid="/.test(svg);
   if (hasGroup) {
-    // Layer-IDs sind case-insensitive — Fill/Stroke und fill/stroke beide ok.
-    if (!/<path[^>]*\bid="fill"/i.test(svg)) warnings.push('Layer "fill" nicht gefunden');
-    if (!/<path[^>]*\bid="stroke"/i.test(svg)) warnings.push('Layer "stroke" nicht gefunden');
+    // Layer-IDs sind case-insensitive. Als Fill/Stroke-Element zählen alle
+    // gängigen Form-Elemente — Illustrator exportiert je nach Original-Form
+    // mal <path>, mal <rect>, mal <polygon>, mal eine Gruppe.
+    const layerEls = '(path|rect|polygon|polyline|circle|g)';
+    if (!new RegExp(`<${layerEls}[^>]*\\bid="fill"`, 'i').test(svg)) {
+      warnings.push('Layer "fill" nicht gefunden');
+    }
+    if (!new RegExp(`<${layerEls}[^>]*\\bid="stroke"`, 'i').test(svg)) {
+      warnings.push('Layer "stroke" nicht gefunden');
+    }
   } else {
     // Mindestens ein Stroke-Element wird verlangt.
     const hasStrokeElement = /<(path|polyline|polygon|line)\b/.test(svg);

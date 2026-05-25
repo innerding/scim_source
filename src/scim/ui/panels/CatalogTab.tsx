@@ -442,7 +442,7 @@ function IconLibrarySection() {
                 <div style={{ fontSize: 11, lineHeight: 1.4, flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 600, color: '#1a365d' }}>{entry.file_name}</div>
                   <div style={{ color: '#718096', fontFamily: 'monospace', fontSize: 10 }}>
-                    {entry.drawing_id ?? <span style={{ color: '#c53030' }}>kein drawing_id</span>}
+                    {entry.drawing_id ?? <span style={{ color: '#a0aec0' }}>— strich-only</span>}
                   </div>
                   {hasWarnings && (
                     <div style={{ color: '#744210', fontSize: 10, marginTop: 4 }}>
