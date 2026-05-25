@@ -70,3 +70,40 @@ export interface PoiCatalogState {
   };
   warnings: string[];          // parser/validation warnings
 }
+
+// ─── Editor (Phase 3) ─────────────────────────────────────────────────────────
+// Overlay-Patches gegen die geparsten Plan-Daten. .md bleibt Source of Truth,
+// localStorage hält pro POI-id eine Patch-Entry. Synthetische IDs `new_XXX`
+// werden für Editor-eigene Neu-Anlagen vergeben (bis Export).
+
+export interface PoiPatch {
+  // Nur für vorhandene Plan-POIs: einzelne Felder überschreiben.
+  changes?: Partial<Omit<CatalogPoi, 'id'>>;
+  // Plan-POI im Editor als gelöscht markiert.
+  deleted?: boolean;
+  // Editor-neue POIs: tragen die volle POI-Definition.
+  is_new?: boolean;
+  new_poi?: CatalogPoi;
+}
+
+export interface PoiCatalogEditState {
+  region_id: string;
+  patches: Record<string, PoiPatch>;  // key = poi id (existing oder synthetic new_XXX)
+  next_new_id: number;                // counter für synthetische IDs
+  updated_at: string;                  // ISO-String, last write
+  schema_version: 1;
+}
+
+export interface MergedPoi extends CatalogPoi {
+  _isDirty: boolean;
+  _isNew: boolean;
+  _isDeleted: boolean;
+}
+
+export interface MergedCatalog {
+  pois: MergedPoi[];
+  clusters: CatalogCluster[];
+  dirty_count: number;
+  new_count: number;
+  deleted_count: number;
+}
