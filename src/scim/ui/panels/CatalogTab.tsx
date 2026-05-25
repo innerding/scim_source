@@ -5,7 +5,7 @@ import { CONTAINER_SYSTEM, containerOf, geometryOf } from '../../poi-catalog/poi
 import { ICON_REGISTRY, findIcons, iconById } from '../../poi-catalog/iconRegistry';
 import type { IconRegistryEntry } from '../../poi-catalog/iconRegistry';
 import { DIGIT_GLYPHS, digitGlyph, glyphsForNumber } from '../../poi-catalog/digitGlyphs';
-import { extractElevation, iconMeta, summitLayout } from '../../poi-catalog/decorations';
+import { extractElevation, iconMeta } from '../../poi-catalog/decorations';
 import type { Geometry } from '../../poi-catalog/poiCatalog.types';
 import {
   addNewPoi, clearEditState, deletePoi, hasEdits, loadEditState,
@@ -128,14 +128,26 @@ function buildPoiComposite(
     return `<svg viewBox="0 0 48 48" width="${size}" height="${size}">${container}${iconPart}</svg>`;
   }
 
-  // Summit-Composite nach ann_044: Icon hochgeschoben + Ziffern unten.
-  // icon_offset_y greift hier NICHT — der summitLayout positioniert explizit.
-  const layout = summitLayout(4);
+  // Summit-Composite (Variante B):
+  // - Icon bleibt in nativer Größe und nativer Position (kein Scale, kein Shift)
+  // - Ziffernreihe sitzt im unteren Bereich, Breite richtet sich nach der
+  //   logischen Icon-Box (24, ann_040-Spec). 4-Ziffern-Annahme:
+  //     gesamte Reihe 4 Glyphen × 6 = 24 breit, Höhe 7.5 (Glyph-Aspect 4:5)
+  //   Bei 3 Ziffern bleibt die Glyph-Größe gleich, Reihe wird schmaler (18)
+  //   und in der Icon-Breite zentriert.
+  // - Vertikal in der unteren Zone (y=36-48) zentriert: y=38.25 bis 45.75
   const digitCount = String(elevation).length;
+  const glyphSize = 6;       // 4-Ziffer-Annahme: 24 Icon-Breite / 4
+  const digitsH   = 7.5;     // 6 × 5/4 (Aspect 4:5)
+  const rowW      = digitCount * glyphSize;
+  const rowX      = 24 - rowW / 2;
+  const rowY      = 38.25;
+  // Icon ohne Transform — native Position
+  const iconPart = iconInner;
   return `<svg viewBox="0 0 48 48" width="${size}" height="${size}">` +
     container +
-    `<svg x="${layout.iconX}" y="${layout.iconY}" width="${layout.iconW}" height="${layout.iconH}" viewBox="0 0 48 48">${iconInner}</svg>` +
-    `<svg x="${layout.textX}" y="${layout.textY}" width="${layout.textW}" height="${layout.textH}" viewBox="0 0 ${digitCount * 4} 5">${buildDigitsSvgString(elevation)}</svg>` +
+    iconPart +
+    `<svg x="${rowX}" y="${rowY}" width="${rowW}" height="${digitsH}" viewBox="0 0 ${digitCount * 4} 5">${buildDigitsSvgString(elevation)}</svg>` +
     `</svg>`;
 }
 
