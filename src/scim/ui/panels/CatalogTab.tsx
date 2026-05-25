@@ -36,7 +36,7 @@ function GeometryGlyph({ subcategory, size = 16 }: { subcategory: Subcategory; s
     case 'Quadrat':
       return <svg width={size} height={size}><rect x={1.5} y={1.5} width={size-3} height={size-3} fill={fill} stroke={stroke} strokeWidth={1.5}/></svg>;
     case 'Tropfen':
-      return <svg width={size} height={size} viewBox="0 0 16 16"><path d="M8 1 C4 7 3 10 3 11.5 a5 5 0 0 0 10 0 C13 10 12 7 8 1 z" fill={fill} stroke={stroke} strokeWidth={1.2}/></svg>;
+      return <svg width={size} height={size} viewBox="0 0 16 16"><path d="M8 2 C5 6 3.5 8.5 3.5 9.5 a4.5 4.5 0 0 0 9 0 C12.5 8.5 11 6 8 2 z" fill={fill} stroke={stroke} strokeWidth={1.2}/></svg>;
     case 'Rechteck hoch':
       return <svg width={size} height={size}><rect x={size*0.22} y={1.5} width={size*0.56} height={size-3} fill={fill} stroke={stroke} strokeWidth={1.5}/></svg>;
     case 'Rechteck breit':
