@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="SCIM3_POI_Icons" data-name="SCIM3 POI Icons" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <g id="Wasser">
+    <path id="Fill" d="M12,12h24v24H12V12Z" fill="none"/>
+    <g id="Stroke">
+      <path d="M15,19c3-2,6-2,9,0s6,2,9,0" fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M15,29c3-2,6-2,9,0s6,2,9,0" fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M15,24c3-2,6-2,9,0s6,2,9,0" fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+  </g>
+</svg>
