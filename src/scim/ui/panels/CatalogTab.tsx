@@ -130,18 +130,19 @@ function buildPoiComposite(
 
   // Summit-Composite (Variante B):
   // - Icon bleibt in nativer Größe und nativer Position (kein Scale, kein Shift)
-  // - Ziffernreihe sitzt im unteren Bereich, Breite richtet sich nach der
-  //   logischen Icon-Box (24, ann_040-Spec). 4-Ziffern-Annahme:
-  //     gesamte Reihe 4 Glyphen × 6 = 24 breit, Höhe 7.5 (Glyph-Aspect 4:5)
-  //   Bei 3 Ziffern bleibt die Glyph-Größe gleich, Reihe wird schmaler (18)
-  //   und in der Icon-Breite zentriert.
-  // - Vertikal in der unteren Zone (y=36-48) zentriert: y=38.25 bis 45.75
+  // - Ziffernreihe sitzt INNERHALB des Containers an dessen unterem Rand,
+  //   nicht am Viewport-Rand. summit_digits_y_max gibt die maximale Y-Position
+  //   der Reihen-Unterkante pro Geometrie an.
+  // - Reihen-Breite richtet sich nach der logischen Icon-Box (24, ann_040).
+  //   4-Ziffern-Annahme: jede Ziffer 6×7.5 (Glyph-Aspect 4:5). Bei 3 Ziffern
+  //   gleiche Glyph-Größe, Reihe wird schmaler (18), horizontal zentriert.
   const digitCount = String(elevation).length;
-  const glyphSize = 6;       // 4-Ziffer-Annahme: 24 Icon-Breite / 4
-  const digitsH   = 7.5;     // 6 × 5/4 (Aspect 4:5)
+  const glyphSize = 6;
+  const digitsH   = 7.5;
   const rowW      = digitCount * glyphSize;
   const rowX      = 24 - rowW / 2;
-  const rowY      = 38.25;
+  const rowYBottom = geo.summit_digits_y_max ?? 47;
+  const rowY      = rowYBottom - digitsH;
   // Icon ohne Transform — native Position
   const iconPart = iconInner;
   return `<svg viewBox="0 0 48 48" width="${size}" height="${size}">` +

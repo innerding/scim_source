@@ -23,6 +23,7 @@ export const GEOMETRIES: Geometry[] = [
     viewBox: '0 0 48 48',
     fill_role: 'fill',
     shape: { kind: 'circle', cx: 24, cy: 24, r: 18 },
+    summit_digits_y_max: 41,  // Kreis-Unterkante bei y=42 (cy=24, r=18)
   },
   {
     id: 'geo_2_rectangle',
@@ -30,6 +31,7 @@ export const GEOMETRIES: Geometry[] = [
     viewBox: '0 0 48 48',
     fill_role: 'fill',
     shape: { kind: 'rect', x: 8, y: 8, width: 32, height: 32, rx: 6 },
+    summit_digits_y_max: 39,  // Quadrat-Unterkante bei y=40
   },
   {
     id: 'geo_3_droplet',
@@ -40,6 +42,7 @@ export const GEOMETRIES: Geometry[] = [
     shape: { kind: 'path', d: 'M 24 4 C 20 12, 9 22, 9 29 A 15 15 0 0 0 39 29 C 39 22, 28 12, 24 4 Z' },
     // Icon nach unten in die bauchige Hälfte verschieben — nicht auf die Spitze.
     icon_offset_y: 5,
+    summit_digits_y_max: 43,  // Tropfen-Unterkante bei y=44
   },
   {
     id: 'geo_4_rectangle_high',
@@ -47,6 +50,7 @@ export const GEOMETRIES: Geometry[] = [
     viewBox: '0 0 48 48',
     fill_role: 'fill',
     shape: { kind: 'rect', x: 10, y: 4, width: 28, height: 40, rx: 6 },
+    summit_digits_y_max: 43,  // Rechteck-Unterkante bei y=44
   },
   {
     id: 'geo_5_rectangle_wide',
@@ -54,6 +58,7 @@ export const GEOMETRIES: Geometry[] = [
     viewBox: '0 0 48 48',
     fill_role: 'fill',
     shape: { kind: 'rect', x: 4, y: 10, width: 40, height: 28, rx: 6 },
+    summit_digits_y_max: 37,  // Rechteck-Unterkante bei y=38
   },
   {
     id: 'geo_6_triangle',
@@ -64,6 +69,7 @@ export const GEOMETRIES: Geometry[] = [
     shape: { kind: 'polygon', points: [[24, 7], [44, 41], [4, 41]] },
     // Dreieck-Schwerpunkt liegt unter der geometrischen Mitte; Icon mitziehen.
     icon_offset_y: 4,
+    summit_digits_y_max: 40,  // Dreieck-Unterkante bei y=41
   },
   {
     id: 'geo_special_hexagon_ring',
@@ -71,6 +77,7 @@ export const GEOMETRIES: Geometry[] = [
     viewBox: '0 0 46 50',
     fill_role: 'stroke',
     shape: { kind: 'polygon', points: [[23, 0], [46, 12.5], [46, 37.5], [23, 50], [0, 37.5], [0, 12.5]] },
+    summit_digits_y_max: 49,  // Hexagon-Unterkante bei y=50 (eigener Viewport)
   },
 ];
 

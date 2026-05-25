@@ -47,6 +47,11 @@ export interface Geometry {
   // Default 0. Beispiele: Droplet=5 (Icon in den bauchigen Teil), Triangle=4
   // (Schwerpunkts-Versatz nach unten).
   icon_offset_y?: number;
+  // Y-Koordinate, unterhalb der die Ziffernreihe für die Summit-Decoration
+  // ihr unteres Ende NICHT überschreiten darf. Entspricht typischerweise dem
+  // unteren Rand des Containers (mit 1 px Innenpadding). Default = 47 (knapp
+  // über dem Viewport-Rand, fallback wenn keine Container-Form definiert).
+  summit_digits_y_max?: number;
 }
 
 export type CoordStatus = 'exact' | 'estimated' | 'missing';
