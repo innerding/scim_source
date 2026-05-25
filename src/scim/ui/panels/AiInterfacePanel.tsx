@@ -465,6 +465,75 @@ Erweiterbar: Das Decoration-Konzept ist generisch — decoration_below kann spä
 Implementierung: Teil von Phase D (Composite-Rendering Icon + Container + Decoration). Bis dahin nur als Spec dokumentiert. Auto-Extraktion der Höhe wird gemeinsam mit der Decoration-Render-Logik gebaut, damit der Decoration-Begriff als zusammenhängendes Konzept ins System kommt statt in zwei Halbschritten.`,
     date: '2026-05-25',
   },
+  {
+    id: 'ann_045',
+    category: 'business_context',
+    label: 'Stand der Icon-Pipeline (Checkpoint nach Phase A+B)',
+    content: `Checkpoint-Annotation: was die SCIM seit ann_039 (Deploy-Workflow) tatsächlich an Funktion gewonnen hat, plus offene Nächste-Schritte. Soll künftig schneller Orientierung geben "wo stehen wir heute".
+
+Implementiert und live auf scim3.diesenpark.com:
+
+Editor (Phase 3, vor der Icon-Pipeline):
+  - P02 Katalog-Tab mit vollem Operator-Editor
+  - Inline-Bearbeitung pro POI (Text, Coord, Cluster, Status, Subkategorie, Icon)
+  - Hinzufuegen/Loeschen/Wiederherstellen, Reset einzeln + total
+  - Auto-Save in localStorage, Dirty/New/Deleted-Marker
+  - Export-Button mit Diff-Vorschau und Plan-md-Download
+
+Container-System (Phase A):
+  - 7 Geometrien als Code-Konstanten in diskriminierter Union
+    (circle, rect, polygon, path), exakt nach ann_042-Mathematik
+  - Subkategorie-Farbtabelle aktualisiert auf neue Palette
+  - Ein generischer ContainerGlyph-Renderer ersetzt die alten switch-cases
+
+Icon-Pipeline (Phase B + Erweiterungen):
+  - data/icons/ Ordner, 27 SVG-Icons live in der Bibliothek
+    (26 Gruenberg-POI-Icons + Aussichtspunkt als Dual-Naming-Demo)
+  - Vite-Glob-Loader laedt alle SVGs zur Build-Zeit
+  - Dual-Naming-Modell: file_name (Bedeutung) vs. drawing_id
+    (gezeichnete Sache), Suche findet ueber beide
+  - svgCleaner-Modul: bereinigt Phantom-Attribute, Illustrator-Metadaten,
+    Root width/height, stempelt Copyright "(c) YYYY diesenpark.com"
+    idempotent rein
+  - liteValidate-Funktion: warnt vor strukturellen Spec-Abweichungen
+    (akzeptiert path/rect/polygon/circle/g als Layer-Element)
+  - Sonderregel fuer Strich-only-Icons (ann_040): SVG ohne Gruppe
+    laeuft auch durch
+  - Icon-Bibliothek-Sektion im Katalog-Tab: alphabetische Liste mit
+    Vorschau, Suche, Cleaning-Badge (klappbar mit Aenderungsliste),
+    Warnungen-Badge
+
+Ziffern-Glyphen (vorbereitend fuer ann_044):
+  - data/digits/ mit 10 Strich-Glyphen 0-9 (4x5-viewBox)
+  - digitGlyphs.ts mit deutschen Namen-Mappings, glyphsForNumber(n)
+  - Ziffern-Glyphen-Sektion im Katalog-Tab mit Demo-Hoehenangaben
+
+Auto-Deploy (ann_039):
+  - Jeder push auf main triggert GitHub Actions, Cloudflare Pages
+    deployt scim3.diesenpark.com automatisch innerhalb ~1-2 Min
+
+Offene Naechste-Schritte (Phase C + D + E):
+
+  Phase C - Icon-Picker im Katalog-Editor:
+    Statt freiem Text-Input fuer das Icon-Feld eines POI ein klickbares
+    Modal mit Vorschau-Grid + Suche ueber Dual-Naming.
+
+  Phase D - Composite-Rendering inkl. Decorations:
+    Container + Icon uebereinander gerendert wie er auf der Karte
+    aussehen wird. Inklusive Elevation-Decoration nach ann_044
+    (Ziffern unter dem Icon fuer Gipfel-POIs), inklusive visueller
+    Stress-Test-Toggle (z.B. magenta-Container-Vorschau) - Phantom-
+    Attribute und Layer-Probleme werden so vor dem Live-Gang sichtbar.
+
+  Phase E - Importer-Tab mit Drag-Drop:
+    Neuer Tab, Operator zieht SVGs rein, sieht PASS/WARN/FAIL pro
+    Datei, Diagnosesheet bei FAIL, Cleaner laeuft mit Diff-Vorschau,
+    bestandene Icons werden in data/icons/ geschrieben.
+
+Phasen-Reihenfolge nicht starr - C kann auch nach D kommen, je nach
+Bedarf. Phase E ist der groesste Brocken und kommt zuletzt.`,
+    date: '2026-05-25',
+  },
 ];
 
 function AnnotationsTab() {

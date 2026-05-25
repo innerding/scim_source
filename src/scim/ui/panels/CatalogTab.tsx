@@ -442,7 +442,10 @@ function IconLibrarySection() {
                 <div style={{ fontSize: 11, lineHeight: 1.4, flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 600, color: '#1a365d' }}>{entry.file_name}</div>
                   <div style={{ color: '#718096', fontFamily: 'monospace', fontSize: 10 }}>
-                    {entry.drawing_id ?? <span style={{ color: '#a0aec0' }}>— strich-only</span>}
+                    {entry.drawing_id ?? <span style={{ color: '#a0aec0' }}>—</span>}
+                    {entry.is_stroke_only && (
+                      <span style={{ color: '#a0aec0', marginLeft: 6, fontStyle: 'italic' }}>· strich-only</span>
+                    )}
                   </div>
                   {hasWarnings && (
                     <div style={{ color: '#744210', fontSize: 10, marginTop: 4 }}>
@@ -450,12 +453,17 @@ function IconLibrarySection() {
                     </div>
                   )}
                   {entry.cleaning_changes.length > 0 && (
-                    <div
-                      style={{ color: '#22543d', fontSize: 10, marginTop: 4 }}
-                      title={entry.cleaning_changes.join('\n')}
-                    >
-                      🧹 bereinigt: {entry.cleaning_changes.length}
-                    </div>
+                    <details style={{ marginTop: 4 }}>
+                      <summary style={{ color: '#22543d', fontSize: 10, cursor: 'pointer', listStyle: 'none' }}>
+                        🧹 bereinigt: {entry.cleaning_changes.length} ›
+                      </summary>
+                      <ul style={{
+                        margin: '4px 0 0 14px', padding: 0, fontSize: 10,
+                        color: '#2f855a', lineHeight: 1.5,
+                      }}>
+                        {entry.cleaning_changes.map((c, i) => <li key={i}>{c}</li>)}
+                      </ul>
+                    </details>
                   )}
                 </div>
               </div>

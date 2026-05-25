@@ -12,7 +12,11 @@ import { cleanIconSvg } from './svgCleaner';
 export interface IconRegistryEntry {
   id: string;            // = file_name; eindeutig pro Bibliothek
   file_name: string;     // 'Aussichtspunkt' (ohne .svg-Endung)
-  drawing_id: string | null;  // aus <g id="…"> im SVG; null wenn nicht gefunden
+  drawing_id: string | null;  // bei <g>-Icons aus <g id="…">; bei Strich-only-
+                              // Icons aus dem id der Wurzel-Form
+                              // (path/polyline/etc.); null nur wenn nirgends id
+  is_stroke_only: boolean;    // true wenn das SVG keine <g>-Gruppe hat
+                              // (Sonderregel aus ann_040)
   svg_raw: string;       // unveränderter SVG-Inhalt aus der Datei
   svg_cleaned: string;   // bereinigte Version (Cleaner angewendet)
   cleaning_changes: string[];  // was der Cleaner verändert hat
@@ -33,9 +37,20 @@ function fileNameFromPath(path: string): string {
   return file.replace(/\.svg$/i, '');
 }
 
+// Drawing-ID-Extraktion:
+//  - Primär: <g id="…"> der Top-Level-Gruppe (normaler Icon-Fall)
+//  - Fallback (Strich-only-Icons ohne <g>): id der ersten Wurzel-Form
+//    (path/polyline/polygon/line/rect/circle), damit auch diese Icons
+//    einen sprechenden drawing_id-Namen tragen.
 function extractDrawingId(svg: string): string | null {
-  const match = svg.match(/<g\s+[^>]*\bid="([^"]+)"/);
-  return match ? match[1] : null;
+  const groupMatch = svg.match(/<g\s+[^>]*\bid="([^"]+)"/);
+  if (groupMatch) return groupMatch[1];
+  const rootShapeMatch = svg.match(/<(?:path|polyline|polygon|line|rect|circle)\s+[^>]*\bid="([^"]+)"/);
+  return rootShapeMatch ? rootShapeMatch[1] : null;
+}
+
+function hasGroup(svg: string): boolean {
+  return /<g\s+[^>]*\bid="/.test(svg);
 }
 
 function liteValidate(svg: string): string[] {
@@ -99,6 +114,7 @@ function buildRegistry(): IconRegistryEntry[] {
       id: file_name,
       file_name,
       drawing_id: extractDrawingId(svgRaw),
+      is_stroke_only: !hasGroup(svgRaw),
       svg_raw: svgRaw,
       svg_cleaned: cleaned,
       cleaning_changes: changes,
