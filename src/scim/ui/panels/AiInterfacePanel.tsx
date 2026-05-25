@@ -288,6 +288,149 @@ Operator-Workflow:
 Feature-Branches deployen explizit nicht — kein Branch-Preview konfiguriert. Wer im Browser testen will: lokal mit npm run dev.`,
     date: '2026-05-25',
   },
+  {
+    id: 'ann_040',
+    category: 'adr',
+    label: 'Icon Intake Convention — Standard POI-Icon',
+    content: `Eingehende POI-Icons werden als einzelne SVG-Dateien geliefert, exportiert aus Adobe Illustrator (oder einem Tool, das dieselben Konventionen erfüllt).
+
+Zeichenfläche (Artboard): 48 × 48 px, viewBox="0 0 48 48".
+
+Aktive Zeichnungsfläche: zentriert, maximal 24 × 24 px. Das Symbol darf kleiner sein, aber nie über diese Box hinausragen. Die umgebenden 12 px Sicherheitszone sind für den system-gerenderten Container reserviert.
+
+Layer-Struktur (von unten nach oben):
+  1. Gruppe <g id="…"> — ID = Identität der Zeichnung (siehe Namenskonvention unten).
+  2. fill — weiße Innenfläche, kein Stroke (fill="#fff", stroke="none").
+  3. stroke — schwarze Konturlinie, kein Fill (fill="none", stroke="#000", stroke-width="1", stroke-linecap="round", stroke-linejoin="round").
+
+Komplexitätsgrenze: ≤ 60 Ankerpunkte über alle Pfade hinweg (Summe der Endpunkt-Kommandos M/L/H/V/C/S/Q/T/A in allen d-Strings). Lesbarkeit vor Detailtreue.
+
+Was NICHT ins Icon gehört (wird vom System ergänzt):
+  - Container (Geometrie + Farbe der Subkategorie, siehe ann_042)
+  - Hitbox (kreisförmig, vom Renderer berechnet)
+  - Hintergrund-, Padding- oder Hilfsflächen
+  - Illustrator-Preview-Metadaten am Root-SVG (z.B. id="kbc-…") — beim Import automatisch entfernt
+
+Zur Namenskonvention: Es gibt zwei voneinander unabhängige Namen — den Gruppen-Namen im SVG (<g id="fernglas">) und den Dateinamen (Aussichtspunkt.svg). Der Gruppen-Name benennt die Zeichnung selbst (was ist gezeichnet) und ist stabil — eine einmal etablierte Zeichnung wird nicht umbenannt. Der Dateiname benennt, wofür dieses Icon im Katalog steht (welche Rolle es spielt), und ist veränderbar. Dasselbe Drawing kann unter mehreren Bedeutungen auftreten: Aussichtspunkt.svg, Hochstand.svg, Belvedere.svg enthalten alle eine <g id="fernglas">. Die Icon-Suche im SCIM-UI findet ein Icon über beide Namen — wer "fernglas" sucht und wer "aussichtspunkt" sucht, landet beim selben Drawing.`,
+    date: '2026-05-25',
+  },
+  {
+    id: 'ann_041',
+    category: 'adr',
+    label: 'Icon Importer UX',
+    content: `Der Importer (geplanter eigener Tab) nimmt einzelne .svg-Dateien oder mehrere .svg-Dateien aus einem Ordner entgegen (Multi-Select, Drag-Drop). Er nimmt keinen Ordner als Ganzes entgegen — nur dessen .svg-Inhalte. Nicht-SVG-Dateien werden ignoriert; Unterordner werden nicht rekursiv durchsucht.
+
+Statusdarstellung pro Datei im Importer-Tab:
+  - Eingegangen, noch ungeprüft: Icon mit 50 % Deckkraft (grau), kein Rahmen, Spinner zeigt "Prüfung läuft".
+  - Bestanden (PASS): Icon voll deckend, dünner grüner Rahmen, ✓ oben rechts. Hover: "48×48 · Layer ok · Stroke ok · N Ankerpunkte". Per Klick übernehmbar.
+  - Mit Warnungen (WARN): Icon voll deckend, dünner gelber Rahmen, ⚠-Symbol. Importierbar mit Hinweis (z.B. "Preview-Metadaten gefunden, beim Import bereinigt" oder "57 Ankerpunkte — knapp am Limit").
+  - Nicht bestanden (FAIL): Icon voll deckend, roter Rahmen, ✗-Symbol. Nicht importierbar, bis korrigiert. Klick öffnet das Diagnosesheet.
+
+Diagnosesheet (pro fehlgeschlagenes Icon):
+  - Liste aller geprüften Regeln mit ✓ / ✗-Status, z.B.:
+      ✓ viewBox="0 0 48 48"
+      ✗ Layer-Gruppe ohne id — erwartet <g id="…">
+      ✓ Layer fill: Farbe #fff, kein Stroke
+      ✗ Layer stroke: stroke-linecap fehlt — erwartet round
+      ✓ Ankerpunkte: 42 (≤ 60)
+      ✗ Inhalt überschreitet 24×24-Box (gemessen: 26×22)
+  - Pro ✗ ein kurzer Korrektur-Hinweis
+  - "Erneut prüfen"-Button für extern korrigierte und neu gedraggte Dateien
+  - "Verwerfen"-Button
+
+Übernahme in die Bibliothek:
+  - Bestandene Icons per Klick (oder Bulk: "Alle PASS übernehmen") nach data/icons/
+  - Namenskollision: Dialog "Vorhandenes überschreiben?" mit Vergleichs-Vorschau alt vs. neu
+
+Spec der Eingangsdateien siehe ann_040.`,
+    date: '2026-05-25',
+  },
+  {
+    id: 'ann_042',
+    category: 'adr',
+    label: 'Container, Geometrien & Palette',
+    content: `Ein Container besteht aus genau einer geometrischen Form in einer Bounding-Box von max. 44 × 44 px (zentriert in einem 48 × 48-Viewport, 2 px Sicherheitsrand). Stroke und Fill liegen nicht auf getrennten Ebenen wie bei Icons — Container haben nur eine Form.
+
+Konvention:
+  - Universell schwarzer Stroke, 1 px
+  - Fill wird zur Renderzeit aus der Subkategorie-Farbe übernommen (Cluster-Hexagon: Sonderfall, siehe ann_043)
+  - Geometrien werden im Code als Konstanten geführt, nicht als File-Import. Sie erscheinen im SCIM-UI, sind aber nicht UI-editierbar.
+
+Datenform der Geometrien — diskriminierte Union. Vier SVG-native Varianten reichen aus: circle, rect, polygon, path. Der Renderer ist eine einzige Funktion, die nach kind switched und das passende SVG-Primitive emittiert.
+
+  type GeometryShape =
+    | { kind: 'circle';  cx: number; cy: number; r: number }
+    | { kind: 'rect';    x: number; y: number; width: number; height: number; rx?: number }
+    | { kind: 'polygon'; points: [number, number][] }
+    | { kind: 'path';    d: string };
+
+  interface Geometry {
+    id: string;                       // 'geo_1_circle' …
+    name_display: string;             // 'Kreis', 'Tropfen', …
+    viewBox: string;                  // meist '0 0 48 48', Hexagon '0 0 46 50'
+    fill_role: 'fill' | 'stroke';     // 'stroke' nur beim Hexagon-Ring
+    shape: GeometryShape;
+  }
+
+Geometrien — Reihenfolge im Namen verankert, Bucket-Zuordnung:
+  geo_1_circle              Points       circle (24,24) r=18
+  geo_2_rectangle           Squares      rect 32×32 @ (8,8), rx=6
+  geo_3_droplet             Regenerate   path "M 24 4 C 20 12, 9 22, 9 29 A 15 15 0 0 0 39 29 C 39 22, 28 12, 24 4 Z"
+  geo_4_rectangle_high      Transport    rect 28×40 @ (10,4), rx=6
+  geo_5_rectangle_wide      Service      rect 40×28 @ (4,10), rx=6
+  geo_6_triangle            Help         polygon [(24,7), (44,41), (4,41)] — Apex 3 px nach unten verschoben gegen optisches "zu hoch" empfinden
+  geo_special_hexagon_ring  Cluster      polygon [(23,0), (46,12.5), (46,37.5), (23,50), (0,37.5), (0,12.5)], viewBox 0 0 46 50, fill_role 'stroke' (siehe ann_043)
+
+Render-Regel (eine Funktion):
+  - Aus der Subkategorie wird die Farbe geholt
+  - fill_role 'fill' → Form mit Subkategorie-Farbe füllen, Stroke schwarz 1 px
+  - fill_role 'stroke' → transparenter Fill, Stroke in Subkategorie-Farbe (Stroke-Dicke für Cluster siehe ann_043)
+  - SVG-Primitive werden direkt emittiert — keine Konvertierung zu Path-Strings, wo eine Primitive verfügbar ist
+
+Subkategorien — Bucket-Position + sprechender Name + Farbe als 6-stelliger Hex:
+  points_1_historical      ffd700
+  points_2_others          ccff33
+  square_1_rest            718c00
+  square_2_move            a4d000
+  regenerate_1_substanze   87ceeb
+  regenerate_2_water       0066ff
+  transport_1_vehicle      c0c0c0
+  transport_2_parking      7a7a7a
+  service_1_sleep          d4a017
+  service_2_others         d4a017
+  help_1_order             ff8c00
+  help_2_emergency         ff4e00
+
+Service: beide Subkategorien teilen dieselbe goldene Farbe — Unterscheidung allein über das Icon innen (bewusst, weil Service eine Not-Kategorie ist und der Fokus dem Operator zumutbar ist).
+
+Warum keine UI-Slots für Kategorien: Die Reihenfolge der Buckets, die Anzahl der Subkategorien und ihre Farbzuordnung sind bewusst nicht im SCIM-UI editierbar. Diese Kategorien sind das semantische Fundament aller POI-Bedeutung in der Auslieferungs-App — eine Änderung wirkt rückwirkend auf alle existierenden Representations und alle gemerkten Operator-Konventionen. Solche Änderungen gehören in eine bewusste Code-Anpassung mit Review, nicht in einen Klick im Editor. Der Operator pflegt POIs innerhalb dieser Struktur; das Strukturskelett selbst ist Sache der Maintainer.`,
+    date: '2026-05-25',
+  },
+  {
+    id: 'ann_043',
+    category: 'adr',
+    label: 'Cluster-Hexagon & Merging-Verhalten',
+    content: `Das Cluster-Hexagon ist der visuelle Sonderfall im Container-System (siehe ann_042) und folgt eigenen Regeln.
+
+Statische Spec:
+  - Form: Pointy-Top-Hexagon (Spitze oben + unten)
+  - Basis-Größe: 46 × 50 px (kleinstes mögliches Cluster aus 2 gerade berührenden POIs)
+  - Stroke: 3 px schwarz, skaliert proportional mit der Hexagon-Größe (linear, kein non-scaling-stroke)
+  - Fill: weiß
+  - Innen: zentriert das Identity-Icon des Clusters (aus dem POI mit is_cluster_identity: true in der Plan-.md, dort markiert als *(Cluster-Icon)*), mit eigenem 48×48-Viewport. Skaliert proportional mit dem Hexagon.
+
+Dynamisches Verhalten — Merging:
+  - Zwei POI-Icons überlappen sich auf der Karte (durch Zoom-Out) → sie verschmelzen zu einem Cluster-Icon
+  - Coord des Cluster-Icons = Schwerpunkt der zusammengefassten Mitglieder
+  - Überlappt ein dritter POI mit dem Cluster-Icon → auch er verschwindet, Cluster wächst
+  - Bei Zoom-In: sobald ein Mitglied die Cluster-Hülle verlässt, fällt es heraus → Cluster schrumpft oder löst sich auf
+
+Größen-Regel:
+  Cluster-Hexagon-Größe entspricht der Bounding-Box der enthaltenen POIs (im Bildschirm-Pixelraum bei aktuellem Zoom), zuzüglich eines Sicherheitsrands von etwa einem halben POI-Container. Untergrenze: 46 × 50 px. Stroke skaliert proportional zur Größe. Das Hexagon ist somit nie größer als die Fläche, die es repräsentiert — und nie kleiner als ein 2-POI-Basiscluster.
+
+Damit braucht es keine willkürliche Skalierungs-Schrittweite und keine Obergrenze: das Cluster wächst organisch mit dem Abstand seiner Mitglieder.`,
+    date: '2026-05-25',
+  },
 ];
 
 function AnnotationsTab() {
