@@ -8,7 +8,8 @@
       "Pizzeria Bella Italia entfernt (außerhalb Wandergebiet)",
       "Wasser-Features ohne Namen entfernt (nur Laudachsee behalten)",
       "Information-Features ohne Namen bereits in Query gefiltert",
-      "Grünberg-Seilbahn Tal- und Bergstation manuell ergänzt aus aerialway=cable_car way 48231263"
+      "Grünberg-Seilbahn Tal- und Bergstation manuell ergänzt aus aerialway=cable_car way 48231263",
+      "8 zusätzliche Attraktionen ergänzt (2026-05-25): Sommerrodelbahn, Baumwipfelpfad, Paragleiter-Start, Adlerhorst-Klettern, BSV-Bogenparcours, Reitanlage, 2× Paragleiter-Landeplatz. category=manual_other, Subtyp im properties.subtype-Feld."
     ]
   },
   "features": [
@@ -704,6 +705,184 @@
         "coordinates": [
           13.8215572,
           47.8983187
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "osm_id": "way/386752559",
+        "category": "manual_other",
+        "subtype": "alpine_coaster",
+        "name": "Sommerrodelbahn Grünberg-Flitzer",
+        "ele": null,
+        "osm_tags": {
+          "tourism": "attraction",
+          "attraction": "alpine_coaster",
+          "website": "https://www.gruenberg.info/de/wandern-aktivitaeten/attraktionen/sommerrodelbahn-gruenberg-flitzer"
+        }
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.8201916,
+          47.8985163
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "osm_id": "node/5797937754",
+        "category": "manual_other",
+        "subtype": "treetop_walk",
+        "name": "Baumwipfelpfad Salzkammergut",
+        "ele": null,
+        "osm_tags": {
+          "tourism": "attraction",
+          "attraction": "treetop_walk",
+          "website": "https://www.baumwipfelpfade.at/salzkammergut/",
+          "wheelchair": "yes"
+        }
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.8181630,
+          47.8981683
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "osm_id": "way/755755991",
+        "category": "manual_other",
+        "subtype": "paragliding_takeoff",
+        "name": "Paragleiter-Startplatz Grünberg",
+        "ele": null,
+        "osm_tags": {
+          "sport": "free_flying",
+          "free_flying:site": "takeoff",
+          "operator": "Flying Swans Traunsee"
+        }
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.8180351,
+          47.8984179
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "osm_id": "node/911877804",
+        "category": "manual_other",
+        "subtype": "climbing",
+        "name": "Adlerhorst (Klettergarten)",
+        "ele": null,
+        "osm_tags": {
+          "sport": "climbing",
+          "climbing": "crag",
+          "climbing:rock": "limestone",
+          "website": "www.klettern-adlerhorst.com"
+        }
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.8191708,
+          47.8803148
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "osm_id": "way/704671635",
+        "category": "manual_other",
+        "subtype": "archery",
+        "name": "BSV Salzkammergut (3D-Bogenparcours)",
+        "ele": null,
+        "osm_tags": {
+          "sport": "archery",
+          "archery": "3D",
+          "website": "https://www.bsv-salzkammergut.at/"
+        }
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.8115432,
+          47.8815527
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "osm_id": "way/1368109835",
+        "category": "manual_other",
+        "subtype": "equestrian",
+        "name": "Reitanlage Grünberg",
+        "ele": null,
+        "osm_tags": {
+          "sport": "equestrian",
+          "leisure": "pitch",
+          "surface": "grass"
+        }
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.8312235,
+          47.9155454
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "osm_id": "way/788753394",
+        "category": "manual_other",
+        "subtype": "paragliding_landing",
+        "name": "Paragleiter-Landeplatz Schloss Weyer",
+        "ele": null,
+        "osm_tags": {
+          "sport": "free_flying",
+          "free_flying:site": "landing",
+          "operator": "Flying Swans Traunsee"
+        }
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.8125055,
+          47.9157906
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "osm_id": "way/1508902319",
+        "category": "manual_other",
+        "subtype": "paragliding_landing",
+        "name": "Paragleiter-Landeplatz Mülibankerl",
+        "ele": null,
+        "osm_tags": {
+          "sport": "free_flying",
+          "free_flying:site": "landing",
+          "operator": "Flying Swans Traunsee"
+        }
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.8226581,
+          47.9192367
         ]
       }
     }
