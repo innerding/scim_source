@@ -4,6 +4,7 @@ import { parsePoiCatalog } from '../../poi-catalog/poiCatalog.parser';
 import { CONTAINER_SYSTEM, containerOf, geometryOf } from '../../poi-catalog/poiCatalog.containerSystem';
 import { ICON_REGISTRY, findIcons } from '../../poi-catalog/iconRegistry';
 import type { IconRegistryEntry } from '../../poi-catalog/iconRegistry';
+import { DIGIT_GLYPHS, glyphsForNumber } from '../../poi-catalog/digitGlyphs';
 import {
   addNewPoi, clearEditState, deletePoi, hasEdits, loadEditState,
   mergeEdits, patchPoi, resetPoi, saveEditState, undeletePoi,
@@ -461,6 +462,57 @@ function IconLibrarySection() {
   );
 }
 
+// ─── Digit-Glyphs Preview (vorbereitend für ann_044 / Phase D) ────────────────
+
+function DigitGlyphsSection() {
+  return (
+    <details style={{ marginTop: 32, fontFamily: 'system-ui, sans-serif' }}>
+      <summary style={{ fontSize: 13, fontWeight: 600, color: '#1a365d', cursor: 'pointer', marginBottom: 8 }}>
+        Ziffern-Glyphen ({DIGIT_GLYPHS.length} / 10)
+      </summary>
+      <div style={{ fontSize: 11, color: '#718096', marginBottom: 12 }}>
+        Eigene Strich-Glyphen für Höhenangaben unter Summit-Icons (siehe ann_044).
+        Quelle: data/digits/*.svg · viewBox 0 0 4 5 · Stroke 0.75
+      </div>
+      {/* Einzelne Glyphen */}
+      <div style={{ display: 'flex', gap: 16, alignItems: 'flex-end', marginBottom: 16 }}>
+        {DIGIT_GLYPHS.map((g) => (
+          <div key={g.digit} style={{ textAlign: 'center' }}>
+            <div
+              style={{ width: 24, height: 30 }}
+              title={`${g.digit} · ${g.name}`}
+              dangerouslySetInnerHTML={{ __html: makeResponsive(g.svg_raw) }}
+            />
+            <div style={{ fontSize: 10, color: '#a0aec0', fontFamily: 'monospace', marginTop: 2 }}>
+              {g.digit} · {g.name}
+            </div>
+          </div>
+        ))}
+      </div>
+      {/* Demo: ein paar Beispielzahlen */}
+      <div style={{ fontSize: 11, color: '#4a5568', marginBottom: 6 }}>Beispiel-Höhenangaben:</div>
+      <div style={{ display: 'flex', gap: 16, alignItems: 'flex-end' }}>
+        {[1349, 986, 649, 789].map((n) => (
+          <div key={n} style={{ textAlign: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 1 }}>
+              {glyphsForNumber(n).map((g, i) => (
+                <div
+                  key={i}
+                  style={{ width: 16, height: 20 }}
+                  dangerouslySetInnerHTML={{ __html: makeResponsive(g.svg_raw) }}
+                />
+              ))}
+            </div>
+            <div style={{ fontSize: 10, color: '#a0aec0', fontFamily: 'monospace', marginTop: 2 }}>
+              {n}
+            </div>
+          </div>
+        ))}
+      </div>
+    </details>
+  );
+}
+
 // ─── Container-System-Übersicht ───────────────────────────────────────────────
 
 function ContainerSystemSection() {
@@ -779,6 +831,9 @@ export default function CatalogTab() {
 
       {/* Icon-Bibliothek (klappbar) */}
       <IconLibrarySection />
+
+      {/* Ziffern-Glyphen (klappbar) */}
+      <DigitGlyphsSection />
 
       {/* Container-System (klappbar) */}
       <ContainerSystemSection />
