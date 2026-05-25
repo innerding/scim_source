@@ -431,6 +431,38 @@ Größen-Regel:
 Damit braucht es keine willkürliche Skalierungs-Schrittweite und keine Obergrenze: das Cluster wächst organisch mit dem Abstand seiner Mitglieder.`,
     date: '2026-05-25',
   },
+  {
+    id: 'ann_044',
+    category: 'adr',
+    label: 'Decoration-Layout: Höhenangabe unter Icon (Summit-Variante)',
+    content: `Für POIs, die gleichzeitig Gipfel sind (z.B. "Katzenstein 1349 m"), wird unter dem Icon eine Ziffernreihe gerendert. Es wird kein eigenes Icon für die Summit-Variante gebraucht — dasselbe Fernglas-Drawing wird nur anders positioniert und mit einer Decoration ergänzt.
+
+Layout-Regel (Viewport 48 × 48):
+  Freier Parameter: p (uniformes Padding, gibt Kompaktheit vor)
+  Icon-Bereich:     zentriert horizontal, p von links/rechts, p von oben
+                    Breite  W_i = 48 - 2p
+                    Höhe    H_i nach Aspect-Ratio des Icons
+  Lücke Icon → Ziffern:  g = p / 2
+  Ziffernreihe:     zentriert horizontal, max. so breit wie das Icon
+                    Abstand p zum unteren Rand
+                    Höhe   H_t = 48 - 5p/2 - H_i  (Schließbedingung)
+
+Schließbedingung (alles muss in 48 px Vertikale passen):
+  p + H_i + g + H_t + p = 48
+  ⇒ H_i + H_t = 48 - 5p/2
+
+Beispiel für Fernglas mit p = 4 (Aspect-Ratio ~3:2):
+  W_i = 40 · H_i ≈ 26.67 · g = 2 · H_t ≈ 11.33 · W_t = 40
+
+Datenherkunft der Höhe: Auto-Extraktion via Regex \\b(\\d{2,5})\\s*m\\b aus dem POI-Textfeld. Keine separate Dateneingabe nötig — die Höhe lebt weiterhin im Text ("Katzenstein 1349 m"), wird nur fürs Rendering extrahiert. "m" wird aus Platzgründen weggelassen, nur die Ziffern werden gerendert.
+
+Welche Icons bekommen die Decoration: pro Icon in data/icons/icons.meta.json deklarierbar, z.B. { "Aussichtspunkt": { "decoration_below": "elevation" } }. Default: keine Decoration.
+
+Erweiterbar: Das Decoration-Konzept ist generisch — decoration_below kann später auch andere Werte tragen (z.B. Distanz für Wegpunkte, Wassertemperatur für Badestellen, Bettenzahl für Hotels).
+
+Implementierung: Teil von Phase D (Composite-Rendering Icon + Container + Decoration). Bis dahin nur als Spec dokumentiert. Auto-Extraktion der Höhe wird gemeinsam mit der Decoration-Render-Logik gebaut, damit der Decoration-Begriff als zusammenhängendes Konzept ins System kommt statt in zwei Halbschritten.`,
+    date: '2026-05-25',
+  },
 ];
 
 function AnnotationsTab() {
