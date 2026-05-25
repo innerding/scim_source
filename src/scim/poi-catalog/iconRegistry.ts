@@ -50,11 +50,30 @@ function liteValidate(svg: string): string[] {
     // gängigen Form-Elemente — Illustrator exportiert je nach Original-Form
     // mal <path>, mal <rect>, mal <polygon>, mal eine Gruppe.
     const layerEls = '(path|rect|polygon|polyline|circle|g)';
-    if (!new RegExp(`<${layerEls}[^>]*\\bid="fill"`, 'i').test(svg)) {
+
+    // Fill-Layer: muss existieren und darf kein echtes stroke-Attribut tragen
+    // (vergessene Strich-Attribute aus Illustrator-Workflows fangen).
+    const fillRe = new RegExp(`<${layerEls}[^>]*\\bid="fill"[^>]*>`, 'i');
+    const fillMatch = fillRe.exec(svg);
+    if (!fillMatch) {
       warnings.push('Layer "fill" nicht gefunden');
+    } else {
+      const strokeAttr = fillMatch[0].match(/\bstroke="([^"]*)"/i);
+      if (strokeAttr && strokeAttr[1].trim().toLowerCase() !== 'none') {
+        warnings.push(`Fill-Layer hat unerwartetes stroke="${strokeAttr[1]}" (sollte fehlen oder "none" sein)`);
+      }
     }
-    if (!new RegExp(`<${layerEls}[^>]*\\bid="stroke"`, 'i').test(svg)) {
+
+    // Stroke-Layer: muss existieren und darf kein echtes fill-Attribut tragen.
+    const strokeRe = new RegExp(`<${layerEls}[^>]*\\bid="stroke"[^>]*>`, 'i');
+    const strokeMatch = strokeRe.exec(svg);
+    if (!strokeMatch) {
       warnings.push('Layer "stroke" nicht gefunden');
+    } else {
+      const fillAttr = strokeMatch[0].match(/\bfill="([^"]*)"/i);
+      if (fillAttr && fillAttr[1].trim().toLowerCase() !== 'none') {
+        warnings.push(`Stroke-Layer hat unerwartetes fill="${fillAttr[1]}" (sollte fehlen oder "none" sein)`);
+      }
     }
   } else {
     // Mindestens ein Stroke-Element wird verlangt.
