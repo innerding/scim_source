@@ -13,6 +13,7 @@ import PanelValidation from './panels/PanelValidation';
 import PanelRaw from './panels/PanelRaw';
 import SystemPanel from './panels/SystemPanel';
 import AiInterfacePanel from './panels/AiInterfacePanel';
+import CatalogTab from './panels/CatalogTab';
 import { useRole } from './RoleContext';
 import V01PackagesPanel from './panels/V01PackagesPanel';
 import V02RegionDetailPanel from './panels/V02RegionDetailPanel';
@@ -23,7 +24,7 @@ interface Props {
   result: ScimPipelineResult;
 }
 
-const TAB_ORDER: TabId[] = ['input', 'result', 'validation', 'leistungsblatt', 'raw'];
+const TAB_ORDER: TabId[] = ['catalog', 'input', 'result', 'validation', 'leistungsblatt', 'raw'];
 
 function TabBar({
   tabs, active, onSelect,
@@ -122,6 +123,11 @@ function PanelContent({ activeId, activeTab, result }: {
     if (role !== 'operator') return null;
     return <AiInterfacePanel activeTab={activeTab} />;
   }
+  // P02 Katalog-Tab (Operator-only)
+  if (activeId === 'P02' && activeTab === 'catalog') {
+    if (role !== 'operator') return null;
+    return <CatalogTab />;
+  }
 
   const runtimeModule = RUNTIME_BUILDER_REGISTRY.find((m) => m.id === activeId);
   if (runtimeModule) {
@@ -151,6 +157,7 @@ function PanelContent({ activeId, activeTab, result }: {
 
 export default function PanelWorkspace({ activeId, result }: Props) {
   const [activeTab, setActiveTab] = useState<TabId>('input');
+  const role = useRole();
 
   // Resolve tabs for the current entry
   const entry =
@@ -168,7 +175,11 @@ export default function PanelWorkspace({ activeId, result }: Props) {
     );
   }
 
-  const tabs = entry.tabs.filter((t) => TAB_ORDER.includes(t.id as TabId));
+  const tabs = entry.tabs.filter((t) => {
+    if (!TAB_ORDER.includes(t.id as TabId)) return false;
+    if (t.id === 'catalog' && role !== 'operator') return false;
+    return true;
+  });
   const subtitle =
     'shortDescription' in entry ? (entry as { shortDescription: string }).shortDescription : '';
 

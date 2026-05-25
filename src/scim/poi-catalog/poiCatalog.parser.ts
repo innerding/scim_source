@@ -1,0 +1,236 @@
+// Runtime-Parser für POI-Plan-Markdown nach PoiCatalogState.
+// Erwartet die Struktur von data/grunberg_pois_plan.md:
+//   ### <Subcategory>
+//   | Icon | Text | Coord | Cluster | Status |
+//   |---|---|---|---|---|
+//   | ... data rows ... |
+//
+// Cluster-Tabellen folgen unter ## Cluster mit `### <ClusterName> *(N POIs)*`
+// und Hover-Text-Marker `**Hover:** „..."`
+
+import type {
+  CatalogCluster, CatalogPoi, CoordStatus, PoiCatalogState, Subcategory,
+} from './poiCatalog.types';
+import { bucketOf, containerOf } from './poiCatalog.containerSystem';
+
+interface ParseOptions {
+  region_id: string;
+  region_name: string;
+  source_path: string;
+}
+
+const SUBCATEGORIES: readonly Subcategory[] = [
+  'Points_historical', 'Points_others',
+  'Square_Rest', 'Square_Move',
+  'Regenerate_Substanze', 'Regenerate_Water',
+  'Transport_Vehicle', 'Transport_Parking',
+  'Service_Sleep', 'Service_Others',
+  'Help_order', 'Help_emergency',
+];
+
+// `Transport_Parking/(Charging)` in the md → normalize to `Transport_Parking`
+function normalizeSubHeading(s: string): Subcategory | null {
+  const trimmed = s.trim().replace(/\/\(.*\)$/, '');
+  return (SUBCATEGORIES as readonly string[]).includes(trimmed) ? (trimmed as Subcategory) : null;
+}
+
+function parseRow(line: string): string[] {
+  const cells = line.split('|').map((c) => c.trim());
+  // First and last are empty around the outer pipes
+  return cells.slice(1, -1);
+}
+
+function isTableSeparator(line: string): boolean {
+  return /^\s*\|\s*[-:\s|]+\|\s*$/.test(line);
+}
+
+function parseCoord(s: string): { coord: [number, number]; status: CoordStatus } {
+  const trimmed = s.trim();
+  if (trimmed === '❓' || trimmed === '') {
+    return { coord: [0, 0], status: 'missing' };
+  }
+  const cleaned = trimmed
+    .replace(/^≈\s*/, '')
+    .replace(/^✓\s*/, '');
+  const match = cleaned.match(/^(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)/);
+  if (!match) {
+    return { coord: [0, 0], status: 'missing' };
+  }
+  const lon = parseFloat(match[1]);
+  const lat = parseFloat(match[2]);
+  const status: CoordStatus = trimmed.startsWith('≈') ? 'estimated' : 'exact';
+  return { coord: [lon, lat], status };
+}
+
+function parseStatus(s: string): CoordStatus {
+  const t = s.trim();
+  if (t.includes('❓')) return 'missing';
+  if (t.includes('≈')) return 'estimated';
+  if (t.includes('✓')) return 'exact';
+  return 'exact';
+}
+
+function parseCluster(s: string): { name?: string; is_identity: boolean; note?: string } {
+  const t = s.trim();
+  if (t === '—' || t === '') return { is_identity: false };
+  const identityMatch = t.match(/^(.+?)\s*\*\(Cluster-Icon\)\*$/);
+  if (identityMatch) {
+    return { name: identityMatch[1].trim(), is_identity: true };
+  }
+  const optionalMatch = t.match(/^\((.+)\)$/);
+  if (optionalMatch) {
+    return { name: optionalMatch[1].trim(), is_identity: false, note: 'optional' };
+  }
+  return { name: t.replace(/\*.*\*/g, '').trim(), is_identity: false };
+}
+
+function stripMdInline(s: string): string {
+  return s
+    .replace(/\*\*(.+?)\*\*/g, '$1')
+    .replace(/\*(.+?)\*/g, '$1')
+    .trim();
+}
+
+export function parsePoiCatalog(md: string, opts: ParseOptions): PoiCatalogState {
+  const lines = md.split('\n');
+  const pois: CatalogPoi[] = [];
+  const clusters: CatalogCluster[] = [];
+  const warnings: string[] = [];
+
+  let i = 0;
+  let currentSub: Subcategory | null = null;
+  let poiCounter = 0;
+  let inClusterSection = false;
+  let currentClusterName: string | null = null;
+  let currentClusterHover: string | null = null;
+
+  while (i < lines.length) {
+    const line = lines[i];
+
+    // Detect Cluster section
+    if (/^##\s+Cluster\s*$/.test(line)) {
+      inClusterSection = true;
+      currentSub = null;
+      i++;
+      continue;
+    }
+
+    // Detect next major section after clusters
+    if (inClusterSection && /^##\s+(?!Cluster)/.test(line)) {
+      inClusterSection = false;
+    }
+
+    if (inClusterSection) {
+      // Cluster heading: ### <Name> *(<n> POIs)*  or  ### Optional <Name> *(...)*
+      const clusterHeadMatch = line.match(/^###\s+(?:Optional\s+)?(.+?)\s*\*\((\d+)\s*POIs?(?:,\s*[^)]*)?\)\*\s*$/);
+      if (clusterHeadMatch) {
+        currentClusterName = clusterHeadMatch[1].trim();
+        currentClusterHover = null;
+        i++;
+        continue;
+      }
+      // Hover line
+      const hoverMatch = line.match(/^\*\*Hover:\*\*\s+„(.+?)["“]\s*$/);
+      if (hoverMatch && currentClusterName) {
+        currentClusterHover = hoverMatch[1];
+        clusters.push({
+          name: currentClusterName,
+          hover_text: currentClusterHover,
+          member_count: pois.filter((p) => p.cluster === currentClusterName).length,
+        });
+        i++;
+        continue;
+      }
+      i++;
+      continue;
+    }
+
+    // Subcategory heading
+    const subMatch = line.match(/^###\s+([A-Za-z_/()]+)(?:\s+\*.*\*)?\s*$/);
+    if (subMatch) {
+      const candidate = normalizeSubHeading(subMatch[1]);
+      currentSub = candidate;
+      i++;
+      continue;
+    }
+
+    // Reset subcategory when a different ## section starts
+    if (/^##\s+/.test(line) && !/^##\s+Tabelle 1/.test(line)) {
+      currentSub = null;
+    }
+
+    // Table row processing (within a subcategory)
+    if (currentSub && line.trim().startsWith('|') && i + 1 < lines.length && isTableSeparator(lines[i + 1])) {
+      // Skip header + separator
+      i += 2;
+      while (i < lines.length && lines[i].trim().startsWith('|')) {
+        const cells = parseRow(lines[i]);
+        if (cells.length >= 5) {
+          const icon = stripMdInline(cells[0]);
+          const text = stripMdInline(cells[1].replace(/\s*\*\([^)]*\)\*$/, ''));
+          const rawNotesMatch = cells[1].match(/\*\(([^)]+)\)\*/);
+          const rawNotes = rawNotesMatch ? rawNotesMatch[1] : undefined;
+          const { coord, status: coordStatus } = parseCoord(cells[2]);
+          const cluster = parseCluster(cells[3]);
+          const statusFromCol = parseStatus(cells[4]);
+
+          poiCounter++;
+          const id = `poi_${String(poiCounter).padStart(3, '0')}`;
+
+          const bucket = bucketOf(currentSub);
+          if (!bucket) {
+            warnings.push(`Subkategorie ohne Container-Mapping: ${currentSub}`);
+            i++;
+            continue;
+          }
+
+          pois.push({
+            id,
+            bucket,
+            subcategory: currentSub,
+            icon,
+            text,
+            coord,
+            coord_status: coordStatus === 'missing' ? 'missing' : statusFromCol,
+            cluster: cluster.name,
+            is_cluster_identity: cluster.is_identity,
+            raw_notes: rawNotes,
+          });
+        }
+        i++;
+      }
+      continue;
+    }
+
+    i++;
+  }
+
+  // Recount cluster members after all POIs parsed
+  for (const c of clusters) {
+    c.member_count = pois.filter((p) => p.cluster === c.name).length;
+    const identityPoi = pois.find((p) => p.cluster === c.name && p.is_cluster_identity);
+    if (identityPoi) c.identity_poi_id = identityPoi.id;
+  }
+
+  // Sanity-Warnings
+  for (const p of pois) {
+    if (!containerOf(p.subcategory)) {
+      warnings.push(`POI ${p.id} (${p.text}): Subkategorie ${p.subcategory} ohne Container-Spec`);
+    }
+  }
+  for (const p of pois.filter((p) => p.cluster)) {
+    if (!clusters.find((c) => c.name === p.cluster)) {
+      warnings.push(`POI ${p.id} (${p.text}) verweist auf Cluster "${p.cluster}", der nicht als ### definiert ist`);
+    }
+  }
+
+  return {
+    region_id: opts.region_id,
+    region_name: opts.region_name,
+    generated_at: new Date().toISOString(),
+    pois,
+    clusters,
+    source: { type: 'markdown_runtime', path: opts.source_path },
+    warnings,
+  };
+}

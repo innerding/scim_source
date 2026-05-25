@@ -3,7 +3,7 @@
 
 export type InputMode = 'user_form' | 'auto_computed' | 'semi_auto' | 'optional';
 
-export type TabId = 'input' | 'result' | 'validation' | 'raw' | 'leistungsblatt';
+export type TabId = 'catalog' | 'input' | 'result' | 'validation' | 'raw' | 'leistungsblatt';
 
 export interface TabDescriptor {
   id: TabId;
@@ -50,6 +50,13 @@ const STANDARD_TABS: TabDescriptor[] = [
   { id: 'raw',        label: 'Rohdaten',   icon: '{}' },
 ];
 
+// P02 RegioContent bekommt zusätzlich den Operator-only "Katalog"-Tab
+// (erste Position). Sichtbarkeits-Filter passiert in PanelWorkspace via useRole().
+const P02_TABS: TabDescriptor[] = [
+  { id: 'catalog',    label: 'Katalog',    icon: '📋' },
+  ...STANDARD_TABS,
+];
+
 export const PANEL_REGISTRY: PanelDescriptor[] = [
   // ── Gruppe 1: Benutzereingaben ─────────────────────────────────────────────
   {
@@ -78,7 +85,7 @@ export const PANEL_REGISTRY: PanelDescriptor[] = [
     inputMode: 'user_form',
     isBlocking: true,
     contextKey: 'regio_content',
-    tabs: STANDARD_TABS,
+    tabs: P02_TABS,
   },
   {
     id: 'P03',
