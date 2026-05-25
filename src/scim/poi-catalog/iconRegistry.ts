@@ -41,15 +41,17 @@ function liteValidate(svg: string): string[] {
     warnings.push('viewBox ≠ "0 0 48 48"');
   }
 
-  // Sonderregel (ann_040): SVG ohne <g id="…"> ist erlaubt — der/die Path(s)
-  // gelten dann implizit als Stroke-Layer. fill-Layer entfällt.
+  // Sonderregel (ann_040): SVG ohne <g id="…"> ist erlaubt — die Stroke-Elemente
+  // auf Root-Ebene gelten dann implizit als Stroke-Layer. fill-Layer entfällt.
+  // Als gültige Stroke-Elemente zählen: <path>, <polyline>, <line>, <polygon>.
   const hasGroup = /<g\s+[^>]*\bid="/.test(svg);
   if (hasGroup) {
     if (!/<path[^>]*\bid="fill"/.test(svg)) warnings.push('Layer "fill" nicht gefunden');
     if (!/<path[^>]*\bid="stroke"/.test(svg)) warnings.push('Layer "stroke" nicht gefunden');
   } else {
-    // Mindestens ein Path-Element wird verlangt.
-    if (!/<path\b/.test(svg)) warnings.push('Kein Path-Element gefunden');
+    // Mindestens ein Stroke-Element wird verlangt.
+    const hasStrokeElement = /<(path|polyline|polygon|line)\b/.test(svg);
+    if (!hasStrokeElement) warnings.push('Kein Stroke-Element gefunden (path/polyline/polygon/line)');
   }
 
   // Illustrator-Preview-Metadaten auf Root-SVG?

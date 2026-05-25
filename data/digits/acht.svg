@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg id="SCIM3_POI_Icons" data-name="SCIM3 POI Icons" xmlns="http://www.w3.org/2000/svg" width="4" height="5" viewBox="0 0 4 5">
-  <path d="M3.498,1.357c.034.515-.463.968-1.111,1.012s-1.201-.338-1.235-.853.463-.968,1.111-1.012,1.201.338,1.235.853ZM2.097,2.384c-.818-.089-1.531.31-1.593.891s.552,1.124,1.37,1.213,1.531-.31,1.593-.891-.552-1.124-1.37-1.213Z" fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width=".75"/>
+  <path id="eight" d="M3.498,1.357c.034.515-.463.968-1.111,1.012s-1.201-.338-1.235-.853.463-.968,1.111-1.012,1.201.338,1.235.853ZM2.097,2.384c-.818-.089-1.531.31-1.593.891s.552,1.124,1.37,1.213,1.531-.31,1.593-.891-.552-1.124-1.37-1.213Z" fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width=".75"/>
 </svg>
