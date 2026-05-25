@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRole } from '../RoleContext';
 import { parsePoiCatalog } from '../../poi-catalog/poiCatalog.parser';
 import { CONTAINER_SYSTEM, containerOf, geometryOf } from '../../poi-catalog/poiCatalog.containerSystem';
+import { ICON_REGISTRY, findIcons } from '../../poi-catalog/iconRegistry';
+import type { IconRegistryEntry } from '../../poi-catalog/iconRegistry';
 import {
   addNewPoi, clearEditState, deletePoi, hasEdits, loadEditState,
   mergeEdits, patchPoi, resetPoi, saveEditState, undeletePoi,
@@ -368,6 +370,97 @@ function ClusterSection({ catalog }: { catalog: ReturnType<typeof mergeEdits> })
   );
 }
 
+// ─── Icon-Bibliothek (Phase B) ────────────────────────────────────────────────
+// Rendert die zur Build-Zeit geladene ICON_REGISTRY. SVG-Vorschau wird per
+// dangerouslySetInnerHTML inline eingefügt; Größe wird auf 32×32 normiert,
+// indem width/height-Attribute des Root-SVGs entfernt werden (die SVGs haben
+// ihre eigene viewBox, die im umgebenden <div> respektiert wird).
+
+function makeResponsive(svg: string): string {
+  return svg
+    .replace(/(<svg[^>]*?)\s+width="[^"]*"/, '$1')
+    .replace(/(<svg[^>]*?)\s+height="[^"]*"/, '$1');
+}
+
+function IconPreview({ entry, size = 32 }: { entry: IconRegistryEntry; size?: number }) {
+  return (
+    <div
+      style={{ width: size, height: size, display: 'inline-block' }}
+      title={`${entry.file_name}${entry.drawing_id ? ` · zeichnet "${entry.drawing_id}"` : ''}`}
+      dangerouslySetInnerHTML={{ __html: makeResponsive(entry.svg_raw) }}
+    />
+  );
+}
+
+function IconLibrarySection() {
+  const [query, setQuery] = useState('');
+  const filtered = useMemo(() => findIcons(query), [query]);
+
+  return (
+    <details style={{ marginTop: 32, fontFamily: 'system-ui, sans-serif' }}>
+      <summary style={{ fontSize: 13, fontWeight: 600, color: '#1a365d', cursor: 'pointer', marginBottom: 8 }}>
+        Icon-Bibliothek ({ICON_REGISTRY.length})
+      </summary>
+      <div style={{ marginTop: 8 }}>
+        <input
+          type="text"
+          placeholder="Suche über file_name oder drawing_id…"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          style={{
+            fontSize: 12, padding: '4px 8px', borderRadius: 4,
+            border: '1px solid #cbd5e0', width: 320, marginBottom: 12,
+          }}
+        />
+        <span style={{ fontSize: 11, color: '#718096', marginLeft: 12, fontFamily: 'monospace' }}>
+          {filtered.length} / {ICON_REGISTRY.length} Treffer
+        </span>
+      </div>
+      {filtered.length === 0 ? (
+        <div style={{ fontSize: 12, color: '#a0aec0', fontStyle: 'italic', padding: '8px 0' }}>
+          Keine Icons gefunden — entweder Suche zu eng oder <code style={{ fontFamily: 'monospace' }}>data/icons/</code> ist leer.
+        </div>
+      ) : (
+        <div style={{
+          display: 'grid', gap: 12, marginTop: 4,
+          gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+        }}>
+          {filtered.map((entry) => {
+            const hasWarnings = entry.warnings.length > 0;
+            return (
+              <div
+                key={entry.id}
+                style={{
+                  border: hasWarnings ? '1px solid #f6e05e' : '1px solid #e2e8f0',
+                  borderRadius: 4, padding: '8px 10px',
+                  background: hasWarnings ? '#fffbeb' : '#fff',
+                  display: 'flex', alignItems: 'flex-start', gap: 10,
+                }}
+              >
+                <IconPreview entry={entry} size={36} />
+                <div style={{ fontSize: 11, lineHeight: 1.4, flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, color: '#1a365d' }}>{entry.file_name}</div>
+                  <div style={{ color: '#718096', fontFamily: 'monospace', fontSize: 10 }}>
+                    {entry.drawing_id ?? <span style={{ color: '#c53030' }}>kein drawing_id</span>}
+                  </div>
+                  {hasWarnings && (
+                    <div style={{ color: '#744210', fontSize: 10, marginTop: 4 }}>
+                      ⚠ {entry.warnings.join(' · ')}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+      <div style={{ marginTop: 12, fontSize: 10, color: '#a0aec0', fontFamily: 'monospace' }}>
+        Quelle: data/icons/*.svg · zur Build-Zeit geladen · siehe ann_040/041
+      </div>
+    </details>
+  );
+}
+
 // ─── Container-System-Übersicht ───────────────────────────────────────────────
 
 function ContainerSystemSection() {
@@ -683,6 +776,9 @@ export default function CatalogTab() {
 
       {/* Cluster */}
       <ClusterSection catalog={merged} />
+
+      {/* Icon-Bibliothek (klappbar) */}
+      <IconLibrarySection />
 
       {/* Container-System (klappbar) */}
       <ContainerSystemSection />
