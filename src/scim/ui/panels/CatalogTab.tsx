@@ -141,10 +141,14 @@ function buildPoiComposite(
   const digitsH   = 7.5;
   const rowW      = digitCount * glyphSize;
   const rowX      = 24 - rowW / 2;
-  const rowYBottom = geo.summit_digits_y_max ?? 47;
+  // Im Summit-Modus: Icon um 6 px nach oben, Ziffernreihe um 4 px nach oben
+  // verschoben (gegenüber der Container-Boden-Referenz). Ergibt mehr Luft
+  // zwischen Icon und Ziffern bzw. zieht beides aus der Container-Unterkante.
+  const summitIconShift = 6;
+  const summitDigitsShift = 4;
+  const rowYBottom = (geo.summit_digits_y_max ?? 47) - summitDigitsShift;
   const rowY      = rowYBottom - digitsH;
-  // Icon ohne Transform — native Position
-  const iconPart = iconInner;
+  const iconPart  = `<g transform="translate(0,${-summitIconShift})">${iconInner}</g>`;
   return `<svg viewBox="0 0 48 48" width="${size}" height="${size}">` +
     container +
     iconPart +
