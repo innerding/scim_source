@@ -388,7 +388,7 @@ function IconPreview({ entry, size = 32 }: { entry: IconRegistryEntry; size?: nu
     <div
       style={{ width: size, height: size, display: 'inline-block' }}
       title={`${entry.file_name}${entry.drawing_id ? ` · zeichnet "${entry.drawing_id}"` : ''}`}
-      dangerouslySetInnerHTML={{ __html: makeResponsive(entry.svg_raw) }}
+      dangerouslySetInnerHTML={{ __html: makeResponsive(entry.svg_cleaned) }}
     />
   );
 }
@@ -447,6 +447,14 @@ function IconLibrarySection() {
                   {hasWarnings && (
                     <div style={{ color: '#744210', fontSize: 10, marginTop: 4 }}>
                       ⚠ {entry.warnings.join(' · ')}
+                    </div>
+                  )}
+                  {entry.cleaning_changes.length > 0 && (
+                    <div
+                      style={{ color: '#22543d', fontSize: 10, marginTop: 4 }}
+                      title={entry.cleaning_changes.join('\n')}
+                    >
+                      🧹 bereinigt: {entry.cleaning_changes.length}
                     </div>
                   )}
                 </div>

@@ -7,12 +7,16 @@
 // Beide Namen sind suchbar; dasselbe Drawing kann unter mehreren file_names
 // auftreten. Die Registry-Eintrags-id ist immer file_name (eindeutig).
 
+import { cleanIconSvg } from './svgCleaner';
+
 export interface IconRegistryEntry {
   id: string;            // = file_name; eindeutig pro Bibliothek
   file_name: string;     // 'Aussichtspunkt' (ohne .svg-Endung)
   drawing_id: string | null;  // aus <g id="…"> im SVG; null wenn nicht gefunden
-  svg_raw: string;       // unveränderter SVG-Inhalt
-  warnings: string[];    // Spec-Abweichungen, leichtgewichtig erkannt
+  svg_raw: string;       // unveränderter SVG-Inhalt aus der Datei
+  svg_cleaned: string;   // bereinigte Version (Cleaner angewendet)
+  cleaning_changes: string[];  // was der Cleaner verändert hat
+  warnings: string[];    // verbleibende Spec-Abweichungen nach Cleaning
 }
 
 // Vite lädt alle .svg-Dateien im Ordner als String zur Build-Zeit.
@@ -90,12 +94,17 @@ function buildRegistry(): IconRegistryEntry[] {
   const entries: IconRegistryEntry[] = [];
   for (const [path, svgRaw] of Object.entries(modules)) {
     const file_name = fileNameFromPath(path);
+    const { cleaned, changes } = cleanIconSvg(svgRaw);
     entries.push({
       id: file_name,
       file_name,
       drawing_id: extractDrawingId(svgRaw),
       svg_raw: svgRaw,
-      warnings: liteValidate(svgRaw),
+      svg_cleaned: cleaned,
+      cleaning_changes: changes,
+      // Validierung läuft auf der bereinigten Version — der Cleaner hat
+      // Phantom-Attribute schon entfernt, übrig bleiben echte Struktur-Probleme.
+      warnings: liteValidate(cleaned),
     });
   }
   // Stabile alphabetische Sortierung nach file_name
