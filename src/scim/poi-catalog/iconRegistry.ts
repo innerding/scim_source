@@ -40,9 +40,18 @@ function liteValidate(svg: string): string[] {
   if (!/viewBox\s*=\s*"0\s+0\s+48\s+48"/.test(svg)) {
     warnings.push('viewBox ≠ "0 0 48 48"');
   }
-  // Layer-Konvention: id="fill" und id="stroke" erwartet
-  if (!/<path[^>]*\bid="fill"/.test(svg)) warnings.push('Layer "fill" nicht gefunden');
-  if (!/<path[^>]*\bid="stroke"/.test(svg)) warnings.push('Layer "stroke" nicht gefunden');
+
+  // Sonderregel (ann_040): SVG ohne <g id="…"> ist erlaubt — der/die Path(s)
+  // gelten dann implizit als Stroke-Layer. fill-Layer entfällt.
+  const hasGroup = /<g\s+[^>]*\bid="/.test(svg);
+  if (hasGroup) {
+    if (!/<path[^>]*\bid="fill"/.test(svg)) warnings.push('Layer "fill" nicht gefunden');
+    if (!/<path[^>]*\bid="stroke"/.test(svg)) warnings.push('Layer "stroke" nicht gefunden');
+  } else {
+    // Mindestens ein Path-Element wird verlangt.
+    if (!/<path\b/.test(svg)) warnings.push('Kein Path-Element gefunden');
+  }
+
   // Illustrator-Preview-Metadaten auf Root-SVG?
   if (/<svg[^>]*\bid="kbc-/.test(svg)) warnings.push('Illustrator-Preview-ID am Root-SVG (sollte bereinigt werden)');
   return warnings;

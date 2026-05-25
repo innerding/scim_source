@@ -311,6 +311,8 @@ Was NICHT ins Icon gehört (wird vom System ergänzt):
   - Hintergrund-, Padding- oder Hilfsflächen
   - Illustrator-Preview-Metadaten am Root-SVG (z.B. id="kbc-…") — beim Import automatisch entfernt
 
+Sonderregel — Icons ohne Gruppe: Wenn das SVG keine <g id="…"> enthält, gilt der vorhandene Layer (alle Pfade auf Root-Ebene) automatisch als Stroke-Layer. Der fill-Layer entfällt in diesem Fall. Die Spec für den Stroke bleibt unverändert: schwarz, 1 px, stroke-linecap="round", stroke-linejoin="round", kein fill (oder fill="none"). Anwendungsfall: einfache strichgrafische Icons (Pfeil, Strich-Symbol), die keine geschlossene Innenfläche brauchen. Konsequenz für die Registry: drawing_id bleibt null (keine wiederverwendbare Drawing-Identität, das Icon ist eigenständig).
+
 Zur Namenskonvention: Es gibt zwei voneinander unabhängige Namen — den Gruppen-Namen im SVG (<g id="fernglas">) und den Dateinamen (Aussichtspunkt.svg). Der Gruppen-Name benennt die Zeichnung selbst (was ist gezeichnet) und ist stabil — eine einmal etablierte Zeichnung wird nicht umbenannt. Der Dateiname benennt, wofür dieses Icon im Katalog steht (welche Rolle es spielt), und ist veränderbar. Dasselbe Drawing kann unter mehreren Bedeutungen auftreten: Aussichtspunkt.svg, Hochstand.svg, Belvedere.svg enthalten alle eine <g id="fernglas">. Die Icon-Suche im SCIM-UI findet ein Icon über beide Namen — wer "fernglas" sucht und wer "aussichtspunkt" sucht, landet beim selben Drawing.`,
     date: '2026-05-25',
   },
