@@ -565,6 +565,121 @@ function ContainerSystemSection() {
   );
 }
 
+// ─── Flow-Info-Modal (Kontext-Hilfe im Katalog) ──────────────────────────────
+
+interface FlowStep {
+  n: number;
+  title: string;
+  status: 'live' | 'planned';
+  body: string;
+  refs?: string[];
+}
+
+const FLOW_STEPS: FlowStep[] = [
+  {
+    n: 1, title: 'Import ins System', status: 'live',
+    body: 'SVG-Dateien landen in data/icons/. Heute manuell, mit Phase E per Drag-Drop im Importer-Tab.',
+    refs: ['ann_040', 'ann_041'],
+  },
+  {
+    n: 2, title: 'Validierung + Cleaning', status: 'live',
+    body: 'liteValidate warnt vor Spec-Abweichungen, svgCleaner entfernt Phantom-Attribute und Illustrator-Metadaten, setzt Copyright-Stempel.',
+    refs: ['ann_040'],
+  },
+  {
+    n: 3, title: 'Kategorisch aufwerten im Katalog', status: 'live',
+    body: 'Operator pflegt POIs: weist Subkategorie zu (= Container-Geometrie + Farbe), referenziert Icon per Namen, setzt Cluster und Coord. Icons selbst sind kategorielos — die Bedeutung entsteht erst hier.',
+    refs: ['ann_042', 'ann_043'],
+  },
+  {
+    n: 4, title: 'Promotion zur Representation', status: 'planned',
+    body: 'Phase 4: kuratierte Plan-POIs werden in die ScimRepresentation übersetzt. Icon-Referenzen bleiben Strings (keine Bildkopie pro POI, nur Verweis auf die Bibliothek).',
+    refs: ['ann_034'],
+  },
+  {
+    n: 5, title: 'Package-Pipeline + Auslieferung', status: 'planned',
+    body: 'Representation wird als ScimBundle verpackt (Charakter + Atem), per R2/Worker hochgeladen. Die Ziel-App lädt das Bundle und rendert Icons über die mitgelieferte Bibliothek.',
+    refs: ['ann_034', 'ann_037'],
+  },
+];
+
+function FlowInfoModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+    }} onClick={onClose}>
+      <div onClick={(e) => e.stopPropagation()} style={{
+        background: 'white', borderRadius: 6, width: 'min(720px, 90vw)',
+        maxHeight: '85vh', display: 'flex', flexDirection: 'column',
+        boxShadow: '0 10px 40px rgba(0,0,0,0.3)',
+      }}>
+        <div style={{
+          padding: '12px 16px', borderBottom: '1px solid #e2e8f0',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: '#1a365d' }}>
+            Icon-Flow im SCIM
+          </div>
+          <button onClick={onClose} style={btnStyle}>Schließen</button>
+        </div>
+        <div style={{ padding: '16px 20px', overflow: 'auto', flex: 1 }}>
+          <div style={{ fontSize: 12, color: '#4a5568', marginBottom: 18, lineHeight: 1.5 }}>
+            Was passiert mit einem POI-Icon vom Illustrator-Export bis zur Darstellung in der Ziel-App.
+            Vollständige Diskussion in der KI-Schnittstelle unter ann_045 (Stand der Pipeline).
+          </div>
+          {FLOW_STEPS.map((s) => {
+            const isLive = s.status === 'live';
+            return (
+              <div key={s.n} style={{
+                display: 'flex', gap: 14, marginBottom: 16,
+                paddingBottom: 14, borderBottom: '1px solid #f0f4f8',
+              }}>
+                <div style={{
+                  width: 28, height: 28, flexShrink: 0,
+                  borderRadius: '50%',
+                  background: isLive ? '#c6f6d5' : '#e2e8f0',
+                  color: isLive ? '#22543d' : '#4a5568',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 13, fontWeight: 600,
+                }}>
+                  {s.n}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: '#1a365d' }}>{s.title}</span>
+                    <span style={{
+                      fontSize: 10, padding: '1px 8px', borderRadius: 10,
+                      background: isLive ? '#c6f6d5' : '#edf2f7',
+                      color: isLive ? '#22543d' : '#718096',
+                      fontFamily: 'monospace',
+                    }}>
+                      {isLive ? '✓ live' : '⏳ geplant'}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: 12, color: '#4a5568', lineHeight: 1.5 }}>{s.body}</div>
+                  {s.refs && (
+                    <div style={{ fontSize: 10, color: '#a0aec0', fontFamily: 'monospace', marginTop: 4 }}>
+                      → {s.refs.join(' · ')}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+          <div style={{
+            marginTop: 4, padding: '10px 12px',
+            background: '#ebf8ff', borderLeft: '3px solid #2b6cb0',
+            borderRadius: 4, fontSize: 11, color: '#2c5282', lineHeight: 1.5,
+          }}>
+            <strong>Wichtig:</strong> Icons durchlaufen die Pipeline nicht einzeln — sie sind eine stabile Bibliothek, auf die der Katalog per Namen verweist. Ein Icon-Update wirkt automatisch überall, ohne POI-by-POI-Migration. Bundle bleibt klein (Bibliothek einmal, Referenzen vielfach).
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Diff-/Export-Modal ──────────────────────────────────────────────────────
 
 function ExportModal({ originalMd, newMd, fileName, onClose }: {
@@ -667,6 +782,7 @@ export default function CatalogTab() {
   const [editState, setEditState] = useState<PoiCatalogEditState>(() => loadEditState(region.id));
   const [editMode, setEditMode] = useState(false);
   const [showExport, setShowExport] = useState(false);
+  const [showFlowInfo, setShowFlowInfo] = useState(false);
 
   // Region-Wechsel: passenden Edit-State laden
   useEffect(() => {
@@ -765,6 +881,19 @@ export default function CatalogTab() {
             <option key={r.id} value={r.id}>{r.name}</option>
           ))}
         </select>
+        <button
+          onClick={() => setShowFlowInfo(true)}
+          title="Icon-Flow im SCIM (Hilfe)"
+          style={{
+            width: 20, height: 20, borderRadius: '50%',
+            border: '1px solid #cbd5e0', background: 'white',
+            color: '#718096', fontSize: 11, fontWeight: 600,
+            cursor: 'pointer', padding: 0, lineHeight: 1,
+            fontFamily: 'serif', fontStyle: 'italic',
+          }}
+        >
+          i
+        </button>
 
         <button
           onClick={() => setEditMode((m) => !m)}
@@ -869,6 +998,8 @@ export default function CatalogTab() {
           onClose={() => setShowExport(false)}
         />
       )}
+
+      {showFlowInfo && <FlowInfoModal onClose={() => setShowFlowInfo(false)} />}
     </div>
   );
 }

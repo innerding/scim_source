@@ -531,7 +531,13 @@ Offene Naechste-Schritte (Phase C + D + E):
     bestandene Icons werden in data/icons/ geschrieben.
 
 Phasen-Reihenfolge nicht starr - C kann auch nach D kommen, je nach
-Bedarf. Phase E ist der groesste Brocken und kommt zuletzt.`,
+Bedarf. Phase E ist der groesste Brocken und kommt zuletzt.
+
+Kontext-Hilfe im Katalog-Tab: Rechts neben dem Region-Dropdown sitzt
+ein (i)-Knopf, der ein Modal mit der Pipeline-Uebersicht oeffnet
+(5 Schritte mit Status-Badges live/geplant + Verweise zu den
+relevanten Annotations). Verschafft schnellen Ueberblick ohne Wechsel
+in die KI-Schnittstelle.`,
     date: '2026-05-25',
   },
 ];
