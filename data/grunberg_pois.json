@@ -9,7 +9,8 @@
       "Wasser-Features ohne Namen entfernt (nur Laudachsee behalten)",
       "Information-Features ohne Namen bereits in Query gefiltert",
       "Grünberg-Seilbahn Tal- und Bergstation manuell ergänzt aus aerialway=cable_car way 48231263",
-      "8 zusätzliche Attraktionen ergänzt (2026-05-25): Sommerrodelbahn, Baumwipfelpfad, Paragleiter-Start, Adlerhorst-Klettern, BSV-Bogenparcours, Reitanlage, 2× Paragleiter-Landeplatz. category=manual_other, Subtyp im properties.subtype-Feld."
+      "8 zusätzliche Attraktionen ergänzt (2026-05-25): Sommerrodelbahn, Baumwipfelpfad, Paragleiter-Start, Adlerhorst-Klettern, BSV-Bogenparcours, Reitanlage, 2× Paragleiter-Landeplatz. category=manual_other, Subtyp im properties.subtype-Feld.",
+      "3 Tal-POIs entfernt (2026-05-25): Reitanlage Grünberg, Paragleiter-Landeplatz Schloss Weyer + Mülibankerl — lagen im Stadtbereich Gmunden außerhalb der gewünschten Wanderfläche."
     ]
   },
   "features": [
@@ -817,72 +818,6 @@
         "coordinates": [
           13.8115432,
           47.8815527
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "osm_id": "way/1368109835",
-        "category": "manual_other",
-        "subtype": "equestrian",
-        "name": "Reitanlage Grünberg",
-        "ele": null,
-        "osm_tags": {
-          "sport": "equestrian",
-          "leisure": "pitch",
-          "surface": "grass"
-        }
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          13.8312235,
-          47.9155454
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "osm_id": "way/788753394",
-        "category": "manual_other",
-        "subtype": "paragliding_landing",
-        "name": "Paragleiter-Landeplatz Schloss Weyer",
-        "ele": null,
-        "osm_tags": {
-          "sport": "free_flying",
-          "free_flying:site": "landing",
-          "operator": "Flying Swans Traunsee"
-        }
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          13.8125055,
-          47.9157906
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "properties": {
-        "osm_id": "way/1508902319",
-        "category": "manual_other",
-        "subtype": "paragliding_landing",
-        "name": "Paragleiter-Landeplatz Mülibankerl",
-        "ele": null,
-        "osm_tags": {
-          "sport": "free_flying",
-          "free_flying:site": "landing",
-          "operator": "Flying Swans Traunsee"
-        }
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          13.8226581,
-          47.9192367
         ]
       }
     }
