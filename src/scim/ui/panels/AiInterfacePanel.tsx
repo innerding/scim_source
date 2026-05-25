@@ -269,13 +269,38 @@ State-Machine-Konsequenz (useAppMachine.ts):
   SensusCorePackage-Typ wird in RepresentationPackage + ColourMeshPackage aufgeteilt.`,
     date: '2026-05-24',
   },
+  {
+    id: 'ann_039',
+    category: 'adr',
+    label: 'Deploy-Workflow: Push auf main = live',
+    content: `Kontext: Mehrere parallele Deploy-Wege (manueller Workflow-Dispatch, Wrangler-CLI, Cloudflare-Dashboard) waren historisch unklar und führten dazu, dass Änderungen nicht sicher live gingen.
+
+Entscheidung: Ein einziger automatischer Pfad. .github/workflows/deploy.yml triggert bei jedem Push auf main → GitHub Actions baut → Cloudflare Pages deployt nach scim3.diesenpark.com. Manuelles workflow_dispatch bleibt als Notfall-Trigger erhalten.
+
+Konsequenz: "Jetzt ist es fix auf der veröffentlichten Seite" = git push main. Innerhalb von ~1-2 Minuten ist die Änderung live. Kein Wrangler-Aufruf, kein Dashboard-Klick, kein manueller Workflow-Start nötig.
+
+Operator-Workflow:
+  Session: feature-branch + npm run dev (lokale Vorschau, niemand sonst sieht es)
+  Fertig:  PR oder direkter Merge nach main + push
+  Live:    automatisch ~1-2 Min nach push
+  Rollback: git revert <commit> + push → wieder ~1-2 Min und der alte Stand ist live
+
+Feature-Branches deployen explizit nicht — kein Branch-Preview konfiguriert. Wer im Browser testen will: lokal mit npm run dev.`,
+    date: '2026-05-25',
+  },
 ];
 
 function AnnotationsTab() {
   const [annotations] = useState<Annotation[]>(SEED_ANNOTATIONS);
   const [filterCat, setFilterCat] = useState<AnnotationCategory | 'all'>('all');
 
-  const filtered = filterCat === 'all' ? annotations : annotations.filter(a => a.category === filterCat);
+  const filtered = (filterCat === 'all' ? annotations : annotations.filter(a => a.category === filterCat))
+    .slice()
+    .sort((a, b) => {
+      // Neueste zuerst: nach date desc, Gleichstand nach id desc.
+      if (a.date !== b.date) return a.date < b.date ? 1 : -1;
+      return a.id < b.id ? 1 : -1;
+    });
 
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif' }}>
