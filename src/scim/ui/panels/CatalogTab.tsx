@@ -2,9 +2,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRole } from '../RoleContext';
 import { parsePoiCatalog } from '../../poi-catalog/poiCatalog.parser';
 import { CONTAINER_SYSTEM, containerOf, geometryOf } from '../../poi-catalog/poiCatalog.containerSystem';
-import { ICON_REGISTRY, findIcons } from '../../poi-catalog/iconRegistry';
+import { ICON_REGISTRY, findIcons, iconById } from '../../poi-catalog/iconRegistry';
 import type { IconRegistryEntry } from '../../poi-catalog/iconRegistry';
-import { DIGIT_GLYPHS, glyphsForNumber } from '../../poi-catalog/digitGlyphs';
+import { DIGIT_GLYPHS, digitGlyph, glyphsForNumber } from '../../poi-catalog/digitGlyphs';
+import { extractElevation, iconMeta, summitLayout } from '../../poi-catalog/decorations';
+import type { Geometry } from '../../poi-catalog/poiCatalog.types';
 import {
   addNewPoi, clearEditState, deletePoi, hasEdits, loadEditState,
   mergeEdits, patchPoi, resetPoi, saveEditState, undeletePoi,
@@ -37,6 +39,203 @@ const SUBCATEGORIES_NON_CLUSTER: Subcategory[] = CONTAINER_SYSTEM
   .map((c) => c.subcategory);
 
 const STATUS_OPTIONS: CoordStatus[] = ['exact', 'estimated', 'missing'];
+
+// ─── Composite-Renderer: Container + Icon + optionale Decoration (Phase D) ───
+// Erzeugt ein einziges SVG-String über verschachtelte <svg>-Elemente, das
+// im umgebenden Container der Subkategorie das Icon mittig zeigt — und bei
+// Summit-Icons (ann_044) zusätzlich die Höhe als Ziffernreihe darunter.
+// Wird per dangerouslySetInnerHTML in einen div eingehängt.
+
+function extractIconInner(svg: string): string {
+  return svg
+    .replace(/<\?xml[^>]*\?>/g, '')
+    .replace(/<!--[^>]*-->/g, '')
+    .replace(/<svg[^>]*>/, '')
+    .replace(/<\/svg>/, '')
+    .trim();
+}
+
+function buildContainerSvgString(geo: Geometry, color: string): string {
+  const isStroke = geo.fill_role === 'stroke';
+  const fill = isStroke ? 'none' : color;
+  const stroke = isStroke ? color : '#000';
+  const strokeWidth = isStroke ? 3 : 1;
+  const common = `fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linejoin="round"`;
+  const s = geo.shape;
+  switch (s.kind) {
+    case 'circle':
+      return `<circle cx="${s.cx}" cy="${s.cy}" r="${s.r}" ${common}/>`;
+    case 'rect':
+      return `<rect x="${s.x}" y="${s.y}" width="${s.width}" height="${s.height}"${s.rx != null ? ` rx="${s.rx}"` : ''} ${common}/>`;
+    case 'polygon':
+      return `<polygon points="${s.points.map((p) => p.join(',')).join(' ')}" ${common}/>`;
+    case 'path':
+      return `<path d="${s.d}" ${common}/>`;
+  }
+}
+
+function buildDigitsSvgString(value: number): string {
+  const digits = String(value).split('').map((d) => parseInt(d, 10));
+  // Jede Ziffer ist in einem 4×5-viewBox; horizontal aneinanderreihen, ohne Lücke.
+  const parts: string[] = [];
+  digits.forEach((d, i) => {
+    const g = digitGlyph(d);
+    if (!g) return;
+    const inner = extractIconInner(g.svg_raw);
+    parts.push(`<svg x="${i * 4}" y="0" width="4" height="5" viewBox="0 0 4 5">${inner}</svg>`);
+  });
+  return parts.join('');
+}
+
+function buildPoiComposite(
+  iconId: string,
+  text: string,
+  containerColor: string,
+  geo: Geometry,
+  size: number,
+): string {
+  const container = buildContainerSvgString(geo, containerColor);
+  const iconEntry = iconById(iconId);
+  const iconInner = iconEntry ? extractIconInner(iconEntry.svg_cleaned) : '';
+
+  const meta = iconMeta(iconId);
+  const elevation =
+    meta.decoration_below === 'elevation' && iconEntry ? extractElevation(text) : null;
+
+  if (elevation == null) {
+    // Standard-Composite: Container füllt 48×48, Icon liegt deckungsgleich drüber.
+    return `<svg viewBox="0 0 48 48" width="${size}" height="${size}">${container}` +
+      (iconInner ? `<svg viewBox="0 0 48 48">${iconInner}</svg>` : '') +
+      `</svg>`;
+  }
+
+  // Summit-Composite nach ann_044: Icon hochgeschoben + Ziffern unten.
+  const layout = summitLayout(4);  // p=4 — feste Wahl, gibt komfortable Maße
+  const digitCount = String(elevation).length;
+  return `<svg viewBox="0 0 48 48" width="${size}" height="${size}">` +
+    container +
+    `<svg x="${layout.iconX}" y="${layout.iconY}" width="${layout.iconW}" height="${layout.iconH}" viewBox="0 0 48 48">${iconInner}</svg>` +
+    `<svg x="${layout.textX}" y="${layout.textY}" width="${layout.textW}" height="${layout.textH}" viewBox="0 0 ${digitCount * 4} 5">${buildDigitsSvgString(elevation)}</svg>` +
+    `</svg>`;
+}
+
+function PoiComposite({
+  iconId, text, subcategory, size = 32, onClick, title,
+}: {
+  iconId: string;
+  text: string;
+  subcategory: Subcategory;
+  size?: number;
+  onClick?: () => void;
+  title?: string;
+}) {
+  const spec = containerOf(subcategory);
+  if (!spec) return null;
+  const geo = geometryOf(spec.geometry_id);
+  if (!geo) return null;
+  const html = buildPoiComposite(iconId, text, spec.color, geo, size);
+  return (
+    <div
+      style={{
+        width: size, height: size, display: 'inline-block',
+        cursor: onClick ? 'pointer' : 'default',
+        verticalAlign: 'middle',
+      }}
+      onClick={onClick}
+      title={title}
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  );
+}
+
+// ─── Icon-Picker-Modal (Phase C) ──────────────────────────────────────────────
+
+function IconPickerModal({
+  currentIcon, subcategory, text, onPick, onClose,
+}: {
+  currentIcon: string;
+  subcategory: Subcategory;
+  text: string;
+  onPick: (iconId: string) => void;
+  onClose: () => void;
+}) {
+  const [query, setQuery] = useState('');
+  const filtered = useMemo(() => findIcons(query), [query]);
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+    }} onClick={onClose}>
+      <div onClick={(e) => e.stopPropagation()} style={{
+        background: 'white', borderRadius: 6, width: 'min(720px, 90vw)',
+        maxHeight: '85vh', display: 'flex', flexDirection: 'column',
+        boxShadow: '0 10px 40px rgba(0,0,0,0.3)',
+      }}>
+        <div style={{
+          padding: '12px 16px', borderBottom: '1px solid #e2e8f0',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+        }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: '#1a365d' }}>Icon wählen</div>
+          <input
+            type="text"
+            placeholder="Suche file_name oder drawing_id…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            autoFocus
+            style={{
+              fontSize: 12, padding: '4px 8px', borderRadius: 4,
+              border: '1px solid #cbd5e0', flex: 1, maxWidth: 320,
+            }}
+          />
+          <button onClick={onClose} style={btnStyle}>Schließen</button>
+        </div>
+        <div style={{ padding: '12px 16px', overflow: 'auto', flex: 1 }}>
+          <div style={{
+            display: 'grid', gap: 10,
+            gridTemplateColumns: 'repeat(auto-fill, minmax(96px, 1fr))',
+          }}>
+            {filtered.map((entry) => {
+              const isCurrent = entry.id === currentIcon;
+              return (
+                <button
+                  key={entry.id}
+                  onClick={() => { onPick(entry.id); onClose(); }}
+                  style={{
+                    padding: 6, border: `2px solid ${isCurrent ? '#2b6cb0' : '#e2e8f0'}`,
+                    borderRadius: 6, background: isCurrent ? '#ebf8ff' : 'white',
+                    cursor: 'pointer', textAlign: 'center',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                  }}
+                  title={`${entry.file_name}${entry.drawing_id ? ` · zeichnet "${entry.drawing_id}"` : ''}`}
+                >
+                  <PoiComposite
+                    iconId={entry.id} text={text} subcategory={subcategory} size={40}
+                  />
+                  <div style={{ fontSize: 10, color: '#2d3748', fontWeight: 600, wordBreak: 'break-word' }}>
+                    {entry.file_name}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          {filtered.length === 0 && (
+            <div style={{ fontSize: 12, color: '#a0aec0', fontStyle: 'italic', padding: '20px 0', textAlign: 'center' }}>
+              Keine Treffer.
+            </div>
+          )}
+        </div>
+        <div style={{
+          padding: '10px 16px', borderTop: '1px solid #e2e8f0',
+          fontSize: 11, color: '#718096', fontFamily: 'system-ui, sans-serif',
+        }}>
+          Vorschau zeigt das Icon im aktuellen Subkategorie-Container „{subcategory}".
+          {DIGIT_GLYPHS.length === 10 && extractElevation(text) != null && ' · Höhe automatisch erkannt'}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ─── Container-Glyph: generischer Renderer für alle Geometrien (ann_042) ─────
 // Liest die Form aus GEOMETRIES (diskriminierte Union) und emittiert das
@@ -180,6 +379,7 @@ interface RowProps {
 }
 
 function PoiRow({ poi, editMode, onPatch, onDelete, onUndelete, onReset }: RowProps) {
+  const [pickerOpen, setPickerOpen] = useState(false);
   const borderColor = poi._isDeleted ? '#fc8181'
     : poi._isNew ? '#68d391'
     : poi._isDirty ? '#f6e05e'
@@ -195,7 +395,15 @@ function PoiRow({ poi, editMode, onPatch, onDelete, onUndelete, onReset }: RowPr
   if (!editMode) {
     return (
       <tr style={rowStyle}>
-        <td style={{ ...cellStyle, fontFamily: 'monospace', color: '#2d3748' }}>{poi.icon}</td>
+        <td style={{ ...cellStyle, whiteSpace: 'nowrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <PoiComposite
+              iconId={poi.icon} text={poi.text} subcategory={poi.subcategory} size={28}
+              title={poi.icon}
+            />
+            <span style={{ fontFamily: 'monospace', color: '#2d3748', fontSize: 11 }}>{poi.icon}</span>
+          </div>
+        </td>
         <td style={cellStyle}>{poi.text}</td>
         <td style={{ ...cellStyle, fontFamily: 'monospace', color: '#4a5568' }}>
           {poi.coord_status === 'missing' ? '—' : `${poi.coord[0].toFixed(5)}, ${poi.coord[1].toFixed(5)}`}
@@ -215,8 +423,24 @@ function PoiRow({ poi, editMode, onPatch, onDelete, onUndelete, onReset }: RowPr
 
   return (
     <tr style={rowStyle}>
-      <td style={cellStyle}>
-        <TextEdit value={poi.icon} onChange={(v) => onPatch({ icon: v })} mono />
+      <td style={{ ...cellStyle, whiteSpace: 'nowrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <PoiComposite
+            iconId={poi.icon} text={poi.text} subcategory={poi.subcategory} size={28}
+            onClick={() => setPickerOpen(true)}
+            title="Klicken zum Icon-Wechseln"
+          />
+          <TextEdit value={poi.icon} onChange={(v) => onPatch({ icon: v })} mono />
+        </div>
+        {pickerOpen && (
+          <IconPickerModal
+            currentIcon={poi.icon}
+            subcategory={poi.subcategory}
+            text={poi.text}
+            onPick={(id) => onPatch({ icon: id })}
+            onClose={() => setPickerOpen(false)}
+          />
+        )}
       </td>
       <td style={cellStyle}>
         <TextEdit value={poi.text} onChange={(v) => onPatch({ text: v })} />
