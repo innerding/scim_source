@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg id="SCIM3_POI_Icons" data-name="SCIM3 POI Icons" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
-  <path id="Tisch" d="M20,19.5l-2,9M28,19.5l2,9M31,19.5h-14M15,24.5h18" fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round"/>
+  <path id="sitzgruppe" d="M20,19.5l-2,9M28,19.5l2,9M31,19.5h-14M15,24.5h18" fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

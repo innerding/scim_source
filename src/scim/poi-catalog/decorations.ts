@@ -16,11 +16,11 @@ export interface IconMeta {
 }
 
 // Opt-in pro Icon — id = file_name aus iconRegistry.
-// Beispiel: Aussichtspunkt + Fernglas können als Summit-Variante eine
-// Höhenangabe tragen, wenn der POI-Text eine enthält.
+// Aussichtspunkt-POIs können als Summit-Variante eine Höhenangabe tragen,
+// wenn der POI-Text eine enthält. Alternativ wird die Decoration auch über
+// das Plus-Suffix im Icon-Namen ausgelöst (z.B. `aussichtspunkt+`).
 export const ICONS_META: Record<string, IconMeta> = {
-  Aussichtspunkt: { decoration_below: 'elevation' },
-  Fernglas:       { decoration_below: 'elevation' },
+  aussichtspunkt: { decoration_below: 'elevation' },
 };
 
 export function iconMeta(iconId: string): IconMeta {

@@ -12,99 +12,99 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 
 | Icon | Text | Coord | Cluster | Status |
 |---|---|---|---|---|
-| Castle | Schloss Weyer | 13.81172, 47.91424 | — | ✓ |
+| schloss | Schloss Weyer | 13.81172, 47.91424 | — | ✓ |
 
 ### Points_others
 
 | Icon | Text | Coord | Cluster | Status |
 |---|---|---|---|---|
-| Sendemast | Sender | 13.81838, 47.89868 | Sender *(Cluster-Icon)* | ✓ |
+| sender | Sender | 13.81838, 47.89868 | Sender *(Cluster-Icon)* | ✓ |
 
 ### Square_Rest
 
 | Icon | Text | Coord | Cluster | Status |
 |---|---|---|---|---|
-| Fernglas | Traunseeblick | 13.83029, 47.89565 | — | ✓ |
-| Fernglas | (Hochgschirr-Anstieg) | 13.82760, 47.89734 | — | ✓ |
-| Fernglas | (Dürrenberg-Aussicht) | 13.81669, 47.88936 | — | ✓ |
-| Fernglas | Adlerhorst | 13.81971, 47.88082 | — | ✓ |
-| Fernglas+ | Katzenstein 1349 m | 13.85929, 47.87454 | — | ✓ |
-| Fernglas+ | Freundschaftshöhe 1020 m | 13.83947, 47.88086 | — | ✓ |
-| Fernglas+ | Grünberg 986 m | 13.81958, 47.89840 | Sender | ✓ |
-| Fernglas+ | Hochgschirr 981 m | 13.83075, 47.89635 | — | ✓ |
-| Fernglas+ | Überraschung 789 m | 13.82236, 47.87975 | — | ✓ |
-| Fernglas+ | Schlosskogel 649 m | 13.81873, 47.87950 | — | ✓ |
-| Tisch | (Westhang) | 13.80708, 47.90296 | — | ✓ |
-| Tisch | Rastplatz | 13.80825, 47.90800 | — | ≈ |
-| Tisch | (Laudachsee-Rast) | 13.852, 47.880 | (Laudachsee) | ≈ |
-| Tisch | Seerast | 13.80597, 47.91321 | Talstation | ≈ |
-| Tisch mit Dach | Holzknecht | 13.83791, 47.88997 | — | ✓ |
+| aussichtspunkt | Traunseeblick | 13.83029, 47.89565 | — | ✓ |
+| aussichtspunkt | (Hochgschirr-Anstieg) | 13.82760, 47.89734 | — | ✓ |
+| aussichtspunkt | (Dürrenberg-Aussicht) | 13.81669, 47.88936 | — | ✓ |
+| aussichtspunkt | Adlerhorst | 13.81971, 47.88082 | — | ✓ |
+| aussichtspunkt+ | Katzenstein 1349 m | 13.85929, 47.87454 | — | ✓ |
+| aussichtspunkt+ | Freundschaftshöhe 1020 m | 13.83947, 47.88086 | — | ✓ |
+| aussichtspunkt+ | Grünberg 986 m | 13.81958, 47.89840 | Sender | ✓ |
+| aussichtspunkt+ | Hochgschirr 981 m | 13.83075, 47.89635 | — | ✓ |
+| aussichtspunkt+ | Überraschung 789 m | 13.82236, 47.87975 | — | ✓ |
+| aussichtspunkt+ | Schlosskogel 649 m | 13.81873, 47.87950 | — | ✓ |
+| rastplatz | (Westhang) | 13.80708, 47.90296 | — | ✓ |
+| rastplatz | Rastplatz | 13.80825, 47.90800 | — | ≈ |
+| rastplatz | (Laudachsee-Rast) | 13.852, 47.880 | (Laudachsee) | ≈ |
+| rastplatz | Seerast | 13.80597, 47.91321 | Talstation | ≈ |
+| unterstand | Holzknecht | 13.83791, 47.88997 | — | ✓ |
 
 ### Square_Move
 
 | Icon | Text | Coord | Cluster | Status |
 |---|---|---|---|---|
-| Spielplatz | Abenteuer | 13.81948, 47.89822 | Sender | ✓ |
-| Hochschaubahn | Sommerrodeln | 13.82019, 47.89852 | Sender | ✓ |
-| Holzbrücke | Wipfelpfad | 13.81816, 47.89817 | Sender | ✓ |
-| Paragleiter | Startplatz | 13.81804, 47.89842 | Sender | ✓ |
-| Karabiner | Adlerhorst | 13.81917, 47.88031 | — | ✓ |
-| Bogen | Parcour | 13.81154, 47.88155 | — | ✓ |
-| Aussichtsturm | Alpenvorlandblick | 13.82316, 47.89776 | Sender | ✓ |
+| spielplatz | Abenteuer | 13.81948, 47.89822 | Sender | ✓ |
+| sommerrodeln | Sommerrodeln | 13.82019, 47.89852 | Sender | ✓ |
+| wipfelpfad | Wipfelpfad | 13.81816, 47.89817 | Sender | ✓ |
+| paragleiten-start | Startplatz | 13.81804, 47.89842 | Sender | ✓ |
+| klettergarten | Adlerhorst | 13.81917, 47.88031 | — | ✓ |
+| bogen-parcour | Parcour | 13.81154, 47.88155 | — | ✓ |
+| aussichtsturm | Alpenvorlandblick | 13.82316, 47.89776 | Sender | ✓ |
 
 ### Regenerate_Substanze
 
 | Icon | Text | Coord | Cluster | Status |
 |---|---|---|---|---|
-| Gasthaus | Franzl im Holz | 13.84428, 47.90441 | — | ✓ |
-| Gasthaus | Silberfuchs | 13.84347, 47.90405 | — | ✓ |
-| Gasthaus | Ramsaualm | 13.84988, 47.88062 | (Laudachsee) | ✓ |
-| Gasthaus | Ramsau | 13.80584, 47.90366 | — | ≈ |
-| Restaurant | Hois'n | 13.81153, 47.88083 | — | ✓ |
-| Restaurant | Grünbergalm | 13.81890, 47.89847 | Sender | ✓ |
-| Bar | Lounge | 13.80691, 47.91361 | Talstation | ✓ |
-| Glas | Imbiss | 13.80841, 47.91540 | Badewiese Weyer | ≈ |
+| gasthaus | Franzl im Holz | 13.84428, 47.90441 | — | ✓ |
+| gasthaus | Silberfuchs | 13.84347, 47.90405 | — | ✓ |
+| gasthaus | Ramsaualm | 13.84988, 47.88062 | (Laudachsee) | ✓ |
+| gasthaus | Ramsau | 13.80584, 47.90366 | — | ≈ |
+| restaurant | Hois'n | 13.81153, 47.88083 | — | ✓ |
+| restaurant | Grünbergalm | 13.81890, 47.89847 | Sender | ✓ |
+| bar | Lounge | 13.80691, 47.91361 | Talstation | ✓ |
+| imbiss | Imbiss | 13.80841, 47.91540 | Badewiese Weyer | ≈ |
 
 ### Regenerate_Water
 
 | Icon | Text | Coord | Cluster | Status |
 |---|---|---|---|---|
-| Wasser | Laudachsee | 13.85334, 47.87914 | (Laudachsee) | ✓ |
-| Wasser | Seereiter | 13.80841, 47.90794 | — | ✓ |
-| Wasser | Liegewiese | 13.80707, 47.91540 | Badewiese Weyer | ≈ |
-| Badehose | Weyer | 13.80841, 47.91540 | Badewiese Weyer *(Cluster-Icon)* | ≈ |
+| gewaesser | Laudachsee | 13.85334, 47.87914 | (Laudachsee) | ✓ |
+| gewaesser | Seereiter | 13.80841, 47.90794 | — | ✓ |
+| gewaesser | Liegewiese | 13.80707, 47.91540 | Badewiese Weyer | ≈ |
+| freibad | Weyer | 13.80841, 47.91540 | Badewiese Weyer *(Cluster-Icon)* | ≈ |
 
 ### Transport_Vehicle
 
 | Icon | Text | Coord | Cluster | Status |
 |---|---|---|---|---|
-| Seilbahn-up | Bergbahn | 13.80802, 47.91339 | Talstation | ✓ |
-| Seilbahn-down | Bergbahn | 13.82156, 47.89832 | Sender | ✓ |
-| Schiffsanlegestelle | Hois'n | 13.81090, 47.88064 | — | ✓ |
-| Schiffsanlegestelle | Ramsau | 13.80554, 47.90366 | — | ✓ |
-| Schiffsanlegestelle | Grünbergseilbahn | 13.80551, 47.91302 | Talstation | ✓ |
-| Bahnstation | Schloss Weyer | 13.81109, 47.91540 | Badewiese Weyer | ✓ |
-| Talstation | Talstation | 13.80802, 47.91339 | Talstation *(Cluster-Icon)* | ✓ |
+| talstation | Bergbahn | 13.80802, 47.91339 | Talstation | ✓ |
+| bergstation | Bergbahn | 13.82156, 47.89832 | Sender | ✓ |
+| schiffsanlegestelle | Hois'n | 13.81090, 47.88064 | — | ✓ |
+| schiffsanlegestelle | Ramsau | 13.80554, 47.90366 | — | ✓ |
+| schiffsanlegestelle | Grünbergseilbahn | 13.80551, 47.91302 | Talstation | ✓ |
+| bahnstation | Schloss Weyer | 13.81109, 47.91540 | Badewiese Weyer | ✓ |
+| bergbahn | Talstation | 13.80802, 47.91339 | Talstation *(Cluster-Icon)* | ✓ |
 
 ### Transport_Parking/(Charging)
 
 | Icon | Text | Coord | Cluster | Status |
 |---|---|---|---|---|
-| Parken | Bergbahn | 13.80871, 47.91262 | Talstation | ≈ |
-| Parken | am See | 13.80644, 47.91341 | Talstation | ≈ |
-| Parken | Busse | 13.80975, 47.91540 | Badewiese Weyer | ≈ |
+| parkplatz | Bergbahn | 13.80871, 47.91262 | Talstation | ≈ |
+| parkplatz | am See | 13.80644, 47.91341 | Talstation | ≈ |
+| parkplatz | Busse | 13.80975, 47.91540 | Badewiese Weyer | ≈ |
 
 ### Service_Sleep
 
 | Icon | Text | Coord | Cluster | Status |
 |---|---|---|---|---|
-| Hotel | Landhotel | 13.80624, 47.90385 | — | ✓ |
+| hotel | Landhotel | 13.80624, 47.90385 | — | ✓ |
 
 ### Service_Others
 
 | Icon | Text | Coord | Cluster | Status |
 |---|---|---|---|---|
-| Werkzeug | Hammerschmid | 13.80397, 47.89998 | — | ✓ |
+| werkstatt | Hammerschmid | 13.80397, 47.89998 | — | ✓ |
 
 ---
 
@@ -112,16 +112,16 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 
 | Bucket | Subkategorie | verwendete Icons |
 |---|---|---|
-| Points | Points_historical | Castle |
-| Points | Points_others | Sendemast |
-| Squares | Square_Rest | Fernglas · Fernglas+ · Tisch · Tisch mit Dach |
-| Squares | Square_Move | Spielplatz · Hochschaubahn · Holzbrücke · Paragleiter · Karabiner · Bogen · Aussichtsturm |
-| Regenerate | Regenerate_Substanze | Gasthaus · Restaurant · Glas · Bar |
-| Regenerate | Regenerate_Water | Wasser · Badehose |
-| Transport | Transport_Vehicle | Seilbahn-up · Seilbahn-down · Schiffsanlegestelle · Bahnstation · Talstation |
-| Transport | Transport_Parking/(Charging) | Parken |
-| Service | Service_Sleep | Hotel |
-| Service | Service_Others | Werkzeug |
+| Points | Points_historical | schloss |
+| Points | Points_others | sender |
+| Squares | Square_Rest | aussichtspunkt · aussichtspunkt+ · rastplatz · unterstand |
+| Squares | Square_Move | spielplatz · sommerrodeln · wipfelpfad · paragleiten-start · klettergarten · bogen-parcour · aussichtsturm |
+| Regenerate | Regenerate_Substanze | gasthaus · restaurant · imbiss · bar |
+| Regenerate | Regenerate_Water | gewaesser · freibad |
+| Transport | Transport_Vehicle | talstation · bergstation · schiffsanlegestelle · bahnstation · bergbahn |
+| Transport | Transport_Parking/(Charging) | parkplatz |
+| Service | Service_Sleep | hotel |
+| Service | Service_Others | werkstatt |
 | Help | Help_order | — |
 | Help | Help_emergency | — |
 
@@ -163,21 +163,21 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 ### Sender *(9 POIs)*
 **Hover:** „Grünberg Plateau"
 
-Sendemast Sender *(Cluster-Icon)* · Fernglas+ Grünberg 986 m · Seilbahn-down Bergbahn · Restaurant Grünbergalm · Spielplatz Abenteuer · Hochschaubahn Sommerrodeln · Holzbrücke Wipfelpfad · Paragleiter Startplatz · Aussichtsturm Alpenvorlandblick
+sender Sender *(Cluster-Icon)* · aussichtspunkt+ Grünberg 986 m · bergstation Bergbahn · restaurant Grünbergalm · spielplatz Abenteuer · sommerrodeln Sommerrodeln · wipfelpfad Wipfelpfad · paragleiten-start Startplatz · aussichtsturm Alpenvorlandblick
 
 ### Talstation *(7 POIs)*
 **Hover:** „Grünberg Bergbahn Talstation"
 
-Talstation *(Cluster-Icon)* · Seilbahn-up Bergbahn · Schiffsanlegestelle Grünbergseilbahn · Tisch Seerast · Parken am See · Bar Lounge · Parken Bergbahn
+bergbahn *(Cluster-Icon)* · talstation Bergbahn · schiffsanlegestelle Grünbergseilbahn · rastplatz Seerast · parkplatz am See · bar Lounge · parkplatz Bergbahn
 
 ### Badewiese Weyer *(5 POIs)*
 **Hover:** „Badewiese Weyer/Bahnstation"
 
-Badehose Weyer *(Cluster-Icon)* · Wasser Liegewiese · Glas Imbiss · Parken Busse · Bahnstation Schloss Weyer
+freibad Weyer *(Cluster-Icon)* · gewaesser Liegewiese · imbiss Imbiss · parkplatz Busse · bahnstation Schloss Weyer
 
 ### Optional Laudachsee *(3 POIs, kein Cluster-Icon)*
 
-Gasthaus Ramsaualm · Wasser Laudachsee · Tisch (Laudachsee-Rast)
+gasthaus Ramsaualm · gewaesser Laudachsee · rastplatz (Laudachsee-Rast)
 
 ---
 

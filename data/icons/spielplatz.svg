@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg id="SCIM3_POI_Icons" data-name="SCIM3 POI Icons" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
-  <g id="Spielplatz">
+  <g id="kinderwagen">
     <path id="Fill" d="M29.762,19.178s-.418-1.335-1.168-1.335l-7.281,9.906c3.566.253,9.962-.265,8.45-8.572Z" fill="#fff"/>
     <path id="Stroke" d="M15,30.572l1.653.621,2.313-3.64s12.848,2.895,10.796-8.374M18.087,30.277c0-.951.787-1.723,1.758-1.723s1.758.771,1.758,1.723-.787,1.723-1.758,1.723-1.758-.771-1.758-1.723M26.878,30.277c0,.951.787,1.723,1.758,1.723s1.758-.771,1.758-1.723-.787-1.723-1.758-1.723-1.758.771-1.758,1.723M33,16h-3l-9.276,12.555M24.826,23.993l2.93,4.562" fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round"/>
   </g>

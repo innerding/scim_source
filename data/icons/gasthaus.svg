@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg id="SCIM3_POI_Icons" data-name="SCIM3 POI Icons" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
-  <g id="Gasthaus">
+  <g id="besteck">
     <path id="Fill" d="M31,15v12h-5c-.023-3.681.184-7.406,5-12" fill="#fff"/>
     <path id="Stroke" d="M31,15v12h-5c-.023-3.681.184-7.406,5-12M31,27v6h-1v-6M20,16v17M17,16v3c0,1.657,1.343,3,3,3s3-1.343,3-3v-3" fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round"/>
   </g>

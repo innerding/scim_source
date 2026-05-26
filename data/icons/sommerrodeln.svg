@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg id="SCIM3_POI_Icons" data-name="SCIM3 POI Icons" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
-  <g id="Hochschaubahn">
+  <g id="achterbahn">
     <path id="Fill" d="M27,15h5v3h-5v-3M18,20l.2,2,1.8.5,4-3-2-2.5-4,3" fill="#fff"/>
     <path id="Stroke" d="M15,33c2.389,0,4.51-1.529,5.265-3.795l.735-2.205c1.194-3.583,4.548-6,8.325-6h3.675M32,21v12M20,33v-3M24,33v-10M28,21.5v11.5M27,15v3h5v-3h-5M18,20l.2,2,1.8.5,4-3-2-2.5-4,3" fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round"/>
   </g>

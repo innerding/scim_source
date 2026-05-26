@@ -244,13 +244,13 @@ function IconPickerModal({
                     cursor: 'pointer', textAlign: 'center',
                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
                   }}
-                  title={`${entry.file_name}${entry.drawing_id ? ` · zeichnet "${entry.drawing_id}"` : ''}`}
+                  title={`${displayName(entry.file_name)}${entry.drawing_id ? ` · zeichnet "${entry.drawing_id}"` : ''}`}
                 >
                   <PoiComposite
                     iconId={entry.id} text={text} subcategory={subcategory} size={40}
                   />
                   <div style={{ fontSize: 10, color: '#2d3748', fontWeight: 600, wordBreak: 'break-word' }}>
-                    {entry.file_name}
+                    {displayName(entry.file_name)}
                   </div>
                 </button>
               );
@@ -644,11 +644,22 @@ function makeResponsive(svg: string): string {
     .replace(/(<svg[^>]*?)\s+height="[^"]*"/, '$1');
 }
 
+// kebab-case lowercase → Title Case Display-Name
+// 'aussichtspunkt' → 'Aussichtspunkt'
+// 'bogen-parcour'  → 'Bogen Parcour'
+// 'seilbahn-up'    → 'Seilbahn Up'
+function displayName(fileName: string): string {
+  return fileName
+    .split('-')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+}
+
 function IconPreview({ entry, size = 32 }: { entry: IconRegistryEntry; size?: number }) {
   return (
     <div
       style={{ width: size, height: size, display: 'inline-block' }}
-      title={`${entry.file_name}${entry.drawing_id ? ` · zeichnet "${entry.drawing_id}"` : ''}`}
+      title={`${displayName(entry.file_name)}${entry.drawing_id ? ` · zeichnet "${entry.drawing_id}"` : ''}`}
       dangerouslySetInnerHTML={{ __html: makeResponsive(entry.svg_cleaned) }}
     />
   );
@@ -701,7 +712,7 @@ function IconLibrarySection() {
               >
                 <IconPreview entry={entry} size={36} />
                 <div style={{ fontSize: 11, lineHeight: 1.4, flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, color: '#1a365d' }}>{entry.file_name}</div>
+                  <div style={{ fontWeight: 600, color: '#1a365d' }}>{displayName(entry.file_name)}</div>
                   <div style={{ color: '#718096', fontFamily: 'monospace', fontSize: 10 }}>
                     {entry.drawing_id ?? <span style={{ color: '#a0aec0' }}>—</span>}
                     {entry.is_stroke_only && (

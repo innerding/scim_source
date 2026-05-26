@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg id="SCIM3_POI_Icons" data-name="SCIM3 POI Icons" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
-  <g id="Bogen">
+  <g id="pfeil-und-bogen">
     <path id="Fill" d="M19,18c7.692-.395,10.651,7.83,6,13,7.716-3.235,4.479-16.442-6-13Z" fill="#f2f2f0"/>
     <path id="Stroke" d="M25,31c7.716-3.235,4.479-16.442-6-13M25,31c4.651-5.17,1.692-13.395-6-13M19,18l6,13M25,31c7.716-3.235,4.479-16.442-6-13M25,31c4.651-5.17,1.692-13.395-6-13M29.903,17.985l3.097,1.084-1.084,3.097M33,19.069l-15.678,7.547M15,25.803l2.322.813-.813,2.322" fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round"/>
   </g>

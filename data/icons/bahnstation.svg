@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg id="SCIM3_POI_Icons" data-name="SCIM3 POI Icons" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
-  <g id="Bahnstation">
+  <g id="strassenbahn">
     <path id="Fill" d="M15.238,30.78h15.781c1.089,0,1.973-.883,1.973-1.973.125-.848-.493-1.973-.493-1.973H15.238v3.946" fill="#fff"/>
     <path id="Stroke" d="M15.238,25.661v1.173h17.26M15.238,21.901,15.238,21.901h7.89c6.539,0,9.863,3.088,9.863,6.906M15.238,30.78h15.781c1.089,0,1.973-.883,1.973-1.973M15.238,26.834v3.946M18.92,26.834v-4.933M22.74,26.834v-4.933M26.489,30.452v-8.057M14.992,33h17.753M20.856,21.89l4.996-3.006-6-3.148.022-.736" fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round"/>
   </g>

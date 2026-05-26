@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg id="SCIM3_POI_Icons" data-name="SCIM3 POI Icons" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
-  <g id="Parken">
+  <g id="parkschild">
     <path id="Fill" d="M16,24c0,4.418,3.582,8,8,8s8-3.582,8-8-3.582-8-8-8-8,3.582-8,8" fill="#fff"/>
     <path id="Stroke" d="M22.222,27.556v-7.111h2.964c.818,0,1.481.796,1.481,1.778s-.663,1.778-1.481,1.778h-1.264M16,24c0,4.418,3.582,8,8,8s8-3.582,8-8-3.582-8-8-8-8,3.582-8,8" fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round"/>
   </g>

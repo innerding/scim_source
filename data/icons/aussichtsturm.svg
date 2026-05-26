@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg id="SCIM3_POI_Icons" data-name="SCIM3 POI Icons" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
-  <g id="Aussichtsturm">
+  <g id="aussichtsturm">
     <rect id="Fill" x="18.625" y="15.5" width="10" height="5" fill="#f2f2f0"/>
     <path id="Stroke" d="M19.647,21l-2.022,12M30.375,31.9l-11.75-9.4M27.728,21l1.897,12M17.625,21h12M18.625,20.5v-5M28.625,20.5v-5M17.625,15h12M19.125,18.5h9M20.625,18.5v2M26.625,18.5v2-2ZM22.625,18.5v2-2ZM20.625,18.5v2M24.625,18.5v2M17.625,31.5h12" fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
