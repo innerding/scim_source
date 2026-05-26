@@ -542,6 +542,86 @@ relevanten Annotations). Verschafft schnellen Ueberblick ohne Wechsel
 in die KI-Schnittstelle.`,
     date: '2026-05-25',
   },
+  {
+    id: 'ann_046',
+    category: 'next_intent',
+    label: 'Naechste Absicht - Katalog-Editor Erweiterungen nach MVP',
+    content: `Stand: MVP-Felder (draw-id, Icon, Tagline, Description short, Coord, Cluster, Status, Subkategorie) sind editierbar und persistierbar. Folgende POI-bezogene Erweiterungen sind als naechstes Paket vorgesehen.
+
+Zusaetzliche Per-POI Felder:
+  - description_long: mehrere Absaetze, fuer das Expanded-Sheet auf der Ziel-App
+  - image_url: optionales Bild pro POI (URL oder spaeter Upload), Header im Expanded-Sheet
+  - external_link: optionale URL (offizielle Seite, OSM-Eintrag, etc.), Button im Expanded-Sheet
+  - elevation_m + Einheit (m, km, ...): strukturiertes Feld fuer Hoehenangabe statt Regex auf Tagline. Plus Checkbox 'als Decoration unter dem Icon anzeigen'. Loest mittelfristig den +-Suffix-Mechanismus ab.
+
+UI-Ergaenzungen im Katalog-Editor:
+  - Zahnrad-Button am Ende jeder POI-Zeile (Edit-Modus) oeffnet ein Detail-Panel mit den Zusatzfeldern, damit die Tabelle nicht zu breit wird
+  - Migrations-Helper: beim Aufruf bestehender Plan-md mit Hoehen-Texten ('Katzenstein 1349 m') kann pro POI per Klick die Zahl in elevation_m extrahiert werden, Tagline bleibt 'Katzenstein'
+  - Reset einzelner Felder pro POI (heute nur ganze Zeile)
+  - Automatische Migration der localStorage-Patches beim Plan-md-Schema-Wechsel (heute muss der Operator manuell 'Alle zuruecksetzen' klicken)
+
+Cluster-spezifisch:
+  - Ghost-Cluster-POI: Cluster-Identitaets-POI ohne Coord (z.B. coord_status 'cluster_only'). Wird nicht als eigener Marker auf der Karte gerendert, erscheint nur als Identity-Icon beim Zusammenfalten des Clusters. Erlaubt eine saubere Trennung zwischen physischem Gebaeude und abstrakter Cluster-Identitaet (siehe Diskussion zu Bergbahn/Talstation).
+
+Daten-Roundtrip:
+  - Plan-md waechst um weitere Spalten (analog zur Description-short-Erweiterung von 5 auf 6 Spalten)
+  - Parser akzeptiert weiterhin aeltere Spalten-Anzahl (Vorwaerts-Kompatibilitaet)
+
+Reihenfolge nicht starr. Wann was gebaut wird, haengt vom konkreten Bedarf der Plan-Datenpflege ab.`,
+    date: '2026-05-26',
+  },
+  {
+    id: 'ann_047',
+    category: 'next_intent',
+    label: 'Naechste Absicht - POI-Rendering und Interaktion in der Ziel-App',
+    content: `Die SCIM3-Ziel-App (mobil und tablet, kartenzentriert) zeigt die im Katalog gepflegten POI-Daten gemaess folgender Schicht-Logik. Diese Annotation beschreibt die geplante Darstellung; die App ist noch nicht implementiert (Phase Z, nach Promotion-Pipeline Phase 4).
+
+Sichtbar auf der Karte (ohne Interaktion):
+  - POI-Composite (Container + Icon + ggf. Elevation-Decoration) als Marker an der Coord
+  - Tagline NICHT permanent eingeblendet (zu unruhig). Erscheint nur als Tooltip beim Hover (Desktop) oder Long-Press (Touch)
+  - Cluster-Hexagon falls mehrere POIs zu nah beieinander - individuelle POIs unsichtbar, Hexagon mit Identity-Icon innen
+
+Tap auf einen POI-Marker:
+  - Marker pulst kurz (Bestaetigung)
+  - Bottom-Sheet slidet von unten ein (Peek-State, ca. 180 px hoch)
+  - Peek-Inhalt:
+      [POI-Composite] Tagline (fett) . Description short (1 Zeile) . Subkategorie . Cluster (falls vorhanden)
+  - Drag-Handle oben am Sheet zum Aufziehen
+
+Swipe nach oben / Klick auf Drag-Handle:
+  - Sheet expandiert auf 70-80 % Bildschirmhoehe
+  - Expanded-Inhalt:
+      [Bild aus image_url, falls vorhanden, header-breit]
+      Tagline (gross) + Description short (Untertitel)
+      ----
+      Description long (mehrere Absaetze)
+      ----
+      Coord + 'Route hierher' (oeffnet System-Karten-App)
+      'Mehr Infos' -> external_link (oeffnet im Browser)
+      'Teilen' (native Share-API)
+      'Schliessen' (oder Swipe nach unten)
+
+Tap auf ein Cluster-Hexagon:
+  - Bottom-Sheet zeigt Cluster-Uebersicht:
+      [Identity-Icon] Cluster-Name . Hover-Text . N enthaltene POIs
+      ----
+      Liste der Mitglieder mit Mini-Composite + Tagline
+      Tap auf Mitglied -> wechselt zu dessen POI-Sheet
+
+Tap ausserhalb / Swipe nach unten: Sheet schliesst, Marker verliert Puls-Effekt.
+
+Felder-Mapping fuer den App-Entwickler:
+  Tagline              -> Bottom-Sheet-Titel + Map-Tooltip
+  Description short    -> Peek-Untertitel (1 Zeile)
+  Description long     -> Expanded-Sheet Hauptbeschreibung
+  image_url            -> Expanded-Sheet Header-Bild
+  external_link        -> 'Mehr Infos'-Button
+  Subkategorie/Cluster -> Peek-Untertitel-Zeile + Cluster-Sheet-Header
+  elevation_m          -> Decoration unter dem Icon (siehe ann_044), zusaetzlich als Text im Sheet
+
+Cluster-Verhalten siehe ann_043. Composite-Aufbau siehe ann_044.`,
+    date: '2026-05-26',
+  },
 ];
 
 function AnnotationsTab() {
