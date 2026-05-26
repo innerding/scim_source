@@ -562,6 +562,7 @@ UI-Ergaenzungen im Katalog-Editor:
 
 Cluster-spezifisch:
   - Ghost-Cluster-POI: Cluster-Identitaets-POI ohne Coord (z.B. coord_status 'cluster_only'). Wird nicht als eigener Marker auf der Karte gerendert, erscheint nur als Identity-Icon beim Zusammenfalten des Clusters. Erlaubt eine saubere Trennung zwischen physischem Gebaeude und abstrakter Cluster-Identitaet (siehe Diskussion zu Bergbahn/Talstation).
+  - Cluster-Vorschlagsystem (System-Automation, mittelfristig): Statt dass der Operator manuell Cluster-Namen vergibt und in jeder Member-Zeile den Cluster-String eintraegt, schlaegt das System Cluster auf Basis raeumlicher Naehe und semantischer Zusammengehoerigkeit vor (z.B. 'diese 5 POIs liegen <30 m beieinander - clustern?'). Operator bestaetigt oder lehnt ab. Implikation fuer heutige Katalog-Arbeit: Cluster-Strukturen und Cluster-Namen sollen so gefuehrt werden, dass sie spaeter durch maschinell vorgeschlagene Cluster ersetzbar sind. Konkret: keine sprechenden Cluster-Namen aufbauen, die spaeter manuell zu pflegen waeren (z.B. nicht 'Lichtenberg-Gipfel mit Sender und Warte', sondern kurze stabile IDs wie 'Lichtenberg'). Der Cluster-Name ist Identifier, nicht Beschreibung - die Beschreibung lebt im hover_text. Heute manuell, spaeter maschinell vorgeschlagen mit gleichem Datenmodell.
 
 Daten-Roundtrip:
   - Plan-md waechst um weitere Spalten (analog zur Description-short-Erweiterung von 5 auf 6 Spalten)
