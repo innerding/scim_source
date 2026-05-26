@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="SCIM3_POI_Icons" data-name="SCIM3 POI Icons" xmlns="http://www.w3.org/2000/svg" width=".667in" height=".667in" viewBox="0 0 48 48">
+  <g id="denkmal">
+    <path id="fill" d="M17,33v-4h14v4h-14ZM27,29l-1-12-2-2-2,2-1,12h6Z" fill="#f2f2f0"/>
+    <path id="stroke" d="M21,29l1-12,2-2,2,2,1,12M31,33v-4h-14v4M15,33h18" fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>
