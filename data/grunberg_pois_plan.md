@@ -33,7 +33,7 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 | aussichtspunkt+ | Freundschaftshöhe 1020 m |  | 13.83947, 47.88086 | — | ✓ |
 | aussichtspunkt+ | Grünberg 986 m | Plateau-Gipfel mit Rundblick über Traunsee und Alpenvorland | 13.81958, 47.89840 | Sender | ✓ |
 | aussichtspunkt+ | Hochgschirr 981 m |  | 13.83075, 47.89635 | — | ✓ |
-| aussichtspunkt+ | Überraschung 789 m |  | 13.82236, 47.87975 | — | ✓ |
+| aussichtspunkt+ | Überraschung 789 m | Felsformation in der Kaltenbachwildnis, durchquerbar seit 1902 | 13.82236, 47.87975 | — | ✓ |
 | aussichtspunkt+ | Schlosskogel 649 m |  | 13.81873, 47.87950 | — | ✓ |
 | rastplatz | (Westhang) |  | 13.80708, 47.90296 | — | ✓ |
 | rastplatz | Rastplatz |  | 13.80825, 47.90800 | — | ≈ |
@@ -49,8 +49,8 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 | sommerrodeln | Sommerrodeln | Edelstahl-Sommerrodelbahn mit Talfahrt durch den Wald | 13.82019, 47.89852 | Sender | ✓ |
 | wipfelpfad | Wipfelpfad | Baumwipfelpfad mit Aussichtsturm und Rundtour durch den Hochwald | 13.81816, 47.89817 | Sender | ✓ |
 | paragleiten-start | Startplatz | Offizieller Paragleiter-Startplatz mit Blick Richtung Traunsee | 13.81804, 47.89842 | Sender | ✓ |
-| klettergarten | Adlerhorst |  | 13.81917, 47.88031 | — | ✓ |
-| bogen-parcour | Parcour |  | 13.81154, 47.88155 | — | ✓ |
+| klettergarten | Adlerhorst | Beliebter Kletterfelsen mit ~20 Routen, Schwierigkeitsgrade 4a bis 7a | 13.81917, 47.88031 | — | ✓ |
+| bogen-parcour | 3D-Bogenparcour | 28 Ziele im Wald, betrieben vom BSV Salzkammergut | 13.81154, 47.88155 | — | ✓ |
 | aussichtsturm | Alpenvorlandblick | Holzturm am Plateau-Rand mit Blick Richtung Norden ins Alpenvorland | 13.82316, 47.89776 | Sender | ✓ |
 | volleyball | Volleyball | Volleyballfeld an der Badewiese Weyer | 13.80707, 47.91540 | Badewiese Weyer | ≈ |
 | segeln | ASKÖ-Segeln | Segelclub ASKÖ Gmunden seit 1919, Boots- und E-Boot-Verleih | 0, 0 | Bootshafen Gmunden | ❓ |
@@ -63,7 +63,7 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 | gasthaus | Silberfuchs |  | 13.84347, 47.90405 | — | ✓ |
 | gasthaus | Ramsaualm | Almgasthaus über dem Laudachsee, 2008 nach Vorbild der abgebrannten Cumberland-Jagdhütte erbaut | 13.84988, 47.88062 | (Laudachsee) | ✓ |
 | gasthaus | Ramsau |  | 13.80584, 47.90366 | — | ≈ |
-| restaurant | Hois'n |  | 13.81153, 47.88083 | — | ✓ |
+| restaurant | Hois'n | Startpunkt für die Kaltenbachwildnis und den Traunstein-Anstieg, am Traunsee-Ostufer | 13.81153, 47.88083 | — | ✓ |
 | restaurant | Grünbergalm | Almgasthaus am Plateau, traditionelle oberösterreichische Küche | 13.81890, 47.89847 | Sender | ✓ |
 | bar | Lounge | Saisonal geöffnetes Restaurant an der Talstation | 13.80691, 47.91361 | Talstation | ✓ |
 | strand-buffet | Strand-Buffet |  | 13.80841, 47.91540 | Badewiese Weyer | ≈ |
@@ -110,7 +110,7 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 
 | Icon | Tagline | Description | Coord | Cluster | Status |
 |---|---|---|---|---|---|
-| werkstatt | Hammerschmid |  | 13.80397, 47.89998 | — | ✓ |
+| werkstatt | Hammerschmid | Bikeshop unterm Stoan | 13.80397, 47.89998 | — | ✓ |
 
 ### Cluster
 
