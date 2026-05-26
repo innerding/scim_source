@@ -21,6 +21,9 @@ import type {
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore — Vite ?raw-Import liefert string
 import gruenbergMd from '../../../../data/grunberg_pois_plan.md?raw';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+import lichtenbergMd from '../../../../data/lichtenberg_pois_plan.md?raw';
 
 // ─── Region-Index (Phase 1: nur Grünberg) ─────────────────────────────────────
 
@@ -32,6 +35,7 @@ interface RegionEntry {
 
 const REGIONS: RegionEntry[] = [
   { id: 'gruenberg', name: 'Grünberg', md: gruenbergMd as string },
+  { id: 'lichtenberg', name: 'Lichtenberg', md: lichtenbergMd as string },
 ];
 
 const SUBCATEGORIES_NON_CLUSTER: Subcategory[] = CONTAINER_SYSTEM

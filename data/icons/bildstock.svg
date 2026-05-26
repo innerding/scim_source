@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="SCIM3_POI_Icons" data-name="SCIM3 POI Icons" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <g id="marterl">
+    <path id="fill" d="M28.954,22.88l-4.954-3.38-5,3.333v10.417h10l-.046-10.37ZM25.875,29.719h-3.565l-.069-3.855c0-.523.424-.947.947-.947h1.671c.523,0,.947.424.947.947l.069,3.855Z" fill="#fff"/>
+    <path d="M19,23.25v10s0-10,0-10ZM29,23.25v10s0-10,0-10ZM16.5,24.5l7.5-5-7.5,5ZM31.5,24.5l-7.5-5,7.5,5ZM24,14.75v4.75M25.875,29.719h-3.656s.031-3.625.031-3.625M22.031,16.844l3.906.031" fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>
