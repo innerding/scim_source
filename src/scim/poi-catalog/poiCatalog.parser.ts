@@ -165,14 +165,25 @@ export function parsePoiCatalog(md: string, opts: ParseOptions): PoiCatalogState
       i += 2;
       while (i < lines.length && lines[i].trim().startsWith('|')) {
         const cells = parseRow(lines[i]);
-        if (cells.length >= 5) {
+        // 5 Spalten (alt):  Icon | Tagline | Coord | Cluster | Status
+        // 6 Spalten (neu):  Icon | Tagline | Description | Coord | Cluster | Status
+        const isNew = cells.length >= 6;
+        const minCells = isNew ? 6 : 5;
+        if (cells.length >= minCells) {
           const icon = stripMdInline(cells[0]);
           const text = stripMdInline(cells[1].replace(/\s*\*\([^)]*\)\*$/, ''));
           const rawNotesMatch = cells[1].match(/\*\(([^)]+)\)\*/);
           const rawNotes = rawNotesMatch ? rawNotesMatch[1] : undefined;
-          const { coord, status: coordStatus } = parseCoord(cells[2]);
-          const cluster = parseCluster(cells[3]);
-          const statusFromCol = parseStatus(cells[4]);
+          // Description-Spalte nur im neuen Format vorhanden
+          const description_short = isNew
+            ? (stripMdInline(cells[2]) || undefined)
+            : undefined;
+          const coordIdx   = isNew ? 3 : 2;
+          const clusterIdx = isNew ? 4 : 3;
+          const statusIdx  = isNew ? 5 : 4;
+          const { coord, status: coordStatus } = parseCoord(cells[coordIdx]);
+          const cluster = parseCluster(cells[clusterIdx]);
+          const statusFromCol = parseStatus(cells[statusIdx]);
 
           poiCounter++;
           const id = `poi_${String(poiCounter).padStart(3, '0')}`;
@@ -190,6 +201,7 @@ export function parsePoiCatalog(md: string, opts: ParseOptions): PoiCatalogState
             subcategory: currentSub,
             icon,
             text,
+            description_short,
             coord,
             coord_status: coordStatus === 'missing' ? 'missing' : statusFromCol,
             cluster: cluster.name,

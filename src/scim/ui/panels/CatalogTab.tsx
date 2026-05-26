@@ -452,6 +452,9 @@ function PoiRow({ poi, editMode, onPatch, onDelete, onUndelete, onReset }: RowPr
           </div>
         </td>
         <td style={cellStyle}>{poi.text}</td>
+        <td style={{ ...cellStyle, color: '#4a5568', fontSize: 11 }}>
+          {poi.description_short ?? <span style={{ color: '#cbd5e0', fontStyle: 'italic' }}>—</span>}
+        </td>
         <td style={{ ...cellStyle, fontFamily: 'monospace', color: '#4a5568' }}>
           {poi.coord_status === 'missing' ? '—' : `${poi.coord[0].toFixed(5)}, ${poi.coord[1].toFixed(5)}`}
         </td>
@@ -492,6 +495,13 @@ function PoiRow({ poi, editMode, onPatch, onDelete, onUndelete, onReset }: RowPr
       </td>
       <td style={cellStyle}>
         <TextEdit value={poi.text} onChange={(v) => onPatch({ text: v })} placeholder="lapidar" />
+      </td>
+      <td style={cellStyle}>
+        <TextEdit
+          value={poi.description_short ?? ''}
+          onChange={(v) => onPatch({ description_short: v.trim() === '' ? undefined : v })}
+          placeholder="one sentence only"
+        />
       </td>
       <td style={cellStyle}>
         <CoordEdit poi={poi} onChange={onPatch} />
@@ -579,6 +589,7 @@ function SubcategorySection({
           <tr style={{ background: '#edf2f7', textAlign: 'left' }}>
             <th style={{ padding: '4px 8px', fontWeight: 500, color: '#4a5568' }}>Icon</th>
             <th style={{ padding: '4px 8px', fontWeight: 500, color: '#4a5568' }}>Tagline</th>
+            <th style={{ padding: '4px 8px', fontWeight: 500, color: '#4a5568' }}>Description short</th>
             <th style={{ padding: '4px 8px', fontWeight: 500, color: '#4a5568' }}>Coord (lon, lat)</th>
             <th style={{ padding: '4px 8px', fontWeight: 500, color: '#4a5568' }}>Cluster</th>
             <th style={{ padding: '4px 8px', fontWeight: 500, color: '#4a5568', width: 30 }}></th>

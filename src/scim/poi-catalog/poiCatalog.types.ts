@@ -60,8 +60,9 @@ export interface CatalogPoi {
   id: string;                  // 'poi_001' etc.
   bucket: Bucket;              // 'Squares'
   subcategory: Subcategory;    // 'Square_Rest'
-  icon: string;                // 'Fernglas+' (operator-icon-name)
-  text: string;                // 'Katzenstein 1349 m'
+  icon: string;                // 'aussichtspunkt+' (operator-icon-name)
+  text: string;                // 'Katzenstein 1349 m' — Tagline (kurze, suchbare Bezeichnung)
+  description_short?: string;  // ein-Satz-Beschreibung für Collapsed-Sheet auf der Ziel-App
   coord: [number, number];     // [lon, lat]
   coord_status: CoordStatus;
   cluster?: string;            // 'Sender' — name of cluster the poi belongs to

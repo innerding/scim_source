@@ -72,11 +72,11 @@ function renderTabelle1(catalog: MergedCatalog): string {
     if (!list || list.length === 0) continue;
     out.push(`### ${subHeading(c.subcategory)}`);
     out.push('');
-    out.push('| Icon | Text | Coord | Cluster | Status |');
-    out.push('|---|---|---|---|---|');
+    out.push('| Icon | Tagline | Description | Coord | Cluster | Status |');
+    out.push('|---|---|---|---|---|---|');
     for (const p of list) {
       out.push(
-        `| ${p.icon} | ${fmtText(p)} | ${fmtCoord(p)} | ${fmtClusterCell(p, clustersWithIdentity)} | ${fmtStatus(p)} |`,
+        `| ${p.icon} | ${fmtText(p)} | ${p.description_short ?? ''} | ${fmtCoord(p)} | ${fmtClusterCell(p, clustersWithIdentity)} | ${fmtStatus(p)} |`,
       );
     }
     out.push('');
