@@ -112,6 +112,14 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 |---|---|---|---|---|---|
 | werkstatt | Hammerschmid |  | 13.80397, 47.89998 | — | ✓ |
 
+### Cluster
+
+| Icon | Tagline | Description | Coord | Cluster | Status |
+|---|---|---|---|---|---|
+| aussichtspunkt+ | Grünberg Plateau 984 m | Aussichtsplateau mit Sender, Bergbahn, Gasthaus, Spiel- und Aktiv-Angeboten | ↑ | Sender | cluster_ghost |
+| gewaesser | Badewiese | Bahnstation, Liegewiese, Strandbuffet, Busparkplatz | ↑ | Badewiese Weyer | cluster_ghost |
+| bergbahn | Grünberg Talstation | Talstation der Grünbergseilbahn am Traunsee — Einstiegspunkt zum Berg, mit Schiffsanlegestelle und Parkmöglichkeit | ↑ | Talstation | cluster_ghost |
+
 ---
 
 ## Tabelle 2 · Kategorien-Übersicht
