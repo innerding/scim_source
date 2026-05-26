@@ -161,34 +161,37 @@ function buildPoiComposite(
   // - Glyph-Reihe (optional Einheit links / Ziffern / optional Einheit rechts)
   //   wird in den Frame eingebettet
   // - Frame hat weisses Fill, deckt unteren Icon-Bereich ab — Icon muss daher
-  //   nur minimal nach oben geschoben werden (2 px)
-  // - Frame skaliert horizontal mit Inhalt (Way A — preserveAspectRatio="none",
-  //   Hand-Kurven werden leicht gestaucht/gestreckt, akzeptiert).
-  // - Anker bleibt summit_digits_y_max der Geometrie wie gehabt — Frame-Boden
-  //   sitzt 1 px ueber der per-Geometrie-Unterkante.
+  //   nur minimal nach oben geschoben werden (3 px)
+  // - Frame skaliert horizontal mit Inhalt (Way A — preserveAspectRatio="none").
+  //   Stroke bleibt dank vector-effect="non-scaling-stroke" gleichmaessig.
+  // - Universeller Anker am Viewport-Boden (kein per-Geometrie-Sondermass mehr):
+  //   FRAME_ANCHOR_Y = 47 (1 px ueber Viewport-Bottom).
   const { inner: glyphRow, widthUnits: contentUnits } = buildGlyphRowSvgString(deco);
   // Frame-viewBox ist 8x9 fuer 1 Glyph (Padding 2 horiz + 2 vert je Seite).
-  // Fuer N Glyphs: Frame-Breite in viewBox-Einheiten = N*4 + 4.
-  const frameUnitsW = contentUnits + 4;
-  const frameUnitsH = 9;
-  // Outer-Pixel je viewBox-Einheit (Sichtpruefung-Konstante).
-  const UNIT_SCALE = 1.2;
+  // Hier mehr horizontale Basisbreite: 4 viewBox-Einheiten Padding je Seite
+  // (= 8 mehr als der Inhalt). Vertikal bleibt Padding 2 oben+unten.
+  const FRAME_PADDING_X = 4;       // viewBox-Einheiten je Seite
+  const FRAME_PADDING_Y = 2;
+  const frameUnitsW = contentUnits + 2 * FRAME_PADDING_X;
+  const frameUnitsH = 5 + 2 * FRAME_PADDING_Y;
+  const UNIT_SCALE = 1.2;          // outer-px je viewBox-Einheit
   const frameW = frameUnitsW * UNIT_SCALE;
   const frameH = frameUnitsH * UNIT_SCALE;
   const frameX = 24 - frameW / 2;
-  const summitDecoShift = 1.0;
-  const frameYBottom = (geo.summit_digits_y_max ?? 47) - summitDecoShift;
-  const frameY = frameYBottom - frameH;
-  // Content sitzt im Frame mit 2-unit Padding je Seite
+  const FRAME_ANCHOR_Y = 47;       // 1 px ueber Viewport-Bottom, fuer alle Container gleich
+  const frameY = FRAME_ANCHOR_Y - frameH;
   const contentW = contentUnits * UNIT_SCALE;
   const contentH = 5 * UNIT_SCALE;
-  const contentX = frameX + 2 * UNIT_SCALE;
-  const contentY = frameY + 2 * UNIT_SCALE;
-  // Icon-Shift: minimal (2 px), damit Icon nicht hinter Frame versinkt
-  const summitIconShift = 2;
+  const contentX = frameX + FRAME_PADDING_X * UNIT_SCALE;
+  const contentY = frameY + FRAME_PADDING_Y * UNIT_SCALE;
+  const summitIconShift = 3;
   const iconPart = `<g transform="translate(0,${-summitIconShift})">${iconInner}</g>`;
+  // Frame-SVG so einbetten, dass der Pfad-Stroke nicht mitskaliert (non-scaling-stroke).
+  // Wir ziehen den Frame-Pfad-Inhalt heraus und fuegen das Attribut hinzu.
   const frameEntry = glyphById('frame');
-  const frameInner = frameEntry ? extractIconInner(frameEntry.svg_raw) : '';
+  const frameInner = frameEntry
+    ? extractIconInner(frameEntry.svg_raw).replace('<path ', '<path vector-effect="non-scaling-stroke" ')
+    : '';
   return `<svg viewBox="0 0 48 48" width="${size}" height="${size}">` +
     container +
     iconPart +
@@ -504,9 +507,15 @@ function PoiRow({ poi, editMode, onPatch, onDelete, onUndelete }: RowProps) {
               : `${poi.coord[0].toFixed(5)}, ${poi.coord[1].toFixed(5)}`}
         </td>
         <td style={{ ...cellStyle, color: '#4a5568' }}>
-          {poi.cluster ?? '—'}
-          {poi.is_cluster_identity && (
-            <span style={{ marginLeft: 6, fontSize: 10, color: '#c8389b', fontStyle: 'italic' }}>(Cluster-Icon)</span>
+          {poi.subcategory === 'Cluster' ? (
+            <span style={{ color: '#cbd5e0', fontStyle: 'italic' }}>—</span>
+          ) : (
+            <>
+              {poi.cluster ?? '—'}
+              {poi.is_cluster_identity && (
+                <span style={{ marginLeft: 6, fontSize: 10, color: '#c8389b', fontStyle: 'italic' }}>(Cluster-Icon)</span>
+              )}
+            </>
           )}
         </td>
         <td style={{ ...cellStyle, textAlign: 'center' }}>
@@ -558,21 +567,27 @@ function PoiRow({ poi, editMode, onPatch, onDelete, onUndelete }: RowProps) {
         )}
       </td>
       <td style={cellStyle}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <TextEdit
-            value={poi.cluster ?? ''}
-            onChange={(v) => onPatch({ cluster: v.trim() === '' ? undefined : v })}
-          />
-          <label title="Cluster-Icon" style={{ display: 'flex', alignItems: 'center', fontSize: 10, color: '#c8389b' }}>
-            <input
-              type="checkbox"
-              checked={!!poi.is_cluster_identity}
-              onChange={(e) => onPatch({ is_cluster_identity: e.target.checked || undefined })}
-              style={{ marginRight: 2 }}
+        {poi.subcategory === 'Cluster' ? (
+          // Ghost-POI: keine cluster-/ID-Eingabe (cluster spiegelt automatisch text,
+          // ID ist als Ghost per Definition gesetzt — Eingabe wuerde nur verwirren).
+          <span style={{ fontSize: 11, color: '#a0aec0', fontStyle: 'italic' }}>—</span>
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <TextEdit
+              value={poi.cluster ?? ''}
+              onChange={(v) => onPatch({ cluster: v.trim() === '' ? undefined : v })}
             />
-            ID
-          </label>
-        </div>
+            <label title="Cluster-Icon" style={{ display: 'flex', alignItems: 'center', fontSize: 10, color: '#c8389b' }}>
+              <input
+                type="checkbox"
+                checked={!!poi.is_cluster_identity}
+                onChange={(e) => onPatch({ is_cluster_identity: e.target.checked || undefined })}
+                style={{ marginRight: 2 }}
+              />
+              ID
+            </label>
+          </div>
+        )}
       </td>
       <td style={{ ...cellStyle, whiteSpace: 'nowrap' }}>
         <StatusEdit value={poi.coord_status} onChange={(v) => onPatch({ coord_status: v })} />
@@ -1188,8 +1203,21 @@ export default function CatalogTab() {
 
   // ─── Handler ────────────────────────────────────────────────────────────────
 
-  const handlePatch = (id: string, changes: Partial<Omit<CatalogPoi, 'id'>>) =>
-    setEditState((s) => patchPoi(s, id, changes));
+  const handlePatch = (id: string, changes: Partial<Omit<CatalogPoi, 'id'>>) => {
+    // Auto-Sync fuer Ghost-POIs (subcategory='Cluster'): cluster spiegelt text.
+    // Die cluster-Eingabe ist in der UI versteckt — ohne Mirror waere sie leer.
+    const currentPoi = merged.pois.find((p) => p.id === id);
+    const newSub = changes.subcategory ?? currentPoi?.subcategory;
+    const isGhost = newSub === 'Cluster';
+    let next = changes;
+    if (isGhost) {
+      const newText = changes.text ?? currentPoi?.text;
+      if (newText != null && (changes.text != null || changes.subcategory === 'Cluster')) {
+        next = { ...changes, cluster: newText };
+      }
+    }
+    setEditState((s) => patchPoi(s, id, next));
+  };
   const handleDelete = (id: string) => setEditState((s) => deletePoi(s, id));
   const handleUndelete = (id: string) => setEditState((s) => undeletePoi(s, id));
   const handleReset = (id: string) => setEditState((s) => resetPoi(s, id));
@@ -1199,13 +1227,16 @@ export default function CatalogTab() {
     if (!spec) return;
     // Ghosts (Cluster-Subkategorie) starten als cluster_ghost ohne eigene Coord.
     const isGhost = sub === 'Cluster';
+    const text = isGhost ? 'Neuer Ghost' : 'Neuer POI';
     const template: Omit<CatalogPoi, 'id'> = {
       bucket: spec.bucket,
       subcategory: sub,
       icon: '',
-      text: isGhost ? 'Neuer Ghost' : 'Neuer POI',
+      text,
       coord: [0, 0],
       coord_status: isGhost ? 'cluster_ghost' : 'missing',
+      // Bei Ghost: cluster spiegelt text initial (vgl. Auto-Sync in handlePatch).
+      cluster: isGhost ? text : undefined,
     };
     setEditState((s) => addNewPoi(s, template).state);
   };
