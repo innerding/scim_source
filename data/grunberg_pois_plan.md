@@ -10,101 +10,101 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 
 ### Points_historical
 
-| Icon | Text | Coord | Cluster | Status |
-|---|---|---|---|---|
-| schloss | Schloss Weyer | 13.81172, 47.91424 | — | ✓ |
+| Icon | Tagline | Description | Coord | Cluster | Status |
+|---|---|---|---|---|---|
+| schloss | Schloss Weyer |  | 13.81172, 47.91424 | — | ✓ |
 
 ### Points_others
 
-| Icon | Text | Coord | Cluster | Status |
-|---|---|---|---|---|
-| sender | Sender | 13.81838, 47.89868 | Sender *(Cluster-Icon)* | ✓ |
+| Icon | Tagline | Description | Coord | Cluster | Status |
+|---|---|---|---|---|---|
+| sender | Sender | ORF-Sendeanlage am Plateau, seit 1955 | 13.81838, 47.89868 | Sender *(Cluster-Icon)* | ✓ |
 
 ### Square_Rest
 
-| Icon | Text | Coord | Cluster | Status |
-|---|---|---|---|---|
-| aussichtspunkt | Traunseeblick | 13.83029, 47.89565 | — | ✓ |
-| aussichtspunkt | (Hochgschirr-Anstieg) | 13.82760, 47.89734 | — | ✓ |
-| aussichtspunkt | (Dürrenberg-Aussicht) | 13.81669, 47.88936 | — | ✓ |
-| aussichtspunkt | Adlerhorst | 13.81971, 47.88082 | — | ✓ |
-| aussichtspunkt+ | Katzenstein 1349 m | 13.85929, 47.87454 | — | ✓ |
-| aussichtspunkt+ | Freundschaftshöhe 1020 m | 13.83947, 47.88086 | — | ✓ |
-| aussichtspunkt+ | Grünberg 986 m | 13.81958, 47.89840 | Sender | ✓ |
-| aussichtspunkt+ | Hochgschirr 981 m | 13.83075, 47.89635 | — | ✓ |
-| aussichtspunkt+ | Überraschung 789 m | 13.82236, 47.87975 | — | ✓ |
-| aussichtspunkt+ | Schlosskogel 649 m | 13.81873, 47.87950 | — | ✓ |
-| rastplatz | (Westhang) | 13.80708, 47.90296 | — | ✓ |
-| rastplatz | Rastplatz | 13.80825, 47.90800 | — | ≈ |
-| rastplatz | (Laudachsee-Rast) | 13.852, 47.880 | (Laudachsee) | ≈ |
-| rastplatz | Seerast | 13.80597, 47.91321 | Talstation | ≈ |
-| unterstand | Holzknecht | 13.83791, 47.88997 | — | ✓ |
+| Icon | Tagline | Description | Coord | Cluster | Status |
+|---|---|---|---|---|---|
+| aussichtspunkt | Traunseeblick |  | 13.83029, 47.89565 | — | ✓ |
+| aussichtspunkt | (Hochgschirr-Anstieg) |  | 13.82760, 47.89734 | — | ✓ |
+| aussichtspunkt | (Dürrenberg-Aussicht) |  | 13.81669, 47.88936 | — | ✓ |
+| aussichtspunkt | Adlerhorst |  | 13.81971, 47.88082 | — | ✓ |
+| aussichtspunkt+ | Katzenstein 1349 m |  | 13.85929, 47.87454 | — | ✓ |
+| aussichtspunkt+ | Freundschaftshöhe 1020 m |  | 13.83947, 47.88086 | — | ✓ |
+| aussichtspunkt+ | Grünberg 986 m | Plateau-Gipfel mit Rundblick über Traunsee und Alpenvorland | 13.81958, 47.89840 | Sender | ✓ |
+| aussichtspunkt+ | Hochgschirr 981 m |  | 13.83075, 47.89635 | — | ✓ |
+| aussichtspunkt+ | Überraschung 789 m |  | 13.82236, 47.87975 | — | ✓ |
+| aussichtspunkt+ | Schlosskogel 649 m |  | 13.81873, 47.87950 | — | ✓ |
+| rastplatz | (Westhang) |  | 13.80708, 47.90296 | — | ✓ |
+| rastplatz | Rastplatz |  | 13.80825, 47.90800 | — | ≈ |
+| rastplatz | (Laudachsee-Rast) |  | 13.852, 47.880 | (Laudachsee) | ≈ |
+| rastplatz | Seerast |  | 13.80597, 47.91321 | Talstation | ≈ |
+| unterstand | Holzknecht |  | 13.83791, 47.88997 | — | ✓ |
 
 ### Square_Move
 
-| Icon | Text | Coord | Cluster | Status |
-|---|---|---|---|---|
-| spielplatz | Abenteuer | 13.81948, 47.89822 | Sender | ✓ |
-| sommerrodeln | Sommerrodeln | 13.82019, 47.89852 | Sender | ✓ |
-| wipfelpfad | Wipfelpfad | 13.81816, 47.89817 | Sender | ✓ |
-| paragleiten-start | Startplatz | 13.81804, 47.89842 | Sender | ✓ |
-| klettergarten | Adlerhorst | 13.81917, 47.88031 | — | ✓ |
-| bogen-parcour | Parcour | 13.81154, 47.88155 | — | ✓ |
-| aussichtsturm | Alpenvorlandblick | 13.82316, 47.89776 | Sender | ✓ |
+| Icon | Tagline | Description | Coord | Cluster | Status |
+|---|---|---|---|---|---|
+| spielplatz | Abenteuer | Großer Naturspielplatz mit Klettergeräten am Plateau | 13.81948, 47.89822 | Sender | ✓ |
+| sommerrodeln | Sommerrodeln | Edelstahl-Sommerrodelbahn mit Talfahrt durch den Wald | 13.82019, 47.89852 | Sender | ✓ |
+| wipfelpfad | Wipfelpfad | Baumwipfelpfad mit Aussichtsturm und Rundtour durch den Hochwald | 13.81816, 47.89817 | Sender | ✓ |
+| paragleiten-start | Startplatz | Offizieller Paragleiter-Startplatz mit Blick Richtung Traunsee | 13.81804, 47.89842 | Sender | ✓ |
+| klettergarten | Adlerhorst |  | 13.81917, 47.88031 | — | ✓ |
+| bogen-parcour | Parcour |  | 13.81154, 47.88155 | — | ✓ |
+| aussichtsturm | Alpenvorlandblick | Holzturm am Plateau-Rand mit Blick Richtung Norden ins Alpenvorland | 13.82316, 47.89776 | Sender | ✓ |
 
 ### Regenerate_Substanze
 
-| Icon | Text | Coord | Cluster | Status |
-|---|---|---|---|---|
-| gasthaus | Franzl im Holz | 13.84428, 47.90441 | — | ✓ |
-| gasthaus | Silberfuchs | 13.84347, 47.90405 | — | ✓ |
-| gasthaus | Ramsaualm | 13.84988, 47.88062 | (Laudachsee) | ✓ |
-| gasthaus | Ramsau | 13.80584, 47.90366 | — | ≈ |
-| restaurant | Hois'n | 13.81153, 47.88083 | — | ✓ |
-| restaurant | Grünbergalm | 13.81890, 47.89847 | Sender | ✓ |
-| bar | Lounge | 13.80691, 47.91361 | Talstation | ✓ |
-| strand-buffet | Strand-Buffet | 13.80841, 47.91540 | Badewiese Weyer | ≈ |
+| Icon | Tagline | Description | Coord | Cluster | Status |
+|---|---|---|---|---|---|
+| gasthaus | Franzl im Holz |  | 13.84428, 47.90441 | — | ✓ |
+| gasthaus | Silberfuchs |  | 13.84347, 47.90405 | — | ✓ |
+| gasthaus | Ramsaualm |  | 13.84988, 47.88062 | (Laudachsee) | ✓ |
+| gasthaus | Ramsau |  | 13.80584, 47.90366 | — | ≈ |
+| restaurant | Hois'n |  | 13.81153, 47.88083 | — | ✓ |
+| restaurant | Grünbergalm | Almgasthaus am Plateau, traditionelle oberösterreichische Küche | 13.81890, 47.89847 | Sender | ✓ |
+| bar | Lounge |  | 13.80691, 47.91361 | Talstation | ✓ |
+| strand-buffet | Strand-Buffet |  | 13.80841, 47.91540 | Badewiese Weyer | ≈ |
 
 ### Regenerate_Water
 
-| Icon | Text | Coord | Cluster | Status |
-|---|---|---|---|---|
-| gewaesser | Laudachsee | 13.85334, 47.87914 | (Laudachsee) | ✓ |
-| gewaesser | Seereiter | 13.80841, 47.90794 | — | ✓ |
-| gewaesser | Liegewiese | 13.80707, 47.91540 | Badewiese Weyer | ≈ |
-| freibad | Weyer | 13.80841, 47.91540 | Badewiese Weyer *(Cluster-Icon)* | ≈ |
+| Icon | Tagline | Description | Coord | Cluster | Status |
+|---|---|---|---|---|---|
+| gewaesser | Laudachsee |  | 13.85334, 47.87914 | (Laudachsee) | ✓ |
+| gewaesser | Seereiter |  | 13.80841, 47.90794 | — | ✓ |
+| gewaesser | Liegewiese |  | 13.80707, 47.91540 | Badewiese Weyer | ≈ |
+| freibad | Weyer |  | 13.80841, 47.91540 | Badewiese Weyer *(Cluster-Icon)* | ≈ |
 
 ### Transport_Vehicle
 
-| Icon | Text | Coord | Cluster | Status |
-|---|---|---|---|---|
-| talstation | Bergbahn | 13.80802, 47.91339 | Talstation | ✓ |
-| bergstation | Bergbahn | 13.82156, 47.89832 | Sender | ✓ |
-| schiffsanlegestelle | Hois'n | 13.81090, 47.88064 | — | ✓ |
-| schiffsanlegestelle | Ramsau | 13.80554, 47.90366 | — | ✓ |
-| schiffsanlegestelle | Grünbergseilbahn | 13.80551, 47.91302 | Talstation | ✓ |
-| bahnstation | Schloss Weyer | 13.81109, 47.91540 | Badewiese Weyer | ✓ |
-| bergbahn | Talstation | 13.80802, 47.91339 | Talstation *(Cluster-Icon)* | ✓ |
+| Icon | Tagline | Description | Coord | Cluster | Status |
+|---|---|---|---|---|---|
+| talstation | Bergbahn |  | 13.80802, 47.91339 | Talstation | ✓ |
+| bergstation | Bergbahn | Bergstation der Grünbergseilbahn, 987 m, Talblick über Traunsee | 13.82156, 47.89832 | Sender | ✓ |
+| schiffsanlegestelle | Hois'n |  | 13.81090, 47.88064 | — | ✓ |
+| schiffsanlegestelle | Ramsau |  | 13.80554, 47.90366 | — | ✓ |
+| schiffsanlegestelle | Grünbergseilbahn |  | 13.80551, 47.91302 | Talstation | ✓ |
+| bahnstation | Schloss Weyer |  | 13.81109, 47.91540 | Badewiese Weyer | ✓ |
+| bergbahn | Talstation |  | 13.80802, 47.91339 | Talstation *(Cluster-Icon)* | ✓ |
 
 ### Transport_Parking/(Charging)
 
-| Icon | Text | Coord | Cluster | Status |
-|---|---|---|---|---|
-| parkplatz | Bergbahn | 13.80871, 47.91262 | Talstation | ≈ |
-| parkplatz | am See | 13.80644, 47.91341 | Talstation | ≈ |
-| parkplatz | Busse | 13.80975, 47.91540 | Badewiese Weyer | ≈ |
+| Icon | Tagline | Description | Coord | Cluster | Status |
+|---|---|---|---|---|---|
+| parkplatz | Bergbahn |  | 13.80871, 47.91262 | Talstation | ≈ |
+| parkplatz | am See |  | 13.80644, 47.91341 | Talstation | ≈ |
+| parkplatz | Busse |  | 13.80975, 47.91540 | Badewiese Weyer | ≈ |
 
 ### Service_Sleep
 
-| Icon | Text | Coord | Cluster | Status |
-|---|---|---|---|---|
-| hotel | Landhotel | 13.80624, 47.90385 | — | ✓ |
+| Icon | Tagline | Description | Coord | Cluster | Status |
+|---|---|---|---|---|---|
+| hotel | Landhotel |  | 13.80624, 47.90385 | — | ✓ |
 
 ### Service_Others
 
-| Icon | Text | Coord | Cluster | Status |
-|---|---|---|---|---|
-| werkstatt | Hammerschmid | 13.80397, 47.89998 | — | ✓ |
+| Icon | Tagline | Description | Coord | Cluster | Status |
+|---|---|---|---|---|---|
+| werkstatt | Hammerschmid |  | 13.80397, 47.89998 | — | ✓ |
 
 ---
 
