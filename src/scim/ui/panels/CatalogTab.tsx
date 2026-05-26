@@ -417,6 +417,14 @@ interface RowProps {
 
 function PoiRow({ poi, editMode, onPatch, onDelete, onUndelete, onReset }: RowProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
+  // Draw-ID des aktuell zugewiesenen Icons ermitteln (inkl. Plus-Suffix-Resolution).
+  const resolvedIcon = resolveIcon(poi.icon);
+  const iconEntry = iconById(resolvedIcon.iconId);
+  const drawId = iconEntry?.drawing_id ?? null;
+  const drawIdLabelStyle: React.CSSProperties = {
+    fontSize: 9, color: '#a0aec0', fontFamily: 'monospace',
+    marginBottom: 2, lineHeight: 1,
+  };
   const borderColor = poi._isDeleted ? '#fc8181'
     : poi._isNew ? '#68d391'
     : poi._isDirty ? '#f6e05e'
@@ -433,6 +441,7 @@ function PoiRow({ poi, editMode, onPatch, onDelete, onUndelete, onReset }: RowPr
     return (
       <tr style={rowStyle}>
         <td style={{ ...cellStyle, whiteSpace: 'nowrap' }}>
+          <div style={drawIdLabelStyle}>{drawId ?? '—'}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <PoiComposite
               iconId={poi.icon} text={poi.text} subcategory={poi.subcategory} size={28}
@@ -461,6 +470,7 @@ function PoiRow({ poi, editMode, onPatch, onDelete, onUndelete, onReset }: RowPr
   return (
     <tr style={rowStyle}>
       <td style={{ ...cellStyle, whiteSpace: 'nowrap' }}>
+        <div style={drawIdLabelStyle}>{drawId ?? '—'}</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <PoiComposite
             iconId={poi.icon} text={poi.text} subcategory={poi.subcategory} size={28}
@@ -567,7 +577,7 @@ function SubcategorySection({
         <thead>
           <tr style={{ background: '#edf2f7', textAlign: 'left' }}>
             <th style={{ padding: '4px 8px', fontWeight: 500, color: '#4a5568' }}>Icon</th>
-            <th style={{ padding: '4px 8px', fontWeight: 500, color: '#4a5568' }}>Text</th>
+            <th style={{ padding: '4px 8px', fontWeight: 500, color: '#4a5568' }}>Lapidar</th>
             <th style={{ padding: '4px 8px', fontWeight: 500, color: '#4a5568' }}>Coord (lon, lat)</th>
             <th style={{ padding: '4px 8px', fontWeight: 500, color: '#4a5568' }}>Cluster</th>
             <th style={{ padding: '4px 8px', fontWeight: 500, color: '#4a5568', width: 30 }}></th>
