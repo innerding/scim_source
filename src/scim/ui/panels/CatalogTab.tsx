@@ -146,13 +146,10 @@ function buildPoiComposite(
   const rowW      = digitCount * glyphSize;
   const rowX      = 24 - rowW / 2;
   // Im Summit-Modus: Icon und Ziffernreihe gezielt positioniert.
-  // Werte angepasst nach Aussichtswarte-Test (höherer Icon-Korpus als Fernglas
-  // benötigt mehr Platz oben): Icon nur noch 4 px nach oben (statt 6),
-  // Ziffernreihe 1 px UNTER die Container-Bodenreferenz (statt 4 darüber)
-  // = Ziffern 5 px tiefer als zuvor. So überlappen Aussichtswarte und Ziffern
-  // nicht mehr, und Fernglas bleibt gut sichtbar.
+  // Final per Sichtpruefung: Icon 4 px nach oben (kompromiss zwischen Fernglas
+  // und Aussichtswarte). Ziffern direkt an Container-Bodenreferenz (Shift 0).
   const summitIconShift = 4;
-  const summitDigitsShift = -1;
+  const summitDigitsShift = 0;
   const rowYBottom = (geo.summit_digits_y_max ?? 47) - summitDigitsShift;
   const rowY      = rowYBottom - digitsH;
   const iconPart  = `<g transform="translate(0,${-summitIconShift})">${iconInner}</g>`;
