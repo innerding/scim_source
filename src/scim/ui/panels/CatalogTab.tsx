@@ -141,15 +141,17 @@ function buildPoiComposite(
   //   4-Ziffern-Annahme: jede Ziffer 6×7.5 (Glyph-Aspect 4:5). Bei 3 Ziffern
   //   gleiche Glyph-Größe, Reihe wird schmaler (18), horizontal zentriert.
   const digitCount = String(elevation).length;
-  const glyphSize = 6;
-  const digitsH   = 7.5;
+  // Deco-Scale 0.9 (Sichtpruefung): glyph 6 -> 5.4, digitsH 7.5 -> 6.75.
+  const glyphSize = 5.4;
+  const digitsH   = 6.75;
   const rowW      = digitCount * glyphSize;
   const rowX      = 24 - rowW / 2;
   // Im Summit-Modus: Icon und Ziffernreihe gezielt positioniert.
   // Final per Sichtpruefung: Icon 4 px nach oben (kompromiss zwischen Fernglas
-  // und Aussichtswarte). Ziffern direkt an Container-Bodenreferenz (Shift 0).
+  // und Aussichtswarte). Ziffern 1.0 px ueber Container-Boden (0.5 px tiefer
+  // als vorher 1.5).
   const summitIconShift = 4;
-  const summitDigitsShift = 1.5;
+  const summitDigitsShift = 1.0;
   const rowYBottom = (geo.summit_digits_y_max ?? 47) - summitDigitsShift;
   const rowY      = rowYBottom - digitsH;
   const iconPart  = `<g transform="translate(0,${-summitIconShift})">${iconInner}</g>`;
