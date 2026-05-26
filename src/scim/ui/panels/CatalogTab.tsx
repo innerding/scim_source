@@ -378,6 +378,11 @@ const inputStyle: React.CSSProperties = {
   width: '100%', fontSize: 12, padding: '2px 4px',
   border: '1px solid #cbd5e0', borderRadius: 3,
   fontFamily: 'system-ui, sans-serif', background: 'white',
+  // Safari-Fixes: cursor:text macht Klick-Verhalten direkt (sonst zwei
+  // Klicks noetig — erst Zelle, dann Input), WebkitAppearance:none
+  // schaltet Safari-eigene Form-Styling-Eigenheiten ab
+  cursor: 'text',
+  WebkitAppearance: 'none',
 };
 
 const inputStyleMono: React.CSSProperties = { ...inputStyle, fontFamily: 'monospace' };
@@ -390,6 +395,15 @@ function TextEdit({ value, onChange, mono = false, placeholder }: {
       type="text"
       value={value}
       onChange={(e) => onChange(e.target.value)}
+      onMouseDown={(e) => {
+        // Safari-Fix: erzwingt Focus auf ersten Klick. Ohne diesen
+        // Handler braucht Safari in collapsed Tables 2 Klicks
+        // (erst Zelle, dann Input).
+        const el = e.currentTarget as HTMLInputElement;
+        if (document.activeElement !== el) {
+          el.focus();
+        }
+      }}
       onKeyDown={(e) => {
         if (e.key === 'Enter') (e.currentTarget as HTMLInputElement).blur();
       }}
