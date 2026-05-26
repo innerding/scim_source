@@ -13,6 +13,7 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 | Icon | Tagline | Description | Coord | Cluster | Status |
 |---|---|---|---|---|---|
 | schloss | Schloss Weyer |  | 13.81172, 47.91424 | — | ✓ |
+| denkmal | Denkmal | Vermutlich Weltkriegs-Gedenkstein bei der Badewiese Weyer | 0, 0 | Badewiese Weyer | ❓ |
 
 ### Points_others
 
@@ -51,6 +52,8 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 | klettergarten | Adlerhorst |  | 13.81917, 47.88031 | — | ✓ |
 | bogen-parcour | Parcour |  | 13.81154, 47.88155 | — | ✓ |
 | aussichtsturm | Alpenvorlandblick | Holzturm am Plateau-Rand mit Blick Richtung Norden ins Alpenvorland | 13.82316, 47.89776 | Sender | ✓ |
+| volleyball | Volleyball | Volleyballfeld an der Badewiese Weyer | 13.80707, 47.91540 | Badewiese Weyer | ≈ |
+| segeln | ASKÖ-Segeln | Segelclub ASKÖ Gmunden seit 1919, Boots- und E-Boot-Verleih | 0, 0 | Bootshafen Gmunden | ❓ |
 
 ### Regenerate_Substanze
 
@@ -73,6 +76,7 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 | gewaesser | Seereiter |  | 13.80841, 47.90794 | — | ✓ |
 | gewaesser | Liegewiese |  | 13.80707, 47.91540 | Badewiese Weyer | ≈ |
 | freibad | Weyer | Kostenfreie Badewiese am Traunsee-Ufer mit Holzsteg | 13.80841, 47.91540 | Badewiese Weyer *(Cluster-Icon)* | ≈ |
+| wc | WC | Öffentliches WC zwischen Badewiese Weyer und Seebahnhof | 0, 0 | Bootshafen Gmunden | ❓ |
 
 ### Transport_Vehicle
 
@@ -93,6 +97,8 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 | parkplatz | Bergbahn | Hauptparkplatz an der Talstation der Grünbergseilbahn | 13.80871, 47.91262 | Talstation | ≈ |
 | parkplatz | am See | Parkplatz direkt am Traunsee-Ufer | 13.80644, 47.91341 | Talstation | ≈ |
 | parkplatz | Busse | Bus- und Reisegruppenparkplatz an der Badewiese | 13.80975, 47.91540 | Badewiese Weyer | ≈ |
+| parkplatz | Hafen | Busparkplatz am Bootshafen | 0, 0 | Bootshafen Gmunden | ❓ |
+| anchor | Bootshafen | Bootshafen am Traunsee zwischen Weyer und Talstation | 0, 0 | Bootshafen Gmunden *(Cluster-Icon)* | ❓ |
 
 ### Service_Sleep
 
@@ -170,10 +176,13 @@ sender Sender *(Cluster-Icon)* · aussichtspunkt+ Grünberg 986 m · bergstation
 
 bergbahn *(Cluster-Icon)* · talstation Bergbahn · schiffsanlegestelle Grünbergseilbahn · rastplatz Seerast · parkplatz am See · bar Lounge · parkplatz Bergbahn
 
-### Badewiese Weyer *(5 POIs)*
-**Hover:** „Badewiese Weyer/Bahnstation"
+### Badewiese Weyer *(7 POIs)*
 
-freibad Weyer *(Cluster-Icon)* · gewaesser Liegewiese · strand-buffet Strand-Buffet · parkplatz Busse · bahnstation Schloss Weyer
+freibad Weyer *(Cluster-Icon)* · gewaesser Liegewiese · strand-buffet Strand-Buffet · parkplatz Busse · bahnstation Schloss Weyer · denkmal Denkmal · volleyball Volleyball
+
+### Bootshafen Gmunden *(4 POIs)*
+
+anchor Bootshafen *(Cluster-Icon)* · segeln ASKÖ-Segeln · wc WC · parkplatz Hafen
 
 ### Optional Laudachsee *(3 POIs, kein Cluster-Icon)*
 
