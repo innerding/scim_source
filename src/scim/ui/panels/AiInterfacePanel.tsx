@@ -622,6 +622,60 @@ Felder-Mapping fuer den App-Entwickler:
 Cluster-Verhalten siehe ann_043. Composite-Aufbau siehe ann_044.`,
     date: '2026-05-26',
   },
+  {
+    id: 'ann_048',
+    category: 'next_intent',
+    label: 'Naechste Absicht - Cluster-Identitaet ueber Ghost-POI mit geerbter Coord',
+    content: `Erweitert die Cluster-Identitaets-Logik aus ann_043. Heute traegt eine reale POI das is_cluster_identity-Flag und ist gleichzeitig physischer Marker UND Cluster-Gesicht. Kuenftig: das Cluster-Gesicht kann eine eigenstaendige Ghost-POI sein, die ihre Coord von einer realen POI erbt.
+
+Konzept
+
+Ein Ghost-Cluster-POI ist ein POI im Katalog mit:
+  - eigenem Icon (Cluster-Gesicht, z.B. das Bergbahn-Drawing)
+  - eigener Tagline (z.B. 'Bergbahn')
+  - optionaler Description
+  - Subkategorie: Cluster (Hexagon-Ring-Container, magenta) - visuell sofort als Ghost erkennbar
+  - keiner eigenen Coord - kein Marker auf der Karte
+  - erbt die Coord einer realen Cluster-Mitglieder-POI, sobald er als deren Cluster-Identitaet gewaehlt wird
+
+Vergabe-Flow im Katalog-Editor
+
+Wenn der Operator das cluster.id-Haekchen auf einer realen POI klickt:
+  1. Picker oeffnet sich mit den verfuegbaren Ghost-POIs der Subkategorie 'Cluster', die noch keinem anderen POI zugeordnet sind
+  2. Option im Picker: '+ Neuen Ghost anlegen' - erzeugt einen leeren Ghost in der Cluster-Subkategorie, gleich befuellbar
+  3. Operator waehlt einen Ghost - der Ghost wird zur Cluster-Identitaet, erbt die Coord des waehlenden POI
+
+Regeln
+
+Genau ein Ghost pro Cluster. Verfuegbare Ghosts im Picker sind solche, die noch nirgendwo zugeordnet sind. Bereits vergebene erscheinen ausgegraut mit Hinweis 'bereits zugeordnet zu POI X im Cluster Y'.
+
+Coord ist Pflicht ODER Ghost-Markierung. Beim Speichern eines POI ohne Coord: Validierungs-Hinweis 'Coord eingeben, sonst als Cluster-Ghost markieren'. Ein Ghost = Subkategorie 'Cluster' + leere Coord; eine reale POI = beliebige andere Subkategorie + befuellte Coord.
+
+Quell-POI geloescht? Der Ghost verliert die Identitaet, wird im UI mit gelber Warnung 'verwaiste Cluster-Identitaet - neu zuweisen oder loeschen' markiert. Im Rendering: Cluster zerfaellt in lose Mitglieder, kein vereinigtes Hexagon-Icon mehr.
+
+Fallback / Backward-Kompatibilitaet
+
+Wenn kein Ghost gewaehlt ist, faellt das System auf das heutige Verhalten zurueck: die reale POI mit is_cluster_identity=true ist direkt das Cluster-Gesicht (so wie aktuell die Talstation-POI fuer den Talstation-Cluster). Damit ist der Ghost-Mechanismus eine optionale Aufruestung, alte Daten funktionieren unveraendert.
+
+UI-Darstellung im Katalog-Tab
+
+Ghosts leben in der Cluster-Subkategorie-Sektion der Katalog-Tabelle (heute noch leer, kuenftig die Ghost-Heimat). Sie tragen den magenta Hexagon-Ring-Container - durch die Kategorie sofort visuell als Ghost erkennbar.
+
+Coord-Spalte zeigt:
+  - '-' wenn nicht zugeordnet (Status: cluster_ghost_unassigned)
+  - 'Pfeil-hoch Talstation' wenn von POI 'Talstation' geerbt (Status: cluster_ghost_assigned)
+
+Die reale POI, die einen Ghost als Identitaet waehlt, zeigt in ihrer Cluster-Spalte den Hinweis 'Identitaet: Bergbahn Pfeil-runter' - die Beziehung ist in beide Richtungen sichtbar.
+
+Daten-Roundtrip
+
+Ghost-POIs erscheinen sowohl in Tabelle 1 (POI-Liste, Cluster-Subkategorie) als auch in der Cluster-Sektion der Plan-md (mit Hover-Text und Mitgliederliste). Konkretes Spaltenformat (neuer coord_status oder Verweis-Notation in der Coord-Spalte) wird mit der Implementierung festgelegt; Parser bleibt vorwaertskompatibel.
+
+Beziehung zu ann_043 (Cluster-Hexagon)
+
+Der Render-Mechanismus fuer das vereinigte Cluster-Hexagon bleibt wie in ann_043 beschrieben (Pointy-Top 46x50, 3px skalierender Stroke, weisser Fill, Identity-Icon mittig). Neu ist nur die Herkunft des Identity-Icons: bevorzugt ein extra dafuer angelegter Ghost-POI mit Subkategorie 'Cluster', sonst Fallback auf reale POI mit is_cluster_identity=true.`,
+    date: '2026-05-26',
+  },
 ];
 
 function AnnotationsTab() {
