@@ -39,6 +39,7 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 | rastplatz | Rastplatz |  | 13.80825, 47.90800 | — | ≈ |
 | rastplatz | Laudachsee-Rast | Rastplatz am Seeufer mit Blick auf Traunstein | 13.85237, 47.88080 | (Laudachsee) | ✓ |
 | rastplatz | Seerast | Rastpunkt am Gmundener Bootshafen | 13.80666, 47.91371 | Talstation | ✓ |
+| rastplatz | Liegewiese | Liegewiese an der Talstation | 13.80708, 47.91289 | Talstation | ✓ |
 | unterstand | Holzknecht |  | 13.83791, 47.88997 | — | ✓ |
 
 ### Square_Move
@@ -67,6 +68,7 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 | restaurant | Grünbergalm | Almgasthaus am Plateau, traditionelle oberösterreichische Küche | 13.81890, 47.89847 | Sender | ✓ |
 | bar | Lounge | Saisonal geöffnetes Restaurant an der Talstation | 13.80691, 47.91361 | Talstation | ✓ |
 | strand-buffet | Strand-Buffet |  | 13.80447, 47.91533 | Badewiese Weyer | ✓ |
+| restaurant | Bella Italia | Pizzeria am Seebahnhof | 13.80567, 47.91534 | — | ✓ |
 
 ### Regenerate_Water
 
@@ -77,6 +79,9 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 | gewaesser | Liegewiese |  | 13.80410, 47.91473 | Badewiese Weyer | ✓ |
 | freibad | Weyer | Kostenfreie Badewiese am Traunsee-Ufer mit Holzsteg | 13.80455, 47.91494 | Badewiese Weyer *(Cluster-Icon)* | ✓ |
 | wc | WC | Öffentliches WC zwischen Badewiese Weyer und Seebahnhof | 13.80606, 47.91448 | Bootshafen Gmunden | ✓ |
+| freibad | Seereiterweg | Badeplatz am Traunsee-Westufer | 13.80840, 47.90792 | — | ✓ |
+| wc | Seereiterweg | Öffentliches WC beim Badeplatz Seereiterweg | 13.80822, 47.90784 | — | ✓ |
+| gewaesser | Kneippanlage | Kneippanlage Gmunden | 13.80526, 47.91590 | — | ✓ |
 
 ### Transport_Vehicle
 
@@ -105,6 +110,7 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 | Icon | Tagline | Description | Coord | Cluster | Status |
 |---|---|---|---|---|---|
 | hotel | Landhotel |  | 13.80624, 47.90385 | — | ✓ |
+| hotel | Seehotel Weyer | Seehotel im Weyer Gmunden | 13.80735, 47.91370 | Talstation | ✓ |
 
 ### Service_Others
 
