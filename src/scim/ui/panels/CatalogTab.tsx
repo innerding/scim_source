@@ -184,7 +184,7 @@ function buildPoiComposite(
   const contentH = 5 * UNIT_SCALE;
   const contentX = frameX + FRAME_PADDING_X * UNIT_SCALE;
   const contentY = frameY + FRAME_PADDING_Y * UNIT_SCALE;
-  const summitIconShift = 3;
+  const summitIconShift = 0;
   const iconPart = `<g transform="translate(0,${-summitIconShift})">${iconInner}</g>`;
   // Frame-SVG so einbetten, dass der Pfad-Stroke nicht mitskaliert (non-scaling-stroke).
   // Wir ziehen den Frame-Pfad-Inhalt heraus und fuegen das Attribut hinzu.
