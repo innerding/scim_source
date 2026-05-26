@@ -62,7 +62,8 @@ function renderTabelle1(catalog: MergedCatalog): string {
   const live = catalog.pois.filter((p) => !p._isDeleted);
   const bySub = new Map<Subcategory, MergedPoi[]>();
   for (const p of live) {
-    if (p.subcategory === 'Cluster') continue;
+    // Ghost-POIs (subcategory='Cluster') werden mit ausgegeben, damit beim
+    // Re-Import nichts verloren geht (Round-Trip-Sicherheit, ann_048).
     const list = bySub.get(p.subcategory) ?? [];
     list.push(p);
     bySub.set(p.subcategory, list);

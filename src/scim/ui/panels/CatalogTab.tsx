@@ -689,6 +689,67 @@ function SubcategorySection({
   );
 }
 
+// ─── Cluster-Sort-Sektion (eine Sektion je Cluster, Mitglieder gemischt) ─────
+
+function ClusterGroupSection({
+  name, pois, editMode, onPatchPoi, onDeletePoi, onUndeletePoi,
+}: {
+  name: string;
+  pois: MergedPoi[];
+  editMode: boolean;
+  onPatchPoi: (id: string, changes: Partial<Omit<CatalogPoi, 'id'>>) => void;
+  onDeletePoi: (id: string) => void;
+  onUndeletePoi: (id: string) => void;
+}) {
+  const liveCount = pois.filter((p) => !p._isDeleted).length;
+  return (
+    <div style={{
+      marginBottom: 24, paddingLeft: 10,
+      borderLeft: '3px solid #c8389b',
+      background: '#faf5ff',
+      paddingTop: 6, paddingBottom: 4, paddingRight: 8,
+      borderRadius: 4,
+    }}>
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6,
+      }}>
+        <span style={{ fontSize: 13, fontWeight: 600, fontFamily: 'system-ui, sans-serif', color: '#1a365d' }}>
+          Cluster: {name}
+        </span>
+        <span style={{ fontSize: 11, color: '#718096', fontFamily: 'monospace' }}>
+          · {liveCount} Mitglieder
+        </span>
+      </div>
+      <table style={{ width: '100%', fontSize: 12, fontFamily: 'system-ui, sans-serif', borderCollapse: 'collapse' }}>
+        <thead>
+          <tr style={{ background: '#edf2f7', textAlign: 'left' }}>
+            <th style={{ padding: '4px 8px', fontWeight: 500, color: '#4a5568' }}>Icon</th>
+            <th style={{ padding: '4px 8px', fontWeight: 500, color: '#4a5568' }}>Tagline</th>
+            <th style={{ padding: '4px 8px', fontWeight: 500, color: '#4a5568' }}>Description short</th>
+            <th style={{ padding: '4px 8px', fontWeight: 500, color: '#4a5568' }}>Coord (lon, lat)</th>
+            <th style={{ padding: '4px 8px', fontWeight: 500, color: '#4a5568' }}>Cluster</th>
+            <th style={{ padding: '4px 8px', fontWeight: 500, color: '#4a5568', width: 30 }}></th>
+            {editMode && <th style={{ padding: '4px 8px', fontWeight: 500, color: '#4a5568' }}>Subkat.</th>}
+            {editMode && <th style={{ padding: '4px 8px', fontWeight: 500, color: '#4a5568' }}></th>}
+          </tr>
+        </thead>
+        <tbody>
+          {pois.map((p) => (
+            <PoiRow
+              key={p.id}
+              poi={p}
+              editMode={editMode}
+              onPatch={(c) => onPatchPoi(p.id, c)}
+              onDelete={() => onDeletePoi(p.id)}
+              onUndelete={() => onUndeletePoi(p.id)}
+            />
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 // ─── Cluster-Übersicht ────────────────────────────────────────────────────────
 
 function ClusterSection({ catalog }: { catalog: ReturnType<typeof mergeEdits> }) {
@@ -1163,6 +1224,7 @@ export default function CatalogTab() {
   const [showExport, setShowExport] = useState(false);
   const [showFlowInfo, setShowFlowInfo] = useState(false);
   const [showChanges, setShowChanges] = useState(false);
+  const [clusterSort, setClusterSort] = useState(false);
 
   // Region-Wechsel: passenden Edit-State laden
   useEffect(() => {
@@ -1192,6 +1254,40 @@ export default function CatalogTab() {
       // damit Operator dort Ghosts anlegen kann — auch wenn (noch) leer.
       .filter((s) => s.subcategory === 'Cluster' || s.pois.length > 0 || editMode);
   }, [merged, editMode]);
+
+  // Cluster-Sort-Modus: POIs gruppiert nach Cluster, jeder Cluster eine eigene
+  // Sektion. Pro Cluster sortiert: Ghost zuerst, dann Identity-Member, dann Rest.
+  // Cluster-Gruppen absteigend nach Mitgliederzahl. POIs ohne Cluster bleiben
+  // in den normalen Subkategorie-Sektionen darunter.
+  const clusterGroups = useMemo(() => {
+    if (!clusterSort) return [];
+    const byCluster = new Map<string, MergedPoi[]>();
+    for (const p of merged.pois) {
+      if (p._isDeleted) continue;
+      if (!p.cluster) continue;
+      const list = byCluster.get(p.cluster) ?? [];
+      list.push(p);
+      byCluster.set(p.cluster, list);
+    }
+    return Array.from(byCluster.entries())
+      .map(([name, pois]) => ({
+        name,
+        pois: [...pois].sort((a, b) => {
+          // 0=Ghost, 1=Identity, 2=Rest
+          const rank = (p: MergedPoi) => p.subcategory === 'Cluster' ? 0 : (p.is_cluster_identity ? 1 : 2);
+          return rank(a) - rank(b);
+        }),
+      }))
+      .sort((a, b) => b.pois.length - a.pois.length);
+  }, [merged, clusterSort]);
+
+  // In Cluster-Sort-Modus: Subkategorie-Sektionen zeigen nur POIs ohne Cluster.
+  const sectionsForRender = useMemo(() => {
+    if (!clusterSort) return sections;
+    return sections
+      .map((s) => ({ ...s, pois: s.pois.filter((p) => !p.cluster) }))
+      .filter((s) => s.subcategory === 'Cluster' || s.pois.length > 0 || editMode);
+  }, [sections, clusterSort, editMode]);
 
   const bucketCounts = useMemo(() => {
     const counts = new Map<Bucket, number>();
@@ -1286,6 +1382,20 @@ export default function CatalogTab() {
           {editMode ? '✓ Bearbeiten an' : '✎ Bearbeiten'}
         </button>
 
+        <button
+          onClick={() => setClusterSort((s) => !s)}
+          title="Cluster-Sortierung: gruppiert nach Cluster (groesster zuerst), Ghost-POI vor Identity vor Rest"
+          style={{
+            ...btnStyle,
+            background: clusterSort ? '#c8389b' : 'white',
+            color: clusterSort ? 'white' : '#2d3748',
+            borderColor: clusterSort ? '#c8389b' : '#cbd5e0',
+            fontWeight: 600,
+          }}
+        >
+          {clusterSort ? '⬢ Cluster-Sort an' : '⬡ Cluster-Sort'}
+        </button>
+
         {(merged.dirty_count + merged.new_count + merged.deleted_count > 0) && (
           <>
             <button
@@ -1340,8 +1450,21 @@ export default function CatalogTab() {
         </div>
       )}
 
-      {/* Subcategory-Sections */}
-      {sections.map((s) => (
+      {/* Cluster-Sort-Modus: Cluster-Gruppen oben (groesster zuerst). */}
+      {clusterSort && clusterGroups.map((g) => (
+        <ClusterGroupSection
+          key={`cluster-${g.name}`}
+          name={g.name}
+          pois={g.pois}
+          editMode={editMode}
+          onPatchPoi={handlePatch}
+          onDeletePoi={handleDelete}
+          onUndeletePoi={handleUndelete}
+        />
+      ))}
+
+      {/* Subcategory-Sections (Cluster-Sort-Modus: nur POIs ohne Cluster) */}
+      {sectionsForRender.map((s) => (
         <SubcategorySection
           key={s.subcategory}
           subcategory={s.subcategory}

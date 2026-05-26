@@ -261,6 +261,22 @@ export function parsePoiCatalog(md: string, opts: ParseOptions): PoiCatalogState
     }
   }
 
+  // Multi-Identity-Check: pro Cluster darf nur EIN POI is_cluster_identity tragen.
+  // Wenn mehrere gesetzt sind, picken Parser/Renderer den ersten — undefined,
+  // also explizit warnen.
+  const identityCounts = new Map<string, { count: number; texts: string[] }>();
+  for (const p of pois.filter((p) => p.is_cluster_identity && p.cluster)) {
+    const c = identityCounts.get(p.cluster!) ?? { count: 0, texts: [] };
+    c.count++;
+    c.texts.push(`${p.text} (${p.id})`);
+    identityCounts.set(p.cluster!, c);
+  }
+  for (const [clusterName, info] of identityCounts) {
+    if (info.count > 1) {
+      warnings.push(`Cluster "${clusterName}" hat ${info.count} Identity-POIs (sollte 1 sein): ${info.texts.join(', ')}`);
+    }
+  }
+
   return {
     region_id: opts.region_id,
     region_name: opts.region_name,
