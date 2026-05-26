@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { TabId } from '../panelRegistry';
 import type { ScimPipelineResult } from '../../pipeline/scimPipeline.types';
 
@@ -245,9 +246,22 @@ const ZIELGRUPPEN = [
   },
 ];
 
-function LeistungsblattTab({ result }: { result: ScimPipelineResult }) {
+// ─── v0.2 (archiviert, Mai 2026) ─────────────────────────────────────────────
+// Eingefroren als historisches Dokument. Inhalte nicht mehr aendern; bei
+// Bedarf neue Version (LeistungsblattV03Tab) ergaenzen.
+function LeistungsblattV02Tab({ result }: { result: ScimPipelineResult }) {
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 720 }}>
+
+      {/* Archiv-Hinweis */}
+      <div style={{
+        background: '#fef5e7', border: '1px solid #f6ad55',
+        borderRadius: 6, padding: '8px 14px', marginBottom: 14,
+        fontSize: 11, color: '#7b341e',
+      }}>
+        <strong>📜 Archiviert · Stand Mai 2026 · v0.2</strong><br/>
+        Dieses Leistungsblatt ist als Dokument-Snapshot eingefroren. Aktuelle Kennzahlen siehe v0.3.
+      </div>
 
       {/* Titel */}
       <div style={{
@@ -356,9 +370,211 @@ function LeistungsblattTab({ result }: { result: ScimPipelineResult }) {
         display: 'flex', justifyContent: 'space-between',
       }}>
         <span>SCIM3 v0.2 · Sensus Core Integration Model 3 · Dietmar Broda</span>
-        <span>{new Date().toLocaleDateString('de-AT', { year: 'numeric', month: 'long' })}</span>
+        <span>Mai 2026 · archiviert</span>
       </div>
 
+    </div>
+  );
+}
+
+// ─── v0.3 (aktuell, Mai 2026) ────────────────────────────────────────────────
+
+const METRIKEN_V03 = [
+  { label: 'Quellcode gesamt',         wert: '~31.000 Zeilen',    detail: '251 Dateien · SCIM3 + Runtime + Worker' },
+  { label: 'Automatisierte Tests',     wert: '518 Tests',         detail: '33 Test-Dateien · verifiziert 2026-05-26' },
+  { label: 'Pipeline-Module',          wert: '14 P-Panels + 7 Compute', detail: 'Unverändert seit v0.2 · stabile Architektur' },
+  { label: 'Region-Katalog',           wert: '2 Regionen',        detail: 'Grünberg (49 POIs) · Lichtenberg (11 POIs)' },
+  { label: 'Icon- + Glyph-Bibliothek', wert: '49 SVG-Assets',     detail: '~38 POI-Icons · 11 Decoration-Glyphs · Frame' },
+  { label: 'Git-Historie',             wert: '130 Commits',       detail: 'Auto-Deploy bei jedem Push (GitHub Actions → Cloudflare Pages)' },
+];
+
+const NEUERUNGEN_V03 = [
+  { id: 'catalog', label: 'Region-Katalog-System', desc: 'Plan-md als deklarative Datenquelle pro Region. Parser, Serializer, Editor mit Diff-Patches im localStorage. Round-Trip-sicher: Export → md → Re-Import ohne Datenverlust.' },
+  { id: 'lichtenberg', label: 'Lichtenberg als zweite Region', desc: 'Voller MVP-Datensatz: 11 POIs, 1 Cluster, recherchiert über OSM + Wikipedia. Beweis dass die Region-Architektur generisch ist, nicht Grünberg-spezifisch.' },
+  { id: 'container', label: 'Container-System (ann_042)', desc: '6 Geometrien × 2 Farbvarianten = 12 Subkategorien. Geometrie + Farbe = visueller Container; Innensymbol = Differenzierung. Hexagon-Ring für Cluster, magenta.' },
+  { id: 'decoration', label: 'Decoration-System (ann_044+)', desc: 'Frame-basierter Zifferncontainer mit parametrischer Breite. Erkennt automatisch 6 Decoration-Arten in der Tagline: m, km, A° (Anno), °, %, Sterne. Multi-Anker für Anno: A°, A., seit JJJJ.' },
+  { id: 'ghost', label: 'Ghost-Cluster-POI (ann_048)', desc: 'Cluster-Identität als eigenständiger POI ohne eigene Coord — erbt vom Identity-Member. Trennt physisches Wahrzeichen (z.B. Giselawarte) von semantischer Cluster-Identität (z.B. „Gis").' },
+  { id: 'editor-ux', label: 'Editor-UX-Verbesserungen', desc: 'Cluster-Sort-Modus (Gruppen sortiert nach Größe, Ghost → Identity → Rest). Änderungs-Popover mit Einzel-Verwerfen. Commit-on-Blur. Multi-Identity-Warning. Safari-Klick-Fixes.' },
+];
+
+const ZIELGRUPPEN_V03 = [
+  {
+    label: 'Forschungsförderung (F+E)',
+    color: '#2b6cb0', bg: '#ebf8ff',
+    punkte: [
+      'Privacy-by-Design als Strukturprinzip — nicht als nachträgliche Maßnahme',
+      'Telco-Signal-Klassifikation als anonyme Mobilitätsmessung (reproduzierbar, deterministisch)',
+      'Zweistufiges Aktivierungsmodell für kontextsensitive UI (Step 1 / Step 2)',
+      'Region-Katalog mit verlustfreiem Round-Trip Export ↔ Re-Import als Forschungs-Datenbasis',
+    ],
+  },
+  {
+    label: 'Tourismusverbände',
+    color: '#276749', bg: '#f0fff4',
+    punkte: [
+      'Kein Gäste-Tracking, kein Empfehlungsalgorithmus — keine Haftungsfragen',
+      'Operator behält volle Kontrolle (Zonen, Schwellenwerte, Freigabe-Entscheid)',
+      'POI-Katalog editierbar im Browser, ohne lokale Installation, ohne Datenbank',
+      'Cluster-Logik bündelt benachbarte POIs visuell — Karte bleibt auch bei vielen POIs lesbar',
+    ],
+  },
+  {
+    label: 'Kooperationspartner Informatik / Universität',
+    color: '#553c9a', bg: '#faf5ff',
+    punkte: [
+      'Saubere Modularchitektur mit definierten Schnittstellen (Compute / Validate / Apply / Context)',
+      'Region-Katalog-Format als md (textbasiert, gitbar, manuell editierbar) statt opaker DB',
+      'Hand-gezeichnete SVG-Glyphs in Code-Pipeline integriert (Tabler-Adapter, svgCleaner)',
+      '130 Git-Commits · vollständige Entwicklungshistorie · Backlog + Annotations versioniert mit Code',
+    ],
+  },
+];
+
+function LeistungsblattV03Tab({ result }: { result: ScimPipelineResult }) {
+  return (
+    <div style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 720 }}>
+
+      {/* Titel */}
+      <div style={{
+        background: 'linear-gradient(135deg, #1a365d 0%, #2b6cb0 100%)',
+        borderRadius: 8, padding: '18px 22px', marginBottom: 20, color: '#fff',
+      }}>
+        <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: '-0.02em' }}>
+          SCIM3 v0.3 — Leistungsblatt
+        </div>
+        <div style={{ fontSize: 12, opacity: 0.8, marginTop: 4 }}>
+          Sensus Core <strong>Integration</strong> Model · Region-Katalog · Operator Tool & Ziel-App Runtime · Stand 26. Mai 2026
+        </div>
+        <div style={{ fontSize: 11, opacity: 0.65, marginTop: 6, fontFamily: 'monospace' }}>
+          Pipeline: {result.steps.length} Schritte · {result.success ? '✓ OK' : '✗ FEHLER'} · SML-2 Functional Core · 2 Regionen aktiv
+        </div>
+      </div>
+
+      {/* Metriken-Grid */}
+      <div style={{ fontSize: 12, fontWeight: 600, color: '#4a5568', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        Kennzahlen (aktuell, verifiziert)
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 22 }}>
+        {METRIKEN_V03.map((m) => (
+          <div key={m.label} style={{
+            background: '#f7fafc', border: '1px solid #e2e8f0',
+            borderRadius: 6, padding: '10px 14px',
+          }}>
+            <div style={{ fontSize: 11, color: '#a0aec0', marginBottom: 2 }}>{m.label}</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: '#1a365d', letterSpacing: '-0.02em' }}>{m.wert}</div>
+            <div style={{ fontSize: 10, color: '#718096', marginTop: 2 }}>{m.detail}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Neuerungen seit v0.2 */}
+      <div style={{ fontSize: 12, fontWeight: 600, color: '#4a5568', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        Neu seit v0.2 (Mai 2026)
+      </div>
+      <div style={{
+        background: '#e6fffa', border: '1px solid #38b2ac',
+        borderRadius: 6, padding: '10px 14px', marginBottom: 12, fontSize: 12, color: '#234e52',
+      }}>
+        Drei Wochen Weiterentwicklung nach dem v0.2-Implementierungssprint. Schwerpunkt: Operator-Datenpflege (Katalog, Cluster, Decorations) und zweite Region als Generizitäts-Beweis.
+      </div>
+      {NEUERUNGEN_V03.map((n) => (
+        <div key={n.id} style={{
+          display: 'flex', gap: 12, alignItems: 'flex-start',
+          padding: '8px 12px', borderRadius: 5, marginBottom: 6,
+          background: '#f7fafc', border: '1px solid #e2e8f0',
+        }}>
+          <div style={{ flexShrink: 0, minWidth: 150 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#2d3748' }}>{n.label}</div>
+          </div>
+          <div style={{ fontSize: 11, color: '#718096', lineHeight: 1.5 }}>{n.desc}</div>
+        </div>
+      ))}
+
+      {/* Kerninnovationen (unverändert aus v0.2 + 1 neu) */}
+      <div style={{ fontSize: 12, fontWeight: 600, color: '#4a5568', margin: '20px 0 10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        Kerninnovationen
+      </div>
+      {[
+        ['Auslastungslage statt Empfehlung', 'Das System empfiehlt keine Route. Es zeigt die aktuelle Auslastung des Wegnetzes — farbcodiert, alle 5 Min. aktualisiert. Der Nutzer entscheidet.'],
+        ['Privacy-by-Design strukturell', 'Verbotene Datenklassen sind bauartbedingt unmöglich — nicht regelbasiert verhindert. Masking-Schicht + dedizierter Validator am Paket-Ausgang.'],
+        ['Zweistufige Klassifikation', 'Step 1: Bewegungsfluss. Step 2 (Aufenthaltskomfort): Aktivierung nach beobachteter Stauindikation und Hochlastinterpretation.'],
+        ['Region-Katalog als md', 'Plan-Daten in markdown, textbasiert, gitbar, mit deklarativem Container-System. Operator editiert im Browser, Export regeneriert die md verlustfrei.'],
+        ['Selbst-dokumentierendes System', 'Glossar, Architekturentscheide, Invarianten, Annotations und Backlog direkt im Operator Tool versioniert.'],
+      ].map(([titel, text]) => (
+        <div key={titel} style={{
+          borderLeft: '3px solid #2b6cb0', paddingLeft: 12,
+          marginBottom: 10,
+        }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: '#2d3748', marginBottom: 2 }}>{titel}</div>
+          <div style={{ fontSize: 11, color: '#718096', lineHeight: 1.5 }}>{text}</div>
+        </div>
+      ))}
+
+      {/* Zielgruppen */}
+      <div style={{ fontSize: 12, fontWeight: 600, color: '#4a5568', margin: '20px 0 10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        Relevanz nach Zielgruppe
+      </div>
+      {ZIELGRUPPEN_V03.map((z) => (
+        <div key={z.label} style={{
+          background: z.bg, border: `1px solid ${z.color}30`,
+          borderLeft: `3px solid ${z.color}`,
+          borderRadius: 6, padding: '12px 16px', marginBottom: 10,
+        }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: z.color, marginBottom: 8 }}>{z.label}</div>
+          {z.punkte.map((p) => (
+            <div key={p} style={{ fontSize: 11, color: '#4a5568', lineHeight: 1.5, marginBottom: 4, display: 'flex', gap: 6 }}>
+              <span style={{ color: z.color, flexShrink: 0 }}>·</span>
+              <span>{p}</span>
+            </div>
+          ))}
+        </div>
+      ))}
+
+      {/* Footer */}
+      <div style={{
+        marginTop: 20, padding: '10px 14px',
+        background: '#f7fafc', borderRadius: 6,
+        fontSize: 10, color: '#a0aec0', fontFamily: 'monospace',
+        display: 'flex', justifyContent: 'space-between',
+      }}>
+        <span>SCIM3 v0.3 · Sensus Core Integration Model 3 · Dietmar Broda</span>
+        <span>{new Date().toLocaleDateString('de-AT', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+      </div>
+
+    </div>
+  );
+}
+
+// ─── Wrapper mit Versions-Switcher ───────────────────────────────────────────
+
+function LeistungsblattTab({ result }: { result: ScimPipelineResult }) {
+  const [version, setVersion] = useState<'v03' | 'v02'>('v03');
+  const btn = (v: 'v03' | 'v02', label: string) => (
+    <button
+      onClick={() => setVersion(v)}
+      style={{
+        fontSize: 11, padding: '4px 10px', cursor: 'pointer', borderRadius: 4,
+        border: '1px solid #cbd5e0',
+        background: version === v ? '#2b6cb0' : 'white',
+        color: version === v ? 'white' : '#2d3748',
+        fontFamily: 'system-ui, sans-serif',
+        marginLeft: 4,
+      }}
+    >
+      {label}
+    </button>
+  );
+  return (
+    <div>
+      <div style={{
+        display: 'flex', justifyContent: 'flex-end', alignItems: 'center',
+        gap: 4, marginBottom: 10, maxWidth: 720,
+      }}>
+        <span style={{ fontSize: 11, color: '#718096' }}>Version:</span>
+        {btn('v03', 'v0.3 (aktuell)')}
+        {btn('v02', 'v0.2 (archiviert)')}
+      </div>
+      {version === 'v03' ? <LeistungsblattV03Tab result={result} /> : <LeistungsblattV02Tab result={result} />}
     </div>
   );
 }
