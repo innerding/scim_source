@@ -390,7 +390,6 @@ function TextEdit({ value, onChange, mono = false, placeholder }: {
       type="text"
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      onFocus={(e) => e.currentTarget.select()}
       onKeyDown={(e) => {
         if (e.key === 'Enter') (e.currentTarget as HTMLInputElement).blur();
       }}
