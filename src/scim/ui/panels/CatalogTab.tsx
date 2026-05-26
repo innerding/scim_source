@@ -319,10 +319,11 @@ function ContainerGlyph({ subcategory, size = 16 }: { subcategory: Subcategory; 
 // ─── Status-Glyph ─────────────────────────────────────────────────────────────
 
 function StatusChip({ status }: { status: CoordStatus }) {
-  const map = {
-    exact:     { char: '✓', color: '#2f855a' },
-    estimated: { char: '≈', color: '#b7791f' },
-    missing:   { char: '❓', color: '#c53030' },
+  const map: Record<CoordStatus, { char: string; color: string }> = {
+    exact:         { char: '✓', color: '#2f855a' },
+    estimated:     { char: '≈', color: '#b7791f' },
+    missing:       { char: '❓', color: '#c53030' },
+    cluster_ghost: { char: '↑', color: '#c8389b' },
   };
   const m = map[status];
   return <span style={{ color: m.color, fontFamily: 'monospace', fontSize: 12 }}>{m.char}</span>;
@@ -460,7 +461,11 @@ function PoiRow({ poi, editMode, onPatch, onDelete, onUndelete, onReset }: RowPr
           {poi.description_short ?? <span style={{ color: '#cbd5e0', fontStyle: 'italic' }}>—</span>}
         </td>
         <td style={{ ...cellStyle, fontFamily: 'monospace', color: '#4a5568' }}>
-          {poi.coord_status === 'missing' ? '—' : `${poi.coord[0].toFixed(5)}, ${poi.coord[1].toFixed(5)}`}
+          {poi.coord_status === 'cluster_ghost'
+            ? <span style={{ color: '#a0aec0', fontStyle: 'italic' }}>↑ {poi.coord[0].toFixed(5)}, {poi.coord[1].toFixed(5)}</span>
+            : poi.coord_status === 'missing'
+              ? '—'
+              : `${poi.coord[0].toFixed(5)}, ${poi.coord[1].toFixed(5)}`}
         </td>
         <td style={{ ...cellStyle, color: '#4a5568' }}>
           {poi.cluster ?? '—'}
@@ -508,7 +513,13 @@ function PoiRow({ poi, editMode, onPatch, onDelete, onUndelete, onReset }: RowPr
         />
       </td>
       <td style={cellStyle}>
-        <CoordEdit poi={poi} onChange={onPatch} />
+        {poi.coord_status === 'cluster_ghost' ? (
+          <div style={{ fontSize: 11, color: '#a0aec0', fontStyle: 'italic' }}>
+            ↑ erbt von Parent
+          </div>
+        ) : (
+          <CoordEdit poi={poi} onChange={onPatch} />
+        )}
       </td>
       <td style={cellStyle}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -1121,9 +1132,10 @@ export default function CatalogTab() {
       map.set(p.subcategory, list);
     }
     return CONTAINER_SYSTEM
-      .filter((c) => c.bucket !== 'Cluster')
       .map((c) => ({ subcategory: c.subcategory, pois: map.get(c.subcategory) ?? [] }))
-      .filter((s) => s.pois.length > 0 || editMode);
+      // Cluster-Subkategorie (Ghost-Heimat, ann_048) ist permanent sichtbar,
+      // damit Operator dort Ghosts anlegen kann — auch wenn (noch) leer.
+      .filter((s) => s.subcategory === 'Cluster' || s.pois.length > 0 || editMode);
   }, [merged, editMode]);
 
   const bucketCounts = useMemo(() => {
@@ -1136,7 +1148,7 @@ export default function CatalogTab() {
   }, [merged]);
 
   const statusCounts = useMemo(() => {
-    const counts = { exact: 0, estimated: 0, missing: 0 };
+    const counts = { exact: 0, estimated: 0, missing: 0, cluster_ghost: 0 };
     for (const p of merged.pois) {
       if (p._isDeleted) continue;
       counts[p.coord_status]++;
@@ -1155,13 +1167,15 @@ export default function CatalogTab() {
   const handleAdd = (sub: Subcategory) => {
     const spec = containerOf(sub);
     if (!spec) return;
+    // Ghosts (Cluster-Subkategorie) starten als cluster_ghost ohne eigene Coord.
+    const isGhost = sub === 'Cluster';
     const template: Omit<CatalogPoi, 'id'> = {
       bucket: spec.bucket,
       subcategory: sub,
       icon: '',
-      text: 'Neuer POI',
+      text: isGhost ? 'Neuer Ghost' : 'Neuer POI',
       coord: [0, 0],
-      coord_status: 'missing',
+      coord_status: isGhost ? 'cluster_ghost' : 'missing',
     };
     setEditState((s) => addNewPoi(s, template).state);
   };
@@ -1240,7 +1254,7 @@ export default function CatalogTab() {
         )}
 
         <span style={{ fontSize: 11, color: '#718096', fontFamily: 'monospace', marginLeft: 'auto' }}>
-          {merged.pois.filter((p) => !p._isDeleted).length} POIs · ✓ {statusCounts.exact} · ≈ {statusCounts.estimated} · ❓ {statusCounts.missing}
+          {merged.pois.filter((p) => !p._isDeleted).length} POIs · ✓ {statusCounts.exact} · ≈ {statusCounts.estimated} · ❓ {statusCounts.missing}{statusCounts.cluster_ghost > 0 && <> · ↑ {statusCounts.cluster_ghost}</>}
         </span>
       </div>
 

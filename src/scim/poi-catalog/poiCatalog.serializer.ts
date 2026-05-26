@@ -19,15 +19,17 @@ interface DiffLine {
 // ─── Hilfen ───────────────────────────────────────────────────────────────────
 
 function fmtCoord(p: CatalogPoi): string {
+  if (p.coord_status === 'cluster_ghost') return '↑';
   if (p.coord_status === 'missing') return '❓';
   return `${p.coord[0].toFixed(5)}, ${p.coord[1].toFixed(5)}`;
 }
 
 function fmtStatus(p: CatalogPoi): string {
   switch (p.coord_status) {
-    case 'exact':     return '✓';
-    case 'estimated': return '≈';
-    case 'missing':   return '❓';
+    case 'exact':         return '✓';
+    case 'estimated':     return '≈';
+    case 'missing':       return '❓';
+    case 'cluster_ghost': return 'cluster_ghost';
   }
 }
 
@@ -50,6 +52,10 @@ function subHeading(sub: Subcategory): string {
   return sub;
 }
 
+// Wenn ein Ghost-POI Coord ausgibt, soll es NICHT die geerbte konkrete Coord
+// sein (sonst wird beim Re-Parse nichts mehr als Ghost erkannt), sondern der
+// Marker ↑. Genauso für Status: 'cluster_ghost' bleibt erhalten.
+
 // ─── Tabelle 1 regenerieren ──────────────────────────────────────────────────
 
 function renderTabelle1(catalog: MergedCatalog): string {
@@ -66,8 +72,8 @@ function renderTabelle1(catalog: MergedCatalog): string {
   );
 
   const out: string[] = ['## Tabelle 1 · POI-Liste', ''];
+  // Cluster-Subkategorie wird mit ausgegeben (Ghost-POIs leben dort, ann_048).
   for (const c of CONTAINER_SYSTEM) {
-    if (c.bucket === 'Cluster') continue;
     const list = bySub.get(c.subcategory);
     if (!list || list.length === 0) continue;
     out.push(`### ${subHeading(c.subcategory)}`);

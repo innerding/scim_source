@@ -54,7 +54,10 @@ export interface Geometry {
   summit_digits_y_max?: number;
 }
 
-export type CoordStatus = 'exact' | 'estimated' | 'missing';
+// Status der POI-Koordinate.
+// 'cluster_ghost' (ann_048): POI ist Ghost in der Cluster-Subkategorie,
+// hat keine eigene Coord, erbt sie vom cluster.id-POI im selben Cluster.
+export type CoordStatus = 'exact' | 'estimated' | 'missing' | 'cluster_ghost';
 
 export interface CatalogPoi {
   id: string;                  // 'poi_001' etc.

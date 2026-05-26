@@ -26,6 +26,7 @@ const SUBCATEGORIES: readonly Subcategory[] = [
   'Transport_Vehicle', 'Transport_Parking',
   'Service_Sleep', 'Service_Others',
   'Help_order', 'Help_emergency',
+  'Cluster',  // Ghost-POIs (ann_048)
 ];
 
 // `Transport_Parking/(Charging)` in the md → normalize to `Transport_Parking`
@@ -63,7 +64,8 @@ function parseCoord(s: string): { coord: [number, number]; status: CoordStatus }
 }
 
 function parseStatus(s: string): CoordStatus {
-  const t = s.trim();
+  const t = s.trim().toLowerCase();
+  if (t === 'cluster_ghost' || t.includes('ghost')) return 'cluster_ghost';
   if (t.includes('❓')) return 'missing';
   if (t.includes('≈')) return 'estimated';
   if (t.includes('✓')) return 'exact';
@@ -195,6 +197,13 @@ export function parsePoiCatalog(md: string, opts: ParseOptions): PoiCatalogState
             continue;
           }
 
+          // Status-Auflösung: 'cluster_ghost' aus Status-Spalte gewinnt immer
+          // (überschreibt missing/exact/estimated aus der Coord-Spalte).
+          let finalStatus: CoordStatus;
+          if (statusFromCol === 'cluster_ghost') finalStatus = 'cluster_ghost';
+          else if (coordStatus === 'missing') finalStatus = 'missing';
+          else finalStatus = statusFromCol;
+
           pois.push({
             id,
             bucket,
@@ -203,7 +212,7 @@ export function parsePoiCatalog(md: string, opts: ParseOptions): PoiCatalogState
             text,
             description_short,
             coord,
-            coord_status: coordStatus === 'missing' ? 'missing' : statusFromCol,
+            coord_status: finalStatus,
             cluster: cluster.name,
             is_cluster_identity: cluster.is_identity,
             raw_notes: rawNotes,
@@ -222,6 +231,22 @@ export function parsePoiCatalog(md: string, opts: ParseOptions): PoiCatalogState
     c.member_count = pois.filter((p) => p.cluster === c.name).length;
     const identityPoi = pois.find((p) => p.cluster === c.name && p.is_cluster_identity);
     if (identityPoi) c.identity_poi_id = identityPoi.id;
+  }
+
+  // Ghost-Coord-Vererbung (ann_048): jeder cluster_ghost-POI erbt die Coord
+  // vom cluster.id-POI im selben Cluster. Wenn kein Parent gefunden, bleibt
+  // [0,0] und Warnung wird ausgegeben.
+  for (const ghost of pois.filter((p) => p.coord_status === 'cluster_ghost')) {
+    if (!ghost.cluster) {
+      warnings.push(`Ghost-POI ${ghost.id} (${ghost.text}) ohne Cluster-Zuordnung — Coord bleibt [0,0]`);
+      continue;
+    }
+    const parent = pois.find((p) => p.cluster === ghost.cluster && p.is_cluster_identity);
+    if (!parent) {
+      warnings.push(`Ghost-POI ${ghost.id} (${ghost.text}) im Cluster "${ghost.cluster}" hat keinen Parent (kein POI mit cluster.id ✓) — Coord bleibt [0,0]`);
+      continue;
+    }
+    ghost.coord = [parent.coord[0], parent.coord[1]];
   }
 
   // Sanity-Warnings
