@@ -72,7 +72,7 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 | gewaesser | Laudachsee |  | 13.85334, 47.87914 | (Laudachsee) | ✓ |
 | gewaesser | Seereiter |  | 13.80841, 47.90794 | — | ✓ |
 | gewaesser | Liegewiese |  | 13.80707, 47.91540 | Badewiese Weyer | ≈ |
-| freibad | Weyer |  | 13.80841, 47.91540 | Badewiese Weyer *(Cluster-Icon)* | ≈ |
+| freibad | Weyer | Kostenfreie Badewiese am Traunsee-Ufer mit Holzsteg | 13.80841, 47.91540 | Badewiese Weyer *(Cluster-Icon)* | ≈ |
 
 ### Transport_Vehicle
 
@@ -83,7 +83,7 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 | schiffsanlegestelle | Hois'n |  | 13.81090, 47.88064 | — | ✓ |
 | schiffsanlegestelle | Ramsau |  | 13.80554, 47.90366 | — | ✓ |
 | schiffsanlegestelle | Grünbergseilbahn | Anlegestelle der Traunsee-Schifffahrt, direkter Umstieg in die Grünbergseilbahn | 13.80551, 47.91302 | Talstation | ✓ |
-| bahnstation | Schloss Weyer |  | 13.81109, 47.91540 | Badewiese Weyer | ✓ |
+| bahnstation | Schloss Weyer | Haltestelle Schloss Weyer der Traunseetram. Seit 2018 durchgehend bis Vorchdorf vereinigt. | 13.81109, 47.91540 | Badewiese Weyer | ✓ |
 | bergbahn | Talstation | Pendelbahn-Fahrt zum Grünberg-Plateau | 13.80802, 47.91339 | Talstation | ✓ |
 
 ### Transport_Parking/(Charging)
@@ -92,7 +92,7 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 |---|---|---|---|---|---|
 | parkplatz | Bergbahn | Hauptparkplatz an der Talstation der Grünbergseilbahn | 13.80871, 47.91262 | Talstation | ≈ |
 | parkplatz | am See | Parkplatz direkt am Traunsee-Ufer | 13.80644, 47.91341 | Talstation | ≈ |
-| parkplatz | Busse |  | 13.80975, 47.91540 | Badewiese Weyer | ≈ |
+| parkplatz | Busse | Bus- und Reisegruppenparkplatz an der Badewiese | 13.80975, 47.91540 | Badewiese Weyer | ≈ |
 
 ### Service_Sleep
 
