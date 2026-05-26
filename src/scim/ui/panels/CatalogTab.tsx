@@ -334,14 +334,15 @@ const inputStyle: React.CSSProperties = {
 
 const inputStyleMono: React.CSSProperties = { ...inputStyle, fontFamily: 'monospace' };
 
-function TextEdit({ value, onChange, mono = false }: {
-  value: string; onChange: (v: string) => void; mono?: boolean;
+function TextEdit({ value, onChange, mono = false, placeholder }: {
+  value: string; onChange: (v: string) => void; mono?: boolean; placeholder?: string;
 }) {
   return (
     <input
       type="text"
       value={value}
       onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
       style={mono ? inputStyleMono : inputStyle}
     />
   );
@@ -490,7 +491,7 @@ function PoiRow({ poi, editMode, onPatch, onDelete, onUndelete, onReset }: RowPr
         )}
       </td>
       <td style={cellStyle}>
-        <TextEdit value={poi.text} onChange={(v) => onPatch({ text: v })} />
+        <TextEdit value={poi.text} onChange={(v) => onPatch({ text: v })} placeholder="lapidar" />
       </td>
       <td style={cellStyle}>
         <CoordEdit poi={poi} onChange={onPatch} />
@@ -577,7 +578,7 @@ function SubcategorySection({
         <thead>
           <tr style={{ background: '#edf2f7', textAlign: 'left' }}>
             <th style={{ padding: '4px 8px', fontWeight: 500, color: '#4a5568' }}>Icon</th>
-            <th style={{ padding: '4px 8px', fontWeight: 500, color: '#4a5568' }}>Lapidar</th>
+            <th style={{ padding: '4px 8px', fontWeight: 500, color: '#4a5568' }}>Tagline</th>
             <th style={{ padding: '4px 8px', fontWeight: 500, color: '#4a5568' }}>Coord (lon, lat)</th>
             <th style={{ padding: '4px 8px', fontWeight: 500, color: '#4a5568' }}>Cluster</th>
             <th style={{ padding: '4px 8px', fontWeight: 500, color: '#4a5568', width: 30 }}></th>
