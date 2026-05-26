@@ -968,6 +968,22 @@ function FlowInfoModal({ onClose }: { onClose: () => void }) {
           }}>
             <strong>Wichtig:</strong> Icons durchlaufen die Pipeline nicht einzeln — sie sind eine stabile Bibliothek, auf die der Katalog per Namen verweist. Ein Icon-Update wirkt automatisch überall, ohne POI-by-POI-Migration. Bundle bleibt klein (Bibliothek einmal, Referenzen vielfach).
           </div>
+          <div style={{
+            marginTop: 12, padding: '10px 12px',
+            background: '#f0fff4', borderLeft: '3px solid #22543d',
+            borderRadius: 4, fontSize: 11, color: '#1c4532', lineHeight: 1.5,
+          }}>
+            <strong>📖 Neue Region anlegen?</strong>{' '}
+            <a
+              href="https://github.com/innerding/scim_source/blob/main/docs/howto_region_catalog.md"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: '#22543d', textDecoration: 'underline' }}
+            >
+              Howto „Region anlegen am Beispiel Grünberg" öffnen
+            </a>{' '}
+            — Schritt-für-Schritt-Anleitung mit MVP-Variante und Voll-Playbook.
+          </div>
         </div>
       </div>
     </div>

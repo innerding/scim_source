@@ -95,9 +95,70 @@ function injectCopyright(svg: string, year: number): string {
   return result;
 }
 
+// Tabler-Adapter (https://tabler.io/icons).
+// Tabler liefert 24×24-viewBox-Icons mit stroke="currentColor", optional einem
+// transparenten 24×24-Platzhalter-Pfad als "Hitbox", und einem Klassen-Attribut
+// wie 'icon-tabler-<name>'. Wir adaptieren das automatisch in SCIM-Format:
+//   - viewBox 0 0 24 24 → 0 0 48 48
+//   - Inhalte in <g transform="translate(12,12)"> zentriert (Größe bleibt!)
+//   - currentColor → #000
+//   - Platzhalter-Pfad (d="M0 0h24v24H0z") entfernt
+//   - drawing-id aus 'icon-tabler-<name>' extrahiert und auf die wrapping Gruppe gesetzt
+function adaptTablerIfNeeded(svg: string): { svg: string; changes: string[] } {
+  const changes: string[] = [];
+  const isTabler =
+    /viewBox\s*=\s*"0\s+0\s+24\s+24"/.test(svg) || /icon-tabler/.test(svg);
+  if (!isTabler) return { svg, changes };
+
+  // drawing-id aus Klasse 'icon-tabler-<name>' ableiten, falls vorhanden
+  const classMatch = svg.match(/icon-tabler-([a-z0-9-]+)/);
+  const drawingId = classMatch ? classMatch[1] : null;
+
+  // Inhalt zwischen <svg ...> und </svg> extrahieren
+  const innerMatch = svg.match(/<svg[^>]*>([\s\S]*?)<\/svg>/);
+  if (!innerMatch) return { svg, changes };
+  let inner = innerMatch[1];
+
+  // Tabler-Hintergrund-Platzhalter strippen
+  const placeholderRe = /<path[^>]*stroke="none"[^>]*d="M0\s+0h24v24H0z"[^>]*\/?>(?:\s*<\/path>)?\s*/g;
+  if (placeholderRe.test(inner)) {
+    inner = inner.replace(placeholderRe, '');
+    changes.push('Tabler-Hintergrund-Platzhalter entfernt');
+  }
+
+  // currentColor → #000
+  if (/currentColor/.test(inner)) {
+    inner = inner.replace(/currentColor/g, '#000');
+    changes.push('Tabler currentColor → #000');
+  }
+
+  // Neues SCIM-konformes SVG aufbauen: 48×48 viewBox, Inhalte translate(12,12)
+  const groupAttrs = [
+    drawingId ? `id="${drawingId}"` : '',
+    'transform="translate(12,12)"',
+    'fill="none"',
+    'stroke="#000"',
+    'stroke-width="1"',
+    'stroke-linecap="round"',
+    'stroke-linejoin="round"',
+  ].filter(Boolean).join(' ');
+
+  const newSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><g ${groupAttrs}>${inner.trim()}</g></svg>`;
+
+  changes.push('Tabler-Adapter: 24×24 in 48×48-viewBox zentriert (translate 12,12)');
+  if (drawingId) changes.push(`Drawing-ID '${drawingId}' aus Tabler-Klasse uebernommen`);
+
+  return { svg: newSvg, changes };
+}
+
 export function cleanIconSvg(raw: string): CleanResult {
   let svg = raw;
   const changes: string[] = [];
+
+  // -1) Tabler-Adapter: wenn das Input eine Tabler-SVG ist, in SCIM-Format wandeln
+  const adapted = adaptTablerIfNeeded(svg);
+  svg = adapted.svg;
+  changes.push(...adapted.changes);
 
   // 0) Bestehende Copyright-Kommentare wegputzen (für Idempotenz)
   const beforeCopyrightStrip = svg;
