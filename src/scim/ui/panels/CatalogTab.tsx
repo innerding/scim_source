@@ -395,14 +395,12 @@ function TextEdit({ value, onChange, mono = false, placeholder }: {
       type="text"
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      onMouseDown={(e) => {
-        // Safari-Fix: erzwingt Focus auf ersten Klick. Ohne diesen
-        // Handler braucht Safari in collapsed Tables 2 Klicks
-        // (erst Zelle, dann Input).
+      onClick={(e) => {
+        // Bei jedem Klick: kompletten Text selektieren. onClick feuert NACH
+        // Focus, daher kein Race mit React-Re-Render wie bei onFocus.
+        // User-Wunsch: ein Klick -> Wort sofort markiert (Idealzustand).
         const el = e.currentTarget as HTMLInputElement;
-        if (document.activeElement !== el) {
-          el.focus();
-        }
+        if (el.value) el.select();
       }}
       onKeyDown={(e) => {
         if (e.key === 'Enter') (e.currentTarget as HTMLInputElement).blur();
