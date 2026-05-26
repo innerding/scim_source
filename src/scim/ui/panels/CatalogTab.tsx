@@ -420,10 +420,9 @@ interface RowProps {
   onPatch: (changes: Partial<Omit<CatalogPoi, 'id'>>) => void;
   onDelete: () => void;
   onUndelete: () => void;
-  onReset: () => void;
 }
 
-function PoiRow({ poi, editMode, onPatch, onDelete, onUndelete, onReset }: RowProps) {
+function PoiRow({ poi, editMode, onPatch, onDelete, onUndelete }: RowProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
   // Draw-ID des aktuell zugewiesenen Icons ermitteln (inkl. Plus-Suffix-Resolution).
   const resolvedIcon = resolveIcon(poi.icon);
@@ -550,12 +549,7 @@ function PoiRow({ poi, editMode, onPatch, onDelete, onUndelete, onReset }: RowPr
         {poi._isDeleted ? (
           <button onClick={onUndelete} style={btnStyleSmall} title="Wiederherstellen">↺</button>
         ) : (
-          <>
-            <button onClick={onDelete} style={{ ...btnStyleSmall, color: '#c53030' }} title="POI löschen">×</button>
-            {(poi._isDirty || poi._isNew) && (
-              <button onClick={onReset} style={{ ...btnStyleSmall, marginLeft: 4 }} title="Änderungen verwerfen">↶</button>
-            )}
-          </>
+          <button onClick={onDelete} style={{ ...btnStyleSmall, color: '#c53030' }} title="POI löschen">×</button>
         )}
       </td>
     </tr>
@@ -575,7 +569,7 @@ const btnStyle: React.CSSProperties = {
 };
 
 function SubcategorySection({
-  subcategory, pois, editMode, onPatchPoi, onDeletePoi, onUndeletePoi, onResetPoi, onAddPoi,
+  subcategory, pois, editMode, onPatchPoi, onDeletePoi, onUndeletePoi, onAddPoi,
 }: {
   subcategory: Subcategory;
   pois: MergedPoi[];
@@ -583,7 +577,6 @@ function SubcategorySection({
   onPatchPoi: (id: string, changes: Partial<Omit<CatalogPoi, 'id'>>) => void;
   onDeletePoi: (id: string) => void;
   onUndeletePoi: (id: string) => void;
-  onResetPoi: (id: string) => void;
   onAddPoi: (sub: Subcategory) => void;
 }) {
   const spec = containerOf(subcategory);
@@ -623,7 +616,6 @@ function SubcategorySection({
               onPatch={(c) => onPatchPoi(p.id, c)}
               onDelete={() => onDeletePoi(p.id)}
               onUndelete={() => onUndeletePoi(p.id)}
-              onReset={() => onResetPoi(p.id)}
             />
           ))}
         </tbody>
@@ -1110,6 +1102,7 @@ export default function CatalogTab() {
   const [editMode, setEditMode] = useState(false);
   const [showExport, setShowExport] = useState(false);
   const [showFlowInfo, setShowFlowInfo] = useState(false);
+  const [showChanges, setShowChanges] = useState(false);
 
   // Region-Wechsel: passenden Edit-State laden
   useEffect(() => {
@@ -1182,11 +1175,6 @@ export default function CatalogTab() {
     setEditState((s) => addNewPoi(s, template).state);
   };
 
-  const handleResetAll = () => {
-    if (!confirm('Alle Editor-Änderungen verwerfen?')) return;
-    setEditState({ ...editState, patches: {}, next_new_id: 1 });
-  };
-
   // ─── Render ─────────────────────────────────────────────────────────────────
 
   const fileName = `${region.id}_pois_plan.md`;
@@ -1240,12 +1228,18 @@ export default function CatalogTab() {
 
         {(merged.dirty_count + merged.new_count + merged.deleted_count > 0) && (
           <>
+            <button
+              onClick={() => setShowChanges(true)}
+              style={btnStyle}
+              title="Liste aller Editor-Aenderungen oeffnen"
+            >
+              Änderungen ({merged.dirty_count + merged.new_count + merged.deleted_count}) ▾
+            </button>
             <span style={{ fontSize: 11, color: '#4a5568', fontFamily: 'monospace' }}>
-              {merged.new_count > 0 && <span style={{ color: '#2f855a' }}>+{merged.new_count} neu </span>}
-              {merged.dirty_count > 0 && <span style={{ color: '#b7791f' }}>~{merged.dirty_count} geändert </span>}
-              {merged.deleted_count > 0 && <span style={{ color: '#c53030' }}>−{merged.deleted_count} gelöscht</span>}
+              {merged.new_count > 0 && <span style={{ color: '#2f855a' }}>+{merged.new_count} </span>}
+              {merged.dirty_count > 0 && <span style={{ color: '#b7791f' }}>~{merged.dirty_count} </span>}
+              {merged.deleted_count > 0 && <span style={{ color: '#c53030' }}>−{merged.deleted_count}</span>}
             </span>
-            <button onClick={handleResetAll} style={btnStyle}>↺ Alle zurücksetzen</button>
             <button
               onClick={() => setShowExport(true)}
               style={{ ...btnStyle, background: '#2f855a', color: 'white', borderColor: '#2f855a', fontWeight: 600 }}
@@ -1296,7 +1290,6 @@ export default function CatalogTab() {
           onPatchPoi={handlePatch}
           onDeletePoi={handleDelete}
           onUndeletePoi={handleUndelete}
-          onResetPoi={handleReset}
           onAddPoi={handleAdd}
         />
       ))}
@@ -1330,6 +1323,144 @@ export default function CatalogTab() {
       )}
 
       {showFlowInfo && <FlowInfoModal onClose={() => setShowFlowInfo(false)} />}
+
+      {showChanges && (
+        <ChangesModal
+          pois={merged.pois}
+          onRevert={(id) => handleReset(id)}
+          onUndelete={(id) => handleUndelete(id)}
+          onResetAll={() => {
+            if (!confirm('Wirklich ALLE Editor-Aenderungen verwerfen? Das kann nicht rueckgaengig gemacht werden.')) return;
+            setEditState({ ...editState, patches: {}, next_new_id: 1 });
+            setShowChanges(false);
+          }}
+          onClose={() => setShowChanges(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── Änderungs-Übersicht (Popover-Modal) ──────────────────────────────────────
+//
+// Listet alle aktuell vorhandenen Editor-Patches (neu / geaendert / geloescht).
+// Pro Zeile ein Einzel-Verwerfen-Button. Unten — visuell abgetrennt — der rote
+// „Alles auf Start"-Button (Atombombe), damit er nicht mehr versehentlich
+// getroffen werden kann.
+function ChangesModal({
+  pois, onRevert, onUndelete, onResetAll, onClose,
+}: {
+  pois: MergedPoi[];
+  onRevert: (id: string) => void;
+  onUndelete: (id: string) => void;
+  onResetAll: () => void;
+  onClose: () => void;
+}) {
+  const changed = pois.filter((p) => p._isNew || p._isDirty || p._isDeleted);
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+    }} onClick={onClose}>
+      <div onClick={(e) => e.stopPropagation()} style={{
+        background: 'white', borderRadius: 6, width: 'min(620px, 90vw)',
+        maxHeight: '85vh', display: 'flex', flexDirection: 'column',
+        boxShadow: '0 10px 40px rgba(0,0,0,0.3)',
+      }}>
+        <div style={{
+          padding: '12px 16px', borderBottom: '1px solid #e2e8f0',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: '#1a365d' }}>
+            Editor-Änderungen ({changed.length})
+          </div>
+          <button onClick={onClose} style={btnStyle}>Schließen</button>
+        </div>
+
+        <div style={{ padding: '8px 0', overflow: 'auto', flex: 1 }}>
+          {changed.length === 0 && (
+            <div style={{ padding: '20px', textAlign: 'center', fontSize: 12, color: '#718096' }}>
+              Keine Änderungen.
+            </div>
+          )}
+          {changed.map((p) => {
+            const kind: 'new' | 'dirty' | 'deleted' = p._isNew ? 'new' : p._isDeleted ? 'deleted' : 'dirty';
+            const badge = kind === 'new'
+              ? { label: 'neu', color: '#2f855a', bg: '#c6f6d5' }
+              : kind === 'deleted'
+                ? { label: 'gelöscht', color: '#c53030', bg: '#fed7d7' }
+                : { label: 'geändert', color: '#b7791f', bg: '#fefcbf' };
+            return (
+              <div key={p.id} style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '8px 16px', borderBottom: '1px solid #f0f4f8',
+                fontSize: 12,
+              }}>
+                <span style={{
+                  display: 'inline-block', minWidth: 64, textAlign: 'center',
+                  padding: '2px 6px', borderRadius: 3, fontSize: 10, fontWeight: 600,
+                  color: badge.color, background: badge.bg,
+                }}>
+                  {badge.label}
+                </span>
+                <span style={{
+                  flex: 1, color: '#2d3748',
+                  textDecoration: kind === 'deleted' ? 'line-through' : undefined,
+                  opacity: kind === 'deleted' ? 0.6 : 1,
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                }}>
+                  {p.text || '(ohne Text)'}
+                </span>
+                <span style={{
+                  fontSize: 10, color: '#718096', fontFamily: 'monospace',
+                }}>
+                  {p.subcategory}
+                </span>
+                {kind === 'deleted' ? (
+                  <button
+                    onClick={() => onUndelete(p.id)}
+                    style={{ ...btnStyleSmall, fontSize: 11 }}
+                    title="Löschung rückgängig"
+                  >
+                    ↺ wiederherstellen
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => onRevert(p.id)}
+                    style={{ ...btnStyleSmall, fontSize: 11 }}
+                    title="Diesen Schritt zurück"
+                  >
+                    ↶ zurück
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {changed.length > 0 && (
+          <div style={{
+            padding: '12px 16px',
+            borderTop: '2px solid #fed7d7',
+            background: '#fff5f5',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
+          }}>
+            <span style={{ fontSize: 11, color: '#742a2a' }}>
+              Alle Änderungen auf einen Schlag verwerfen:
+            </span>
+            <button
+              onClick={onResetAll}
+              style={{
+                ...btnStyle, background: '#c53030', color: 'white',
+                borderColor: '#c53030', fontWeight: 600,
+              }}
+              title="Alle Editor-Aenderungen verwerfen"
+            >
+              ↺ Alles auf Start
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
