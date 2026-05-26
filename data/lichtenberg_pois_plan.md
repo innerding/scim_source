@@ -19,21 +19,21 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 
 | Icon | Tagline | Description | Coord | Cluster | Status |
 |---|---|---|---|---|---|
-| sendemast | Sender | UKW/DAB/TV-Sender 155 m hoch (seit 1960) | 14.25456, 48.38468 | Lichtenberg | ✓ |
+| sender | Sender | UKW/DAB/TV-Sender 155 m hoch (seit 1960) | 14.25456, 48.38468 | Lichtenberg | ✓ |
 
 ### Square_Rest
 
 | Icon | Tagline | Description | Coord | Cluster | Status |
 |---|---|---|---|---|---|
 | aussichtswarte+ | Giselawarte 927 m | Steinblock-Aussichtswarte von 1857, 17,5 m hoch | 14.25444, 48.38528 | Lichtenberg *(Cluster-Icon)* | ✓ |
-| fernglas | Kogl |  | 14.23873, 48.38005 | — | ✓ |
+| aussichtspunkt | Kogl |  | 14.23873, 48.38005 | — | ✓ |
 
 ### Regenerate_Substanze
 
 | Icon | Tagline | Description | Coord | Cluster | Status |
 |---|---|---|---|---|---|
-| besteck | zur Gis | Jausenstation seit 1702 am Gipfel | 14.25618, 48.38306 | Lichtenberg | ✓ |
-| besteck | Eidenberger | Ausflugsgasthaus mit Tiroler Almhütte | 14.23322, 48.39395 | — | ✓ |
+| gasthaus | zur Gis | Jausenstation seit 1702 am Gipfel | 14.25618, 48.38306 | Lichtenberg | ✓ |
+| gasthaus | Eidenberger | Ausflugsgasthaus mit Tiroler Almhütte | 14.23322, 48.39395 | — | ✓ |
 
 ### Regenerate_Water
 
@@ -60,10 +60,10 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 | Bucket | Subkategorie | verwendete Icons |
 |---|---|---|
 | Points | Points_historical | bildstock |
-| Points | Points_others | sendemast |
-| Squares | Square_Rest | aussichtswarte · fernglas |
+| Points | Points_others | sender |
+| Squares | Square_Rest | aussichtswarte · aussichtspunkt |
 | Squares | Square_Move | — |
-| Regenerate | Regenerate_Substanze | besteck |
+| Regenerate | Regenerate_Substanze | gasthaus |
 | Regenerate | Regenerate_Water | gewaesser |
 | Transport | Transport_Vehicle | — |
 | Transport | Transport_Parking/(Charging) | — |
@@ -108,7 +108,7 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 ### Lichtenberg *(4 POIs)*
 **Hover:** „Lichtenberg-Gipfel mit Sender, Giselawarte und Gasthaus"
 
-aussichtswarte+ Giselawarte 927 m *(Cluster-Icon)* · sendemast Sender · besteck zur Gis · gewaesser Pollack-Quelle
+aussichtswarte+ Giselawarte 927 m *(Cluster-Icon)* · sender Sender · gasthaus zur Gis · gewaesser Pollack-Quelle
 
 ---
 
