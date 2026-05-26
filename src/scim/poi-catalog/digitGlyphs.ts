@@ -1,29 +1,49 @@
-// Digit-Glyphs (vorbereitend für ann_044 Elevation-Decoration).
-// Eigene Asset-Klasse — getrennt von POI-Icons:
-//   - viewBox 0 0 4 5 (deutlich kleiner als 48×48, hochformatig 5:4)
-//   - Pure Strich-Glyphen ohne Container, ohne Decoration
-//   - Zur Composite-Zeit (Phase D) skaliert der Renderer sie auf die in
-//     ann_044 berechnete Ziffernreihen-Höhe.
+// Glyph-Registry — gemeinsamer Asset-Pool unter data/glyphs/.
 //
-// Quelle: data/digits/<deutscher-name>.svg (null, eins, …, neun).
-// Werden zur Build-Zeit über Vite-Glob als Strings geladen.
+// Frueher hiess das Modul digitGlyphs.ts und lud nur 0–9 aus data/digits/.
+// Ab Phase „Decoration-Erweiterung" (m, km, A°, %, °, Sterne, Frame) liegt
+// alles unter data/glyphs/. Datei-Name bleibt voruebergehend digitGlyphs.ts,
+// damit bestehende Imports nicht brechen — Rename in eigenem Schritt.
+//
+// Glyph-Klassen:
+//   - Ziffern 0–9 (viewBox 0 0 4 5) — deutsche Datei-Namen (null, eins, …)
+//   - Einheits-Glyphen (meter, kilometer, anno, grad, prozent)
+//   - Stern-Glyphen (star-5, star-6) — Hotel-Klasse / Genealogie
+//   - Operator-Glyphen (plus, circa, und)
+//   - Frame — Zifferncontainer-Huelle (viewBox 0 0 8 9, parametrisch breitenskaliert)
+//
+// Alle Glyphen sind reine Strich-/Pfad-Assets ohne Container, ohne Decoration.
+// Composite-Zeit-Skalierung passiert im Renderer.
 
-const NAME_TO_DIGIT: Record<string, number> = {
+const DIGIT_NAME_TO_NUMBER: Record<string, number> = {
   null: 0, eins: 1, zwei: 2, drei: 3, vier: 4,
   'fünf': 5, sechs: 6, sieben: 7, acht: 8, neun: 9,
 };
 
-const DIGIT_TO_NAME: Record<number, string> = Object.fromEntries(
-  Object.entries(NAME_TO_DIGIT).map(([k, v]) => [v, k]),
+const DIGIT_NUMBER_TO_NAME: Record<number, string> = Object.fromEntries(
+  Object.entries(DIGIT_NAME_TO_NUMBER).map(([k, v]) => [v, k]),
 );
 
-export interface DigitGlyph {
-  digit: number;          // 0–9
-  name: string;           // 'null', 'eins', 'fünf', …
-  svg_raw: string;        // unveränderter SVG-Inhalt
+export type GlyphKind = 'digit' | 'unit' | 'star' | 'operator' | 'frame';
+
+export interface Glyph {
+  id: string;             // Dateistamm: 'null', 'eins', 'meter', 'anno', 'frame', …
+  kind: GlyphKind;
+  digit?: number;         // nur bei kind='digit'
+  svg_raw: string;
 }
 
-const modules = import.meta.glob<string>('../../../data/digits/*.svg', {
+// Klassifizierung anhand des Dateinamens.
+function classify(id: string): { kind: GlyphKind; digit?: number } {
+  if (id in DIGIT_NAME_TO_NUMBER) return { kind: 'digit', digit: DIGIT_NAME_TO_NUMBER[id] };
+  if (id === 'frame') return { kind: 'frame' };
+  if (id === 'star-5' || id === 'star-6') return { kind: 'star' };
+  if (id === 'plus' || id === 'circa' || id === 'und') return { kind: 'operator' };
+  // Default: Einheits-Glyph (meter, kilometer, anno, grad, prozent, …)
+  return { kind: 'unit' };
+}
+
+const modules = import.meta.glob<string>('../../../data/glyphs/*.svg', {
   query: '?raw',
   import: 'default',
   eager: true,
@@ -34,26 +54,45 @@ function fileStem(path: string): string {
   return parts[parts.length - 1].replace(/\.svg$/i, '');
 }
 
-function buildRegistry(): DigitGlyph[] {
-  const entries: DigitGlyph[] = [];
+function buildRegistry(): Glyph[] {
+  const entries: Glyph[] = [];
   for (const [path, svgRaw] of Object.entries(modules)) {
-    const name = fileStem(path);
-    const digit = NAME_TO_DIGIT[name];
-    if (digit === undefined) continue; // unbekannter Name → ignoriert
-    entries.push({ digit, name, svg_raw: svgRaw });
+    const id = fileStem(path);
+    const { kind, digit } = classify(id);
+    entries.push({ id, kind, digit, svg_raw: svgRaw });
   }
-  // Numerisch sortiert 0 → 9
-  entries.sort((a, b) => a.digit - b.digit);
+  // Sortierung: Ziffern numerisch zuerst, dann alphabetisch
+  entries.sort((a, b) => {
+    if (a.kind === 'digit' && b.kind === 'digit') return (a.digit ?? 0) - (b.digit ?? 0);
+    if (a.kind === 'digit') return -1;
+    if (b.kind === 'digit') return 1;
+    return a.id.localeCompare(b.id);
+  });
   return entries;
 }
 
-export const DIGIT_GLYPHS: DigitGlyph[] = buildRegistry();
+export const GLYPHS: Glyph[] = buildRegistry();
+
+export function glyphById(id: string): Glyph | undefined {
+  return GLYPHS.find((g) => g.id === id);
+}
+
+// ─── Backward-Compat: digit-spezifische API ────────────────────────────────
+
+export interface DigitGlyph {
+  digit: number;
+  name: string;
+  svg_raw: string;
+}
+
+export const DIGIT_GLYPHS: DigitGlyph[] = GLYPHS
+  .filter((g): g is Glyph & { digit: number } => g.kind === 'digit' && g.digit !== undefined)
+  .map((g) => ({ digit: g.digit, name: g.id, svg_raw: g.svg_raw }));
 
 export function digitGlyph(d: number): DigitGlyph | undefined {
   return DIGIT_GLYPHS.find((g) => g.digit === d);
 }
 
-// Hilfen für Phase D: eine Zahl als Liste von Glyphen
 export function glyphsForNumber(n: number): DigitGlyph[] {
   const str = String(Math.trunc(Math.abs(n)));
   const result: DigitGlyph[] = [];
@@ -65,5 +104,5 @@ export function glyphsForNumber(n: number): DigitGlyph[] {
 }
 
 export function nameForDigit(d: number): string | undefined {
-  return DIGIT_TO_NAME[d];
+  return DIGIT_NUMBER_TO_NAME[d];
 }

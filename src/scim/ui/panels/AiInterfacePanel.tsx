@@ -506,8 +506,8 @@ Icon-Pipeline (Phase B + Erweiterungen):
     Warnungen-Badge
 
 Ziffern-Glyphen (vorbereitend fuer ann_044):
-  - data/digits/ mit 10 Strich-Glyphen 0-9 (4x5-viewBox)
-  - digitGlyphs.ts mit deutschen Namen-Mappings, glyphsForNumber(n)
+  - data/glyphs/ mit Strich-Glyphen: 0-9 (4x5-viewBox), Einheiten (meter, kilometer, anno, grad, prozent), Sterne (star-5, star-6), Operatoren (plus, circa, und), Frame (8x9, weisses Fill, parametrisch breitenskaliert)
+  - digitGlyphs.ts mit deutschen Namen-Mappings, glyphsForNumber(n); generischer glyphById(id) und GLYPHS-Registry
   - Ziffern-Glyphen-Sektion im Katalog-Tab mit Demo-Hoehenangaben
 
 Auto-Deploy (ann_039):
@@ -851,7 +851,7 @@ Handover-Hinweise fuer neuen Chat
 
 Stand der Pipeline: ann_045 (Status nach Phase A-D), ergaenzt um diese ann_050. Ziel-Definition: ann_049. Cluster-Mechanik: ann_043 (statisch) plus ann_048 (Ghost). Composite-Aufbau: ann_044. POI-Sheet-Spec: ann_047. Katalog-Erweiterungen (parallel zur Ziel-App moeglich): ann_046.
 
-Codebasis liegt unter ~/SCIM3ClaudeMax/scim_source. Deploy bei jedem Push auf main automatisch (ann_039). Plan-md fuer Gruenberg in data/grunberg_pois_plan.md (6-spaltig nach MVP-Abschluss). Icon-Bibliothek in data/icons (26 Dateien, Dual-Naming-Konvention). Digit-Glyphs in data/digits (10 Dateien).`,
+Codebasis liegt unter ~/SCIM3ClaudeMax/scim_source. Deploy bei jedem Push auf main automatisch (ann_039). Plan-md fuer Gruenberg in data/grunberg_pois_plan.md (6-spaltig nach MVP-Abschluss). Icon-Bibliothek in data/icons (26 Dateien, Dual-Naming-Konvention). Glyphs (Ziffern + Einheiten + Sterne + Operatoren + Frame) in data/glyphs.`,
     date: '2026-05-26',
   },
 ];

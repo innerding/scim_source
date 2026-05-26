@@ -791,7 +791,7 @@ function DigitGlyphsSection() {
       </summary>
       <div style={{ fontSize: 11, color: '#718096', marginBottom: 12 }}>
         Eigene Strich-Glyphen für Höhenangaben unter Summit-Icons (siehe ann_044).
-        Quelle: data/digits/*.svg · viewBox 0 0 4 5 · Stroke 0.75
+        Quelle: data/glyphs/*.svg · viewBox 0 0 4 5 · Stroke 0.75
       </div>
       {/* Einzelne Glyphen */}
       <div style={{ display: 'flex', gap: 16, alignItems: 'flex-end', marginBottom: 16 }}>
