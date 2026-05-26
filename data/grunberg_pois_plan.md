@@ -37,7 +37,7 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 | aussichtspunkt+ | Schlosskogel 649 m |  | 13.81873, 47.87950 | — | ✓ |
 | rastplatz | (Westhang) |  | 13.80708, 47.90296 | — | ✓ |
 | rastplatz | Rastplatz |  | 13.80825, 47.90800 | — | ≈ |
-| rastplatz | (Laudachsee-Rast) |  | 13.852, 47.880 | (Laudachsee) | ≈ |
+| rastplatz | Laudachsee-Rast | Rastplatz am Seeufer mit Blick auf Traunstein | 13.852, 47.880 | (Laudachsee) | ≈ |
 | rastplatz | Seerast | Rastpunkt am Gmundener Bootshafen | 13.80597, 47.91321 | Talstation | ≈ |
 | unterstand | Holzknecht |  | 13.83791, 47.88997 | — | ✓ |
 
@@ -61,7 +61,7 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 |---|---|---|---|---|---|
 | gasthaus | Franzl im Holz |  | 13.84428, 47.90441 | — | ✓ |
 | gasthaus | Silberfuchs |  | 13.84347, 47.90405 | — | ✓ |
-| gasthaus | Ramsaualm |  | 13.84988, 47.88062 | (Laudachsee) | ✓ |
+| gasthaus | Ramsaualm | Almgasthaus über dem Laudachsee, 2008 nach Vorbild der abgebrannten Cumberland-Jagdhütte erbaut | 13.84988, 47.88062 | (Laudachsee) | ✓ |
 | gasthaus | Ramsau |  | 13.80584, 47.90366 | — | ≈ |
 | restaurant | Hois'n |  | 13.81153, 47.88083 | — | ✓ |
 | restaurant | Grünbergalm | Almgasthaus am Plateau, traditionelle oberösterreichische Küche | 13.81890, 47.89847 | Sender | ✓ |
@@ -72,7 +72,7 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 
 | Icon | Tagline | Description | Coord | Cluster | Status |
 |---|---|---|---|---|---|
-| gewaesser | Laudachsee |  | 13.85334, 47.87914 | (Laudachsee) | ✓ |
+| gewaesser+ | Laudachsee 895 m | Bergsee unter dem Katzenstein, 25 m tief — Reich der Nixe Blondchen nach der Sage vom Riesen Erla | 13.85334, 47.87914 | (Laudachsee) | ✓ |
 | gewaesser | Seereiter |  | 13.80841, 47.90794 | — | ✓ |
 | gewaesser | Liegewiese |  | 13.80707, 47.91540 | Badewiese Weyer | ≈ |
 | freibad | Weyer | Kostenfreie Badewiese am Traunsee-Ufer mit Holzsteg | 13.80841, 47.91540 | Badewiese Weyer *(Cluster-Icon)* | ≈ |
