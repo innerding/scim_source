@@ -714,6 +714,98 @@ Beziehung zu ann_043 (Cluster-Hexagon)
 Der Render-Mechanismus fuer das vereinigte Cluster-Hexagon bleibt wie in ann_043 beschrieben (Pointy-Top 46x50, 3px skalierender Stroke, weisser Fill, Identity-Icon mittig). Neu sind nur die Herkunft des Identity-Icons (bevorzugt ein extra dafuer angelegter Ghost-POI, sonst Fallback auf reale POI mit is_cluster_identity=true) und die Rekursivitaet auf hoeheren Zoom-Stufen.`,
     date: '2026-05-26',
   },
+  {
+    id: 'ann_049',
+    category: 'next_intent',
+    label: 'Naechste Absicht - Ziel-App MVP Tour-Planung (Gruenberg + Lichtenberg)',
+    content: `Erstes konkretes Arbeitsziel fuer die Ziel-App. Definiert was ohne Leaflet-Wegbindung bereits funktionieren soll.
+
+Scope (in)
+
+  - Zwei Regionen verfuegbar: Gruenberg und Lichtenberg, jeweils als eigene Representation
+  - Region-Switcher im Header der Ziel-App (Dropdown oder Tabs)
+  - Alle POIs werden angezeigt mit ihren Composites (Container + Icon + ggf. Decoration aus ann_044)
+  - Drei Cluster pro Gruenberg-Region (Sender, Talstation, Badewiese Weyer) reagieren auf Zoom - bei Zoom-Out falten sie wie in ann_043 beschrieben zum Hexagon zusammen
+  - POI-Tap oeffnet Bottom-Sheet (gem. ann_047, Peek + Expanded States)
+  - Tagline und Description short werden konsumiert (aus Plan-md geladen)
+
+Tour-Planung (neue Funktion)
+
+  - Markierungs-Mechanismus: im Bottom-Sheet eines POI gibt es einen Button '⊕ Zur Tour'
+  - Markierte POIs erhalten visuell einen kleinen nummerierten Badge am Container (1, 2, 3, ...) entsprechend ihrer Reihenfolge in der Tour
+  - Tour-Liste: als Tab am unteren Bildschirmrand oder Slide-Out-Panel rechts
+  - Reihenfolge = Begehungsreihenfolge: Marken passieren in der Reihenfolge, in der der User die POIs hinzufuegt
+      Position 1: Start-POI
+      Position N: End-POI
+  - Permanenter Toggle am Ende der Liste: 'Ist Start-POI = End-POI' (Rundtour-Modus)
+      Default: ein (Rundtour, der End-POI wird visuell = Start-POI)
+      Aus: linearer Trip mit unterschiedlichem Start und Ziel
+  - POI aus Tour entfernen: per Wisch oder Button in der Liste; Nummerierung der nachfolgenden POIs passt sich an
+  - Reihenfolge aendern: Drag-and-Drop in der Liste (optional MVP, kann auch spaeter)
+  - Persistierung: Tour-Auswahl bleibt im localStorage der App-Instanz, pro Region separat
+
+UX-Flow
+
+Markierung im POI-Modal: Das ist der natuerlichste Ort.
+  - User tappt POI auf der Karte - Bottom-Sheet oeffnet sich (Peek-State)
+  - Schon im Peek ist ein prominenter Button '⊕ Zur Tour' sichtbar
+  - Tap - POI wird hinzugefuegt, Button wechselt zu '✓ In Tour an Position 3'
+  - Zweiter Tap - Entfernen
+  - Im Expanded-State derselbe Button, plus mehr Kontext
+  Begruendung: User entscheidet direkt nach dem Anschauen der Info, ob der POI passt. Klick-Distanz minimal.
+
+POI-Liste im Modal: nur Kontext-Anzeige, nicht die volle Liste (waere Overload). Im POI-Sheet sichtbar:
+  - 'In Tour: ja/nein' + Positions-Nummer (klein im Peek)
+  - 'Tour: 5 POIs - ca. 2.3 km' Mini-Status (klein im Expanded-Header)
+  - Button 'Tour ansehen' oeffnet die volle Liste (im Expanded)
+
+Volle Tour-Liste lebt woanders:
+  - Slide-Out-Panel rechts (Tablet/Desktop)
+  - Bottom-Tab mit Drag-Handle (Mobil) - kollabiert auf z.B. 'Tour (5)', expandiert auf vollstaendige Liste
+  - Persistent zugaenglich, nicht an POI-Sheet gebunden
+
+So bleibt der POI-Fokus klar, die Tour ist orthogonal verwaltbar.
+
+Folge-Stufen (geplant, nicht im MVP)
+
+MVP+1 - Refinement
+  - POI Auto-Sort: 'Geographisch sinnvolle Reihenfolge' via Nearest-Neighbor-Heuristik. Button 'Optimieren' in der Tour-Liste, User kann jederzeit zurueck sortieren
+  - Mini-Stats in der Liste: geschaetzte Gesamtdistanz (Luftlinie reicht zunaechst), Anzahl POIs pro Cluster
+
+MVP+2 - Time-Budget
+  - Kick-out by Timeframe: User setzt verfuegbare Zeit (z.B. '3 h, gemuetliches Tempo'), System schlaegt POIs zum Entfernen vor - basierend auf:
+      geschaetzter Wegzeit (braucht spaeter Wegberechnung ueber BCK/BAK-Path)
+      geschaetzter Aufenthaltsdauer pro POI (per-Subkategorie-Default oder per-POI editierbar im Katalog)
+  - Visualisierung: grau ueberlagerte POIs, die rausfliegen wuerden, mit 'Entfernen?'-Button
+  - Setzt Wege voraus - eher MVP+3 oder spaeter
+
+MVP+3 - Manual Line Select
+  - User zeichnet eine Linie auf der Karte (Lasso oder Pfad)
+  - Alle POIs innerhalb eines Korridors (z.B. plus/minus 200 m) werden automatisch in Reihenfolge der Linie zur Tour hinzugefuegt
+  - Konflikt mit bereits gewaehlten POIs: User wird gefragt 'ersetzen oder dazu?'
+
+Scope (out - bewusst nicht im MVP)
+
+  - Keine Wegbindung / Routenberechnung ueber Leaflet (kommt mit BCK/BAK-Path, ann_007)
+  - Kein ColourMesh-Overlay (kommt mit Phase E des Bundle-Push-Mechanismus, ann_034)
+  - Keine Cross-Region-Touren (eine Tour bleibt innerhalb einer Region)
+  - Keine Export-Funktion fuer die Tour (GPX, Share, etc.) - kann spaeter
+  - Keine Editier-Funktion fuer POI-Daten in der Ziel-App (das gehoert in den Katalog, ann_046)
+
+Datenherkunft
+
+  - POIs: aus den Plan-md der jeweiligen Region, via Promotion-Pipeline (Phase 4) in die ScimRepresentation transformiert
+  - Bis Promotion-Pipeline steht: Direkt-Import der Plan-md zur Build-Zeit (Vite ?raw-Import, analog zum Katalog-Tab)
+  - Icon-Bibliothek wird mit der App ausgeliefert (selbe data/icons/)
+
+Implementierungs-Hinweise
+
+  - Karten-Backend: Leaflet mit OSM-Tiles (gem. ScimRepresentation.leaflet, ann_037)
+  - POI-Marker: HTML-Overlay mit Composite-SVG, NICHT Leaflet-CircleMarker (wegen Composite-Komplexitaet)
+  - Hitbox: kreisfoermige Overlay-Buttons, transparent, etwas groesser als der Container (gem. ann_044)
+  - Cluster-Detection: serverseitig vordefinierte Cluster aus Plan-md werden NICHT dynamisch neu berechnet - die in der Representation festgelegten Cluster-Mitgliedschaften gelten. Falls spaeter dynamisches Clustering kommt, ist das eine eigene Phase.`,
+    date: '2026-05-26',
+  },
 ];
 
 function AnnotationsTab() {
