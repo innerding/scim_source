@@ -573,7 +573,7 @@ function PoiRow({ poi, editMode, onPatch, onDelete, onUndelete }: RowProps) {
       <td style={cellStyle}>
         <TextEdit
           value={poi.description_short ?? ''}
-          onChange={(v) => onPatch({ description_short: v.trim() === '' ? undefined : v })}
+          onChange={(v) => onPatch({ description_short: v.trim() === '' ? '' : v })}
           placeholder="one sentence only"
         />
       </td>
@@ -590,7 +590,7 @@ function PoiRow({ poi, editMode, onPatch, onDelete, onUndelete }: RowProps) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <TextEdit
             value={poi.cluster ?? ''}
-            onChange={(v) => onPatch({ cluster: v.trim() === '' ? undefined : v })}
+            onChange={(v) => onPatch({ cluster: v.trim() === '' ? '' : v })}
           />
           {/* Ghost-POI: ID-Checkbox versteckt — Ghost IST der Cluster-Repraesentant,
               kann nicht zusaetzlich Member-Identity sein. */}
@@ -599,7 +599,7 @@ function PoiRow({ poi, editMode, onPatch, onDelete, onUndelete }: RowProps) {
               <input
                 type="checkbox"
                 checked={!!poi.is_cluster_identity}
-                onChange={(e) => onPatch({ is_cluster_identity: e.target.checked || undefined })}
+                onChange={(e) => onPatch({ is_cluster_identity: e.target.checked })}
                 style={{ marginRight: 2 }}
               />
               ID
