@@ -58,9 +58,11 @@ const PATTERNS: Array<{
 }> = [
   {
     kind: 'anno',
-    // "A° 1702", "Aº 1857", "a° 1948", "A·1702", "A. 1702", "a.1702"
-    // Anker ist entweder °/·/º (typografisch korrekt) oder . (tipp-freundlich).
-    re: /\b[Aa](?:[°·º]|\.)\s*(\d{3,4})\b/,
+    // "A° 1702", "Aº 1857", "a° 1948", "A·1702", "A. 1702", "a.1702",
+    // "seit 1973", "Seit 1857" — alle werden als anno erkannt.
+    // Anker ist entweder A + °/·/º/. (typografisch / tipp-freundlich)
+    // oder das Wort "seit" (umgangssprachlich auf Inschriften / Schildern).
+    re: /\b(?:[Aa](?:[°·º]|\.)\s*|[Ss]eit\s+)(\d{3,4})\b/,
     group_value: 1,
     unit_glyph: 'anno',
     unit_position: 'left',
