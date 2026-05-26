@@ -13,7 +13,7 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 | Icon | Tagline | Description | Coord | Cluster | Status |
 |---|---|---|---|---|---|
 | schloss+ | Schloss Weyer A° 1596 | Renaissance-Schloss mit einer der größten Meissen-Porzellan-Sammlungen Europas | 13.81172, 47.91424 | — | ✓ |
-| denkmal+ | Kriegerdenkmal Seebahnhof A° 1954 | Zum Gedenken an 169 Gmundner Gefallene des Ersten Weltkriegs, Entwurf Helmut Stark | 0, 0 | Badewiese Weyer | ❓ |
+| denkmal+ | Kriegerdenkmal Seebahnhof A° 1954 | Zum Gedenken an 169 Gmundner Gefallene des Ersten Weltkriegs, Entwurf Helmut Stark | 13.80353, 47.91543 | Badewiese Weyer | ✓ |
 
 ### Points_others
 
@@ -37,8 +37,8 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 | aussichtspunkt+ | Schlosskogel 649 m |  | 13.81873, 47.87950 | — | ✓ |
 | rastplatz | (Westhang) |  | 13.80708, 47.90296 | — | ✓ |
 | rastplatz | Rastplatz |  | 13.80825, 47.90800 | — | ≈ |
-| rastplatz | Laudachsee-Rast | Rastplatz am Seeufer mit Blick auf Traunstein | 13.852, 47.880 | (Laudachsee) | ≈ |
-| rastplatz | Seerast | Rastpunkt am Gmundener Bootshafen | 13.80597, 47.91321 | Talstation | ≈ |
+| rastplatz | Laudachsee-Rast | Rastplatz am Seeufer mit Blick auf Traunstein | 13.85237, 47.88080 | (Laudachsee) | ✓ |
+| rastplatz | Seerast | Rastpunkt am Gmundener Bootshafen | 13.80666, 47.91371 | Talstation | ✓ |
 | unterstand | Holzknecht |  | 13.83791, 47.88997 | — | ✓ |
 
 ### Square_Move
@@ -52,8 +52,8 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 | klettergarten | Adlerhorst | Beliebter Kletterfelsen mit ~20 Routen, Schwierigkeitsgrade 4a bis 7a | 13.81917, 47.88031 | — | ✓ |
 | bogen-parcour | 3D-Bogenparcour | 28 Ziele im Wald, betrieben vom BSV Salzkammergut | 13.81154, 47.88155 | — | ✓ |
 | aussichtsturm | Alpenvorlandblick | Holzturm am Plateau-Rand mit Blick Richtung Norden ins Alpenvorland | 13.82316, 47.89776 | Sender | ✓ |
-| volleyball | Volleyball | Volleyballfeld an der Badewiese Weyer | 13.80707, 47.91540 | Badewiese Weyer | ≈ |
-| segeln | ASKÖ-Segeln | Segelclub ASKÖ Gmunden seit 1919, Boots- und E-Boot-Verleih | 0, 0 | Bootshafen Gmunden | ❓ |
+| volleyball | Volleyball | Volleyballfeld an der Badewiese Weyer | 13.80380, 47.91526 | Badewiese Weyer | ✓ |
+| segeln | ASKÖ-Segeln | Segelclub ASKÖ Gmunden seit 1919, Boots- und E-Boot-Verleih | 13.80777, 47.91240 | — | ✓ |
 
 ### Regenerate_Substanze
 
@@ -62,11 +62,11 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 | gasthaus | Franzl im Holz |  | 13.84428, 47.90441 | — | ✓ |
 | gasthaus | Silberfuchs |  | 13.84347, 47.90405 | — | ✓ |
 | gasthaus | Ramsaualm | Almgasthaus über dem Laudachsee, 2008 nach Vorbild der abgebrannten Cumberland-Jagdhütte erbaut | 13.84988, 47.88062 | (Laudachsee) | ✓ |
-| gasthaus | Ramsau |  | 13.80584, 47.90366 | — | ≈ |
+| gasthaus | Ramsau |  | 13.80895, 47.88695 | — | ✓ |
 | restaurant | Hois'n | Startpunkt für die Kaltenbachwildnis und den Traunstein-Anstieg, am Traunsee-Ostufer | 13.81153, 47.88083 | — | ✓ |
 | restaurant | Grünbergalm | Almgasthaus am Plateau, traditionelle oberösterreichische Küche | 13.81890, 47.89847 | Sender | ✓ |
 | bar | Lounge | Saisonal geöffnetes Restaurant an der Talstation | 13.80691, 47.91361 | Talstation | ✓ |
-| strand-buffet | Strand-Buffet |  | 13.80841, 47.91540 | Badewiese Weyer | ≈ |
+| strand-buffet | Strand-Buffet |  | 13.80447, 47.91533 | Badewiese Weyer | ✓ |
 
 ### Regenerate_Water
 
@@ -74,9 +74,9 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 |---|---|---|---|---|---|
 | gewaesser+ | Laudachsee 895 m | Bergsee unter dem Katzenstein, 25 m tief — Reich der Nixe Blondchen nach der Sage vom Riesen Erla | 13.85334, 47.87914 | (Laudachsee) | ✓ |
 | gewaesser | Seereiter |  | 13.80841, 47.90794 | — | ✓ |
-| gewaesser | Liegewiese |  | 13.80707, 47.91540 | Badewiese Weyer | ≈ |
-| freibad | Weyer | Kostenfreie Badewiese am Traunsee-Ufer mit Holzsteg | 13.80841, 47.91540 | Badewiese Weyer *(Cluster-Icon)* | ≈ |
-| wc | WC | Öffentliches WC zwischen Badewiese Weyer und Seebahnhof | 0, 0 | Bootshafen Gmunden | ❓ |
+| gewaesser | Liegewiese |  | 13.80410, 47.91473 | Badewiese Weyer | ✓ |
+| freibad | Weyer | Kostenfreie Badewiese am Traunsee-Ufer mit Holzsteg | 13.80455, 47.91494 | Badewiese Weyer *(Cluster-Icon)* | ✓ |
+| wc | WC | Öffentliches WC zwischen Badewiese Weyer und Seebahnhof | 13.80606, 47.91448 | Bootshafen Gmunden | ✓ |
 
 ### Transport_Vehicle
 
@@ -87,18 +87,18 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 | schiffsanlegestelle | Hois'n |  | 13.81090, 47.88064 | — | ✓ |
 | schiffsanlegestelle | Ramsau |  | 13.80554, 47.90366 | — | ✓ |
 | schiffsanlegestelle | Grünbergseilbahn | Anlegestelle der Traunsee-Schifffahrt, direkter Umstieg in die Grünbergseilbahn | 13.80551, 47.91302 | Talstation | ✓ |
-| bahnstation | Schloss Weyer | Haltestelle Schloss Weyer der Traunseetram. Seit 2018 durchgehend bis Vorchdorf vereinigt. | 13.81109, 47.91540 | Badewiese Weyer | ✓ |
+| bahnstation | Schloss Weyer | Haltestelle Schloss Weyer der Traunseetram. Seit 2018 durchgehend bis Vorchdorf vereinigt. | 13.80535, 47.91633 | — | ✓ |
 | bergbahn | Talstation | Pendelbahn-Fahrt zum Grünberg-Plateau | 13.80802, 47.91339 | Talstation | ✓ |
 
 ### Transport_Parking/(Charging)
 
 | Icon | Tagline | Description | Coord | Cluster | Status |
 |---|---|---|---|---|---|
-| parkplatz | Bergbahn | Hauptparkplatz an der Talstation der Grünbergseilbahn | 13.80871, 47.91262 | Talstation | ≈ |
-| parkplatz | am See | Parkplatz direkt am Traunsee-Ufer | 13.80644, 47.91341 | Talstation | ≈ |
-| parkplatz | Busse | Bus- und Reisegruppenparkplatz an der Badewiese | 13.80975, 47.91540 | Badewiese Weyer | ≈ |
-| parkplatz | Hafen | Busparkplatz am Bootshafen | 0, 0 | Bootshafen Gmunden | ❓ |
-| anchor | Bootshafen | Bootshafen am Traunsee zwischen Weyer und Talstation | 0, 0 | Bootshafen Gmunden *(Cluster-Icon)* | ❓ |
+| parkplatz | Bergbahn | Hauptparkplatz an der Talstation der Grünbergseilbahn | 13.80869, 47.91269 | Talstation | ✓ |
+| parkplatz | am See | Parkplatz direkt am Traunsee-Ufer | 13.80680, 47.91391 | Talstation | ✓ |
+| parkplatz | Busse | Bus- und Reisegruppenparkplatz an der Badewiese | 13.80478, 47.91555 | Badewiese Weyer | ✓ |
+| parkplatz | Hafen | Busparkplatz am Bootshafen | 13.80639, 47.91451 | Bootshafen Gmunden | ✓ |
+| anchor | Bootshafen | Bootshafen am Traunsee zwischen Weyer und Talstation | 13.80605, 47.91408 | Bootshafen Gmunden *(Cluster-Icon)* | ✓ |
 
 ### Service_Sleep
 
