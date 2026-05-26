@@ -149,7 +149,7 @@ function buildPoiComposite(
   // Final per Sichtpruefung: Icon 4 px nach oben (kompromiss zwischen Fernglas
   // und Aussichtswarte). Ziffern direkt an Container-Bodenreferenz (Shift 0).
   const summitIconShift = 4;
-  const summitDigitsShift = 0;
+  const summitDigitsShift = 1.5;
   const rowYBottom = (geo.summit_digits_y_max ?? 47) - summitDigitsShift;
   const rowY      = rowYBottom - digitsH;
   const iconPart  = `<g transform="translate(0,${-summitIconShift})">${iconInner}</g>`;
