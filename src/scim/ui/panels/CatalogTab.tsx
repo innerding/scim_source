@@ -4,8 +4,9 @@ import { parsePoiCatalog } from '../../poi-catalog/poiCatalog.parser';
 import { CONTAINER_SYSTEM, containerOf, geometryOf } from '../../poi-catalog/poiCatalog.containerSystem';
 import { ICON_REGISTRY, findIcons, iconById } from '../../poi-catalog/iconRegistry';
 import type { IconRegistryEntry } from '../../poi-catalog/iconRegistry';
-import { DIGIT_GLYPHS, digitGlyph, glyphsForNumber } from '../../poi-catalog/digitGlyphs';
-import { extractElevation, iconMeta } from '../../poi-catalog/decorations';
+import { DIGIT_GLYPHS, digitGlyph, glyphsForNumber, glyphById } from '../../poi-catalog/digitGlyphs';
+import { extractDecoration, extractElevation, iconMeta } from '../../poi-catalog/decorations';
+import type { DecorationMatch } from '../../poi-catalog/decorations';
 import type { Geometry } from '../../poi-catalog/poiCatalog.types';
 import {
   addNewPoi, clearEditState, deletePoi, hasEdits, loadEditState,
@@ -78,17 +79,41 @@ function buildContainerSvgString(geo: Geometry, color: string): string {
   }
 }
 
-function buildDigitsSvgString(value: number): string {
-  const digits = String(value).split('').map((d) => parseInt(d, 10));
-  // Jede Ziffer ist in einem 4×5-viewBox; horizontal aneinanderreihen, ohne Lücke.
+// Generische Glyph-Reihe fuer eine Decoration: optionales Einheits-Glyph
+// links, dann Ziffern, dann optionales Einheits-Glyph rechts. Jeder Glyph
+// ist 4 viewBox-Einheiten breit, 5 hoch. Stars-Decoration: Stern-Glyph
+// wird (value)-mal wiederholt, keine Ziffern.
+function buildGlyphRowSvgString(deco: DecorationMatch): { inner: string; widthUnits: number } {
   const parts: string[] = [];
-  digits.forEach((d, i) => {
-    const g = digitGlyph(d);
-    if (!g) return;
-    const inner = extractIconInner(g.svg_raw);
-    parts.push(`<svg x="${i * 4}" y="0" width="4" height="5" viewBox="0 0 4 5">${inner}</svg>`);
-  });
-  return parts.join('');
+  let x = 0;
+  const placeGlyph = (svgRaw: string) => {
+    parts.push(`<svg x="${x}" y="0" width="4" height="5" viewBox="0 0 4 5">${extractIconInner(svgRaw)}</svg>`);
+    x += 4;
+  };
+
+  if (deco.kind === 'stars') {
+    // Sterne werden wiederholt, keine Ziffern dazu
+    const star = deco.unit_glyph ? glyphById(deco.unit_glyph) : undefined;
+    if (star) {
+      const n = Math.max(1, Math.min(5, deco.value));
+      for (let i = 0; i < n; i++) placeGlyph(star.svg_raw);
+    }
+    return { inner: parts.join(''), widthUnits: x };
+  }
+
+  if (deco.unit_glyph && deco.unit_position === 'left') {
+    const u = glyphById(deco.unit_glyph);
+    if (u) placeGlyph(u.svg_raw);
+  }
+  for (const ch of deco.digits) {
+    const g = digitGlyph(parseInt(ch, 10));
+    if (g) placeGlyph(g.svg_raw);
+  }
+  if (deco.unit_glyph && deco.unit_position === 'right') {
+    const u = glyphById(deco.unit_glyph);
+    if (u) placeGlyph(u.svg_raw);
+  }
+  return { inner: parts.join(''), widthUnits: x };
 }
 
 // Auflösung des Icon-Referenz-Strings aus dem Plan:
@@ -117,10 +142,10 @@ function buildPoiComposite(
   const iconInner = iconEntry ? extractIconInner(iconEntry.svg_cleaned) : '';
 
   const meta = iconMeta(resolvedId);
-  const showElevation = (forceElevation || meta.decoration_below === 'elevation') && iconEntry;
-  const elevation = showElevation ? extractElevation(text) : null;
+  const decoAllowed = (forceElevation || meta.decoration_below) && iconEntry;
+  const deco = decoAllowed ? extractDecoration(text) : null;
 
-  if (elevation == null) {
+  if (deco == null) {
     // Standard-Composite: Container füllt 48×48, Icon liegt darüber.
     // icon_offset_y verschiebt das Icon im Container nach unten (Droplet, Triangle).
     const offsetY = geo.icon_offset_y ?? 0;
@@ -132,33 +157,43 @@ function buildPoiComposite(
     return `<svg viewBox="0 0 48 48" width="${size}" height="${size}">${container}${iconPart}</svg>`;
   }
 
-  // Summit-Composite (Variante B):
-  // - Icon bleibt in nativer Größe und nativer Position (kein Scale, kein Shift)
-  // - Ziffernreihe sitzt INNERHALB des Containers an dessen unterem Rand,
-  //   nicht am Viewport-Rand. summit_digits_y_max gibt die maximale Y-Position
-  //   der Reihen-Unterkante pro Geometrie an.
-  // - Reihen-Breite richtet sich nach der logischen Icon-Box (24, ann_040).
-  //   4-Ziffern-Annahme: jede Ziffer 6×7.5 (Glyph-Aspect 4:5). Bei 3 Ziffern
-  //   gleiche Glyph-Größe, Reihe wird schmaler (18), horizontal zentriert.
-  const digitCount = String(elevation).length;
-  // Deco-Scale 0.9 (Sichtpruefung): glyph 6 -> 5.4, digitsH 7.5 -> 6.75.
-  const glyphSize = 5.4;
-  const digitsH   = 6.75;
-  const rowW      = digitCount * glyphSize;
-  const rowX      = 24 - rowW / 2;
-  // Im Summit-Modus: Icon und Ziffernreihe gezielt positioniert.
-  // Final per Sichtpruefung: Icon 4 px nach oben (kompromiss zwischen Fernglas
-  // und Aussichtswarte). Ziffern 1.0 px ueber Container-Boden (0.5 px tiefer
-  // als vorher 1.5).
-  const summitIconShift = 4;
-  const summitDigitsShift = 1.0;
-  const rowYBottom = (geo.summit_digits_y_max ?? 47) - summitDigitsShift;
-  const rowY      = rowYBottom - digitsH;
-  const iconPart  = `<g transform="translate(0,${-summitIconShift})">${iconInner}</g>`;
+  // Summit-Composite mit Zifferncontainer (Frame):
+  // - Glyph-Reihe (optional Einheit links / Ziffern / optional Einheit rechts)
+  //   wird in den Frame eingebettet
+  // - Frame hat weisses Fill, deckt unteren Icon-Bereich ab — Icon muss daher
+  //   nur minimal nach oben geschoben werden (2 px)
+  // - Frame skaliert horizontal mit Inhalt (Way A — preserveAspectRatio="none",
+  //   Hand-Kurven werden leicht gestaucht/gestreckt, akzeptiert).
+  // - Anker bleibt summit_digits_y_max der Geometrie wie gehabt — Frame-Boden
+  //   sitzt 1 px ueber der per-Geometrie-Unterkante.
+  const { inner: glyphRow, widthUnits: contentUnits } = buildGlyphRowSvgString(deco);
+  // Frame-viewBox ist 8x9 fuer 1 Glyph (Padding 2 horiz + 2 vert je Seite).
+  // Fuer N Glyphs: Frame-Breite in viewBox-Einheiten = N*4 + 4.
+  const frameUnitsW = contentUnits + 4;
+  const frameUnitsH = 9;
+  // Outer-Pixel je viewBox-Einheit (Sichtpruefung-Konstante).
+  const UNIT_SCALE = 1.2;
+  const frameW = frameUnitsW * UNIT_SCALE;
+  const frameH = frameUnitsH * UNIT_SCALE;
+  const frameX = 24 - frameW / 2;
+  const summitDecoShift = 1.0;
+  const frameYBottom = (geo.summit_digits_y_max ?? 47) - summitDecoShift;
+  const frameY = frameYBottom - frameH;
+  // Content sitzt im Frame mit 2-unit Padding je Seite
+  const contentW = contentUnits * UNIT_SCALE;
+  const contentH = 5 * UNIT_SCALE;
+  const contentX = frameX + 2 * UNIT_SCALE;
+  const contentY = frameY + 2 * UNIT_SCALE;
+  // Icon-Shift: minimal (2 px), damit Icon nicht hinter Frame versinkt
+  const summitIconShift = 2;
+  const iconPart = `<g transform="translate(0,${-summitIconShift})">${iconInner}</g>`;
+  const frameEntry = glyphById('frame');
+  const frameInner = frameEntry ? extractIconInner(frameEntry.svg_raw) : '';
   return `<svg viewBox="0 0 48 48" width="${size}" height="${size}">` +
     container +
     iconPart +
-    `<svg x="${rowX}" y="${rowY}" width="${rowW}" height="${digitsH}" viewBox="0 0 ${digitCount * 4} 5">${buildDigitsSvgString(elevation)}</svg>` +
+    `<svg x="${frameX}" y="${frameY}" width="${frameW}" height="${frameH}" viewBox="0 0 8 9" preserveAspectRatio="none">${frameInner}</svg>` +
+    `<svg x="${contentX}" y="${contentY}" width="${contentW}" height="${contentH}" viewBox="0 0 ${contentUnits} 5">${glyphRow}</svg>` +
     `</svg>`;
 }
 
