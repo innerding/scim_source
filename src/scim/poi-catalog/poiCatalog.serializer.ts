@@ -113,7 +113,6 @@ function renderClusterSection(catalog: MergedCatalog): string {
     const hasIdentity = members.some((m) => m.is_cluster_identity);
     if (hasIdentity) {
       out.push(`### ${c.name} *(${members.length} POIs)*`);
-      out.push(`**Hover:** „${c.hover_text}"`);
     } else {
       out.push(`### Optional ${c.name} *(${members.length} POIs, kein Cluster-Icon)*`);
     }

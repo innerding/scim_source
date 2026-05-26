@@ -104,7 +104,6 @@ export function parsePoiCatalog(md: string, opts: ParseOptions): PoiCatalogState
   let poiCounter = 0;
   let inClusterSection = false;
   let currentClusterName: string | null = null;
-  let currentClusterHover: string | null = null;
 
   while (i < lines.length) {
     const line = lines[i];
@@ -127,22 +126,17 @@ export function parsePoiCatalog(md: string, opts: ParseOptions): PoiCatalogState
       const clusterHeadMatch = line.match(/^###\s+(?:Optional\s+)?(.+?)\s*\*\((\d+)\s*POIs?(?:,\s*[^)]*)?\)\*\s*$/);
       if (clusterHeadMatch) {
         currentClusterName = clusterHeadMatch[1].trim();
-        currentClusterHover = null;
-        i++;
-        continue;
-      }
-      // Hover line
-      const hoverMatch = line.match(/^\*\*Hover:\*\*\s+„(.+?)["“]\s*$/);
-      if (hoverMatch && currentClusterName) {
-        currentClusterHover = hoverMatch[1];
+        // Cluster sofort registrieren (frueher: erst nach **Hover:**-Match,
+        // hover_text wurde Mai 2026 entfernt). member_count wird unten
+        // re-counted nach komplettem Parsen.
         clusters.push({
           name: currentClusterName,
-          hover_text: currentClusterHover,
-          member_count: pois.filter((p) => p.cluster === currentClusterName).length,
+          member_count: 0,
         });
         i++;
         continue;
       }
+      // Hover-Zeilen aus alten md still durchwinken (Tolerance, ignorierter Inhalt)
       i++;
       continue;
     }

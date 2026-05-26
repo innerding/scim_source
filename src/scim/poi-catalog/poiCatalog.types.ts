@@ -69,10 +69,11 @@ export interface CatalogPoi {
 }
 
 export interface CatalogCluster {
-  name: string;                // 'Sender'
-  hover_text: string;          // 'Grünberg Plateau'
+  name: string;                // 'Sender' — Cluster-Identifier (Link zu POIs)
   member_count: number;        // counted from POIs
-  identity_poi_id?: string;    // POI that carries the cluster icon
+  identity_poi_id?: string;    // POI that carries the cluster icon (oder Ghost)
+  // hover_text wurde Mai 2026 entfernt: redundant, weil der Repraesentanten-POI
+  // (Ghost oder Identity-Member) selbst Tagline + description_short traegt.
 }
 
 export interface PoiCatalogState {
