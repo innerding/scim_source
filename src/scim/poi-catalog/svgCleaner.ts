@@ -44,6 +44,34 @@ function stripIllustratorRootId(svg: string): { svg: string; removed: string | n
   return { svg: svg.replace(re, '$1'), removed: match[2] };
 }
 
+// Bekanntes Illustrator-Problem: das Programm exportiert manchmal eine Gruppe
+// mit korrekt benanntem fill-Pfad, ABER der Stroke-Pfad bleibt ohne id="stroke".
+// Wenn klar erkennbar (Pfad ohne id, mit stroke="X" non-none), tagen wir ihn
+// nachträglich. Heuristik: nur tun, wenn (a) noch kein id="stroke" existiert
+// und (b) ein id="fill" existiert (= wir sind in einem klassischen Fill+Stroke-
+// Icon, nicht in einem strich-only nach Sonderregel).
+function tagUnnamedStrokeLayer(svg: string): { svg: string; strokeValue: string | null } {
+  if (/<path[^>]*\bid="stroke"/i.test(svg)) return { svg, strokeValue: null };
+  if (!/<path[^>]*\bid="fill"/i.test(svg)) return { svg, strokeValue: null };
+
+  const pathRe = /<path\s+[^>]*?(?:\/>|>)/g;
+  let match: RegExpExecArray | null;
+  while ((match = pathRe.exec(svg)) !== null) {
+    const pathTag = match[0];
+    // Hat schon eine id? Skip.
+    if (/\bid=/.test(pathTag)) continue;
+    // Stroke vorhanden und nicht "none"?
+    const strokeMatch = pathTag.match(/\bstroke="([^"]+)"/i);
+    if (!strokeMatch) continue;
+    if (strokeMatch[1].trim().toLowerCase() === 'none') continue;
+    // Treffer: id="stroke" voranstellen.
+    const newPathTag = pathTag.replace(/^<path/, '<path id="stroke"');
+    const newSvg = svg.substring(0, match.index) + newPathTag + svg.substring(match.index + pathTag.length);
+    return { svg: newSvg, strokeValue: strokeMatch[1] };
+  }
+  return { svg, strokeValue: null };
+}
+
 function stripPhantomStrokeFromFill(svg: string): { svg: string; removed: string | null } {
   // Sucht Element mit id="fill" (case-insensitive); wenn ein stroke="…"
   // dranhängt (Wert != none), wird es samt orphan-stroke-* Attributen entfernt.
@@ -187,6 +215,16 @@ export function cleanIconSvg(raw: string): CleanResult {
     const r2 = stripRootAttribute(svg, 'height');
     svg = r2.svg;
     if (r2.removed !== null) changes.push(`Root-height entfernt (${r2.removed})`);
+  }
+
+  // 3.5) Unbenannten Stroke-Layer nachträglich mit id="stroke" taggen
+  //      (klassisches Illustrator-Export-Problem: Fill bekommt id, Stroke nicht)
+  {
+    const r = tagUnnamedStrokeLayer(svg);
+    svg = r.svg;
+    if (r.strokeValue) {
+      changes.push(`Stroke-Layer-ID 'stroke' nachgetragen (Pfad war ohne id, hatte stroke="${r.strokeValue}")`);
+    }
   }
 
   // 4) Phantom-stroke am Fill-Layer
