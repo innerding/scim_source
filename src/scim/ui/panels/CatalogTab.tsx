@@ -758,40 +758,6 @@ function ClusterGroupSection({
   );
 }
 
-// ─── Cluster-Übersicht ────────────────────────────────────────────────────────
-
-function ClusterSection({ catalog }: { catalog: ReturnType<typeof mergeEdits> }) {
-  if (catalog.clusters.length === 0) return null;
-  return (
-    <div style={{ marginTop: 32 }}>
-      <h3 style={{ fontSize: 14, fontWeight: 600, color: '#1a365d', marginBottom: 12 }}>Cluster</h3>
-      {catalog.clusters.map((c) => {
-        const members = catalog.pois.filter((p) => !p._isDeleted && p.cluster === c.name);
-        if (members.length === 0) return null;
-        return (
-          <div key={c.name} style={{
-            marginBottom: 14, padding: '8px 12px',
-            background: '#faf5ff', borderLeft: '3px solid #c8389b', borderRadius: 4,
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-              <span style={{ fontSize: 13, fontWeight: 600, color: '#1a365d' }}>{c.name}</span>
-              <span style={{ fontSize: 11, color: '#718096', fontFamily: 'monospace' }}>· {members.length} POIs</span>
-            </div>
-            {c.hover_text && (
-              <div style={{ fontSize: 11, color: '#553c9a', fontStyle: 'italic', marginBottom: 6 }}>
-                Hover: „{c.hover_text}"
-              </div>
-            )}
-            <div style={{ fontSize: 11, color: '#4a5568', lineHeight: 1.6 }}>
-              {members.map((p) => p.text).join(' · ')}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
 // ─── Icon-Bibliothek (Phase B) ────────────────────────────────────────────────
 // Rendert die zur Build-Zeit geladene ICON_REGISTRY. SVG-Vorschau wird per
 // dangerouslySetInnerHTML inline eingefügt; Größe wird auf 32×32 normiert,
@@ -1484,9 +1450,6 @@ export default function CatalogTab() {
           onAddPoi={handleAdd}
         />
       ))}
-
-      {/* Cluster */}
-      <ClusterSection catalog={merged} />
 
       {/* Icon-Bibliothek (klappbar) */}
       <IconLibrarySection />
