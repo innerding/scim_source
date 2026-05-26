@@ -806,6 +806,54 @@ Implementierungs-Hinweise
   - Cluster-Detection: serverseitig vordefinierte Cluster aus Plan-md werden NICHT dynamisch neu berechnet - die in der Representation festgelegten Cluster-Mitgliedschaften gelten. Falls spaeter dynamisches Clustering kommt, ist das eine eigene Phase.`,
     date: '2026-05-26',
   },
+  {
+    id: 'ann_050',
+    category: 'next_intent',
+    label: 'Naechste Absicht - Umbauplan Phasen 1-6 zur Erreichung von ann_049',
+    content: `Konkrete Phasen-Roadmap, um das Arbeitsziel aus ann_049 (Ziel-App MVP mit Tour-Planung fuer Gruenberg und Lichtenberg) zu erreichen. Reihenfolge so gewaehlt, dass jede Phase fuer sich abgeschlossen und live testbar ist. Schaetzungen sind grob (eine Session = ein produktiver Arbeitsblock, kein fester Zeitwert).
+
+Phase 1 - Ghost-Cluster-POI im Katalog-Editor (~1-2 Sessions)
+
+Implementiert ann_048. Datenmodell CatalogPoi um parent_poi_id und coord_status 'cluster_ghost' erweitert. Parser und Serializer lesen/schreiben Ghosts (Coord-Spalten-Notation z.B. 'Pfeil-hoch poi_017'). Cluster-Subkategorie-Sektion permanent eingeblendet nach Help_emergency mit Parent-Picker. Composite-Renderer beruecksichtigt Ghost-Identitaet beim Cluster-Render. Smoke-Test: Bergbahn-Ghost fuer Talstation-Cluster anlegen.
+
+Phase 2 - plan.md fuer Lichtenberg (User-Recherche + 1 Session Dev)
+
+User-Task: Recherche der Lichtenberger POIs (Coords, Subkategorisierung, Cluster). Dev liefert ein Skeleton im Format von grunberg_pois_plan.md, User fuellt Details. Anschliessend Eintrag im Region-Switcher der Ziel-App (folgt in Phase 3). Diese Phase blockiert NICHTS - kann parallel zu allen anderen laufen, Resultat fliesst ein sobald bereit.
+
+Phase 3 - Ziel-App Grundgeruest (~1-2 Sessions)
+
+Neuer Tab/Panel in SCIM (pragmatisch in den vorhandenen Deploy integriert, eigene Trennung kommt erst mit Phase 4 der Promotion-Pipeline). Leaflet einbinden plus OSM-Tiles. Region-Switcher im Header. Plan-md per Vite ?raw-Import laden. POI-Marker als HTML-Overlay mit Composite-SVG (re-use PoiComposite aus Katalog-Tab). Initial-Viewport aus Bounding-Box aller POIs. Keine Sheets, kein Cluster-Zoom, keine Tour - reines Rendering der Marker.
+
+Phase 4 - POI-Sheet (~1-2 Sessions)
+
+Implementiert ann_047. Bottom-Sheet-Komponente mit Peek- und Expanded-States, Drag-Handle, Swipe-Gesten. Tap auf POI-Marker oeffnet Sheet im Peek-State, Marker pulst kurz. Peek zeigt Composite plus Tagline plus Description short plus Subkategorie/Cluster. Expanded zeigt zusaetzlich Bild-Platzhalter, Description long-Platzhalter, Coord, Buttons fuer Route/Mehr/Teilen (zunaechst nur visuell). Schliessen per Swipe down oder Tap ausserhalb.
+
+Phase 5 - Cluster-Verhalten beim Zoom (~1 Session)
+
+Pre-defined Clusters aus Plan-md, nicht dynamisch berechnet. Bei Zoom-Out unter Threshold X: Mitglieder-Marker ausblenden, Cluster-Hexagon an Identity-Coord einblenden. Identity-Icon-Quelle: Ghost wenn vorhanden (aus Phase 1), sonst is_cluster_identity-POI selbst. Tap auf Cluster-Hexagon oeffnet Cluster-Sheet mit Mitgliederliste. Tap auf Mitglied wechselt zu dessen POI-Sheet. Voraussetzung: Phase 1 sollte gemacht sein fuer eleganten Talstation/Bergbahn-Fall, sonst greift Fallback.
+
+Phase 6 - Tour-Planung (~1-2 Sessions)
+
+Implementiert ann_049. Button '⊕ Zur Tour' im POI-Sheet (Peek + Expanded). Nummerierter Badge am Container fuer markierte POIs. Tour-Liste als Slide-Out rechts (Desktop) bzw. Bottom-Tab mit Drag-Handle (Mobil). Rundtour-Toggle am Ende der Liste, Default on. POI entfernen per Swipe oder Button. Reorder per Drag-and-Drop (MVP optional). Persistierung in localStorage pro Region (Key z.B. 'ziel-app:tour:gruenberg').
+
+Empfohlene Reihenfolge
+
+  Phase 1 (Ghost) - starten
+  Phase 3 (Grundgeruest)
+  Phase 4 (POI-Sheet)
+  Phase 5 (Cluster-Zoom)
+  Phase 6 (Tour) - Ziel 1 erreicht (Gruenberg laeuft komplett)
+  Phase 2 (Lichtenberg) - Ziel 2 erreicht (zweite Region dazu)
+
+Phase 2 zum Schluss, weil sie die Architektur nicht blockiert (Region-Switcher kommt in Phase 3), keinen Dev-Druck erzeugt (User-Recherche ohne Deadline) und nach Vorliegen der Plan-md nur ein 5-Minuten-Push ist.
+
+Handover-Hinweise fuer neuen Chat
+
+Stand der Pipeline: ann_045 (Status nach Phase A-D), ergaenzt um diese ann_050. Ziel-Definition: ann_049. Cluster-Mechanik: ann_043 (statisch) plus ann_048 (Ghost). Composite-Aufbau: ann_044. POI-Sheet-Spec: ann_047. Katalog-Erweiterungen (parallel zur Ziel-App moeglich): ann_046.
+
+Codebasis liegt unter ~/SCIM3ClaudeMax/scim_source. Deploy bei jedem Push auf main automatisch (ann_039). Plan-md fuer Gruenberg in data/grunberg_pois_plan.md (6-spaltig nach MVP-Abschluss). Icon-Bibliothek in data/icons (26 Dateien, Dual-Naming-Konvention). Digit-Glyphs in data/digits (10 Dateien).`,
+    date: '2026-05-26',
+  },
 ];
 
 function AnnotationsTab() {
