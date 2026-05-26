@@ -117,12 +117,14 @@ aussichtswarte+ Giselawarte 927 m *(Cluster-Icon)* · sendemast Sender · bestec
 Heutige Konfiguration: die **Giselawarte**-POI trägt das Cluster-Icon (Backward-Compat-Modus aus ann_048).
 
 Sobald Phase 1 der Ziel-App-Roadmap gebaut ist (Ghost-Cluster-POI im Editor):
-- Giselawarte verliert das Cluster-Icon-Flag (wird normale Mitglied-POI)
-- Neue **Ghost-POI „Gipfel"** in der Cluster-Subkategorie anlegen
-- Parent des Ghosts: Giselawarte (erbt deren Coord)
-- Ghost-Icon: **`fernglas+`** mit Höhe 927 (Aussichts-Marker auf Berg)
+- Giselawarte verliert das Cluster-Icon-Flag (wird normale Mitglied-POI mit Tagline „Giselawarte 927 m")
+- Neue **Ghost-POI in der Cluster-Subkategorie** mit:
+  - **Tagline:** `Gis` (lokaler Eigenname, abgeleitet von **Gis**elawarte)
+  - **Description short:** „Sender, Giselawarte und Gasthaus am Lichtenberg-Gipfel"
+  - **Icon:** `fernglas+` mit Höhe 927 (Aussichts-Marker auf Berg, Plus-Suffix triggert Höhen-Decoration)
+  - **Parent:** Giselawarte-POI (erbt deren Coord)
 
-Begründung: der geografische Gipfel liegt im Wald, Aussicht gibt's nur über die Warte. Der Ghost trennt physisches Wahrzeichen (Warte) von semantischer Cluster-Identität (Gipfel).
+Begründung: der geografische Gipfel liegt im Wald, Aussicht gibt's nur über die Warte. Der Ghost trennt physisches Wahrzeichen (Warte) von semantischer Cluster-Identität. „Gis" als Tagline ist lokaler Eigenname mit Charme und passt perfekt ins kompakte Hexagon-Tooltip (3 Buchstaben).
 
 ---
 
