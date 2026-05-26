@@ -390,15 +390,23 @@ const inputStyleMono: React.CSSProperties = { ...inputStyle, fontFamily: 'monosp
 function TextEdit({ value, onChange, mono = false, placeholder }: {
   value: string; onChange: (v: string) => void; mono?: boolean; placeholder?: string;
 }) {
+  // Commit on blur: lokaler Draft-State haelt die Live-Eingabe. onChange feuert
+  // nur bei blur oder Enter. Vermeidet, dass jeder Tastendruck einen Re-Render
+  // ausloest, der die Zeilen-Position aendert (z.B. im Cluster-Sort-Modus,
+  // wo die Gruppen sich beim Tippen umsortieren wuerden -> Focus-Verlust).
+  const [draft, setDraft] = useState(value);
+  // Externer Wert aendert sich (z.B. durch Region-Wechsel, Reset) -> Draft folgen.
+  useEffect(() => { setDraft(value); }, [value]);
+  const commit = () => {
+    if (draft !== value) onChange(draft);
+  };
   return (
     <input
       type="text"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
+      value={draft}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={commit}
       onClick={(e) => {
-        // Bei jedem Klick: kompletten Text selektieren. onClick feuert NACH
-        // Focus, daher kein Race mit React-Re-Render wie bei onFocus.
-        // User-Wunsch: ein Klick -> Wort sofort markiert (Idealzustand).
         const el = e.currentTarget as HTMLInputElement;
         if (el.value) el.select();
       }}
