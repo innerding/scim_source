@@ -178,13 +178,16 @@ function buildPoiComposite(
   const frameW = frameUnitsW * UNIT_SCALE;
   const frameH = frameUnitsH * UNIT_SCALE;
   const frameX = 24 - frameW / 2;
-  const FRAME_ANCHOR_Y = 47;       // 1 px ueber Viewport-Bottom, fuer alle Container gleich
+  const FRAME_ANCHOR_Y = 45;       // Frame-Boden 3 px ueber Viewport-Bottom (Sichtpruefung)
   const frameY = FRAME_ANCHOR_Y - frameH;
-  const contentW = contentUnits * UNIT_SCALE;
-  const contentH = 5 * UNIT_SCALE;
-  const contentX = frameX + FRAME_PADDING_X * UNIT_SCALE;
-  const contentY = frameY + FRAME_PADDING_Y * UNIT_SCALE;
-  const summitIconShift = 0;
+  // Content (Ziffern + Einheit) wird um Faktor 0.9 geschrumpft (User-Wunsch),
+  // im Frame-Inneren zentriert. Stroke darf mitschrumpfen.
+  const DECO_TEXT_SCALE = 0.9;
+  const contentW = contentUnits * UNIT_SCALE * DECO_TEXT_SCALE;
+  const contentH = 5 * UNIT_SCALE * DECO_TEXT_SCALE;
+  const contentX = frameX + (frameW - contentW) / 2;
+  const contentY = frameY + (frameH - contentH) / 2;
+  const summitIconShift = 1;
   const iconPart = `<g transform="translate(0,${-summitIconShift})">${iconInner}</g>`;
   // Frame-SVG so einbetten, dass der Pfad-Stroke nicht mitskaliert (non-scaling-stroke).
   // Wir ziehen den Frame-Pfad-Inhalt heraus und fuegen das Attribut hinzu.
@@ -507,15 +510,9 @@ function PoiRow({ poi, editMode, onPatch, onDelete, onUndelete }: RowProps) {
               : `${poi.coord[0].toFixed(5)}, ${poi.coord[1].toFixed(5)}`}
         </td>
         <td style={{ ...cellStyle, color: '#4a5568' }}>
-          {poi.subcategory === 'Cluster' ? (
-            <span style={{ color: '#cbd5e0', fontStyle: 'italic' }}>—</span>
-          ) : (
-            <>
-              {poi.cluster ?? '—'}
-              {poi.is_cluster_identity && (
-                <span style={{ marginLeft: 6, fontSize: 10, color: '#c8389b', fontStyle: 'italic' }}>(Cluster-Icon)</span>
-              )}
-            </>
+          {poi.cluster ?? '—'}
+          {poi.subcategory !== 'Cluster' && poi.is_cluster_identity && (
+            <span style={{ marginLeft: 6, fontSize: 10, color: '#c8389b', fontStyle: 'italic' }}>(Cluster-Icon)</span>
           )}
         </td>
         <td style={{ ...cellStyle, textAlign: 'center' }}>
@@ -567,16 +564,14 @@ function PoiRow({ poi, editMode, onPatch, onDelete, onUndelete }: RowProps) {
         )}
       </td>
       <td style={cellStyle}>
-        {poi.subcategory === 'Cluster' ? (
-          // Ghost-POI: keine cluster-/ID-Eingabe (cluster spiegelt automatisch text,
-          // ID ist als Ghost per Definition gesetzt — Eingabe wuerde nur verwirren).
-          <span style={{ fontSize: 11, color: '#a0aec0', fontStyle: 'italic' }}>—</span>
-        ) : (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <TextEdit
-              value={poi.cluster ?? ''}
-              onChange={(v) => onPatch({ cluster: v.trim() === '' ? undefined : v })}
-            />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <TextEdit
+            value={poi.cluster ?? ''}
+            onChange={(v) => onPatch({ cluster: v.trim() === '' ? undefined : v })}
+          />
+          {/* Ghost-POI: ID-Checkbox versteckt — Ghost IST der Cluster-Repraesentant,
+              kann nicht zusaetzlich Member-Identity sein. */}
+          {poi.subcategory !== 'Cluster' && (
             <label title="Cluster-Icon" style={{ display: 'flex', alignItems: 'center', fontSize: 10, color: '#c8389b' }}>
               <input
                 type="checkbox"
@@ -586,8 +581,8 @@ function PoiRow({ poi, editMode, onPatch, onDelete, onUndelete }: RowProps) {
               />
               ID
             </label>
-          </div>
-        )}
+          )}
+        </div>
       </td>
       <td style={{ ...cellStyle, whiteSpace: 'nowrap' }}>
         <StatusEdit value={poi.coord_status} onChange={(v) => onPatch({ coord_status: v })} />
@@ -1203,21 +1198,8 @@ export default function CatalogTab() {
 
   // ─── Handler ────────────────────────────────────────────────────────────────
 
-  const handlePatch = (id: string, changes: Partial<Omit<CatalogPoi, 'id'>>) => {
-    // Auto-Sync fuer Ghost-POIs (subcategory='Cluster'): cluster spiegelt text.
-    // Die cluster-Eingabe ist in der UI versteckt — ohne Mirror waere sie leer.
-    const currentPoi = merged.pois.find((p) => p.id === id);
-    const newSub = changes.subcategory ?? currentPoi?.subcategory;
-    const isGhost = newSub === 'Cluster';
-    let next = changes;
-    if (isGhost) {
-      const newText = changes.text ?? currentPoi?.text;
-      if (newText != null && (changes.text != null || changes.subcategory === 'Cluster')) {
-        next = { ...changes, cluster: newText };
-      }
-    }
-    setEditState((s) => patchPoi(s, id, next));
-  };
+  const handlePatch = (id: string, changes: Partial<Omit<CatalogPoi, 'id'>>) =>
+    setEditState((s) => patchPoi(s, id, changes));
   const handleDelete = (id: string) => setEditState((s) => deletePoi(s, id));
   const handleUndelete = (id: string) => setEditState((s) => undeletePoi(s, id));
   const handleReset = (id: string) => setEditState((s) => resetPoi(s, id));
@@ -1227,16 +1209,13 @@ export default function CatalogTab() {
     if (!spec) return;
     // Ghosts (Cluster-Subkategorie) starten als cluster_ghost ohne eigene Coord.
     const isGhost = sub === 'Cluster';
-    const text = isGhost ? 'Neuer Ghost' : 'Neuer POI';
     const template: Omit<CatalogPoi, 'id'> = {
       bucket: spec.bucket,
       subcategory: sub,
       icon: '',
-      text,
+      text: isGhost ? 'Neuer Ghost' : 'Neuer POI',
       coord: [0, 0],
       coord_status: isGhost ? 'cluster_ghost' : 'missing',
-      // Bei Ghost: cluster spiegelt text initial (vgl. Auto-Sync in handlePatch).
-      cluster: isGhost ? text : undefined,
     };
     setEditState((s) => addNewPoi(s, template).state);
   };
