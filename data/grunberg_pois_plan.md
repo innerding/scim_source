@@ -37,7 +37,7 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 | rastplatz | (Westhang) |  | 13.80708, 47.90296 | — | ✓ |
 | rastplatz | Rastplatz |  | 13.80825, 47.90800 | — | ≈ |
 | rastplatz | (Laudachsee-Rast) |  | 13.852, 47.880 | (Laudachsee) | ≈ |
-| rastplatz | Seerast |  | 13.80597, 47.91321 | Talstation | ≈ |
+| rastplatz | Seerast | Rastpunkt am Gmundener Bootshafen | 13.80597, 47.91321 | Talstation | ≈ |
 | unterstand | Holzknecht |  | 13.83791, 47.88997 | — | ✓ |
 
 ### Square_Move
@@ -62,7 +62,7 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 | gasthaus | Ramsau |  | 13.80584, 47.90366 | — | ≈ |
 | restaurant | Hois'n |  | 13.81153, 47.88083 | — | ✓ |
 | restaurant | Grünbergalm | Almgasthaus am Plateau, traditionelle oberösterreichische Küche | 13.81890, 47.89847 | Sender | ✓ |
-| bar | Lounge |  | 13.80691, 47.91361 | Talstation | ✓ |
+| bar | Lounge | Saisonal geöffnetes Restaurant an der Talstation | 13.80691, 47.91361 | Talstation | ✓ |
 | strand-buffet | Strand-Buffet |  | 13.80841, 47.91540 | Badewiese Weyer | ≈ |
 
 ### Regenerate_Water
@@ -78,20 +78,20 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 
 | Icon | Tagline | Description | Coord | Cluster | Status |
 |---|---|---|---|---|---|
-| talstation | Bergbahn |  | 13.80802, 47.91339 | Talstation | ✓ |
+| talstation | Bergbahn | Großkabinen-Pendelbahn auf das Plateau, Neubau 2014 ersetzt Zweiseilumlaufbahn von 1957 | 13.80802, 47.91339 | Talstation *(Cluster-Icon)* | ✓ |
 | bergstation | Bergbahn | Bergstation der Grünbergseilbahn, 987 m, Talblick über Traunsee | 13.82156, 47.89832 | Sender | ✓ |
 | schiffsanlegestelle | Hois'n |  | 13.81090, 47.88064 | — | ✓ |
 | schiffsanlegestelle | Ramsau |  | 13.80554, 47.90366 | — | ✓ |
-| schiffsanlegestelle | Grünbergseilbahn |  | 13.80551, 47.91302 | Talstation | ✓ |
+| schiffsanlegestelle | Grünbergseilbahn | Anlegestelle der Traunsee-Schifffahrt, direkter Umstieg in die Grünbergseilbahn | 13.80551, 47.91302 | Talstation | ✓ |
 | bahnstation | Schloss Weyer |  | 13.81109, 47.91540 | Badewiese Weyer | ✓ |
-| bergbahn | Talstation |  | 13.80802, 47.91339 | Talstation *(Cluster-Icon)* | ✓ |
+| bergbahn | Talstation | Pendelbahn-Fahrt zum Grünberg-Plateau | 13.80802, 47.91339 | Talstation | ✓ |
 
 ### Transport_Parking/(Charging)
 
 | Icon | Tagline | Description | Coord | Cluster | Status |
 |---|---|---|---|---|---|
-| parkplatz | Bergbahn |  | 13.80871, 47.91262 | Talstation | ≈ |
-| parkplatz | am See |  | 13.80644, 47.91341 | Talstation | ≈ |
+| parkplatz | Bergbahn | Hauptparkplatz an der Talstation der Grünbergseilbahn | 13.80871, 47.91262 | Talstation | ≈ |
+| parkplatz | am See | Parkplatz direkt am Traunsee-Ufer | 13.80644, 47.91341 | Talstation | ≈ |
 | parkplatz | Busse |  | 13.80975, 47.91540 | Badewiese Weyer | ≈ |
 
 ### Service_Sleep
