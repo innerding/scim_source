@@ -13,7 +13,7 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 | Icon | Tagline | Description | Coord | Cluster | Status |
 |---|---|---|---|---|---|
 | schloss | Schloss Weyer |  | 13.81172, 47.91424 | — | ✓ |
-| denkmal | Kriegerdenkmal Seebahnhof A° 1954 | Zum Gedenken an 169 Gmundner Gefallene des Ersten Weltkriegs, Entwurf Helmut Stark | 0, 0 | Badewiese Weyer | ❓ |
+| denkmal+ | Kriegerdenkmal Seebahnhof A° 1954 | Zum Gedenken an 169 Gmundner Gefallene des Ersten Weltkriegs, Entwurf Helmut Stark | 0, 0 | Badewiese Weyer | ❓ |
 
 ### Points_others
 
