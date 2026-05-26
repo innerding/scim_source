@@ -436,33 +436,35 @@ Damit braucht es keine willkürliche Skalierungs-Schrittweite und keine Obergren
   {
     id: 'ann_044',
     category: 'adr',
-    label: 'Decoration-Layout: Höhenangabe unter Icon (Summit-Variante)',
-    content: `Für POIs, die gleichzeitig Gipfel sind (z.B. "Katzenstein 1349 m"), wird unter dem Icon eine Ziffernreihe gerendert. Es wird kein eigenes Icon für die Summit-Variante gebraucht — dasselbe Fernglas-Drawing wird nur anders positioniert und mit einer Decoration ergänzt.
+    label: 'Decoration-Layout · Anatomie eines kategorisierten POI-Icons',
+    content: `Was im Katalog-Tab als ein POI-Visual erscheint, ist ein Composite aus mehreren uebereinanderliegenden Schichten. Diese Annotation beschreibt die beteiligten Elemente und ihr Zusammenspiel.
 
-Layout-Regel (Viewport 48 × 48):
-  Freier Parameter: p (uniformes Padding, gibt Kompaktheit vor)
-  Icon-Bereich:     zentriert horizontal, p von links/rechts, p von oben
-                    Breite  W_i = 48 - 2p
-                    Höhe    H_i nach Aspect-Ratio des Icons
-  Lücke Icon → Ziffern:  g = p / 2
-  Ziffernreihe:     zentriert horizontal, max. so breit wie das Icon
-                    Abstand p zum unteren Rand
-                    Höhe   H_t = 48 - 5p/2 - H_i  (Schließbedingung)
+Schichten (von hinten nach vorne):
 
-Schließbedingung (alles muss in 48 px Vertikale passen):
-  p + H_i + g + H_t + p = 48
-  ⇒ H_i + H_t = 48 - 5p/2
+1. Container (siehe ann_042) - die geometrische Traegerform
+   - Form aus dem Bucket: Kreis, Quadrat, Tropfen, Rechteck hochkant/quer, Dreieck, Hexagon-Ring
+   - Farbe aus der Subkategorie
+   - Schwarzer 1 px Stroke (Sonderfall Hexagon: skalierender 3 px in Subkategorie-Farbe, transparenter Innenraum)
+   - Lebt im 48 x 48-Viewport (Hexagon: 46 x 50)
 
-Beispiel für Fernglas mit p = 4 (Aspect-Ratio ~3:2):
-  W_i = 40 · H_i ≈ 26.67 · g = 2 · H_t ≈ 11.33 · W_t = 40
+2. Icon (siehe ann_040) - die zentrale Bildaussage
+   - Aus der Icon-Bibliothek per Namen referenziert (Dateiname = Bedeutung, Gruppen-ID = Zeichnung)
+   - Native Groesse, keine Skalierung
+   - Native Position, ausser per Container-Eigenschaft icon_offset_y verschoben (Tropfen +5, Dreieck +4)
 
-Datenherkunft der Höhe: Auto-Extraktion via Regex \\b(\\d{2,5})\\s*m\\b aus dem POI-Textfeld. Keine separate Dateneingabe nötig — die Höhe lebt weiterhin im Text ("Katzenstein 1349 m"), wird nur fürs Rendering extrahiert. "m" wird aus Platzgründen weggelassen, nur die Ziffern werden gerendert.
+3. Decoration (optional) - semantische Zusatzinformation
+   - Beispiel-Variante: 'elevation' - Hoehenangabe als Ziffernreihe unter dem Icon, fuer POIs die gleichzeitig Gipfel sind (z.B. "Katzenstein 1349 m"). Es wird kein eigenes Icon fuer die Summit-Variante gebraucht - dasselbe Drawing wird nur anders positioniert und mit der Decoration ergaenzt.
+   - Datenherkunft: Auto-Extraktion via Regex \\b(\\d{2,5})\\s*m\\b aus dem POI-Textfeld. Keine separate Dateneingabe - die Hoehe lebt im Text, wird nur fuers Rendering extrahiert. "m" wird aus Platzgruenden weggelassen, nur die Ziffern gerendert.
+   - Opt-in pro Icon: entweder per ICONS_META[id].decoration_below: 'elevation' oder per Trailing-Plus-Konvention im Icon-Namen (z.B. Fernglas+ -> Basis-Icon Fernglas plus erzwungene Decoration)
+   - Konzept generisch: weitere decoration_below-Kinds denkbar (Distanz fuer Wegpunkte, Wassertemperatur fuer Badestellen, Bettenzahl fuer Hotels)
 
-Welche Icons bekommen die Decoration: pro Icon in data/icons/icons.meta.json deklarierbar, z.B. { "Aussichtspunkt": { "decoration_below": "elevation" } }. Default: keine Decoration.
+4. Hitbox - die klickbare/tippbare Flaeche
+   - Noch nicht implementiert. Im Katalog-Tab als Inspektor braucht es keine Hitbox; relevant wird sie erst, wenn das Composite auf einer Karte als interaktiver Marker liegt (Phase 4/5)
+   - Konvention aus ann_040: kreisfoermig, vom Renderer berechnet, groesser als der visuelle Container, damit Touch/Klick komfortabel sind
+   - Lebt nicht im SVG selbst, sondern im DOM-Layer drueber (z.B. transparenter <circle pointer-events="all"> oder eine HTML-Huelle um das Composite)
 
-Erweiterbar: Das Decoration-Konzept ist generisch — decoration_below kann später auch andere Werte tragen (z.B. Distanz für Wegpunkte, Wassertemperatur für Badestellen, Bettenzahl für Hotels).
-
-Implementierung: Teil von Phase D (Composite-Rendering Icon + Container + Decoration). Bis dahin nur als Spec dokumentiert. Auto-Extraktion der Höhe wird gemeinsam mit der Decoration-Render-Logik gebaut, damit der Decoration-Begriff als zusammenhängendes Konzept ins System kommt statt in zwei Halbschritten.`,
+Sonderfall Cluster (siehe ann_043):
+Ein Cluster ist selbst ein "kategorisiertes Icon" nach der gleichen Schicht-Logik. Container = Hexagon-Ring; Icon innen = das Identity-Icon des Clusters (z.B. Sendemast fuer den Sender-Cluster). Eine Decoration kann theoretisch auch hier haengen, wenn das Identity-Icon eine traegt (Gruenberg 986 m als Cluster-Identity -> Hoehe darunter). Groessenverhalten, Stroke-Skalierung und Bounding-Box-Wachstum des Hexagons sind in ann_043 geregelt.`,
     date: '2026-05-25',
   },
   {
