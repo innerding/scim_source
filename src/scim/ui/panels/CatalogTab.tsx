@@ -563,7 +563,7 @@ function PoiRow({ poi, editMode, onPatch, onDelete, onUndelete }: RowProps) {
           <CoordEdit poi={poi} onChange={onPatch} />
         )}
       </td>
-      <td style={cellStyle}>
+      <td style={{ ...cellStyle, minWidth: 140 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <TextEdit
             value={poi.cluster ?? ''}
