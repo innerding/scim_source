@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="SCIM3_POI_Icons" data-name="SCIM3 POI Icons" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <g id="eis-am-stiel">
+    <path id="fill" d="M19.676,22.079v-3.755c0-2.388,1.936-4.324,4.324-4.324s4.306,1.921,4.322,4.297l-8.646,3.783ZM19.676,26.461v2.674h8.649v-6.458l-8.649,3.784Z" fill="#fff"/>
+    <path id="stroke" d="M24,34v-4.865M19.676,29.135h8.649v-10.811c0-2.388-1.936-4.324-4.324-4.324s-4.324,1.936-4.324,4.324v10.811M19.676,22.108l8.649-3.784-8.649,3.784ZM19.676,26.432l8.649-3.784-8.649,3.784Z" fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

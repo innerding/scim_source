@@ -63,7 +63,7 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 | restaurant | Hois'n | 13.81153, 47.88083 | — | ✓ |
 | restaurant | Grünbergalm | 13.81890, 47.89847 | Sender | ✓ |
 | bar | Lounge | 13.80691, 47.91361 | Talstation | ✓ |
-| imbiss | Imbiss | 13.80841, 47.91540 | Badewiese Weyer | ≈ |
+| strand-buffet | Strand-Buffet | 13.80841, 47.91540 | Badewiese Weyer | ≈ |
 
 ### Regenerate_Water
 
@@ -116,7 +116,7 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 | Points | Points_others | sender |
 | Squares | Square_Rest | aussichtspunkt · aussichtspunkt+ · rastplatz · unterstand |
 | Squares | Square_Move | spielplatz · sommerrodeln · wipfelpfad · paragleiten-start · klettergarten · bogen-parcour · aussichtsturm |
-| Regenerate | Regenerate_Substanze | gasthaus · restaurant · imbiss · bar |
+| Regenerate | Regenerate_Substanze | gasthaus · restaurant · strand-buffet · bar |
 | Regenerate | Regenerate_Water | gewaesser · freibad |
 | Transport | Transport_Vehicle | talstation · bergstation · schiffsanlegestelle · bahnstation · bergbahn |
 | Transport | Transport_Parking/(Charging) | parkplatz |
@@ -173,7 +173,7 @@ bergbahn *(Cluster-Icon)* · talstation Bergbahn · schiffsanlegestelle Grünber
 ### Badewiese Weyer *(5 POIs)*
 **Hover:** „Badewiese Weyer/Bahnstation"
 
-freibad Weyer *(Cluster-Icon)* · gewaesser Liegewiese · imbiss Imbiss · parkplatz Busse · bahnstation Schloss Weyer
+freibad Weyer *(Cluster-Icon)* · gewaesser Liegewiese · strand-buffet Strand-Buffet · parkplatz Busse · bahnstation Schloss Weyer
 
 ### Optional Laudachsee *(3 POIs, kein Cluster-Icon)*
 
