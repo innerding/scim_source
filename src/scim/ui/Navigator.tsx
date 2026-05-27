@@ -120,6 +120,7 @@ function faceFromActive(activeId: string, activeTab?: TabId): RepresentBuildFace
 function arcFromActive(activeId: string, activeTab?: TabId): RepresentBuildArc | undefined {
   // P02 input == klassische Regio-Content-Eingabe
   if (activeId === 'P02' && activeTab === 'input') return 'regio_content';
+  if (activeId === 'P01') return 'system_adjust';
   return undefined;
 }
 
