@@ -85,7 +85,7 @@ const FACES: Array<{
   {
     id: 'catalog_magazination',
     shortLabel: 'cat',
-    longLabel: 'Catalog Magazination',
+    longLabel: 'POI Magazin',
     points: `${-S / 2},${-H / 3} 0,${2 * H / 3} ${-S},${2 * H / 3}`,
     labelX: (-S / 2 + 0 + -S) / 3,
     labelY: (-H / 3 + 2 * H / 3 + 2 * H / 3) / 3,
@@ -116,8 +116,8 @@ const ARCS: Array<{
   // Top (-90°) → Bottom-Right (30°): zwischen Geometry und Inspection
   {
     id: 'regio_content',
-    shortLabel: 'thr',
-    longLabel: 'Regio Content (Threshold)',
+    shortLabel: 'rou',
+    longLabel: 'Route Thresholds',
     startDeg: -90,
     endDeg: 30,
     labelAngleDeg: -30,
@@ -134,8 +134,8 @@ const ARCS: Array<{
   // Bottom-Left (150°) → Top (270°): zwischen Catalog und Geometry
   {
     id: 'system_adjust',
-    shortLabel: 'adj',
-    longLabel: 'System Adjust',
+    shortLabel: 'sys',
+    longLabel: 'System Thresholds',
     startDeg: 150,
     endDeg: 270,
     labelAngleDeg: 210,

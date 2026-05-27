@@ -4,6 +4,8 @@ import {
   RUNTIME_BUILDER_REGISTRY, VERSIONEN_REGISTRY, WORKSPACE_DESCRIPTOR,
   GEOMETRY_EDITOR_DESCRIPTOR, CATALOG_DESCRIPTOR,
 } from './panelRegistry';
+import logoBase from '../../assets/logo-base.svg';
+import logoHex from '../../assets/logo-hex.svg';
 import { useRole } from './RoleContext';
 import RepresentBuildTetrahedron from './RepresentBuildTetrahedron';
 import type { RepresentBuildFace, RepresentBuildArc } from './RepresentBuildTetrahedron';
@@ -138,27 +140,30 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
       overflowY: 'auto',
       padding: '12px 6px 12px',
     }}>
-      {/* Logo — nur der Hex, zentriert, gross. Pulsiert sanft. */}
+      {/* Logo-Komposition — Iconset bleibt, Wordmark ist aus SVG entfernt.
+          Hex-Layer pulsiert sanft. Aspect ratio 182.625 × 51.122. */}
       <div style={{
-        display: 'flex', justifyContent: 'center', alignItems: 'center',
-        marginTop: 4, marginBottom: 6, flexShrink: 0,
+        position: 'relative',
+        width: '100%',
+        height: Math.round((210 - 12) / (182.625 / 51.122)),
+        marginBottom: 6, flexShrink: 0,
       }}>
-        <svg
-          viewBox="42 17 22 27"
-          width={90}
-          height={90}
-          aria-label="SCIM3"
-          style={{ animation: 'nav-hex-pulse 3200ms 2000ms ease-in-out infinite' }}
-        >
-          <path
-            d="M62.156,23.896l-8.357-4.752c-.518-.295-1.16-.291-1.677.011l-8.297,4.864c-.516.303-.834.86-.83,1.455l.063,9.615c.004.599.33,1.153.85,1.446l8.357,4.752c.256.146.542.219.828.219.293,0,.587-.077.849-.229l8.296-4.865c.516-.302.834-.859.83-1.454l-.063-9.615c-.004-.598-.33-1.152-.85-1.446ZM48.583,33.158l-2.814,1.653c-.056.033-.117.048-.177.048-.12,0-.237-.062-.303-.173-.098-.166-.042-.381.125-.479l2.814-1.653c.167-.099.382-.042.48.125.098.166.042.381-.125.479ZM53.023,25.429h-.002c-.193,0-.349-.155-.35-.348l-.022-3.263c-.001-.194.155-.352.348-.353.206-.009.351.154.353.348l.022,3.263c.001.193-.155.352-.348.353ZM60.878,34.745c-.065.113-.183.177-.305.177-.058,0-.118-.015-.172-.046l-2.837-1.612c-.168-.096-.227-.309-.132-.478.096-.167.31-.227.478-.131l2.837,1.612c.168.096.227.309.132.478Z"
-            fill="#fff"
-            opacity="0.85"
-          />
-        </svg>
+        <img
+          src={logoBase}
+          alt="SCIM3"
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
+        />
+        <img
+          src={logoHex}
+          alt=""
+          style={{
+            position: 'absolute', inset: 0, width: '100%', height: '100%',
+            animation: 'nav-hex-pulse 3200ms 2000ms ease-in-out infinite',
+          }}
+        />
         <style>{`
           @keyframes nav-hex-pulse {
-            0%, 100% { opacity: 0.85; }
+            0%, 100% { opacity: 0.75; }
             50%       { opacity: 1; }
           }
         `}</style>
