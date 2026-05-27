@@ -12,6 +12,7 @@ import type { RepresentBuildFace } from './RepresentBuildTetrahedron';
 interface Props {
   result: ScimPipelineResult;
   onNavigate?: (face: RepresentBuildFace) => void;
+  onCollapseToggle?: () => void;
 }
 
 const POI_LOAD_COLORS: Record<string, string> = {
@@ -34,7 +35,7 @@ const DEFAULT_VISIBILITY: LayerVisibility = {
   pois: true,
 };
 
-export default function ScimMap({ result, onNavigate }: Props) {
+export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const layerGroupRef = useRef<L.LayerGroup | null>(null);
@@ -173,7 +174,7 @@ export default function ScimMap({ result, onNavigate }: Props) {
         width: '100%', height: '100%', display: 'flex', flexDirection: 'column',
         background: '#1a1a1a', color: '#ff4136', fontFamily: 'monospace', fontSize: 13,
       }}>
-        <Header label="Pipeline-Kontrolle" detail="Fehler" vis={vis} setVis={setVis} onNavigate={onNavigate} disabled />
+        <Header label="Pipeline-Kontrolle" detail="Fehler" vis={vis} setVis={setVis} onNavigate={onNavigate} onCollapseToggle={onCollapseToggle} disabled />
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           Pipeline failed at: {result.failed_at_step ?? 'unknown'}
         </div>
@@ -194,20 +195,21 @@ export default function ScimMap({ result, onNavigate }: Props) {
 
   return (
     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Header label="Pipeline-Kontrolle" detail={detail} vis={vis} setVis={setVis} onNavigate={onNavigate} />
+      <Header label="Pipeline-Kontrolle" detail={detail} vis={vis} setVis={setVis} onNavigate={onNavigate} onCollapseToggle={onCollapseToggle} />
       <div ref={containerRef} style={{ flex: 1, minHeight: 0 }} />
     </div>
   );
 }
 
 function Header({
-  label, detail, vis, setVis, onNavigate, disabled,
+  label, detail, vis, setVis, onNavigate, onCollapseToggle, disabled,
 }: {
   label: string;
   detail: string;
   vis: LayerVisibility;
   setVis: (v: LayerVisibility) => void;
   onNavigate?: (face: RepresentBuildFace) => void;
+  onCollapseToggle?: () => void;
   disabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
@@ -219,9 +221,8 @@ function Header({
       fontFamily: 'system-ui, sans-serif',
       display: 'flex', alignItems: 'center', gap: 8,
     }}>
-      <div style={{ flexShrink: 0 }} title="Represent Build · Seite 3 · Represent Inspection">
+      <div style={{ flexShrink: 0 }} title="Inspector — Sicht auf die laufende Repraesentation">
         <RepresentBuildTetrahedron
-          activeFace="represent_inspection"
           variant="dark"
           onFaceClick={onNavigate}
           size={38}
@@ -244,6 +245,17 @@ function Header({
       >
         Layer ▾
       </button>
+      {onCollapseToggle && (
+        <button
+          onClick={onCollapseToggle}
+          title="Inspector ausblenden"
+          style={{
+            fontSize: 12, padding: '0 8px', cursor: 'pointer', height: 22,
+            border: '1px solid #2d4a6a', background: 'transparent',
+            color: '#a0aec0', borderRadius: 3,
+          }}
+        >▶</button>
+      )}
       {open && (
         <div style={{
           position: 'absolute', top: '100%', right: 6, zIndex: 1000,

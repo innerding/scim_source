@@ -1439,10 +1439,12 @@ export default function CatalogTab({ onJumpTo }: { onJumpTo?: (panelId: string) 
               onFaceClick={(f) => {
                 if (f === 'geometry_draw') onJumpTo('geometry_editor');
                 else if (f === 'represent_organisation') onJumpTo('workspace');
+                else if (f === 'sensus_core_build') onJumpTo('P11');
               }}
               onArcClick={(a) => {
                 if (a === 'system_adjust') onJumpTo('P01');
                 else if (a === 'regio_content') onJumpTo('P02');
+                else if (a === 'load_thresholds') onJumpTo('P09');
               }}
             />
           </div>

@@ -264,10 +264,12 @@ export default function GeometryEditorPanel({ onJumpTo }: Props) {
     if (f === 'geometry_draw') onJumpTo('geometry_editor');
     else if (f === 'catalog_magazination') onJumpTo('catalog');
     else if (f === 'represent_organisation') onJumpTo('workspace');
+    else if (f === 'sensus_core_build') onJumpTo('P11');
   };
   const onTetraArc = (a: string) => {
     if (a === 'system_adjust') onJumpTo('P01');
     else if (a === 'regio_content') onJumpTo('P02');
+    else if (a === 'load_thresholds') onJumpTo('P09');
   };
 
   return (

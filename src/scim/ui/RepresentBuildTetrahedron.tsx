@@ -18,20 +18,19 @@
 export type RepresentBuildFace =
   | 'geometry_draw'
   | 'catalog_magazination'
-  | 'represent_inspection'
+  | 'sensus_core_build'
   | 'represent_organisation';
 
 export type RepresentBuildArc =
   | 'system_adjust'
   | 'regio_content'
-  | 'manual';
+  | 'load_thresholds';
 
 interface Props {
   activeFace?: RepresentBuildFace;     // hervorgehobene Triangle (optional)
   activeArc?: RepresentBuildArc;       // hervorgehobenes Bogen-Segment (optional)
   onFaceClick?: (face: RepresentBuildFace) => void;
   onArcClick?: (arc: RepresentBuildArc) => void;
-  onInspectorToggle?: () => void;
   size?: number;
   variant?: 'dark' | 'light';
   showLabels?: boolean;
@@ -66,10 +65,11 @@ const FACES: Array<{
   labelY: number;
 }> = [
   // labelX/Y = geometrischer Schwerpunkt = (p1+p2+p3)/3
+  // Top-Position: scb (Sensus Core Build) — feuert ueber den Apex zum Mond.
   {
-    id: 'geometry_draw',
-    shortLabel: 'geo',
-    longLabel: 'Geometry Draw',
+    id: 'sensus_core_build',
+    shortLabel: 'scb',
+    longLabel: 'Sensus Core Build',
     points: `${-S / 2},${-H / 3} ${S / 2},${-H / 3} 0,${-R}`,
     labelX: 0,
     labelY: (-H / 3 + -H / 3 + -R) / 3,
@@ -91,9 +91,9 @@ const FACES: Array<{
     labelY: (-H / 3 + 2 * H / 3 + 2 * H / 3) / 3,
   },
   {
-    id: 'represent_inspection',
-    shortLabel: 'ins',
-    longLabel: 'Represent Inspection',
+    id: 'geometry_draw',
+    shortLabel: 'geo',
+    longLabel: 'Geometry Draw',
     points: `${S / 2},${-H / 3} 0,${2 * H / 3} ${S},${2 * H / 3}`,
     labelX: (S / 2 + 0 + S) / 3,
     labelY: (-H / 3 + 2 * H / 3 + 2 * H / 3) / 3,
@@ -122,11 +122,11 @@ const ARCS: Array<{
     endDeg: 30,
     labelAngleDeg: -30,
   },
-  // Bottom-Right (30°) → Bottom-Left (150°): zwischen Inspection und Catalog
+  // Bottom-Right (30°) → Bottom-Left (150°): dritte Schwellen-Sphere
   {
-    id: 'manual',
-    shortLabel: 'man',
-    longLabel: 'Manual',
+    id: 'load_thresholds',
+    shortLabel: 'loa',
+    longLabel: 'Load Thresholds',
     startDeg: 30,
     endDeg: 150,
     labelAngleDeg: 90,
@@ -174,7 +174,6 @@ export default function RepresentBuildTetrahedron({
   activeArc,
   onFaceClick,
   onArcClick,
-  onInspectorToggle,
   size = 100,
   variant = 'dark',
   showLabels = false,
@@ -254,22 +253,16 @@ export default function RepresentBuildTetrahedron({
       {/* Triangles */}
       {FACES.map((f) => {
         const isActive = f.id === activeFace;
-        const isInspector = f.id === 'represent_inspection';
         const fill = isActive ? triangleActiveFill : 'transparent';
         const stroke = isActive ? triangleActiveStroke : triangleInactiveStroke;
         const strokeWidth = isActive ? 1.6 : 1;
         const opacity = isActive ? 1 : 0.85;
-        const clickable = !isActive && (
-          isInspector ? !!onInspectorToggle : !!onFaceClick
-        );
-        const onClick = isInspector
-          ? onInspectorToggle
-          : (onFaceClick ? () => onFaceClick(f.id) : undefined);
+        const clickable = !isActive && !!onFaceClick;
         return (
           <g
             key={f.id}
             style={{ cursor: clickable ? 'pointer' : 'default' }}
-            onClick={clickable ? onClick : undefined}
+            onClick={clickable && onFaceClick ? () => onFaceClick(f.id) : undefined}
           >
             <polygon
               points={f.points}
@@ -280,7 +273,7 @@ export default function RepresentBuildTetrahedron({
               opacity={opacity}
               className={isActive ? 'rb-active-tile' : undefined}
             >
-              <title>{f.longLabel}{isInspector ? ' (Inspector-Toggle)' : ''}</title>
+              <title>{f.longLabel}</title>
             </polygon>
             {showLabels && (
               <text

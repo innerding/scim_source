@@ -16,8 +16,6 @@ interface Props {
   activeTab?: TabId;
   onSelect: (id: string) => void;
   onGoTo?: (id: string, tab?: TabId) => void;
-  onInspectorToggle?: () => void;
-  onManualOpen?: () => void;
   panelStatus?: Record<string, StatusColor>;
 }
 
@@ -114,17 +112,19 @@ function faceFromActive(activeId: string): RepresentBuildFace | undefined {
   if (activeId === 'geometry_editor') return 'geometry_draw';
   if (activeId === 'catalog') return 'catalog_magazination';
   if (activeId === 'workspace') return 'represent_organisation';
+  if (activeId === 'P11') return 'sensus_core_build';
   return undefined;
 }
 
-// Arc-Highlight: 'thr' = Regio-Content (P02 jedweder Tab), 'adj' = System-Adjust (P01).
+// Arc-Highlight: sys = P01, rou = P02, loa = P09 (Engine, wo Load lebt).
 function arcFromActive(activeId: string): RepresentBuildArc | undefined {
   if (activeId === 'P02') return 'regio_content';
   if (activeId === 'P01') return 'system_adjust';
+  if (activeId === 'P09') return 'load_thresholds';
   return undefined;
 }
 
-export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggle, onManualOpen, panelStatus = {} }: Props) {
+export default function Navigator({ activeId, onSelect, onGoTo, panelStatus = {} }: Props) {
   const go = onGoTo ?? ((id: string) => onSelect(id));
   const pipelineGroups = [1, 2, 3, 4] as const;
   const role = useRole();
@@ -189,13 +189,13 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
             if (f === 'geometry_draw') go('geometry_editor');
             else if (f === 'catalog_magazination') go('catalog');
             else if (f === 'represent_organisation') go('workspace');
+            else if (f === 'sensus_core_build') go('P11');
           }}
           onArcClick={(a) => {
             if (a === 'system_adjust') go('P01');
             else if (a === 'regio_content') go('P02', 'input');
-            else if (a === 'manual') onManualOpen?.();
+            else if (a === 'load_thresholds') go('P09');
           }}
-          onInspectorToggle={onInspectorToggle}
         />
         <div style={{
           fontSize: 9, color: '#4a6a8a', textTransform: 'uppercase',
