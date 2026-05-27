@@ -140,31 +140,35 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
       overflowY: 'auto',
       padding: '12px 6px 12px',
     }}>
-      {/* Nacktes Logo — Iconset alleine. Auf Iconset-Bounds beschnitten,
-          waechst nach rechts/unten bis Gap dem linken Padding-Rand entspricht.
-          Hex-Layer pulsiert sanft. Aspect ratio 107.5 × 51.122. */}
+      {/* Nacktes Logo — Iconset alleine, beschnitten auf 107.5 x 51.122.
+          Wrapper zentriert die 0.88-skalierte Box links/rechts.
+          Hex-Layer pulsiert; Dim-Wert um 50% tiefer als zuvor. */}
       <div style={{
-        position: 'relative',
-        width: '100%',
-        height: Math.round((210 - 12) / (107.5 / 51.122)),
+        display: 'flex', justifyContent: 'center',
         marginBottom: 6, flexShrink: 0,
       }}>
-        <img
-          src={logoBaseNaked}
-          alt="SCIM3"
-          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
-        />
-        <img
-          src={logoHexNaked}
-          alt=""
-          style={{
-            position: 'absolute', inset: 0, width: '100%', height: '100%',
-            animation: 'nav-hex-pulse 3200ms 2000ms ease-in-out infinite',
-          }}
-        />
+        <div style={{
+          position: 'relative',
+          width: `${Math.round(0.88 * 100)}%`,                          // f0.88
+          height: Math.round(0.88 * (210 - 12) / (107.5 / 51.122)),     // proportional mit f0.88
+        }}>
+          <img
+            src={logoBaseNaked}
+            alt="SCIM3"
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
+          />
+          <img
+            src={logoHexNaked}
+            alt=""
+            style={{
+              position: 'absolute', inset: 0, width: '100%', height: '100%',
+              animation: 'nav-hex-pulse 3200ms 2000ms ease-in-out infinite',
+            }}
+          />
+        </div>
         <style>{`
           @keyframes nav-hex-pulse {
-            0%, 100% { opacity: 0.75; }
+            0%, 100% { opacity: 0.625; }
             50%       { opacity: 1; }
           }
         `}</style>
@@ -179,7 +183,7 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
           activeFace={faceFromActive(activeId)}
           activeArc={arcFromActive(activeId)}
           variant="dark"
-          size={153}
+          size={171}
           showLabels
           onFaceClick={(f) => {
             if (f === 'geometry_draw') go('geometry_editor');
