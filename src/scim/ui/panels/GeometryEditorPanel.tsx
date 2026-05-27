@@ -275,7 +275,11 @@ export default function GeometryEditorPanel() {
 
   const proposedFileName = (
     geometryId === 'new'
-      ? (name || 'unbenannt').toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '')
+      ? (name || 'unbenannt')
+          .toLowerCase()
+          .replace(/[äöüß]/g, (c) => ({ ä: 'ae', ö: 'oe', ü: 'ue', ß: 'ss' }[c] ?? c))
+          .replace(/[^a-z0-9-]+/g, '-')
+          .replace(/^-+|-+$/g, '')
       : geometryId
   ) + '.json';
 
