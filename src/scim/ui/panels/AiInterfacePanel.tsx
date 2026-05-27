@@ -855,6 +855,186 @@ Stand der Pipeline: ann_045 (Status nach Phase A-D), ergaenzt um diese ann_050. 
 Codebasis liegt unter ~/SCIM3ClaudeMax/scim_source. Deploy bei jedem Push auf main automatisch (ann_039). Plan-md fuer Gruenberg in data/grunberg_pois_plan.md (6-spaltig nach MVP-Abschluss). Icon-Bibliothek in data/icons (26 Dateien, Dual-Naming-Konvention). Glyphs (Ziffern + Einheiten + Sterne + Operatoren + Frame) in data/glyphs.`,
     date: '2026-05-26',
   },
+
+  // ── Session 2026-05-27: Tetraeder-Kosmologie + UX-Spec ─────────────────────
+  // Ausfuehrliche Doku im Repo:
+  //   docs/represent_build.md  ("Kosmologie-Update Mai 2026")
+  //   docs/runtime_mvp.md      (Ziel-App UX-Flow)
+  //   HANDOVER.md              (Session-Status, Roadmap)
+
+  {
+    id: 'ann_051',
+    category: 'vocabulary',
+    label: 'Tetraeder als zentraler Dienstleister',
+    content: `Der Tetraeder im Navigator ist nicht ein zusaetzliches Pipeline-Element, sondern die zentrale Bedienstelle, ueber die alle Bausteine einer Repraesentation erreichbar sind. Er bedient die existierenden Pipeline-Panels ueber Convenience-Bruecken:
+
+- 4 Faces (Triangles, Bausteine einer R):
+  scb (Top, Apex) -> P11  Sensus Core Build
+  org (Center)    -> Workspace
+  cat (Bot-Left)  -> Katalog
+  geo (Bot-Right) -> Geometry-Editor
+
+- 3 Spheres (Boegen, Schwellen-Trilogie):
+  sys -> P01  System Thresholds
+  rou -> P02  Route Thresholds (heute; spaeter P10)
+  loa -> P09  Load Thresholds
+
+Die Spheres heissen Threshold-Schwellen-Trilogie, weil System (Boundary-Parameter), Route (Scoring-Cutoffs) und Load (POI-Auslastungs-Klassifikation) drei verschiedene Schwellen-Ebenen sind, die einer R Gestalt geben. Manual ist aus den Spheres entfernt und sitzt als File-Glyph (mit Reader-Glyph spiegelbildlich) zwischen Mond und Tetraeder.
+
+Authoritative Vertiefung: docs/represent_build.md, Abschnitt "Kosmologie-Update Mai 2026".`,
+    date: '2026-05-27',
+  },
+
+  {
+    id: 'ann_052',
+    category: 'vocabulary',
+    label: 'Kosmologie der Werkbank: Mond, Hex, Atem, Empty Sea',
+    content: `Die SCIM-Werkbank ist als kosmologisches Bild mit drei vertikalen Schichten organisiert:
+
+OBEN:    Mond     = App-Shell + Engine + R-Bibliothek
+                    (im SVG das nackte SCIM3-Logo; Auswuechse = die einzelnen R's;
+                    Hex im Zentrum = die eine geteilte Engine)
+MITTE:   Tetraeder = lokale Composition einer R im Bau
+                    (Apex zeigt nach oben Richtung Mond - dort feuert scb)
+UNTEN:   Empty Sea = der dunkle Hintergrund. Darunter liegen Pipeline (P03-P14)
+                    und noch tiefer die Operator-Dimension.
+
+Schluesselbilder:
+
+- Atem: Der Hex-Layer pulsiert im 3.2-Sekunden-Takt (Dim 0.625 bis 1.0). Das ist nicht Dekoration - das ist Load, das durch die Engine stroemt. Wenn das Bild jemand erklaert: "Der Hex atmet, weil die Engine atmet, weil Load durch sie stroemt."
+
+- Sicheln: Die drei sichelfoermigen Raeume zwischen aeusseren Triangles und den darueberliegenden Boegen sind kosmologisch reserviert als Beobachtungs-Fenster in den Prozess. Heute leer, vorbereitet.
+
+- Inspector als Firmament: Das Pergament-Trapez ueber dem Mond ist die alles-sehende Sicht-Decke. Konzeptionell, kein eigener Baustein. Funktional toggelt der Klick die ScimMap rechts ein/aus.
+
+- Manual + Reader: Datei-Glyph (stumm) links zwischen Mond und Tetraeder, Reader-Glyph (klickbar) rechts spiegelbildlich. Die einzige bewusste Asymmetrie - der Leser erzeugt die Symmetrie durch den Akt des Lesens.`,
+    date: '2026-05-27',
+  },
+
+  {
+    id: 'ann_053',
+    category: 'vocabulary',
+    label: 'R-Lifecycle: Tetraeder-Form ↔ Sphere-Form',
+    content: `Eine Representation (R) hat zwei visuelle Aggregatzustaende:
+
+- Tetraeder-Form: roh komponiert, deployed aber noch nicht gelebt
+                  (gerade entstandener Auswuchs am Mond)
+- Sphere-Form:    mit Colourmesh umhuellt, die Engine hat sie geatmet, sie ist live
+                  (gereifter Auswuchs am Mond, rund)
+
+Der Strahl vom Apex zum Mond ist die Kausalitaet zwischen lokaler Composition und globaler Bibliothek. Zweimodig:
+
+- (a) Erstmaliger Deploy: Strahl traegt das fertige Bundle hoch -> ein neuer Mond-Tetraeder entsteht.
+- (b) Re-Deploy / Engine-Atmung: Strahl feuert Colourmesh-Pulse -> Mond-Tetraeder werden umhuellt, reifen zur Sphere.
+
+In der Spaetversion (siehe Vision in docs) koennen sich die Sphaeren-Boegen am Tetraeder beim Feuern drehen und geben einen Spalt frei. Heute nur konzeptionell.`,
+    date: '2026-05-27',
+  },
+
+  {
+    id: 'ann_054',
+    category: 'adr',
+    label: 'Lineare Pipeline wird durch Kosmologie 3D-dimensional',
+    content: `Beobachtung aus der Session 2026-05-27:
+
+Die Pipeline (P01-P14) ist deterministisch, sequenziell, linear. Sie produziert ein Sensus-Core-Package fuer genau eine Analyse. Das ist ihre Staerke - aber auch ihre erzaehlerische Grenze. Lineare Strukturen erklaeren sich schwer, wachsen schwer organisch, lassen mehrere parallele Inkarnationen nur muehsam zu.
+
+Mit der Tetraeder-Kosmologie wird derselbe Code-Raum auf eine andere Weise sichtbar gemacht: Statt einer langen Kette gibt es einen zentralen Dienstleister (Tetraeder), der gleichzeitig auf verschiedene Punkte der Pipeline zugreift; statt einer Maschine gibt es einen Mond mit Auswuechsen (die verschiedenen R's), die alle dieselbe Engine teilen.
+
+Dadurch wird die Pipeline in der mentalen Darstellung 3D-dimensional:
+- Die Pipeline selbst bleibt als Unterwasser-Schicht erhalten.
+- Der Tetraeder hebt drei Pipeline-Bausteine als Schwellen heraus (P01, P02, P09).
+- Der scb-Apex feuert ins Package-Output (P11).
+- Verschiedene R's koennen denselben Pipeline-Code auf unterschiedliche Konfigurationen anwenden, ohne den Code zu duplizieren - die R-Auswahl bestimmt die Inputs.
+
+Welche Vorteile diese 3D-Sicht bringt, ist noch nicht final bewiesen. Vermutungen (siehe ann_057):
+- Erklaerbarkeit ueber Bilder statt ueber Diagramme
+- Mehrere parallele R's ohne Code-Duplikation
+- Wachstum als Organismus / Kosmos statt als verzweigte If-Else-Pipeline
+
+Konsequenz fuer den Code: keine. Die Kosmologie sitzt als Schicht ueber der Pipeline, beruehrt sie nicht (siehe ann_055).`,
+    date: '2026-05-27',
+  },
+
+  {
+    id: 'ann_055',
+    category: 'adr',
+    label: 'Kompromisslosigkeit: Pipeline unangetastet, Tetraeder als Schicht darueber',
+    content: `Methoden-Prinzip dieser Session (nicht verhandelbar):
+
+1. Die Pipeline (P01-P14) wurde durch keine kosmologische Aenderung beruehrt. useScimPipeline.ts ist unveraendert. Pipeline-Panel-Logik ist unveraendert. Daten-Schemas sind unveraendert.
+
+2. Die Click-Targets der Tetraeder-Spheres (sys -> P01, rou -> P02, loa -> P09, scb -> P11) sind Convenience-Bruecken zu existierenden Panels, kein Endzustand. Sie werden langfristig durch echte Threshold-Editoren ersetzt, die die jeweiligen Werte direkt editieren (und die Pipeline-Panels lesen die dann aus separaten JSON-Files). Bis dahin ist die Bruecke ehrlicherweise eine UX-Hilfe, kein architektonischer Anspruch.
+
+3. Wenn etwas in der UI nicht klar ausdrueckbar ist, dann wird eher das Label geschaerft als der Datenpfad gekruemmt. Beispiel: 'Route Thresholds' fuehrt heute noch zu P02 RegioContent (semantisch inkonsistent), aber das Label ist gewollt-richtig fuer die finale Architektur. Wir leben mit der temporaeren Inkonsistenz, um nicht eine schlechtere Loesung permanent zu machen.
+
+4. Umbauten gehoeren geplant. Diese Session hat 12+ Commits produziert, jeder einzeln rueckrollbar, jeder mit klarem Scope.
+
+5. Git ist Review-Mechanismus. Der Browser kann nicht ins Repo schreiben. Mehr-Personen-Approval kommt - wenn ueberhaupt - ueber Cloudflare-Worker + GitHub-API (eigene Bauphase, nicht heute).
+
+Verweis: docs/represent_build.md, Abschnitt "Architekturregeln".`,
+    date: '2026-05-27',
+  },
+
+  {
+    id: 'ann_056',
+    category: 'invariant',
+    label: 'Tetraeder darf die Pipeline nie mutieren',
+    content: `Hartgezogene Linie: Der Tetraeder, die Kosmologie, der Inspector, der Mond, alle Visualisierungen - sie duerfen die Pipeline-Daten und -Logik nicht aendern. Nur lesend zugreifen. Nur navigieren.
+
+Wenn ein zukuenftiger Code-Pfad die Pipeline aus dem Tetraeder heraus modifizieren wollte, ist das ein Architektur-Fehler. Pipeline-Modifikation passiert ausschliesslich ueber die Panel-Editoren (P01 input form, P02 input form, etc.) und ueber Repo-Dateien (data/geometries, data/representations).
+
+Die Pipeline ist die Maschine. Der Tetraeder ist die Werkbank vor der Maschine. Wer an der Werkbank etwas einstellt, geht zur Maschine und stellt es dort ein - nicht umgekehrt.
+
+Diese Invariante schuetzt die Pipeline davor, durch UI-Convenience kompromittiert zu werden.`,
+    date: '2026-05-27',
+  },
+
+  {
+    id: 'ann_057',
+    category: 'business_context',
+    label: 'Erwartung an die kosmologische SCIM',
+    content: `Was wir uns von der kosmologischen Darstellung des SCIM erhoffen (Vermutungen, nicht Beweise):
+
+1. Bessere Erklaerbarkeit. Wer SCIM heute begreifen soll, kaempft sich durch 14 Pipeline-Panels mit kryptischen Namen (P01 SystemAdjust, P09 Engine 4 Modelle, etc.). Die Kosmologie liefert Bilder: Mond, Tetraeder, Atem, Apex, Strahl, Sicheln. Bilder erinnert man, Diagramme lernt man neu.
+
+2. Modell als wachsender Organismus / Kosmos. Eine lineare Pipeline waechst durch Anbau (mehr Panels) oder Verzweigung (if-else-Pfade). Eine kosmische Struktur waechst durch neue Sphaeren um denselben Kern - jede R ist ein eigener Auswuchs am Mond, ohne dass die Engine im Hex sich aendert.
+
+3. Mehrere R's teilen sich eine Engine. Wie Planeten um einen Stern. Das macht das Hinzufuegen einer neuen Region (Boehmerwald, Salzkammergut, Magnum) zu einem Vorgang am Mond, nicht zu einem Pipeline-Eingriff.
+
+4. Geringerer kognitiver Aufwand beim Einarbeiten neuer Mitwirkender. Wer das Bild "Mond mit Auswuechsen, die alle den Hex teilen" gesehen hat, hat 70 Prozent der Architektur verinnerlicht, bevor er eine Code-Zeile gelesen hat.
+
+5. Roboustness gegen Schiefes. Schiefe Compromisse (Pipeline-Hacks, UI-Quick-Fixes) brechen das kosmische Bild sofort. Das macht es leichter, sie zu erkennen und zu verweigern.
+
+Diese Liste ist eine Wette, kein Beweis. Wir behalten uns vor, die Hypothesen zu pruefen, sobald die kosmologische SCIM mehrere Benutzer trifft.`,
+    date: '2026-05-27',
+  },
+
+  {
+    id: 'ann_058',
+    category: 'next_intent',
+    label: 'R-Konsument bauen — bis dahin ist Representation Manifest-only',
+    content: `Heute, Stand 2026-05-27: Eine data/representations/*.json-Datei ist ein Manifest ohne Konsument. Sie wird in der Workspace-Liste angezeigt - aber von Map, Pipeline, Mesh nicht gelesen. Eine Versprechungs-Datei.
+
+Vier kleine Code-Stuecke heben sie auf "wirksam":
+
+(1) public/_redirects fuer Cloudflare-SPA-Fallback. Damit /<region>/<r-name> nicht zu 404 wird, sondern an die SPA geht.
+(2) URL-Parser: liest location.pathname, matched gegen die Representation-Registry, setzt eine active R.
+(3) RepresentationContext (React-Context): haelt die active R global, Komponenten abonnieren.
+(4) ScimMap reagiert auf active R: fittet auf rep.geometry-Bounds, holt OSM-Wege fuer diese bbox, laedt POIs aus rep.catalog_id.
+
+Mit diesen vier Stuecken hat scim3.diesenpark.com/boehmerwald/lichtenberg endlich echte Wirkung: Karte fokussiert Lichtenberg, Mesh laeuft auf dessen OSM-Daten, POIs aus dem Lichtenberger Katalog.
+
+Das ist der klar abgegrenzte naechste Schritt. Kein Architektur-Risiko, kein Pipeline-Bruch. Ein Commit pro Stueck waere vernuenftig.
+
+Anschliessend faellt der MVP-UX-Flow (docs/runtime_mvp.md) zur Verfuegung: POI-Tap -> Wishlist -> Route durch Mesh -> Guidance. Plus Bonus BAK-Movement ("out of your comfort" + Alternative-Route bei Time-Switcher-Last-Spitze).
+
+Referenzen:
+- HANDOVER.md "Was offen ist" Punkt 1
+- docs/represent_build.md "Roadmap" Punkt 1
+- docs/runtime_mvp.md "Stufenplan" Stufen 1+2`,
+    date: '2026-05-27',
+  },
 ];
 
 function AnnotationsTab() {
