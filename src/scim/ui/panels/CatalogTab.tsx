@@ -1311,10 +1311,13 @@ export default function CatalogTab() {
 
   const merged = useMemo(() => mergeEdits(baseCatalog, editState), [baseCatalog, editState]);
 
-  // POIs pro Subkategorie in Container-System-Reihenfolge
+  // POIs pro Subkategorie in Container-System-Reihenfolge.
+  // _isDeleted POIs werden ausgeblendet — sie sind im Aenderungs-Popover sichtbar
+  // und dort wiederherstellbar.
   const sections = useMemo(() => {
     const map = new Map<Subcategory, MergedPoi[]>();
     for (const p of merged.pois) {
+      if (p._isDeleted) continue;
       const list = map.get(p.subcategory) ?? [];
       list.push(p);
       map.set(p.subcategory, list);
