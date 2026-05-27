@@ -211,7 +211,7 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
               primary={g.name}
               badge={g.id}
               secondary={`Polygon mit ${g.polygon.length} Punkten${g.region ? ` · ${g.region}` : ''}${g.drawn_at ? ` · gezeichnet ${g.drawn_at}` : ''}`}
-              action={{ label: 'In P01 ansehen', onClick: () => onJumpTo('P01') }}
+              action={{ label: 'Im Editor öffnen', onClick: () => onJumpTo('geometry_editor') }}
             />
           ))
         )}

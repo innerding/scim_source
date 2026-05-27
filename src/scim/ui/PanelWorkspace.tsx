@@ -3,6 +3,7 @@ import type { TabId } from './panelRegistry';
 import {
   PANEL_REGISTRY, SYSTEM_DESCRIPTOR, AI_INTERFACE_DESCRIPTOR,
   RUNTIME_BUILDER_REGISTRY, VERSIONEN_REGISTRY, WORKSPACE_DESCRIPTOR,
+  GEOMETRY_EDITOR_DESCRIPTOR,
 } from './panelRegistry';
 import type { ScimPipelineResult } from '../pipeline/scimPipeline.types';
 
@@ -19,6 +20,7 @@ import V01PackagesPanel from './panels/V01PackagesPanel';
 import V02RegionDetailPanel from './panels/V02RegionDetailPanel';
 import V03ActiveMonitorPanel from './panels/V03ActiveMonitorPanel';
 import WorkspacePanel from './panels/WorkspacePanel';
+import GeometryEditorPanel from './panels/GeometryEditorPanel';
 
 interface Props {
   activeId: string;
@@ -122,6 +124,9 @@ function PanelContent({ activeId, activeTab, result, onJumpTo }: {
   if (activeId === WORKSPACE_DESCRIPTOR.id) {
     return <WorkspacePanel onJumpTo={onJumpTo ?? (() => {})} />;
   }
+  if (activeId === GEOMETRY_EDITOR_DESCRIPTOR.id) {
+    return <GeometryEditorPanel />;
+  }
   if (activeId === SYSTEM_DESCRIPTOR.id) {
     return <SystemPanel activeTab={activeTab} result={result} />;
   }
@@ -167,8 +172,9 @@ export default function PanelWorkspace({ activeId, result, onJumpTo }: Props) {
 
   // Resolve tabs for the current entry
   const entry =
-    activeId === WORKSPACE_DESCRIPTOR.id    ? WORKSPACE_DESCRIPTOR :
-    activeId === SYSTEM_DESCRIPTOR.id       ? SYSTEM_DESCRIPTOR :
+    activeId === WORKSPACE_DESCRIPTOR.id        ? WORKSPACE_DESCRIPTOR :
+    activeId === GEOMETRY_EDITOR_DESCRIPTOR.id  ? GEOMETRY_EDITOR_DESCRIPTOR :
+    activeId === SYSTEM_DESCRIPTOR.id           ? SYSTEM_DESCRIPTOR :
     activeId === AI_INTERFACE_DESCRIPTOR.id ? AI_INTERFACE_DESCRIPTOR :
     RUNTIME_BUILDER_REGISTRY.find((m) => m.id === activeId) ??
     VERSIONEN_REGISTRY.find((v) => v.id === activeId) ??
@@ -201,9 +207,16 @@ export default function PanelWorkspace({ activeId, result, onJumpTo }: Props) {
     }}>
       <PanelHeader title={entry.label} subtitle={subtitle} />
       <TabBar tabs={tabs} active={activeTab} onSelect={setActiveTab} />
-      <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
-        <PanelContent activeId={activeId} activeTab={activeTab} result={result} onJumpTo={onJumpTo} />
-      </div>
+      {/* Geometry-Editor braucht volle Hoehe ohne Padding */}
+      {activeId === GEOMETRY_EDITOR_DESCRIPTOR.id ? (
+        <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+          <PanelContent activeId={activeId} activeTab={activeTab} result={result} onJumpTo={onJumpTo} />
+        </div>
+      ) : (
+        <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
+          <PanelContent activeId={activeId} activeTab={activeTab} result={result} onJumpTo={onJumpTo} />
+        </div>
+      )}
     </div>
   );
 }

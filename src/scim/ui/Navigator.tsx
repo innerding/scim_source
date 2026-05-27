@@ -2,6 +2,7 @@ import type { PanelDescriptor, StatusColor } from './panelRegistry';
 import {
   PANEL_REGISTRY, SYSTEM_DESCRIPTOR, AI_INTERFACE_DESCRIPTOR,
   RUNTIME_BUILDER_REGISTRY, VERSIONEN_REGISTRY, WORKSPACE_DESCRIPTOR,
+  GEOMETRY_EDITOR_DESCRIPTOR,
 } from './panelRegistry';
 import logoBase from '../../assets/logo-base.svg';
 import logoHex from '../../assets/logo-hex.svg';
@@ -152,6 +153,14 @@ export default function Navigator({ activeId, onSelect, panelStatus = {} }: Prop
         status="blue"
         isActive={activeId === WORKSPACE_DESCRIPTOR.id}
         onClick={() => onSelect(WORKSPACE_DESCRIPTOR.id)}
+      />
+      <NavItem
+        id={GEOMETRY_EDITOR_DESCRIPTOR.id}
+        icon={GEOMETRY_EDITOR_DESCRIPTOR.icon}
+        label={GEOMETRY_EDITOR_DESCRIPTOR.label}
+        status="blue"
+        isActive={activeId === GEOMETRY_EDITOR_DESCRIPTOR.id}
+        onClick={() => onSelect(GEOMETRY_EDITOR_DESCRIPTOR.id)}
       />
 
       {/* ── Package Pipeline ───────────────────────────────────────────────── */}

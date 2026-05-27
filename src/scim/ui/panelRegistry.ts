@@ -364,7 +364,7 @@ export const VERSIONEN_REGISTRY: VersionenDescriptor[] = [
 
 export interface WorkspaceDescriptor {
   kind: 'workspace';
-  id: 'workspace';
+  id: string;  // 'workspace' | 'geometry_editor' | ...
   label: string;
   icon: string;
   tabs: TabDescriptor[];
@@ -377,6 +377,18 @@ export const WORKSPACE_DESCRIPTOR: WorkspaceDescriptor = {
   icon: '⌂',
   tabs: [
     { id: 'input', label: 'Übersicht', icon: '⌂' },
+  ],
+};
+
+// ─── Geometry-Editor (Wave 2b) ─────────────────────────────────────────────
+
+export const GEOMETRY_EDITOR_DESCRIPTOR: WorkspaceDescriptor = {
+  kind: 'workspace',
+  id: 'geometry_editor',
+  label: 'Geometry-Editor',
+  icon: '🗺',
+  tabs: [
+    { id: 'input', label: 'Karte', icon: '🗺' },
   ],
 };
 
