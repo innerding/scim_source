@@ -105,7 +105,7 @@ export default function GeometryEditorPanel() {
       // Smoother & schneller Zoom (Google-Maps-haftig, soweit Leaflet eben kann)
       zoomSnap: 0,        // stufenlos
       zoomDelta: 1,       // 1 voller Zoom-Step pro Wheel-Tick (war 0.5 → zu trege)
-      wheelPxPerZoomLevel: 20,  // schnelle Reaktion auch fuer Trackpad (default 60)
+      wheelPxPerZoomLevel: 7,  // schnelle Reaktion auch fuer Trackpad (default 60)
       wheelDebounceTime: 0,     // sofortiges Update
       preferCanvas: true,       // POI-Marker als Canvas, glatter beim Zoom
       zoomAnimation: true,
