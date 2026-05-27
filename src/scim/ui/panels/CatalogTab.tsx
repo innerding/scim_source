@@ -1434,10 +1434,15 @@ export default function CatalogTab({ onJumpTo }: { onJumpTo?: (panelId: string) 
           <div title="Represent Build · Seite 2 · Catalog Magazination" style={{ flexShrink: 0 }}>
             <RepresentBuildTetrahedron
               activeFace="catalog_magazination"
-              size={40}
-              onNavigate={(f) => {
+              variant="light"
+              size={44}
+              onFaceClick={(f) => {
                 if (f === 'geometry_draw') onJumpTo('geometry_editor');
                 else if (f === 'represent_organisation') onJumpTo('workspace');
+              }}
+              onArcClick={(a) => {
+                if (a === 'system_adjust') onJumpTo('P01');
+                else if (a === 'regio_content') onJumpTo('P02');
               }}
             />
           </div>

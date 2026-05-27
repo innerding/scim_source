@@ -219,8 +219,13 @@ function Header({
       fontFamily: 'system-ui, sans-serif',
       display: 'flex', alignItems: 'center', gap: 8,
     }}>
-      <div style={{ flexShrink: 0, background: '#1a2535', padding: 3, borderRadius: 3 }} title="Represent Build · Seite 3 · Represent Inspection">
-        <RepresentBuildTetrahedron activeFace="represent_inspection" onNavigate={onNavigate} size={36} />
+      <div style={{ flexShrink: 0 }} title="Represent Build · Seite 3 · Represent Inspection">
+        <RepresentBuildTetrahedron
+          activeFace="represent_inspection"
+          variant="dark"
+          onFaceClick={onNavigate}
+          size={38}
+        />
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 9, color: '#4a6a8a', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{label}</div>

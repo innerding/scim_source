@@ -7,10 +7,14 @@ import {
 import logoBase from '../../assets/logo-base.svg';
 import logoHex from '../../assets/logo-hex.svg';
 import { useRole } from './RoleContext';
+import RepresentBuildTetrahedron from './RepresentBuildTetrahedron';
+import type { RepresentBuildFace } from './RepresentBuildTetrahedron';
 
 interface Props {
   activeId: string;
   onSelect: (id: string) => void;
+  onInspectorToggle?: () => void;
+  onManualOpen?: () => void;
   panelStatus?: Record<string, StatusColor>;
 }
 
@@ -101,7 +105,16 @@ function SectionDivider() {
   );
 }
 
-export default function Navigator({ activeId, onSelect, panelStatus = {} }: Props) {
+// Derive which tetrahedron-face is currently "active" from the activeId.
+function faceFromActive(activeId: string): RepresentBuildFace {
+  if (activeId === 'geometry_editor') return 'geometry_draw';
+  if (activeId === 'P02') return 'catalog_magazination';
+  if (activeId === 'workspace') return 'represent_organisation';
+  // Default: Organisation (Workspace is the home)
+  return 'represent_organisation';
+}
+
+export default function Navigator({ activeId, onSelect, onInspectorToggle, onManualOpen, panelStatus = {} }: Props) {
   const pipelineGroups = [1, 2, 3, 4] as const;
   const role = useRole();
 
@@ -145,7 +158,38 @@ export default function Navigator({ activeId, onSelect, panelStatus = {} }: Prop
         `}</style>
       </div>
 
-      {/* ── Workspace (Gate / Entry-Point) ─────────────────────────────────── */}
+      {/* ── Represent Build — zentrales Tetraeder-Control ──────────────────── */}
+      <div style={{
+        padding: '14px 12px 8px', display: 'flex', flexDirection: 'column',
+        alignItems: 'center', gap: 6, flexShrink: 0,
+      }}>
+        <RepresentBuildTetrahedron
+          activeFace={faceFromActive(activeId)}
+          variant="dark"
+          size={170}
+          showLabels
+          onFaceClick={(f) => {
+            if (f === 'geometry_draw') onSelect('geometry_editor');
+            else if (f === 'catalog_magazination') onSelect('P02');
+            else if (f === 'represent_organisation') onSelect('workspace');
+          }}
+          onArcClick={(a) => {
+            if (a === 'system_adjust') onSelect('P01');
+            else if (a === 'regio_content') onSelect('P02');
+            else if (a === 'manual') onManualOpen?.();
+          }}
+          onInspectorToggle={onInspectorToggle}
+        />
+        <div style={{
+          fontSize: 9, color: '#4a6a8a', textTransform: 'uppercase',
+          letterSpacing: '0.10em', fontFamily: 'monospace',
+        }}>
+          Represent Build
+        </div>
+      </div>
+
+      {/* ── Workspace / Geometry-Editor als Listen-Fallback ────────────────── */}
+      <SectionDivider />
       <NavItem
         id={WORKSPACE_DESCRIPTOR.id}
         icon={WORKSPACE_DESCRIPTOR.icon}

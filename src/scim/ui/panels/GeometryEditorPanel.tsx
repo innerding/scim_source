@@ -260,10 +260,14 @@ export default function GeometryEditorPanel({ onJumpTo }: Props) {
       : geometryId
   ) + '.json';
 
-  const onTetraNav = (f: RepresentBuildFace) => {
+  const onTetraFace = (f: RepresentBuildFace) => {
     if (f === 'geometry_draw') onJumpTo('geometry_editor');
     else if (f === 'catalog_magazination') onJumpTo('P02');
     else if (f === 'represent_organisation') onJumpTo('workspace');
+  };
+  const onTetraArc = (a: string) => {
+    if (a === 'system_adjust') onJumpTo('P01');
+    else if (a === 'regio_content') onJumpTo('P02');
   };
 
   return (
@@ -274,7 +278,13 @@ export default function GeometryEditorPanel({ onJumpTo }: Props) {
         background: '#f7fafc', borderBottom: '1px solid #e2e8f0', flexWrap: 'wrap',
       }}>
         <div title="Represent Build · Seite 1 · Geometry Draw" style={{ flexShrink: 0 }}>
-          <RepresentBuildTetrahedron activeFace="geometry_draw" onNavigate={onTetraNav} size={40} />
+          <RepresentBuildTetrahedron
+            activeFace="geometry_draw"
+            variant="light"
+            onFaceClick={onTetraFace}
+            onArcClick={onTetraArc}
+            size={44}
+          />
         </div>
         <label style={{ fontSize: 11, color: '#4a5568' }}>Geometrie:</label>
         <select

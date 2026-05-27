@@ -6,12 +6,14 @@ import { useScimPipeline } from './scim/ui/useScimPipeline';
 import IntroScreen from './scim/ui/IntroScreen';
 import { RoleContext } from './scim/ui/RoleContext';
 import type { Role } from './scim/ui/RoleContext';
+import RepresentBuildManualModal from './scim/ui/RepresentBuildManualModal';
 
 export default function App() {
   const [role, setRole] = useState<Role | null>(null);
   const result = useScimPipeline();
   const [activeId, setActiveId] = useState('P01');
   const [mapCollapsed, setMapCollapsed] = useState(false);
+  const [showManual, setShowManual] = useState(false);
 
   if (role === null) {
     return <IntroScreen onAuth={setRole} />;
@@ -20,43 +22,31 @@ export default function App() {
   return (
     <RoleContext.Provider value={role}>
       <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
-        <Navigator activeId={activeId} onSelect={setActiveId} />
+        <Navigator
+          activeId={activeId}
+          onSelect={setActiveId}
+          onInspectorToggle={() => setMapCollapsed((c) => !c)}
+          onManualOpen={() => setShowManual(true)}
+        />
         <PanelWorkspace activeId={activeId} result={result} onJumpTo={setActiveId} />
         <div style={{
-          display: 'flex', flexShrink: 0,
+          flexShrink: 0,
           borderLeft: '1px solid #1a2535',
+          width: mapCollapsed ? 0 : 420,
           transition: 'width 200ms ease',
+          overflow: 'hidden',
+          position: 'relative',
         }}>
-          {/* Toggle-Handle, immer sichtbar am linken Rand des Monitor-Bereichs */}
-          <button
-            onClick={() => setMapCollapsed((c) => !c)}
-            title={mapCollapsed ? 'Monitor ausfahren' : 'Monitor einklappen'}
-            style={{
-              width: 18, background: '#0d1520', color: '#a0aec0',
-              border: 'none', borderRight: '1px solid #1a2535',
-              cursor: 'pointer', fontSize: 13, padding: 0,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontFamily: 'monospace',
+          <ScimMap
+            result={result}
+            onNavigate={(face) => {
+              if (face === 'geometry_draw') setActiveId('geometry_editor');
+              else if (face === 'catalog_magazination') setActiveId('P02');
+              else if (face === 'represent_organisation') setActiveId('workspace');
             }}
-          >
-            {mapCollapsed ? '◂' : '▸'}
-          </button>
-          <div style={{
-            width: mapCollapsed ? 0 : 420,
-            transition: 'width 200ms ease',
-            overflow: 'hidden',
-            position: 'relative',
-          }}>
-            <ScimMap
-              result={result}
-              onNavigate={(face) => {
-                if (face === 'geometry_draw') setActiveId('geometry_editor');
-                else if (face === 'catalog_magazination') setActiveId('P02');
-                else if (face === 'represent_organisation') setActiveId('workspace');
-              }}
-            />
-          </div>
+          />
         </div>
+        {showManual && <RepresentBuildManualModal onClose={() => setShowManual(false)} />}
       </div>
     </RoleContext.Provider>
   );

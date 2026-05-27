@@ -161,11 +161,15 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
     }));
   }, []);
 
-  const onTetrahedronNav = (f: RepresentBuildFace) => {
+  const onTetraFace = (f: RepresentBuildFace) => {
     if (f === 'geometry_draw') onJumpTo('geometry_editor');
     else if (f === 'catalog_magazination') onJumpTo('P02');
     else if (f === 'represent_organisation') onJumpTo('workspace');
-    // represent_inspection: kein eigener Tab — rechter Pipeline-Monitor
+  };
+  const onTetraArc = (a: string) => {
+    if (a === 'system_adjust') onJumpTo('P01');
+    else if (a === 'regio_content') onJumpTo('P02');
+    // 'manual' wird vom Navigator-Tetraeder gehandhabt (Modal)
   };
 
   return (
@@ -177,7 +181,13 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
         display: 'flex', gap: 18, alignItems: 'center',
       }}>
         <div style={{ flexShrink: 0, background: '#fff', padding: 8, borderRadius: 4 }}>
-          <RepresentBuildTetrahedron activeFace="represent_organisation" onNavigate={onTetrahedronNav} size={80} />
+          <RepresentBuildTetrahedron
+            activeFace="represent_organisation"
+            variant="light"
+            onFaceClick={onTetraFace}
+            onArcClick={onTetraArc}
+            size={80}
+          />
         </div>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 9, opacity: 0.65, fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
