@@ -4,8 +4,6 @@ import {
   RUNTIME_BUILDER_REGISTRY, VERSIONEN_REGISTRY, WORKSPACE_DESCRIPTOR,
   GEOMETRY_EDITOR_DESCRIPTOR, CATALOG_DESCRIPTOR,
 } from './panelRegistry';
-import logoBase from '../../assets/logo-base.svg';
-import logoHex from '../../assets/logo-hex.svg';
 import { useRole } from './RoleContext';
 import RepresentBuildTetrahedron from './RepresentBuildTetrahedron';
 import type { RepresentBuildFace, RepresentBuildArc } from './RepresentBuildTetrahedron';
@@ -140,30 +138,27 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
       overflowY: 'auto',
       padding: '12px 6px 12px',
     }}>
-      {/* Logo composition — aspect ratio 182.625 × 51.122 */}
+      {/* Logo — nur der Hex, zentriert, gross. Pulsiert sanft. */}
       <div style={{
-        position: 'relative',
-        width: '100%',
-        height: Math.round((210 - 12) / (182.625 / 51.122)),  // ≈ 54px
-        marginBottom: 4, flexShrink: 0,
+        display: 'flex', justifyContent: 'center', alignItems: 'center',
+        marginTop: 4, marginBottom: 6, flexShrink: 0,
       }}>
-        <img
-          src={logoBase}
-          alt="SCIM3"
-          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
-        />
-        <img
-          src={logoHex}
-          alt=""
-          style={{
-            position: 'absolute', inset: 0, width: '100%', height: '100%',
-            transformOrigin: '29.1% 59.1%',
-            animation: 'nav-hex-pulse 3200ms 2000ms ease-in-out infinite',
-          }}
-        />
+        <svg
+          viewBox="42 17 22 27"
+          width={90}
+          height={90}
+          aria-label="SCIM3"
+          style={{ animation: 'nav-hex-pulse 3200ms 2000ms ease-in-out infinite' }}
+        >
+          <path
+            d="M62.156,23.896l-8.357-4.752c-.518-.295-1.16-.291-1.677.011l-8.297,4.864c-.516.303-.834.86-.83,1.455l.063,9.615c.004.599.33,1.153.85,1.446l8.357,4.752c.256.146.542.219.828.219.293,0,.587-.077.849-.229l8.296-4.865c.516-.302.834-.859.83-1.454l-.063-9.615c-.004-.598-.33-1.152-.85-1.446ZM48.583,33.158l-2.814,1.653c-.056.033-.117.048-.177.048-.12,0-.237-.062-.303-.173-.098-.166-.042-.381.125-.479l2.814-1.653c.167-.099.382-.042.48.125.098.166.042.381-.125.479ZM53.023,25.429h-.002c-.193,0-.349-.155-.35-.348l-.022-3.263c-.001-.194.155-.352.348-.353.206-.009.351.154.353.348l.022,3.263c.001.193-.155.352-.348.353ZM60.878,34.745c-.065.113-.183.177-.305.177-.058,0-.118-.015-.172-.046l-2.837-1.612c-.168-.096-.227-.309-.132-.478.096-.167.31-.227.478-.131l2.837,1.612c.168.096.227.309.132.478Z"
+            fill="#fff"
+            opacity="0.85"
+          />
+        </svg>
         <style>{`
           @keyframes nav-hex-pulse {
-            0%, 100% { opacity: 0.75; }
+            0%, 100% { opacity: 0.85; }
             50%       { opacity: 1; }
           }
         `}</style>
@@ -227,25 +222,27 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
           onClick={() => onSelect(CATALOG_DESCRIPTOR.id)}
         />
       )}
-      {(() => {
-        const p01 = PANEL_REGISTRY.find((p) => p.id === 'P01');
-        return p01 ? (
+      {(['P01', 'P02'] as const).map((pid) => {
+        const p = PANEL_REGISTRY.find((x) => x.id === pid);
+        if (!p) return null;
+        return (
           <NavItem
-            id={p01.id}
-            icon={p01.icon}
-            label={p01.label}
-            status={panelStatus[p01.id] ?? 'grey'}
-            isActive={activeId === p01.id}
-            onClick={() => onSelect(p01.id)}
+            key={p.id}
+            id={p.id}
+            icon={p.icon}
+            label={p.label}
+            status={panelStatus[p.id] ?? 'grey'}
+            isActive={activeId === p.id}
+            onClick={() => onSelect(p.id)}
           />
-        ) : null;
-      })()}
+        );
+      })}
 
-      {/* ── Package Pipeline (ohne P01 — der sitzt jetzt unter Katalog) ───── */}
+      {/* ── Package Pipeline (ohne P01/P02 — sitzen jetzt unter Katalog) ──── */}
       <SectionDivider />
       <SectionHeader title="Package Pipeline" />
       {pipelineGroups.map((g, gi) => {
-        const panels = PANEL_REGISTRY.filter((p: PanelDescriptor) => p.group === g && p.id !== 'P01');
+        const panels = PANEL_REGISTRY.filter((p: PanelDescriptor) => p.group === g && p.id !== 'P01' && p.id !== 'P02');
         return (
           <div key={g}>
             {gi > 0 && <Divider />}
