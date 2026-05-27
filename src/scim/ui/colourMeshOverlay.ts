@@ -112,6 +112,137 @@ function loadAt(lat: number, lon: number, hotspots: Hotspot[]): number {
   return Math.min(1, total);
 }
 
+// ─── Synthetisches Wegenetz (Fallback wenn echter Graph dünn) ────────────────
+
+// Wenn nur Mock-Daten vorhanden sind (3 Edges), generiert dies ein dichteres
+// pseudo-OSM-Netz: N gestreute Knoten + k-NN-Verbindungen mit leichter Krümmung.
+// Deterministisch (seed=7), damit das Bild zwischen Reloads stabil bleibt.
+export function generateSyntheticEdges(
+  bbox: [number, number, number, number],
+  nodeCount: number = 32,
+): Edge[] {
+  const [minLon, minLat, maxLon, maxLat] = bbox;
+  const lonSpan = maxLon - minLon;
+  const latSpan = maxLat - minLat;
+  const rng = makeRng(7);
+
+  const nodes: [number, number][] = [];
+  for (let i = 0; i < nodeCount; i++) {
+    const lat = minLat + (0.08 + rng() * 0.84) * latSpan;
+    const lon = minLon + (0.08 + rng() * 0.84) * lonSpan;
+    nodes.push([lon, lat]);
+  }
+
+  const edges: Edge[] = [];
+  const seen = new Set<string>();
+  for (let i = 0; i < nodes.length; i++) {
+    const a = nodes[i];
+    const neighbors = nodes
+      .map((p, j) => ({ j, d: j === i ? Infinity : (a[0] - p[0]) ** 2 + (a[1] - p[1]) ** 2 }))
+      .sort((x, y) => x.d - y.d)
+      .slice(0, 2 + Math.floor(rng() * 2));   // 2..3 Nachbarn
+
+    for (const { j } of neighbors) {
+      const key = i < j ? `${i}-${j}` : `${j}-${i}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      const b = nodes[j];
+      // Quadratic Bezier mit leichtem Versatz fuer organischen Look
+      const midLon = (a[0] + b[0]) / 2;
+      const midLat = (a[1] + b[1]) / 2;
+      const dLat = b[1] - a[1], dLon = b[0] - a[0];
+      const len = Math.hypot(dLat, dLon) || 1;
+      const offset = (rng() - 0.5) * 0.15;
+      const cLon = midLon + (-dLat / len) * len * offset;
+      const cLat = midLat + (dLon / len) * len * offset;
+
+      const coords: [number, number][] = [];
+      const steps = 12;
+      for (let s = 0; s <= steps; s++) {
+        const t = s / steps;
+        const u = 1 - t;
+        const lon = u * u * a[0] + 2 * u * t * cLon + t * t * b[0];
+        const lat = u * u * a[1] + 2 * u * t * cLat + t * t * b[1];
+        coords.push([lon, lat]);
+      }
+
+      edges.push({
+        edge_id: `syn_${key}`,
+        geometry: { coordinates: coords },
+      });
+    }
+  }
+  return edges;
+}
+
+// ─── Per-Edge-Gradient: Edge in K Segmente teilen, Heat pro Segment ──────────
+
+function paintEdgeWithGradient(
+  group: L.LayerGroup,
+  latLngs: [number, number][],
+  hotspots: Hotspot[],
+  K: number = 6,
+): void {
+  if (latLngs.length < 2) return;
+
+  // Kumulative Bogenlaenge fuer arc-length-Sampling
+  const cum: number[] = [0];
+  for (let i = 1; i < latLngs.length; i++) {
+    const [aLat, aLon] = latLngs[i - 1];
+    const [bLat, bLon] = latLngs[i];
+    cum.push(cum[i - 1] + Math.hypot(bLat - aLat, bLon - aLon));
+  }
+  const total = cum[cum.length - 1];
+  if (total === 0) return;
+
+  const pointAt = (s: number): [number, number] => {
+    if (s <= 0) return latLngs[0];
+    if (s >= total) return latLngs[latLngs.length - 1];
+    for (let i = 1; i < cum.length; i++) {
+      if (s <= cum[i]) {
+        const span = cum[i] - cum[i - 1] || 1;
+        const f = (s - cum[i - 1]) / span;
+        const [aLat, aLon] = latLngs[i - 1];
+        const [bLat, bLon] = latLngs[i];
+        return [aLat + (bLat - aLat) * f, aLon + (bLon - aLon) * f];
+      }
+    }
+    return latLngs[latLngs.length - 1];
+  };
+
+  for (let i = 0; i < K; i++) {
+    const s0 = (i / K) * total;
+    const s1 = ((i + 1) / K) * total;
+    const subSteps = 4;
+    const pts: [number, number][] = [];
+    for (let k = 0; k <= subSteps; k++) {
+      pts.push(pointAt(s0 + (s1 - s0) * (k / subSteps)));
+    }
+    const mid = pointAt((s0 + s1) / 2);
+    const t = loadAt(mid[0], mid[1], hotspots);
+    const color = heatColor(t);
+
+    // Glow
+    L.polyline(pts, {
+      color: '#ffffff',
+      weight: 7,
+      opacity: 0.38,
+      lineCap: 'round',
+      lineJoin: 'round',
+    }).addTo(group);
+
+    // Hauptlinie mit Heat-Farbe
+    L.polyline(pts, {
+      color,
+      weight: 3.2,
+      opacity: 0.95,
+      lineCap: 'round',
+      lineJoin: 'round',
+    }).addTo(group);
+  }
+}
+
 // ─── Edge-Heat: jede Strasse bekommt eine Heat-Pipe ──────────────────────────
 
 export function addRoadHeatMesh(
@@ -120,36 +251,20 @@ export function addRoadHeatMesh(
   bbox: [number, number, number, number],
   pois: POI[],
 ): void {
-  if (!edges || edges.length === 0) return;
   const hotspots = generateHotspots(bbox, pois);
 
-  for (const edge of edges) {
+  // Falls echter Graph duenn (z.B. Mock mit 3 Edges) — synthetisches Netz dazu.
+  const allEdges: Edge[] = [];
+  if (edges) allEdges.push(...edges);
+  if (allEdges.length < 20) {
+    allEdges.push(...generateSyntheticEdges(bbox));
+  }
+
+  for (const edge of allEdges) {
     const coords = edge.geometry.coordinates;
     if (!coords || coords.length < 2) continue;
-    // LatLon-Reihe aus GeoJSON [lon,lat] -> Leaflet [lat,lon]
     const latLngs: [number, number][] = coords.map(([lon, lat]) => [lat, lon]);
-    // Last am Mittelpunkt der Edge (genuegt fuer den Look)
-    const mid = latLngs[Math.floor(latLngs.length / 2)];
-    const t = loadAt(mid[0], mid[1], hotspots);
-    const color = heatColor(t);
-
-    // Glow: weiss, breiter, halbtransparent
-    L.polyline(latLngs, {
-      color: '#ffffff',
-      weight: 7,
-      opacity: 0.32 + 0.18 * t,
-      lineCap: 'round',
-      lineJoin: 'round',
-    }).addTo(group);
-
-    // Hauptlinie: heat color
-    L.polyline(latLngs, {
-      color,
-      weight: 3.2,
-      opacity: 0.95,
-      lineCap: 'round',
-      lineJoin: 'round',
-    }).addTo(group);
+    paintEdgeWithGradient(group, latLngs, hotspots, 6);
   }
 }
 
