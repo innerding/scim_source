@@ -77,9 +77,9 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 | gewaesser+ | Laudachsee 895 m | Bergsee unter dem Katzenstein, 25 m tief — Reich der Nixe Blondchen nach der Sage vom Riesen Erla | 13.85334, 47.87914 | (Laudachsee) | ✓ |
 | gewaesser | Seereiter |  | 13.80841, 47.90794 | — | ✓ |
 | gewaesser | Liegewiese |  | 13.80410, 47.91473 | Badewiese Weyer | ✓ |
-| freibad | Weyer | Kostenfreie Badewiese am Traunsee-Ufer mit Holzsteg | 13.80455, 47.91494 | Badewiese Weyer *(Cluster-Icon)* | ✓ |
+| badewiese | Weyer | Kostenfreie Badewiese am Traunsee-Ufer mit Holzsteg | 13.80455, 47.91494 | Badewiese Weyer *(Cluster-Icon)* | ✓ |
 | wc | WC | Öffentliches WC zwischen Badewiese Weyer und Seebahnhof | 13.80606, 47.91448 | Bootshafen Gmunden | ✓ |
-| freibad | Seereiterweg | Badeplatz am Traunsee-Westufer | 13.80840, 47.90792 | — | ✓ |
+| badewiese | Seereiterweg | Badeplatz am Traunsee-Westufer | 13.80840, 47.90792 | — | ✓ |
 | wc | Seereiterweg | Öffentliches WC beim Badeplatz Seereiterweg | 13.80822, 47.90784 | — | ✓ |
 | gewaesser | Kneippanlage | Kneippanlage Gmunden | 13.80526, 47.91590 | — | ✓ |
 
@@ -137,7 +137,7 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 | Squares | Square_Rest | aussichtspunkt · aussichtspunkt+ · rastplatz · unterstand |
 | Squares | Square_Move | spielplatz · sommerrodeln · wipfelpfad · paragleiten-start · klettergarten · bogen-parcour · aussichtsturm |
 | Regenerate | Regenerate_Substanze | gasthaus · restaurant · strand-buffet · bar |
-| Regenerate | Regenerate_Water | gewaesser · freibad |
+| Regenerate | Regenerate_Water | gewaesser · badewiese |
 | Transport | Transport_Vehicle | talstation · bergstation · schiffsanlegestelle · bahnstation · bergbahn |
 | Transport | Transport_Parking/(Charging) | parkplatz |
 | Service | Service_Sleep | hotel |
@@ -192,7 +192,7 @@ bergbahn *(Cluster-Icon)* · talstation Bergbahn · schiffsanlegestelle Grünber
 
 ### Badewiese Weyer *(7 POIs)*
 
-freibad Weyer *(Cluster-Icon)* · gewaesser Liegewiese · strand-buffet Strand-Buffet · parkplatz Busse · bahnstation Schloss Weyer · denkmal Denkmal · volleyball Volleyball
+badewiese Weyer *(Cluster-Icon)* · gewaesser Liegewiese · strand-buffet Strand-Buffet · parkplatz Busse · bahnstation Schloss Weyer · denkmal Denkmal · volleyball Volleyball
 
 ### Bootshafen Gmunden *(4 POIs)*
 
