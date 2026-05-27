@@ -163,7 +163,7 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
 
   const onTetraFace = (f: RepresentBuildFace) => {
     if (f === 'geometry_draw') onJumpTo('geometry_editor');
-    else if (f === 'catalog_magazination') onJumpTo('P02');
+    else if (f === 'catalog_magazination') onJumpTo('catalog');
     else if (f === 'represent_organisation') onJumpTo('workspace');
   };
   const onTetraArc = (a: string) => {
@@ -240,7 +240,7 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
             primary={c.name}
             badge={c.id}
             secondary={`${c.poi_count} POIs · ${c.cluster_count} Cluster · ${c.warning_count} Warnungen`}
-            action={{ label: 'Im Katalog-Tab öffnen', onClick: () => onJumpTo('P02') }}
+            action={{ label: 'Im Katalog öffnen', onClick: () => onJumpTo('catalog') }}
           />
         ))}
       </Section>

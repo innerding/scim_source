@@ -2,7 +2,7 @@ import type { PanelDescriptor, StatusColor } from './panelRegistry';
 import {
   PANEL_REGISTRY, SYSTEM_DESCRIPTOR, AI_INTERFACE_DESCRIPTOR,
   RUNTIME_BUILDER_REGISTRY, VERSIONEN_REGISTRY, WORKSPACE_DESCRIPTOR,
-  GEOMETRY_EDITOR_DESCRIPTOR,
+  GEOMETRY_EDITOR_DESCRIPTOR, CATALOG_DESCRIPTOR,
 } from './panelRegistry';
 import logoBase from '../../assets/logo-base.svg';
 import logoHex from '../../assets/logo-hex.svg';
@@ -108,23 +108,23 @@ function SectionDivider() {
   );
 }
 
-// Derive which tetrahedron-face is currently "active" from the activeId+activeTab.
-function faceFromActive(activeId: string, activeTab?: TabId): RepresentBuildFace | undefined {
+// Derive which tetrahedron-face is currently "active" from the activeId.
+// Faces -> Panels (1:1).
+function faceFromActive(activeId: string): RepresentBuildFace | undefined {
   if (activeId === 'geometry_editor') return 'geometry_draw';
-  if (activeId === 'P02' && activeTab === 'catalog') return 'catalog_magazination';
+  if (activeId === 'catalog') return 'catalog_magazination';
   if (activeId === 'workspace') return 'represent_organisation';
   return undefined;
 }
 
-// Arc-Highlight: 'thr' wenn auf einem Panel im input-Tab (Regio-Content-Eingabe).
-function arcFromActive(activeId: string, activeTab?: TabId): RepresentBuildArc | undefined {
-  // P02 input == klassische Regio-Content-Eingabe
-  if (activeId === 'P02' && activeTab === 'input') return 'regio_content';
+// Arc-Highlight: 'thr' = Regio-Content (P02 jedweder Tab), 'adj' = System-Adjust (P01).
+function arcFromActive(activeId: string): RepresentBuildArc | undefined {
+  if (activeId === 'P02') return 'regio_content';
   if (activeId === 'P01') return 'system_adjust';
   return undefined;
 }
 
-export default function Navigator({ activeId, activeTab, onSelect, onGoTo, onInspectorToggle, onManualOpen, panelStatus = {} }: Props) {
+export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggle, onManualOpen, panelStatus = {} }: Props) {
   const go = onGoTo ?? ((id: string) => onSelect(id));
   const pipelineGroups = [1, 2, 3, 4] as const;
   const role = useRole();
@@ -175,14 +175,14 @@ export default function Navigator({ activeId, activeTab, onSelect, onGoTo, onIns
         alignItems: 'center', gap: 6, flexShrink: 0,
       }}>
         <RepresentBuildTetrahedron
-          activeFace={faceFromActive(activeId, activeTab)}
-          activeArc={arcFromActive(activeId, activeTab)}
+          activeFace={faceFromActive(activeId)}
+          activeArc={arcFromActive(activeId)}
           variant="dark"
           size={170}
           showLabels
           onFaceClick={(f) => {
             if (f === 'geometry_draw') go('geometry_editor');
-            else if (f === 'catalog_magazination') go('P02', 'catalog');
+            else if (f === 'catalog_magazination') go('catalog');
             else if (f === 'represent_organisation') go('workspace');
           }}
           onArcClick={(a) => {
@@ -218,6 +218,16 @@ export default function Navigator({ activeId, activeTab, onSelect, onGoTo, onIns
         isActive={activeId === GEOMETRY_EDITOR_DESCRIPTOR.id}
         onClick={() => onSelect(GEOMETRY_EDITOR_DESCRIPTOR.id)}
       />
+      {role === 'operator' && (
+        <NavItem
+          id={CATALOG_DESCRIPTOR.id}
+          icon={CATALOG_DESCRIPTOR.icon}
+          label={CATALOG_DESCRIPTOR.label}
+          status="blue"
+          isActive={activeId === CATALOG_DESCRIPTOR.id}
+          onClick={() => onSelect(CATALOG_DESCRIPTOR.id)}
+        />
+      )}
 
       {/* ── Package Pipeline ───────────────────────────────────────────────── */}
       <SectionDivider />

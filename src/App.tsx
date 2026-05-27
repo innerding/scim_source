@@ -57,7 +57,7 @@ export default function App() {
             result={result}
             onNavigate={(face) => {
               if (face === 'geometry_draw') goTo('geometry_editor');
-              else if (face === 'catalog_magazination') goTo('P02', 'catalog');
+              else if (face === 'catalog_magazination') goTo('catalog');
               else if (face === 'represent_organisation') goTo('workspace');
             }}
           />

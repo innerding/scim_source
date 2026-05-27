@@ -2,7 +2,7 @@ import type { TabId } from './panelRegistry';
 import {
   PANEL_REGISTRY, SYSTEM_DESCRIPTOR, AI_INTERFACE_DESCRIPTOR,
   RUNTIME_BUILDER_REGISTRY, VERSIONEN_REGISTRY, WORKSPACE_DESCRIPTOR,
-  GEOMETRY_EDITOR_DESCRIPTOR,
+  GEOMETRY_EDITOR_DESCRIPTOR, CATALOG_DESCRIPTOR,
 } from './panelRegistry';
 import type { ScimPipelineResult } from '../pipeline/scimPipeline.types';
 
@@ -128,17 +128,16 @@ function PanelContent({ activeId, activeTab, result, onJumpTo }: {
   if (activeId === GEOMETRY_EDITOR_DESCRIPTOR.id) {
     return <GeometryEditorPanel onJumpTo={onJumpTo ?? (() => {})} />;
   }
+  if (activeId === CATALOG_DESCRIPTOR.id) {
+    if (role !== 'operator') return null;
+    return <CatalogTab onJumpTo={onJumpTo} />;
+  }
   if (activeId === SYSTEM_DESCRIPTOR.id) {
     return <SystemPanel activeTab={activeTab} result={result} />;
   }
   if (activeId === AI_INTERFACE_DESCRIPTOR.id) {
     if (role !== 'operator') return null;
     return <AiInterfacePanel activeTab={activeTab} />;
-  }
-  // P02 Katalog-Tab (Operator-only)
-  if (activeId === 'P02' && activeTab === 'catalog') {
-    if (role !== 'operator') return null;
-    return <CatalogTab onJumpTo={onJumpTo} />;
   }
 
   const runtimeModule = RUNTIME_BUILDER_REGISTRY.find((m) => m.id === activeId);
@@ -174,6 +173,7 @@ export default function PanelWorkspace({ activeId, activeTab, onTabChange, resul
   const entry =
     activeId === WORKSPACE_DESCRIPTOR.id        ? WORKSPACE_DESCRIPTOR :
     activeId === GEOMETRY_EDITOR_DESCRIPTOR.id  ? GEOMETRY_EDITOR_DESCRIPTOR :
+    activeId === CATALOG_DESCRIPTOR.id          ? CATALOG_DESCRIPTOR :
     activeId === SYSTEM_DESCRIPTOR.id           ? SYSTEM_DESCRIPTOR :
     activeId === AI_INTERFACE_DESCRIPTOR.id ? AI_INTERFACE_DESCRIPTOR :
     RUNTIME_BUILDER_REGISTRY.find((m) => m.id === activeId) ??

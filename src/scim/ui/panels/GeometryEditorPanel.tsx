@@ -262,7 +262,7 @@ export default function GeometryEditorPanel({ onJumpTo }: Props) {
 
   const onTetraFace = (f: RepresentBuildFace) => {
     if (f === 'geometry_draw') onJumpTo('geometry_editor');
-    else if (f === 'catalog_magazination') onJumpTo('P02');
+    else if (f === 'catalog_magazination') onJumpTo('catalog');
     else if (f === 'represent_organisation') onJumpTo('workspace');
   };
   const onTetraArc = (a: string) => {

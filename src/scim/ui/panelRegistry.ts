@@ -50,12 +50,7 @@ const STANDARD_TABS: TabDescriptor[] = [
   { id: 'raw',        label: 'Rohdaten',   icon: '{}' },
 ];
 
-// P02 RegioContent bekommt zusätzlich den Operator-only "Katalog"-Tab
-// (erste Position). Sichtbarkeits-Filter passiert in PanelWorkspace via useRole().
-const P02_TABS: TabDescriptor[] = [
-  { id: 'catalog',    label: 'Katalog',    icon: '📋' },
-  ...STANDARD_TABS,
-];
+// (Katalog ist seit Umbau ein eigenes Panel — siehe CATALOG_DESCRIPTOR.)
 
 export const PANEL_REGISTRY: PanelDescriptor[] = [
   // ── Gruppe 1: Benutzereingaben ─────────────────────────────────────────────
@@ -85,7 +80,7 @@ export const PANEL_REGISTRY: PanelDescriptor[] = [
     inputMode: 'user_form',
     isBlocking: true,
     contextKey: 'regio_content',
-    tabs: P02_TABS,
+    tabs: STANDARD_TABS,
   },
   {
     id: 'P03',
@@ -389,6 +384,18 @@ export const GEOMETRY_EDITOR_DESCRIPTOR: WorkspaceDescriptor = {
   icon: '🗺',
   tabs: [
     { id: 'input', label: 'Karte', icon: '🗺' },
+  ],
+};
+
+// ─── Katalog (Erstklass-Panel ab Umbau) ──────────────────────────────────────
+// Operator-only. Visibility-Filter passiert in PanelWorkspace via useRole().
+export const CATALOG_DESCRIPTOR: WorkspaceDescriptor = {
+  kind: 'workspace',
+  id: 'catalog',
+  label: 'Katalog',
+  icon: '📋',
+  tabs: [
+    { id: 'catalog', label: 'Katalog', icon: '📋' },
   ],
 };
 
