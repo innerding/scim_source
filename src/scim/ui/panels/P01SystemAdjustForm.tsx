@@ -2,8 +2,9 @@ import { useState } from 'react';
 import type { SystemAdjustState, RouteExceedanceBehavior, GraphEdgeType } from '../../system-adjust/systemAdjust.types';
 import { ALL_GRAPH_EDGE_TYPES } from '../../system-adjust/systemAdjust.types';
 import { mockSystemAdjustState } from '../../system-adjust/systemAdjust.mock';
-import { P01RepresentationSection } from './P01RepresentationSection';
-import type { RepresentationValue } from './P01RepresentationSection';
+// P01RepresentationSection wurde Mai 2026 entrümpelt — Polygon-Editor lebt
+// jetzt eigenstaendig im Workspace/Geometry-Editor-Tab. P01 ist wieder reine
+// SystemAdjust-Settings-Maske wie urspruenglich konzipiert.
 
 interface Props {
   state?: SystemAdjustState;
@@ -174,7 +175,6 @@ export default function P01SystemAdjustForm({ state }: Props) {
   const [excludedEdgeTypes, setExcludedEdgeTypes] = useState<GraphEdgeType[]>(
     base.svg_overlay?.excluded_edge_types ?? []
   );
-  const [representation, setRepresentation] = useState<RepresentationValue>({ name: 'Lichtenberg', polygon: null });
   const [saved, setSaved] = useState(false);
   const [dirty, setDirty] = useState(false);
 
@@ -191,7 +191,7 @@ export default function P01SystemAdjustForm({ state }: Props) {
   };
 
   const handleSave = () => {
-    console.log('P01 gespeichert:', { params, flags, representation });
+    console.log('P01 gespeichert:', { params, flags });
     setSaved(true);
     setDirty(false);
   };
@@ -215,10 +215,6 @@ export default function P01SystemAdjustForm({ state }: Props) {
 
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 560 }}>
-
-      {/* Representation */}
-      <SectionTitle>Representation</SectionTitle>
-      <P01RepresentationSection onChange={(v) => { setRepresentation(v); setDirty(true); setSaved(false); }} />
 
       {/* Status banner */}
       <div style={{
