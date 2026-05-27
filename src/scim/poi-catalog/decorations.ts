@@ -101,7 +101,16 @@ const PATTERNS: Array<{
   },
   {
     kind: 'stars',
-    // "4★", "★★★★" (1–5 Sterne)
+    // "3-Stern", "5-Sterne", "3 Stern", "4Sterne" — deutsche Compound-Schreibweise.
+    // Verwendet das gold-gefuellte 'stern'-Glyph (vs. ★ -> star-5 outline).
+    re: /\b(\d)[\s-]*Stern[e]?\b/,
+    group_value: 1,
+    unit_glyph: 'stern',
+    unit_position: 'right',
+  },
+  {
+    kind: 'stars',
+    // "4★", "★★★★" (1–5 Sterne) — outline-Stil
     re: /(\d)\s*★|(★+)/,
     group_value: 0, // wird unten speziell behandelt
     digits_from: (m) => {
