@@ -26,7 +26,8 @@ const mockRoadNetwork = {
     difficulty_class: e.difficulty_class,
     bidirectional: e.bidirectional,
   })),
-  bbox: [15.0, 47.5, 15.4, 47.8] as [number, number, number, number],
+  // Bbox passt zur Lichtenberg-Region (siehe regio-content.mock + graph.mock).
+  bbox: [14.22, 48.36, 14.29, 48.42] as [number, number, number, number],
 };
 
 export function useScimPipeline(): ScimPipelineResult {
