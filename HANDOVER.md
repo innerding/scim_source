@@ -84,8 +84,11 @@ Bei scb-Klick visueller Effekt. Aufwand mittel.
 ### 4. Drehende Sphären beim Feuern
 Mechanik-Idee dokumentiert, kein Code.
 
-### 5. BCK/BAK-Routing auf generierten Routen
-Vom User als finales "haben gewonnen"-Kriterium benannt.
+### 5. Ziel-App MVP-Flow (siehe eigene Doku)
+Spezifiziert in `docs/runtime_mvp.md`. MVP-Kern (Route durch POIs +
+Guidance) und Bonus (BAK „out of your comfort" mit Time-Switcher) sind dort
+mit konkreten Schritten, Inventar und Stufenplan beschrieben. Drei Stufen,
+jede deploybar. Vom User als finales „haben gewonnen"-Kriterium benannt.
 
 ### 6. Backend für echte Reviews
 Cloudflare Worker + GitHub API → echte PRs aus dem Browser. Großes
@@ -111,6 +114,7 @@ Bauvorhaben, nicht akut.
 | Datei | Inhalt |
 |---|---|
 | `docs/represent_build.md` | **Autoritative Doku** der Tetraeder-Kosmologie. Lange Doku, *Kosmologie-Update Mai 2026* am Ende ist der aktuelle Stand. |
+| `docs/runtime_mvp.md` | **Autoritative Doku** des Ziel-App-UX-Flows (MVP + BAK-Bonus, drei Stufen). |
 | `src/scim/ui/RepresentBuildTetrahedron.tsx` | SVG-Tetraeder mit 4 Faces + 3 Spheres |
 | `src/scim/ui/Navigator.tsx` | Navigator mit Logo + Trapez + Manual/Reader + Tetraeder + Listen |
 | `src/scim/ui/ScimMap.tsx` | Inspector-Karte (rechts) mit Colour-Mesh |
