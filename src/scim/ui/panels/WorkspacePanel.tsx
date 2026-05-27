@@ -11,7 +11,8 @@
 // Loest Phase 1 ab — der heutige P01-localStorage-Polygon wird nicht mehr
 // gezeigt (steht jetzt unter "noch nicht in Repo" als Migrations-Hinweis).
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import RepresentationWizard from './RepresentationWizard';
 import { parsePoiCatalog } from '../../poi-catalog/poiCatalog.parser';
 import { GEOMETRIES, REPRESENTATIONS } from '../../workspace/workspace.registry';
 import type { CatalogRef } from '../../workspace/workspace.types';
@@ -155,6 +156,7 @@ function ListItem({
 
 export default function WorkspacePanel({ onJumpTo }: Props) {
   const localPolygon = useMemo(() => readP01Polygon(), []);
+  const [showWizard, setShowWizard] = useState(false);
 
   const catalogs: CatalogRef[] = useMemo(() => {
     const grunberg = parsePoiCatalog(gruenbergMd as string, {
@@ -199,7 +201,10 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
       <Section
         title="Boundary-Geometrien"
         count={GEOMETRIES.length}
-        action={{ label: '+ neue Geometry', onClick: () => { /* Wave 2b */ }, disabled: true }}
+        action={{
+          label: '+ neue Geometry',
+          onClick: () => onJumpTo('geometry_editor'),
+        }}
       >
         {GEOMETRIES.length === 0 ? (
           <EmptyHint text="Noch keine Geometry im Repo. Wave 2b bringt einen Vollbild-Editor mit POI-Overlay." />
@@ -249,7 +254,11 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
       <Section
         title="Representations"
         count={REPRESENTATIONS.length}
-        action={{ label: '+ neue Representation', onClick: () => { /* Wave 2b */ }, disabled: true }}
+        action={{
+          label: '+ neue Representation',
+          onClick: () => setShowWizard(true),
+          disabled: GEOMETRIES.length === 0,
+        }}
       >
         {REPRESENTATIONS.length === 0 ? (
           <EmptyHint text="Noch keine Representations. Wave 2b baut den Wizard: Geometry + Katalog + Name → Representation. Erst dann werden SystemAdjust-Settings, Regio-Content und QR-Code für diese Representation aktiv." />
@@ -272,10 +281,12 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
         background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 4,
         fontSize: 11, color: '#0c4a6e',
       }}>
-        <strong>Wave 2a — was geht:</strong> Geometrien und Representations werden aus den gitbaren data/-Verzeichnissen gelesen. Kataloge wie bisher.
+        <strong>Wave 2b — was geht:</strong> Geometry-Editor mit POI-Overlay (Tab nebenan), Representation-Wizard (Knopf oben), P01-Polygon-Migration (Knopf im Editor wenn Legacy-Daten gefunden).
         <br />
-        <strong>Wave 2b — kommt:</strong> Vollbild-Geometry-Editor mit POI-Overlay, Representation-Wizard, P01-Polygon-Migration und P01-Entrümpelung (Polygon zieht aus P01 raus).
+        <strong>Was noch fehlt:</strong> P01-Entrümpelung (Polygon-Section aus P01 raus). Wartet, bis dein Lichtenberg-Polygon migriert ist — sonst Datenverlust.
       </div>
+
+      {showWizard && <RepresentationWizard onClose={() => setShowWizard(false)} />}
     </div>
   );
 }
