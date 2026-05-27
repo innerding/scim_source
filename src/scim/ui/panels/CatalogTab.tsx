@@ -4,7 +4,7 @@ import { parsePoiCatalog } from '../../poi-catalog/poiCatalog.parser';
 import { CONTAINER_SYSTEM, containerOf, geometryOf } from '../../poi-catalog/poiCatalog.containerSystem';
 import { ICON_REGISTRY, findIcons, iconById } from '../../poi-catalog/iconRegistry';
 import type { IconRegistryEntry } from '../../poi-catalog/iconRegistry';
-import { DIGIT_GLYPHS, digitGlyph, glyphsForNumber, glyphById } from '../../poi-catalog/digitGlyphs';
+import { DIGIT_GLYPHS, GLYPHS, digitGlyph, glyphsForNumber, glyphById } from '../../poi-catalog/digitGlyphs';
 import { extractDecoration, extractElevation, iconMeta } from '../../poi-catalog/decorations';
 import type { DecorationMatch } from '../../poi-catalog/decorations';
 import type { Geometry } from '../../poi-catalog/poiCatalog.types';
@@ -905,7 +905,7 @@ function DigitGlyphsSection() {
       </div>
       {/* Demo: ein paar Beispielzahlen */}
       <div style={{ fontSize: 11, color: '#4a5568', marginBottom: 6 }}>Beispiel-Höhenangaben:</div>
-      <div style={{ display: 'flex', gap: 16, alignItems: 'flex-end' }}>
+      <div style={{ display: 'flex', gap: 16, alignItems: 'flex-end', marginBottom: 20 }}>
         {[1349, 986, 649, 789].map((n) => (
           <div key={n} style={{ textAlign: 'center' }}>
             <div style={{ display: 'flex', alignItems: 'flex-end', gap: 1 }}>
@@ -923,7 +923,100 @@ function DigitGlyphsSection() {
           </div>
         ))}
       </div>
+
+      {/* Einheits-Glyphen mit Trigger-Pattern */}
+      <SpecialGlyphsTable
+        title="Einheits-Glyphen (in Tagline triggern automatisch die Decoration)"
+        items={SPECIAL_GLYPHS_UNITS}
+      />
+
+      {/* Stern-Glyphen */}
+      <SpecialGlyphsTable
+        title="Stern-Glyphen"
+        items={SPECIAL_GLYPHS_STARS}
+      />
+
+      {/* Operator-Glyphen (kein Auto-Trigger, nur als Asset verfuegbar) */}
+      <SpecialGlyphsTable
+        title="Operator-Glyphen (zur Verwendung in Icons / Sprites — kein Auto-Trigger im Text)"
+        items={SPECIAL_GLYPHS_OPERATORS}
+      />
+
+      {/* Frame */}
+      <SpecialGlyphsTable
+        title="Frame (Zifferncontainer, parametrisch gestreckt)"
+        items={SPECIAL_GLYPHS_FRAME}
+      />
     </details>
+  );
+}
+
+// ─── Spezial-Glyph-Listen mit Text-Triggern ──────────────────────────────────
+
+interface SpecialGlyphItem {
+  glyphId: string;       // Datei-id in der GLYPHS-Registry
+  label: string;         // Sprechender Name
+  trigger?: string;      // Was in der Tagline schreiben, damit's rendert
+  example?: string;      // Beispiel-Text
+}
+
+const SPECIAL_GLYPHS_UNITS: SpecialGlyphItem[] = [
+  { glyphId: 'meter',     label: 'm — Höhenmeter',     trigger: 'NN m',         example: '927 m' },
+  { glyphId: 'kilometer', label: 'k — für km',          trigger: 'NN km',        example: '4 km' },
+  { glyphId: 'anno',      label: 'A° — Jahresangabe',  trigger: 'A° / A. / seit JJJJ', example: 'A° 1702' },
+  { glyphId: 'grad',      label: '° — Grad-Symbol',     trigger: 'NN°',          example: '22°' },
+  { glyphId: 'prozent',   label: '% — Prozent',         trigger: 'NN %',         example: '12 %' },
+];
+
+const SPECIAL_GLYPHS_STARS: SpecialGlyphItem[] = [
+  { glyphId: 'star-5', label: 'Stern fünfeckig', trigger: '★★★ oder N★', example: '★★★ Superior' },
+  { glyphId: 'star-6', label: 'Stern sechseckig', trigger: '(kein Auto-Trigger)', example: '—' },
+];
+
+const SPECIAL_GLYPHS_OPERATORS: SpecialGlyphItem[] = [
+  { glyphId: 'plus',  label: '+ — Plus (im Icon-Namen: Decoration-Force)', example: 'aussichtspunkt+' },
+  { glyphId: 'circa', label: '~ — circa / ungefähr' },
+  { glyphId: 'und',   label: '& — und / Ampersand' },
+];
+
+const SPECIAL_GLYPHS_FRAME: SpecialGlyphItem[] = [
+  { glyphId: 'frame', label: 'Zifferncontainer-Hülle' },
+];
+
+function SpecialGlyphsTable({ title, items }: { title: string; items: SpecialGlyphItem[] }) {
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <div style={{ fontSize: 11, fontWeight: 600, color: '#4a5568', marginBottom: 6 }}>{title}</div>
+      <table style={{ width: '100%', fontSize: 11, borderCollapse: 'collapse' }}>
+        <thead>
+          <tr style={{ background: '#edf2f7', textAlign: 'left' }}>
+            <th style={{ padding: '4px 8px', fontWeight: 500, color: '#4a5568', width: 36 }}>Glyph</th>
+            <th style={{ padding: '4px 8px', fontWeight: 500, color: '#4a5568' }}>ID</th>
+            <th style={{ padding: '4px 8px', fontWeight: 500, color: '#4a5568' }}>Bezeichnung</th>
+            <th style={{ padding: '4px 8px', fontWeight: 500, color: '#4a5568' }}>Text-Trigger</th>
+            <th style={{ padding: '4px 8px', fontWeight: 500, color: '#4a5568' }}>Beispiel</th>
+          </tr>
+        </thead>
+        <tbody>
+          {items.map((it) => {
+            const g = GLYPHS.find((x) => x.id === it.glyphId);
+            return (
+              <tr key={it.glyphId} style={{ borderBottom: '1px solid #f0f4f8' }}>
+                <td style={{ padding: '4px 8px' }}>
+                  {g
+                    ? <div style={{ width: 20, height: 24 }} dangerouslySetInnerHTML={{ __html: makeResponsive(g.svg_raw) }} />
+                    : <span style={{ color: '#cbd5e0' }}>—</span>}
+                </td>
+                <td style={{ padding: '4px 8px', fontFamily: 'monospace', color: '#2d3748' }}>{it.glyphId}</td>
+                <td style={{ padding: '4px 8px', color: '#4a5568' }}>{it.label}</td>
+                <td style={{ padding: '4px 8px', fontFamily: 'monospace', color: '#718096' }}>{it.trigger ?? '—'}</td>
+                <td style={{ padding: '4px 8px', fontFamily: 'monospace', color: '#a0aec0' }}>{it.example ?? '—'}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
