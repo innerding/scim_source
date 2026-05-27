@@ -46,8 +46,9 @@ export default function ScimMap({ result }: Props) {
       zoomControl: true,
       zoomSnap: 0,        // stufenlos
       zoomDelta: 1,       // 1 voller Step pro Wheel-Tick
-      wheelPxPerZoomLevel: 40,
-      wheelDebounceTime: 20,
+      wheelPxPerZoomLevel: 20,
+      wheelDebounceTime: 0,
+      preferCanvas: true,
     });
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors',
