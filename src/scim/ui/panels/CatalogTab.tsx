@@ -614,7 +614,13 @@ function PoiRow({ poi, editMode, onPatch, onDelete, onUndelete }: RowProps) {
         <StatusEdit value={poi.coord_status} onChange={(v) => onPatch({ coord_status: v })} />
       </td>
       <td style={cellStyle}>
-        <SubcategoryEdit value={poi.subcategory} onChange={(v) => onPatch({ subcategory: v })} />
+        {poi.subcategory === 'Cluster' ? (
+          <span style={{ fontSize: 11, color: '#a0aec0', fontStyle: 'italic' }}>
+            Cluster <span style={{ color: '#c8389b' }}>(Ghost)</span>
+          </span>
+        ) : (
+          <SubcategoryEdit value={poi.subcategory} onChange={(v) => onPatch({ subcategory: v })} />
+        )}
       </td>
       <td style={{ ...cellStyle, whiteSpace: 'nowrap' }}>
         {poi._isDeleted ? (
