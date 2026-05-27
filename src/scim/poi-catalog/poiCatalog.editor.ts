@@ -178,6 +178,22 @@ export function mergeEdits(base: PoiCatalogState, edits: PoiCatalogEditState): M
     return { ...c, member_count: members.length, identity_poi_id: identity?.id };
   });
 
+  // 4) Ghost-Coord-Inheritance (analog Parser, aber auch fuer im Editor
+  // neu-angelegte Ghosts mit synthetischen IDs). Jeder cluster_ghost POI
+  // erbt seine Coord von dem Member im selben Cluster mit is_cluster_identity.
+  // Wenn kein Parent existiert, bleibt die Template-Coord stehen ([0,0] bei
+  // Neu-Anlage). Mutation in-place ist erlaubt — merged ist ein lokales Array.
+  for (const ghost of merged) {
+    if (ghost._isDeleted) continue;
+    if (ghost.coord_status !== 'cluster_ghost') continue;
+    if (!ghost.cluster) continue;
+    const members = liveByCluster.get(ghost.cluster) ?? [];
+    const parent = members.find((m) => m.is_cluster_identity);
+    if (parent) {
+      ghost.coord = [parent.coord[0], parent.coord[1]];
+    }
+  }
+
   return { pois: merged, clusters, dirty_count: dirty, new_count: newCount, deleted_count: deletedCount };
 }
 

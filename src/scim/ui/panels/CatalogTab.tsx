@@ -529,8 +529,8 @@ function PoiRow({ poi, editMode, onPatch, onDelete, onUndelete }: RowProps) {
           {poi.description_short ?? <span style={{ color: '#cbd5e0', fontStyle: 'italic' }}>—</span>}
         </td>
         <td style={{ ...cellStyle, fontFamily: 'monospace', color: '#4a5568' }}>
-          {poi.coord_status === 'cluster_ghost'
-            ? <span style={{ color: '#a0aec0', fontStyle: 'italic' }}>↑ {poi.coord[0].toFixed(5)}, {poi.coord[1].toFixed(5)}</span>
+          {poi.subcategory === 'Cluster'
+            ? <span style={{ color: '#a0aec0', fontStyle: 'italic', fontFamily: 'system-ui, sans-serif' }}>↑ Coord vom Cluster-POI</span>
             : poi.coord_status === 'missing'
               ? '—'
               : `${poi.coord[0].toFixed(5)}, ${poi.coord[1].toFixed(5)}`}
@@ -581,9 +581,9 @@ function PoiRow({ poi, editMode, onPatch, onDelete, onUndelete }: RowProps) {
         />
       </td>
       <td style={cellStyle}>
-        {poi.coord_status === 'cluster_ghost' ? (
+        {poi.subcategory === 'Cluster' ? (
           <div style={{ fontSize: 11, color: '#a0aec0', fontStyle: 'italic' }}>
-            ↑ erbt von Parent
+            ↑ Coord vom Cluster-POI
           </div>
         ) : (
           <CoordEdit poi={poi} onChange={onPatch} />
@@ -611,7 +611,11 @@ function PoiRow({ poi, editMode, onPatch, onDelete, onUndelete }: RowProps) {
         </div>
       </td>
       <td style={{ ...cellStyle, whiteSpace: 'nowrap' }}>
-        <StatusEdit value={poi.coord_status} onChange={(v) => onPatch({ coord_status: v })} />
+        {poi.subcategory === 'Cluster' ? (
+          <span style={{ fontSize: 11, color: '#a0aec0', fontStyle: 'italic' }}>↑ Vererbt</span>
+        ) : (
+          <StatusEdit value={poi.coord_status} onChange={(v) => onPatch({ coord_status: v })} />
+        )}
       </td>
       <td style={cellStyle}>
         {poi.subcategory === 'Cluster' ? (
