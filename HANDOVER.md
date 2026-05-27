@@ -1,139 +1,136 @@
-# Handover — 2026-05-26 12:25
+# Handover — 2026-05-27 (Session-Ende)
 
 ## TL;DR für den nächsten Claude
 
-Alle Code-Arbeit ist committed und gepusht. Ein einziger offener Punkt:
-**GitHub Actions Run `26447653098` für SHA `ec6c879` rerun**, weil der
-erste Versuch an `codeload.github.com` (GitHub-CDN-Outage-Schwanz)
-gescheitert ist — *nicht* an unserem Code.
+Sehr produktive Session. Drei große Themenblöcke abgeschlossen, ein vierter
+benannt und für die nächste Session vorbereitet:
 
-Sobald *irgendein* Run für `ec6c879` (oder neuer) auf grün geht, sind
-**alle** seit cc6d9c4 aufgestauten Pushes auf einen Schlag live (Pages
-baut immer `main`-HEAD).
+1. **Tetraeder-Kosmologie** komplett umgebaut und mit dem User auf einen
+   gemeinsamen Begriff gebracht. Siehe ausführlich `docs/represent_build.md`,
+   Abschnitt *„Kosmologie-Update — Mai 2026"*.
+2. **Colour-Mesh** in drei Phasen gebaut: erst Schwefelgas (raus), dann
+   Heat-entlang-der-Wege (besser), dann echte OSM via Overpass (richtig).
+3. **DRAFT-Workflow** für Geometrien sauber durchgespielt: localStorage →
+   sichtbar im Workspace → Wizard mit Geometry-Copy-Knopf → Git → live.
+4. **Offen für nächste Session:** R-Konsument bauen — siehe unten.
 
----
-
-## Sofort-Aktion beim Chat-Start
-
-```bash
-cd /Users/dietmarbroda/SCIM3ClaudeMax/scim_source
-gh run rerun 26447653098
-# warten, dann:
-gh run view 26447653098 --json conclusion,headSha
-```
-
-Wenn `conclusion=success` und `headSha=ec6c879…` → User kurz Bescheid geben:
-„Alles live, inklusive Magnum, Lichtenberg, Ghost-POIs, Deco-Position,
-Bildstock-Auto-Tag."
-
-Wenn weiterhin `failure` mit `codeload.github.com`-Fehler → weitere
-20 min vertagen. **Nicht** den Code anfassen, das ist GitHub-Infra.
+**Alle Commits gepusht.** Letzter Commit: `df0bb45` (Lichtenberg Geometry).
 
 ---
 
-## Was wurde in dieser Session gemacht
+## Was real funktioniert (Ende dieser Session)
 
-In Reihenfolge (Commits aufsteigend):
+### Visuelles / Navigator
+- **Naked Logo** im Navigator (`logo-base-naked.svg` + `logo-hex-naked.svg`),
+  88 % zentriert, 28 px nach unten gerückt, Hex pulsiert (Dim 0.625 → 1.0)
+- **Inspector-Trapez** aus Pergament (`#e8d4a8` × 12 % opacity) über dem
+  Mond, perspektivisch verjüngt, kein Stroke, Klick toggelt Karte
+- **Manual + Reader** als 📄 (stumm) + 📖 (klickbar, öffnet Modal)
+- **Tetraeder** 171 px, scb (top), org (center), cat (bottom-left),
+  geo (bottom-right), Spheres sys/rou/loa
+- **Click-Targets**: scb→P11, sys→P01, rou→P02, loa→P09, geo→geometry_editor,
+  cat→catalog, org→workspace
 
-1. `404ab91` — Tabler-Adapter im svgCleaner (24×24 → 48×48 Wrap),
-   Howto-Doc `docs/howto_region_catalog.md` mit MVP-Vorab-Sektion,
-   Link aus Flow-Info-Modal im CatalogTab.
-2. `58bd86e` — Lichtenberg als zweite Region (10 POIs, Cluster
-   „Lichtenberg" mit Giselawarte-Identity, 2 neue Icons:
-   `aussichtswarte.svg`, `bildstock.svg`).
-3. `c2455b8` — Lichtenberg-Plan-md Notiz präzisiert: Ghost-Tagline „Gis".
-4. `cc6d9c4` — Lichtenberg-Icon-Refs auf Dateinamen korrigiert
-   (sender/gasthaus/aussichtspunkt statt sendemast/besteck/fernglas);
-   `summitIconShift 6→4`, `summitDigitsShift 4→-1`.
-5. `770e18d` — `svgCleaner.tagUnnamedStrokeLayer()`: unbenannte
-   Stroke-Pfade nach `id="fill"`-Pfad bekommen automatisch `id="stroke"`.
-   Wird im Cleaning-Log angezeigt („nicht stillschweigend").
-6. `9727b87` — `summitDigitsShift -1 → 0` (Sichtprüfung).
-7. `7b30060` — **Phase 1 Ghost-Cluster-POI Editor (ann_048)**:
-   `coord_status` Union um `'cluster_ghost'` erweitert,
-   Parser/Serializer für Cluster-Subkategorie, UI: StatusChip magenta ↑,
-   `handleAdd` legt Ghosts mit `'cluster_ghost'` an, Cluster-Section
-   immer sichtbar in `editMode`.
-8. `8af1e49` — `summitDigitsShift 0 → 1.5` (finale Sichtprüfung).
-9. `444478d` — CI-Trigger-Commit nach Outage.
-10. `e73dba3` — `imbiss.svg → strand-buffet.svg` (Eis-am-Stiel V1,
-    schlicht). Plan-md aktualisiert in Tabelle 1, Tabelle 2 Pool,
-    Cluster-Section „Badewiese Weyer".
-11. `ec6c879` — `strand-buffet.svg` auf Magnum-Variante upgraded
-    (weiße Schoki, Bissecke, Funkel-Striche). Dual-Naming: drawing-id
-    `eis-am-stiel`, file-id `strand-buffet`.
+### Workspace
+- **DRAFT-Box** (oranger gestrichelter Rahmen) ganz oben in
+  Boundary-Geometrien, wenn `localStorage:scim3_geometry_draft` ein gültiges
+  Polygon enthält
+- **Wizard "+ neue Representation"** mit DRAFT-selektierbar; bei DRAFT-Auswahl
+  Warnung + extra **"Geometry kopieren"**-Knopf direkt im Warnkasten
+- Katalog ist eigenständiges Erstklass-Panel (nicht mehr Tab in P02)
 
----
+### Colour-Mesh (ScimMap rechts)
+- Default **Layer "Colour-Mesh" an**, alte Routen-Edges default aus
+- **Overpass-API** holt echte highway-Wege innerhalb der Boundary-bbox
+  (`fetchOsmEdges` mit 24h-Cache pro bbox-Key)
+- **Per-Edge-Gradient**: jede Edge in 6 Segmente, jedes mit eigener Heat-Farbe
+- **Heat-Palette** ohne Gelb: navy → electric blue → cyan-teal → lavender →
+  magenta
+- **Synthetisches Fallback-Netz** wenn OSM lädt / fehlschlägt (deterministisch,
+  seed=7)
+- **Base-Tile** im Mesh-Modus: `dark_nolabels` von CartoDB
+- POI-Routen (k-NN + Bezier + Glow) sind drin, aktiv erst ab ≥ 2 POIs
+  (Mock hat nur 1)
 
-## GitHub-Actions-Outage-Chronik (26.05.2026)
-
-- **cc6d9c4** war der letzte normal deployte Commit (10:36 UTC).
-- **770e18d, 7b30060, 9727b87, 8af1e49, 444478d, e73dba3** haben
-  *keinen* Workflow-Run erzeugt — push-Events gingen verloren
-  (nicht in Warteschlange, GitHub spielt sie nicht nachträglich).
-- **ec6c879** hat wieder einen Run erzeugt (26447653098), scheitert
-  aber am Action-Asset-Download. Rerun nötig.
-- Lehre `ann_039`-Erweiterung: Deploy-Bestätigung muss `headSha`
-  vergleichen, nicht nur `status=success` (sonst false-positive
-  durch stale Run aus der Liste).
+### Daten im Repo
+- `data/geometries/lichtenberg.json` — vom User in dieser Session committed
+- `data/representations/rep-lichtenberg.json` — committed, ohne `catalog_id`
+  (User entschied: belassen, weil R heute eh manifest-only ist)
 
 ---
 
-## Aktiver Arbeitsstand
+## Was offen ist (priorisierte Roadmap)
 
-### Code-seitig fertig
-- Phase 1 Ghost-Cluster-POI komplett (Parser, Serializer, UI, Renderer).
-- Lichtenberg als zweite Region.
-- Magnum-Icon für Strand-Buffet.
-- Tabler-Adapter, Howto-Doc, Auto-Stroke-Tag.
-- Deco-Position für Summit-Container final (`summitIconShift=4`,
-  `summitDigitsShift=1.5`).
+### 1. R-Konsument bauen (NÄCHSTER SCHRITT)
+Die `rep-lichtenberg.json` ist heute Manifest ohne Wirkung. Vier Stücke
+machen sie funktional:
 
-### Offen / Nächste Phasen (siehe ann_050 im AiInterfacePanel)
-- **Phase 2:** Echte App-Routes statt Tab-System (Ziel: MVP-Routing).
-- **Phase 3:** Repräsentations-Editor in Karten-Tab.
-- **Phase 4:** Multi-Region Storage-Trennung.
-- **Phase 5+6:** siehe ann_050.
+| Stück | Effekt |
+|---|---|
+| `_redirects` für SPA-Fallback | Cloudflare leitet `/<region>/<r-name>` an die SPA |
+| URL-Parser | liest pathname → matcht Representation in der Registry |
+| RepresentationContext | hält aktive R, Komponenten abonnieren |
+| ScimMap-Verdrahtung | fittet Bounds auf `rep.geometry`, holt OSM dafür, lädt POIs aus `rep.catalog_id` |
 
-### User-side TODOs (sind beim User, nicht bei uns)
-- Eventuell weitere Icon-Variationen zeichnen (Cornetto etc.) —
-  Dual-Naming-Architektur ist bereit.
+Ergebnis: `scim3.diesenpark.com/böhmerwald/lichtenberg` öffnet die App
+fokussiert auf Lichtenberg. **Klar abgegrenzt, kein Architektur-Risiko.**
 
----
+### 2. Sicheln als Prozess-Fenster
+Konzept steht (siehe represent_build.md). Implementation noch offen.
 
-## Wichtige Konventionen (für den nächsten Claude)
+### 3. Strahl-Animation Apex → Mond
+Bei scb-Klick visueller Effekt. Aufwand mittel.
 
-1. **Commit-Messages: ASCII-only** (Cloudflare-API lehnt em-dash etc. ab).
-2. **Pre-commit-Hooks nicht skippen.** Bei Fehler: fixen, neu committen
-   (NIE `--amend` zum Umgehen).
-3. **Deploy-Bestätigung:** Immer `headSha` gegen aktuellen HEAD prüfen,
-   nicht nur `status=success` (ann_039-Lehre).
-4. **`git add -A` vermeiden** — `.wrangler/` und `worker/.wrangler/`
-   schleppen sich sonst ein. Explizit Dateien adden.
-5. **macOS Case-insensitive:** Bei Rename mit nur Case-Änderung
-   Temp-Filename-Pattern nutzen (`mv foo.svg tmp_foo.svg && mv tmp_foo.svg Foo.svg`).
-6. **Plan-md ist Soll-Quelle.** Editor schreibt Patches in
-   localStorage; Export regeneriert Tabelle 1 + Cluster-Section
-   im Original-md (Serializer).
-7. **SVG-Imports:** User legt SVGs in
-   `POI-Assets aus Illustrator/POI-Icons-Grünberg/` ab, wir kopieren
-   nach `data/icons/<filename>.svg`. svgCleaner läuft beim Vite-Import
-   automatisch.
-8. **User-Sprache: Deutsch.** Direktiv, kurz, ohne Boilerplate.
+### 4. Drehende Sphären beim Feuern
+Mechanik-Idee dokumentiert, kein Code.
+
+### 5. BCK/BAK-Routing auf generierten Routen
+Vom User als finales "haben gewonnen"-Kriterium benannt.
+
+### 6. Backend für echte Reviews
+Cloudflare Worker + GitHub API → echte PRs aus dem Browser. Großes
+Bauvorhaben, nicht akut.
 
 ---
 
-## Relevante Memory-Einträge (im User-Profil)
+## Architektur-Konsens (NICHT VERHANDELBAR)
 
-- `project_grunberg_poi_system.md` — Container-System
-- `project_grunberg_clusters.md` — Cluster-Definitionen
-- `project_grunberg_poi_plan_vs_code.md` — Plan-md vs Code-Stand
-- `project_grunberg_catalog_tab.md` — Tab-Implementierungsstand
-- `project_scim3_deploystand.md` — URLs, Login, Deploy
+- **Pipeline (P01–P14) bleibt unangetastet.** Tetraeder lebt auf anderer
+  Schicht, ist nie *in* der Pipeline.
+- **Click-Targets der Bögen sind Convenience-Brücken** zu Pipeline-Panels,
+  nicht der architektonische Anspruch. Sind heute: sys→P01, rou→P02,
+  loa→P09. Werden langfristig zu echten Threshold-Editoren ersetzt.
+- **Direktester Weg.** Umbauten gehören geplant. Nicht herumbasteln.
+- **Git ist Review-Mechanismus.** Browser schreibt nichts ins Repo. PR-Flow
+  ist Zukunftsmusik, kein Heute.
 
 ---
 
-## Wenn der User „weiter mit Phase 2" sagt
+## Wichtige Files (für schnelle Orientierung)
 
-Im AiInterfacePanel die Annotation `ann_050` lesen — dort steht der
-6-Phasen-Plan für den MVP-Umbau zur Ziel-App-Struktur.
+| Datei | Inhalt |
+|---|---|
+| `docs/represent_build.md` | **Autoritative Doku** der Tetraeder-Kosmologie. Lange Doku, *Kosmologie-Update Mai 2026* am Ende ist der aktuelle Stand. |
+| `src/scim/ui/RepresentBuildTetrahedron.tsx` | SVG-Tetraeder mit 4 Faces + 3 Spheres |
+| `src/scim/ui/Navigator.tsx` | Navigator mit Logo + Trapez + Manual/Reader + Tetraeder + Listen |
+| `src/scim/ui/ScimMap.tsx` | Inspector-Karte (rechts) mit Colour-Mesh |
+| `src/scim/ui/colourMeshOverlay.ts` | Heat-Pipe-Rendering + Overpass-Fetch |
+| `src/scim/ui/panels/GeometryEditorPanel.tsx` | Geometry-Editor mit Polygon-Zeichnen + Export |
+| `src/scim/ui/panels/RepresentationWizard.tsx` | Wizard mit DRAFT-Support + Geometry-Copy-Knopf |
+| `src/scim/ui/panels/WorkspacePanel.tsx` | Represent-Organisation mit DRAFT-Box |
+| `src/assets/logo-base-naked.svg` | Mond ohne Wordmark (Iconset only) |
+| `src/assets/logo-hex-naked.svg` | Hex separat zum Pulsieren |
+
+---
+
+## Sofort-Aktion beim nächsten Chat-Start
+
+Nichts CI-mäßiges hängt. Einfach `docs/represent_build.md` (besonders das
+Kapitel *Kosmologie-Update Mai 2026*) und diese HANDOVER lesen, dann mit dem
+User abstimmen ob R-Konsument (Punkt 1 oben) gebaut werden soll.
+
+Wenn ja: vier Schritte, ein Commit pro Schritt:
+1. `_redirects` in `public/` für Cloudflare-SPA-Fallback
+2. URL-Parser + RepresentationContext
+3. ScimMap reagiert auf active R (Bounds, OSM, POIs)
+4. Workspace-Liste macht jede R anklickbar → setzt sie aktiv

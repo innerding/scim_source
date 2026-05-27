@@ -212,3 +212,190 @@ Was fehlt: Versionsverwaltung (`-v2`-Suffix automatisch), Workspace-Filter
 nach Author/Region, Konflikt-Warnungen wenn Geometry-IDs kollidieren,
 aktive-Representation-Kontext (Pipeline-Monitor zeigt automatisch die
 gewählte Representation). Diese Punkte werden in Phase 3+ ergänzt.
+
+---
+
+## Kosmologie-Update — Mai 2026 (Session-Konsens)
+
+In der Session vom 27. Mai 2026 hat sich das Modell deutlich weiterentwickelt.
+Die ursprünglichen vier Faces und drei Bögen wurden umbenannt und in eine
+größere kosmologische Schichtung eingebettet. Was nun folgt **ersetzt** an
+einigen Stellen die obigen Texte; was hier nicht erwähnt wird, gilt unverändert.
+
+### Renaming
+
+**4. Triangle** (Top-Position, Apex zeigt nach oben):
+- vorher: *Represent Inspection* (`ins`)
+- jetzt: **Sensus Core Build** (`scb`)
+- Begründung: Inspection ist eine *Sicht* (siehe Inspector unten), kein
+  Baustein. Was an dieser Position wirklich passiert: der Apex feuert das
+  fertige Bündel als **Sensus Core Package** zum Mond. Click → P11.
+
+**3. Sphere** (unten, zwischen `cat` und `geo`):
+- vorher: *Manual* (`man`)
+- jetzt: **Load Thresholds** (`loa`)
+- Begründung: Sym­metrie der Schwellen-Trilogie. Sys (P01) · Rou (P02 heute,
+  P10 später) · Loa (P09). Manual war ein Service-Fremdkörper im
+  Architektur-Anker.
+
+Das alte Manual lebt jetzt als **kleines `📄`-Icon links** zwischen Mond
+und Tetraeder, daneben rechts ein **`📖` Reader-Icon**. Klick auf den Reader
+öffnet das Manual-Modal. Diese Asymmetrie ist gewollt: das Manual ist tot
+ohne Leser; der Leser bringt es zur Sprache.
+
+### Die drei Schichten
+
+```
+           ☾   Mond — App-Shell + Engine + R-Bibliothek
+                Auswüchse im Logo = die R's (manche eckig=Tetraeder, manche
+                rund=Sphere)
+                Hex im Zentrum = die *eine* Engine, die alle R's teilen
+
+       ─ ─ ─ ─ ─ ─ ─ ─ ─
+
+           ▲   Tetraeder — eine R im Bau
+         ╱ │ ╲   4 Faces = Bausteine: scb(top), geo, org, cat
+        ╱  │  ╲  3 Spheres = Schwellen: sys, rou, loa
+       ╱   │   ╲  3 Sicheln zwischen Bögen und Triangles = Prozess-Fenster
+      ╱────┴────╲
+       (Inspector-Trapez aus Pergament über dem Mond,
+        88% transluzent, Klick toggelt die Karten-Sicht)
+
+   ≡≡≡≡≡≡≡≡≡≡≡≡≡≡  Empty-Sea-Oberfläche
+
+   ░░░ Pipeline (P03–P14) ░░░  unter Wasser, gespeist aus ...
+
+   ≋≋≋≋≋≋≋  Operator-Dimension (tiefer als Funk; rein menschliche Intention)
+```
+
+**Mond = App-Shell mit Engine.** Im SVG sichtbar als das nackte SCIM3-Logo
+(siehe `src/assets/logo-base-naked.svg`). Die organischen Auswüchse darin
+**sind** die R's: manche noch eckig (frisch deployed Tetraeder-Form), manche
+schon rund (gereift, vom Colourmesh umhüllt). Im Zentrum sitzt der **Hex**
+(`src/assets/logo-hex-naked.svg`) — die **eine geteilte Engine**, die alle
+R's bedient. Der Hex **pulsiert** im 3.2-s-Takt: das ist der **Atem der
+Engine**. Atem = Load durchströmt die Engine.
+
+**Tetraeder = lokale Composition einer R.** Sitzt im Navigator unter dem
+Mond. Apex zeigt nach oben Richtung Mond — von dort feuert `scb` das fertige
+Bündel zur Bibliothek.
+
+**Sicheln** = die drei sichelförmigen Räume *zwischen* den äußeren Triangles
+und ihren überstehenden Bögen. Heute leer, kosmologisch reserviert als
+**Beobachtungs-Fenster in den Prozess**: durch sie hindurch sieht man, was
+unter der Orga gerade verarbeitet wird. Vorbereitet, noch nicht implementiert.
+
+**Inspector** = das **Pergament-Trapez** über dem Mond. Perspektivisch
+verjüngt nach unten, kein Stroke, fill `#e8d4a8` zu 12 % Opazität.
+Konzeptionell ist er das **Firmament**, das sich über die ganze Werkbank
+spannt — die alles-sehende Sicht. Funktional: Klick toggelt die ScimMap.
+Inspector ist **keine Komponente** mehr (war früher die 4. Face), sondern
+eine *Sicht*. Der ausgeklappte Mond-Monitor rechts (ScimMap) ist seine
+sichtbare Manifestation.
+
+### Lifecycle einer Representation
+
+Eine R hat zwei visuelle **Aggregatzustände**:
+
+| Form | Bedeutung | Wann |
+|---|---|---|
+| **Tetraeder** | roh komponiert, deployed aber noch nicht gelebt | direkt nach erstmaligem Deploy |
+| **Sphere** | mit Colourmesh umhüllt, die Engine hat sie geatmet, sie ist live | nach Engine-Lauf |
+
+Der **Strahl vom Apex zum Mond** ist der **Akt der Kausalität** zwischen
+lokaler Composition und globaler Bibliothek. Zweimodig:
+
+- **(a) Erstmaliger Deploy**: Strahl trägt ein neues Tetraeder hoch → ein
+  neuer Auswuchs am Mond entsteht (Tetraeder-Form).
+- **(b) Re-Deploy / Engine-Atmung**: Strahl feuert **Colourmesh-Pulse** →
+  Mond-Tetraeder werden umhüllt, reifen zur Sphere.
+
+Die Sphären-Bögen am Tetraeder können sich in der Spätversion **drehen** und
+geben den Spalt frei, wenn gefeuert wird (Mechanik für die Zukunft).
+
+### Was heute wirkt vs. Vision
+
+| Element | Status |
+|---|---|
+| Tetraeder mit 4 Faces + 3 Spheres | ✓ implementiert |
+| scb als Top, Apex sichtbar | ✓ implementiert |
+| Inspector-Trapez Pergament-Look | ✓ implementiert |
+| Manual + Reader Asymmetrie | ✓ implementiert |
+| Mond als nacktes Logo + Hex-Pulse | ✓ implementiert |
+| Colour-Mesh entlang OSM-Wegen (Overpass) | ✓ implementiert |
+| Per-Edge-Gradient für Heat-Pipes | ✓ implementiert |
+| Workspace zeigt localStorage-Draft als DRAFT | ✓ implementiert |
+| Wizard bietet Geometry- + Representation-Copy | ✓ implementiert |
+| Sicheln als Prozess-Fenster | nur reserviert, nicht aktiv |
+| Strahl-Animation Tetraeder → Mond | Vision |
+| Drehende Sphären beim Feuern | Vision |
+| Mond-Auswüchse als anklickbare R-Bibliothek | Vision |
+| Inspector als Firmament (visueller Schein) | nur als Trapez angedeutet |
+| Pipeline-Visualisierung als Unterwasser-Schicht | Vision |
+| Operator-Dimension darunter | Vision |
+
+### Architekturregeln (Session-Konsens)
+
+1. **Pipeline bleibt unangetastet.** Tetraeder ist eine *Schicht darüber*,
+   nicht *in* der Pipeline. Code-seitig hat keine kosmologische Änderung je
+   `useScimPipeline.ts` oder die Pipeline-Panels berührt.
+2. **Click-Targets der Bögen sind Convenience-Brücken** zu existierenden
+   Pipeline-Panels (sys→P01, rou→P02, loa→P09, scb→P11). Sie sind nicht der
+   architektonische Anspruch — sie sind Übergangsverdrahtung, bis echte
+   Threshold-Editoren existieren.
+3. **Kompromisslosigkeit:** kein Hack im Pipeline-Pfad. Wenn etwas in der UI
+   nicht klar ausdrückbar ist, eher Labels schärfen als Pfade krümmen.
+4. **Direktester Weg:** Umbauten gehören sorgfältig geplant. Nicht
+   herumbasteln.
+5. **Git als Review-Mechanismus:** Geometrien, Kataloge und Representations
+   leben im Repo. Browser kann nicht ins Repo schreiben. Pull-Requests sind
+   der Mehr-Personen-Approval (für später, wenn Backend kommt).
+
+### Representation: heute manifest, morgen Wirkung
+
+Ehrlicher Status (Stand 27. Mai 2026):
+Eine `data/representations/*.json`-Datei ist heute **ein Manifest ohne
+Konsumenten**. Sie wird in der Workspace-Liste angezeigt. Sie wird **nicht**
+gelesen vom Map-Renderer, **nicht** von der Pipeline, **nicht** vom
+Colour-Mesh. Sie ist eine Versprechungs-Datei.
+
+**Sobald sie Wirkung bekommen soll, braucht es vier kleine Stücke:**
+
+| Stück | Beschreibung |
+|---|---|
+| **URL-Parser** | `location.pathname` wie `/<region>/<r-name>` → matched Representation in der Registry → setzt `activeRepresentationId` |
+| **RepresentationContext** | React-Context für aktive R; alle Komponenten abonnieren |
+| **Map-Verdrahtung** | ScimMap fittet auf `activeRep.geometry`, holt OSM für diese bbox, lädt POIs aus `activeRep.catalog_id` |
+| **Cloudflare SPA-Fallback** | `_redirects`-File damit `/böhmerwald/lichtenberg` zum SPA geht statt 404 |
+
+Erst nach diesen vier Stücken hätte `scim3.diesenpark.com/böhmerwald/lichtenberg`
+tatsächlich Lichtenberg-fokussierte Wirkung. Das ist der nächste **klar
+abgegrenzte** Schritt — kein Architektur-Risiko, kein Pipeline-Bruch.
+
+### Color-Mesh Designentscheidungen (festgehalten)
+
+- **Echte OSM-Wege** via Overpass-API (`fetchOsmEdges` in `colourMeshOverlay.ts`).
+  24h-Cache pro bbox in localStorage.
+- **Fallback** wenn Overpass langsam/down: synthetisches Netz aus 32 Knoten
+  mit k-NN-Verbindungen (deterministisch, seed=7). Auto-Switch, sobald OSM da.
+- **Per-Edge-Gradient**: jede Edge in 6 Segmente, jedes mit eigener Heat-Farbe
+  nach Last am Segment-Mittelpunkt.
+- **Heat-Pipe-Palette** (kein Gelb mehr): navy → electric blue → cyan-teal →
+  lavender → magenta. Vermeidet "Schwefelgas"-Look.
+- **Base-Tile im Mesh-Modus**: `dark_nolabels` von CartoDB — Heat-Farben
+  poppen auf dunklem Grund.
+- **Fake-Load** = max-Gauss von 4 synthetischen Hotspots + POI-Positionen
+  (deterministisch, seed=42). Echter Load (P04 Telco) ist Phase 2.
+
+### Was offen bleibt (priorisiert)
+
+1. **R-Konsument bauen** (URL-Routing + Context + Map-Verdrahtung +
+   `_redirects`) → erste *funktionale* R.
+2. **Sicheln** als Prozess-Fenster sichtbar machen.
+3. **Inspector als Firmament** visuell ausbauen (Wellenwurf-Spiegel, später).
+4. **Strahl-Animation** vom Apex zum Mond beim scb-Click.
+5. **Drehende Sphären** beim Feuern.
+6. **BCK/BAK-Routing** auf den generierten Routen.
+7. **Backend für echte Reviews** (Cloudflare Worker + GitHub API), wenn
+   Mehr-Personen-Workflow nötig.
+
