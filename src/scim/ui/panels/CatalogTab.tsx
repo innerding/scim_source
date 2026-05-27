@@ -5,6 +5,7 @@ import { CONTAINER_SYSTEM, containerOf, geometryOf } from '../../poi-catalog/poi
 import { ICON_REGISTRY, findIcons, iconById } from '../../poi-catalog/iconRegistry';
 import type { IconRegistryEntry } from '../../poi-catalog/iconRegistry';
 import { DIGIT_GLYPHS, GLYPHS, digitGlyph, glyphsForNumber, glyphById } from '../../poi-catalog/digitGlyphs';
+import RepresentBuildTetrahedron from '../RepresentBuildTetrahedron';
 import { extractDecoration, extractElevation, iconMeta } from '../../poi-catalog/decorations';
 import type { DecorationMatch } from '../../poi-catalog/decorations';
 import type { Geometry } from '../../poi-catalog/poiCatalog.types';
@@ -1284,7 +1285,7 @@ function ExportModal({ originalMd, newMd, fileName, onClose }: {
 
 // ─── Haupt-Komponente ─────────────────────────────────────────────────────────
 
-export default function CatalogTab() {
+export default function CatalogTab({ onJumpTo }: { onJumpTo?: (panelId: string) => void } = {}) {
   const role = useRole();
   if (role !== 'operator') return null;
 
@@ -1429,6 +1430,18 @@ export default function CatalogTab() {
       <div style={{
         display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, flexWrap: 'wrap',
       }}>
+        {onJumpTo && (
+          <div title="Represent Build · Seite 2 · Catalog Magazination" style={{ flexShrink: 0 }}>
+            <RepresentBuildTetrahedron
+              activeFace="catalog_magazination"
+              size={40}
+              onNavigate={(f) => {
+                if (f === 'geometry_draw') onJumpTo('geometry_editor');
+                else if (f === 'represent_organisation') onJumpTo('workspace');
+              }}
+            />
+          </div>
+        )}
         <label style={{ fontSize: 12, color: '#4a5568' }}>Region:</label>
         <select
           value={regionId}

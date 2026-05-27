@@ -125,7 +125,7 @@ function PanelContent({ activeId, activeTab, result, onJumpTo }: {
     return <WorkspacePanel onJumpTo={onJumpTo ?? (() => {})} />;
   }
   if (activeId === GEOMETRY_EDITOR_DESCRIPTOR.id) {
-    return <GeometryEditorPanel />;
+    return <GeometryEditorPanel onJumpTo={onJumpTo ?? (() => {})} />;
   }
   if (activeId === SYSTEM_DESCRIPTOR.id) {
     return <SystemPanel activeTab={activeTab} result={result} />;
@@ -137,7 +137,7 @@ function PanelContent({ activeId, activeTab, result, onJumpTo }: {
   // P02 Katalog-Tab (Operator-only)
   if (activeId === 'P02' && activeTab === 'catalog') {
     if (role !== 'operator') return null;
-    return <CatalogTab />;
+    return <CatalogTab onJumpTo={onJumpTo} />;
   }
 
   const runtimeModule = RUNTIME_BUILDER_REGISTRY.find((m) => m.id === activeId);

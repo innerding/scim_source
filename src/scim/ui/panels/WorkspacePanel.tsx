@@ -13,6 +13,8 @@
 
 import { useMemo, useState } from 'react';
 import RepresentationWizard from './RepresentationWizard';
+import RepresentBuildTetrahedron from '../RepresentBuildTetrahedron';
+import type { RepresentBuildFace } from '../RepresentBuildTetrahedron';
 import { parsePoiCatalog } from '../../poi-catalog/poiCatalog.parser';
 import { GEOMETRIES, REPRESENTATIONS } from '../../workspace/workspace.registry';
 import type { CatalogRef } from '../../workspace/workspace.types';
@@ -159,22 +161,34 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
     }));
   }, []);
 
+  const onTetrahedronNav = (f: RepresentBuildFace) => {
+    if (f === 'geometry_draw') onJumpTo('geometry_editor');
+    else if (f === 'catalog_magazination') onJumpTo('P02');
+    else if (f === 'represent_organisation') onJumpTo('workspace');
+    // represent_inspection: kein eigener Tab — rechter Pipeline-Monitor
+  };
+
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 760 }}>
-      {/* Intro */}
+      {/* Intro mit Tetraeder */}
       <div style={{
         background: 'linear-gradient(135deg, #1a365d 0%, #2b6cb0 100%)',
         borderRadius: 6, padding: '14px 18px', marginBottom: 22, color: '#fff',
+        display: 'flex', gap: 18, alignItems: 'center',
       }}>
-        <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: '-0.01em' }}>
-          SCIM Workspace
+        <div style={{ flexShrink: 0, background: '#fff', padding: 8, borderRadius: 4 }}>
+          <RepresentBuildTetrahedron activeFace="represent_organisation" onNavigate={onTetrahedronNav} size={80} />
         </div>
-        <div style={{ fontSize: 11, opacity: 0.85, marginTop: 4, lineHeight: 1.5 }}>
-          Drei Primär-Objekte: <strong>Boundary-Geometrien</strong>, <strong>Kataloge</strong>, <strong>Representations</strong>.
-          Geometry + Katalog werden gemeinsam zu einer Representation kombiniert — das ist die Einheit, die als Bundle in der Ziel-App landet.
-        </div>
-        <div style={{ fontSize: 10, opacity: 0.65, marginTop: 6, fontFamily: 'monospace' }}>
-          Phase 2a · Read-only · Editoren via Panels nebenan
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 9, opacity: 0.65, fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            Represent Build · Seite 4
+          </div>
+          <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: '-0.01em', marginTop: 2 }}>
+            Represent Organisation
+          </div>
+          <div style={{ fontSize: 11, opacity: 0.85, marginTop: 4, lineHeight: 1.5 }}>
+            Empfangshalle der drei Produktions-Seiten. Hier laufen alle Geometrien, Kataloge und Representations zusammen. Komposition neuer Representations passiert ausschließlich hier.
+          </div>
         </div>
       </div>
 

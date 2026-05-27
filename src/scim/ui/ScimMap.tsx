@@ -6,9 +6,12 @@ import type { BoundaryState } from '../boundary/boundary.types';
 import type { ExtractionState } from '../extraction/extraction.types';
 import type { PoiModelState } from '../poi-model/poiModel.types';
 import type { RouteLayerModelState } from '../route-layer-model/routeLayerModel.types';
+import RepresentBuildTetrahedron from './RepresentBuildTetrahedron';
+import type { RepresentBuildFace } from './RepresentBuildTetrahedron';
 
 interface Props {
   result: ScimPipelineResult;
+  onNavigate?: (face: RepresentBuildFace) => void;
 }
 
 const POI_LOAD_COLORS: Record<string, string> = {
@@ -31,7 +34,7 @@ const DEFAULT_VISIBILITY: LayerVisibility = {
   pois: true,
 };
 
-export default function ScimMap({ result }: Props) {
+export default function ScimMap({ result, onNavigate }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const layerGroupRef = useRef<L.LayerGroup | null>(null);
@@ -170,7 +173,7 @@ export default function ScimMap({ result }: Props) {
         width: '100%', height: '100%', display: 'flex', flexDirection: 'column',
         background: '#1a1a1a', color: '#ff4136', fontFamily: 'monospace', fontSize: 13,
       }}>
-        <Header label="Pipeline-Kontrolle" detail="Fehler" vis={vis} setVis={setVis} disabled />
+        <Header label="Pipeline-Kontrolle" detail="Fehler" vis={vis} setVis={setVis} onNavigate={onNavigate} disabled />
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           Pipeline failed at: {result.failed_at_step ?? 'unknown'}
         </div>
@@ -191,19 +194,20 @@ export default function ScimMap({ result }: Props) {
 
   return (
     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Header label="Pipeline-Kontrolle" detail={detail} vis={vis} setVis={setVis} />
+      <Header label="Pipeline-Kontrolle" detail={detail} vis={vis} setVis={setVis} onNavigate={onNavigate} />
       <div ref={containerRef} style={{ flex: 1, minHeight: 0 }} />
     </div>
   );
 }
 
 function Header({
-  label, detail, vis, setVis, disabled,
+  label, detail, vis, setVis, onNavigate, disabled,
 }: {
   label: string;
   detail: string;
   vis: LayerVisibility;
   setVis: (v: LayerVisibility) => void;
+  onNavigate?: (face: RepresentBuildFace) => void;
   disabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
@@ -215,6 +219,9 @@ function Header({
       fontFamily: 'system-ui, sans-serif',
       display: 'flex', alignItems: 'center', gap: 8,
     }}>
+      <div style={{ flexShrink: 0, background: '#1a2535', padding: 3, borderRadius: 3 }} title="Represent Build · Seite 3 · Represent Inspection">
+        <RepresentBuildTetrahedron activeFace="represent_inspection" onNavigate={onNavigate} size={36} />
+      </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 9, color: '#4a6a8a', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{label}</div>
         <div style={{ color: '#e0eeff', fontSize: 11, marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>

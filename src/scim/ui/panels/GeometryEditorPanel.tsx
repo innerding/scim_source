@@ -20,6 +20,8 @@ import '@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css';
 import type { Position } from 'geojson';
 import { GEOMETRIES } from '../../workspace/workspace.registry';
 import { parsePoiCatalog } from '../../poi-catalog/poiCatalog.parser';
+import RepresentBuildTetrahedron from '../RepresentBuildTetrahedron';
+import type { RepresentBuildFace } from '../RepresentBuildTetrahedron';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import gruenbergMd from '../../../../data/grunberg_pois_plan.md?raw';
@@ -55,7 +57,11 @@ function saveDraft(d: Draft): void {
 
 // ─── Hauptpanel ─────────────────────────────────────────────────────────────
 
-export default function GeometryEditorPanel() {
+interface Props {
+  onJumpTo: (panelId: string) => void;
+}
+
+export default function GeometryEditorPanel({ onJumpTo }: Props) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const polygonLayerRef = useRef<L.Layer | null>(null);
@@ -254,6 +260,12 @@ export default function GeometryEditorPanel() {
       : geometryId
   ) + '.json';
 
+  const onTetraNav = (f: RepresentBuildFace) => {
+    if (f === 'geometry_draw') onJumpTo('geometry_editor');
+    else if (f === 'catalog_magazination') onJumpTo('P02');
+    else if (f === 'represent_organisation') onJumpTo('workspace');
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', fontFamily: 'system-ui, sans-serif' }}>
       {/* Toolbar */}
@@ -261,6 +273,9 @@ export default function GeometryEditorPanel() {
         display: 'flex', alignItems: 'center', gap: 12, padding: '8px 12px',
         background: '#f7fafc', borderBottom: '1px solid #e2e8f0', flexWrap: 'wrap',
       }}>
+        <div title="Represent Build · Seite 1 · Geometry Draw" style={{ flexShrink: 0 }}>
+          <RepresentBuildTetrahedron activeFace="geometry_draw" onNavigate={onTetraNav} size={40} />
+        </div>
         <label style={{ fontSize: 11, color: '#4a5568' }}>Geometrie:</label>
         <select
           value={geometryId}

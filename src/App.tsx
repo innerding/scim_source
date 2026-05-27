@@ -47,7 +47,14 @@ export default function App() {
             overflow: 'hidden',
             position: 'relative',
           }}>
-            <ScimMap result={result} />
+            <ScimMap
+              result={result}
+              onNavigate={(face) => {
+                if (face === 'geometry_draw') setActiveId('geometry_editor');
+                else if (face === 'catalog_magazination') setActiveId('P02');
+                else if (face === 'represent_organisation') setActiveId('workspace');
+              }}
+            />
           </div>
         </div>
       </div>
