@@ -18,6 +18,25 @@ import type { RepresentBuildFace } from '../RepresentBuildTetrahedron';
 import { parsePoiCatalog } from '../../poi-catalog/poiCatalog.parser';
 import { GEOMETRIES, REPRESENTATIONS } from '../../workspace/workspace.registry';
 import type { CatalogRef } from '../../workspace/workspace.types';
+import { DRAFT_KEY } from './GeometryEditorPanel';
+
+// Im Browser gezeichnete Geometry — sitzt in localStorage, noch nicht im Repo.
+interface GeometryDraft {
+  geometryId: string | 'new';
+  name: string;
+  region: string;
+  polygon: [number, number][] | null;
+}
+
+function loadGeometryDraft(): GeometryDraft | null {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return null;
+    const d = JSON.parse(raw) as GeometryDraft;
+    if (!d.polygon || d.polygon.length < 3) return null;
+    return d;
+  } catch { return null; }
+}
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore — Vite ?raw-Import liefert string
 import gruenbergMd from '../../../../data/grunberg_pois_plan.md?raw';
@@ -139,6 +158,8 @@ function ListItem({
 // ─── Hauptpanel ─────────────────────────────────────────────────────────────
 
 export default function WorkspacePanel({ onJumpTo }: Props) {
+  // Draft aus dem Editor (localStorage) — wird hier sichtbar, bevor er ins Repo geht.
+  const draft = useMemo(() => loadGeometryDraft(), []);
   const [showWizard, setShowWizard] = useState(false);
 
   const catalogs: CatalogRef[] = useMemo(() => {
@@ -206,13 +227,51 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
       {/* Geometrien */}
       <Section
         title="Boundary-Geometrien"
-        count={GEOMETRIES.length}
+        count={GEOMETRIES.length + (draft ? 1 : 0)}
         action={{
           label: '+ neue Geometry',
           onClick: () => onJumpTo('geometry_editor'),
         }}
       >
-        {GEOMETRIES.length === 0 ? (
+        {/* Draft (localStorage) zuerst — sichtbar gemacht fuer Review,
+            noch nicht im Repo. */}
+        {draft && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 12,
+            padding: '8px 12px', borderRadius: 4, marginBottom: 6,
+            background: '#fffaf0', border: '1px dashed #ed8936',
+          }}>
+            <span style={{ fontSize: 16, width: 24, textAlign: 'center' }}>🗺</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#7c2d12' }}>
+                {draft.name || 'Unbenannt'}
+                <span style={{
+                  marginLeft: 8, fontSize: 10, fontFamily: 'monospace',
+                  background: '#ed8936', color: '#fff', padding: '1px 6px', borderRadius: 3,
+                }}>
+                  DRAFT
+                </span>
+              </div>
+              <div style={{ fontSize: 11, color: '#9c4221', fontFamily: 'monospace', marginTop: 1 }}>
+                Polygon mit {draft.polygon!.length} Punkten
+                {draft.region ? ` · ${draft.region}` : ''}
+                {' · localStorage, noch nicht ins Repo committed'}
+              </div>
+            </div>
+            <button
+              onClick={() => onJumpTo('geometry_editor')}
+              style={{
+                fontSize: 11, padding: '4px 12px', cursor: 'pointer',
+                border: '1px solid #ed8936', borderRadius: 4,
+                background: 'white', color: '#9c4221', fontWeight: 500,
+              }}
+            >
+              Im Editor öffnen
+            </button>
+          </div>
+        )}
+
+        {GEOMETRIES.length === 0 && !draft ? (
           <EmptyHint text="Noch keine Geometry im Repo. Wave 2b bringt einen Vollbild-Editor mit POI-Overlay." />
         ) : (
           GEOMETRIES.map((g) => (

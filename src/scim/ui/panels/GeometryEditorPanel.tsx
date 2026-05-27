@@ -34,7 +34,7 @@ const CATALOGS = [
   { id: 'lichtenberg', name: 'Lichtenberg', md: lichtenbergMd as string },
 ];
 
-const DRAFT_KEY = 'scim3_geometry_draft';
+export const DRAFT_KEY = 'scim3_geometry_draft';
 
 interface Draft {
   geometryId: string | 'new';
@@ -288,25 +288,37 @@ export default function GeometryEditorPanel({ onJumpTo }: Props) {
             size={44}
           />
         </div>
-        <label style={{ fontSize: 11, color: '#4a5568' }}>Geometrie:</label>
+        <label style={{ fontSize: 11, color: '#4a5568' }}>Bearbeite:</label>
         <select
           value={geometryId}
           onChange={(e) => onChangeGeometry(e.target.value as string)}
           style={{ fontSize: 12, padding: '3px 6px', borderRadius: 4, border: '1px solid #cbd5e0' }}
         >
-          <option value="new">— Neu —</option>
+          <option value="new">— Neu zeichnen —</option>
           {GEOMETRIES.map((g) => (
             <option key={g.id} value={g.id}>{g.name} ({g.id})</option>
           ))}
         </select>
 
-        <label style={{ fontSize: 11, color: '#4a5568', marginLeft: 8 }}>Name:</label>
+        <label style={{
+          fontSize: 11, color: geometryId === 'new' ? '#c05621' : '#4a5568',
+          marginLeft: 8, fontWeight: geometryId === 'new' ? 700 : 400,
+        }}>
+          {geometryId === 'new' ? 'Name (neu) →' : 'Name:'}
+        </label>
         <input
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="z.B. Lichtenberg"
-          style={{ fontSize: 12, padding: '3px 6px', borderRadius: 4, border: '1px solid #cbd5e0', width: 140 }}
+          style={{
+            fontSize: 12, padding: '3px 6px', borderRadius: 4,
+            border: geometryId === 'new'
+              ? '1px solid #ed8936'
+              : '1px solid #cbd5e0',
+            width: 140,
+            background: geometryId === 'new' ? '#fffaf0' : 'white',
+          }}
         />
 
         <label style={{ fontSize: 11, color: '#4a5568' }}>Region:</label>
