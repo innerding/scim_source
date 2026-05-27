@@ -5,7 +5,7 @@ import {
   GEOMETRY_EDITOR_DESCRIPTOR, CATALOG_DESCRIPTOR,
 } from './panelRegistry';
 import logoBaseNaked from '../../assets/logo-base-naked.svg';
-import logoHex from '../../assets/logo-hex.svg';
+import logoHexNaked from '../../assets/logo-hex-naked.svg';
 import { useRole } from './RoleContext';
 import RepresentBuildTetrahedron from './RepresentBuildTetrahedron';
 import type { RepresentBuildFace, RepresentBuildArc } from './RepresentBuildTetrahedron';
@@ -140,12 +140,13 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
       overflowY: 'auto',
       padding: '12px 6px 12px',
     }}>
-      {/* Logo-Komposition — Iconset bleibt, Wordmark ist aus SVG entfernt.
-          Hex-Layer pulsiert sanft. Aspect ratio 182.625 × 51.122. */}
+      {/* Nacktes Logo — Iconset alleine. Auf Iconset-Bounds beschnitten,
+          waechst nach rechts/unten bis Gap dem linken Padding-Rand entspricht.
+          Hex-Layer pulsiert sanft. Aspect ratio 107.5 × 51.122. */}
       <div style={{
         position: 'relative',
         width: '100%',
-        height: Math.round((210 - 12) / (182.625 / 51.122)),
+        height: Math.round((210 - 12) / (107.5 / 51.122)),
         marginBottom: 6, flexShrink: 0,
       }}>
         <img
@@ -154,7 +155,7 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
         />
         <img
-          src={logoHex}
+          src={logoHexNaked}
           alt=""
           style={{
             position: 'absolute', inset: 0, width: '100%', height: '100%',
