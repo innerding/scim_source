@@ -9,9 +9,14 @@ import type { RouteLayerModelState } from '../route-layer-model/routeLayerModel.
 import RepresentBuildTetrahedron from './RepresentBuildTetrahedron';
 import type { RepresentBuildFace } from './RepresentBuildTetrahedron';
 import {
-  addRoadHeatMesh, addPoiRoutes,
+  addRoadHeatMesh, addPoiRoutes, fetchOsmEdges,
   TILE_OSM_URL, TILE_OSM_ATTR, TILE_MESH_URL, TILE_MESH_ATTR,
 } from './colourMeshOverlay';
+
+interface OsmEdge {
+  edge_id: string;
+  geometry: { coordinates: [number, number][] };
+}
 
 interface Props {
   result: ScimPipelineResult;
@@ -47,6 +52,8 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
   const layerGroupRef = useRef<L.LayerGroup | null>(null);
   const baseTileRef = useRef<L.TileLayer | null>(null);
   const [vis, setVis] = useState<LayerVisibility>(DEFAULT_VISIBILITY);
+  const [osmEdges, setOsmEdges] = useState<OsmEdge[]>([]);
+  const [osmStatus, setOsmStatus] = useState<'idle' | 'loading' | 'ok' | 'failed'>('idle');
 
   // Init Leaflet map once (guard against StrictMode double-invoke).
   useEffect(() => {
@@ -96,6 +103,31 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
       attribution: wantAttr, maxZoom: 19,
     }).addTo(map);
   }, [vis.colourmesh]);
+
+  // OSM-Wege via Overpass holen, sobald colourmesh an und bbox bekannt.
+  // Hat einen Cache (24h) — beim zweiten Aufruf sofort da.
+  useEffect(() => {
+    if (!vis.colourmesh) return;
+    const bbox = result.success
+      ? ((result.context.boundary as unknown as { computed_boundary: { bbox?: [number, number, number, number] } } | undefined)
+         ?.computed_boundary?.bbox)
+      : undefined;
+    if (!bbox) return;
+    let cancelled = false;
+    setOsmStatus('loading');
+    fetchOsmEdges(bbox)
+      .then((edges) => {
+        if (cancelled) return;
+        setOsmEdges(edges);
+        setOsmStatus('ok');
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        console.warn('Overpass-API failed, fallback to synthetic mesh:', err);
+        setOsmStatus('failed');
+      });
+    return () => { cancelled = true; };
+  }, [vis.colourmesh, result]);
 
   // Container kann resized werden (Collapsible-Container) — Map neu einladen
   useEffect(() => {
@@ -165,9 +197,12 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
     }
 
     // Colour-Mesh: Heat *entlang der Strassen* + POI-zu-POI Routen mit Glow.
-    if (vis.colourmesh && boundary?.computed_boundary.bbox && graph?.edges) {
+    // Bevorzugt OSM-Wege (echte Geometrie); waehrend des Ladens / bei Fehler
+    // faellt addRoadHeatMesh intern auf synthetische Edges zurueck.
+    if (vis.colourmesh && boundary?.computed_boundary.bbox) {
       const pois = extraction?.extracted_pois ?? [];
-      addRoadHeatMesh(layerGroup, graph.edges, boundary.computed_boundary.bbox, pois);
+      const edgesToRender = osmEdges.length > 0 ? osmEdges : (graph?.edges ?? []);
+      addRoadHeatMesh(layerGroup, edgesToRender, boundary.computed_boundary.bbox, pois);
       addPoiRoutes(layerGroup, pois);
     }
 
@@ -200,7 +235,7 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
         [Math.max(...lats), Math.max(...lons)],
       ]);
     }
-  }, [result, vis]);
+  }, [result, vis, osmEdges]);
 
   if (!result.success) {
     return (
@@ -223,7 +258,12 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
 
   const activeLabels: string[] = [];
   if (vis.boundary && boundary?.computed_boundary.bbox) activeLabels.push('Boundary');
-  if (vis.colourmesh) activeLabels.push('Colour-Mesh');
+  if (vis.colourmesh) {
+    if (osmStatus === 'loading') activeLabels.push('Colour-Mesh (OSM laedt…)');
+    else if (osmStatus === 'ok') activeLabels.push(`Colour-Mesh · ${osmEdges.length} OSM-Wege`);
+    else if (osmStatus === 'failed') activeLabels.push('Colour-Mesh (synthetisch · OSM-Fehler)');
+    else activeLabels.push('Colour-Mesh');
+  }
   if (vis.routes && routeLayerModel?.segments?.length) activeLabels.push(`${routeLayerModel.segments.length} Routen`);
   if (vis.pois && extraction?.extracted_pois?.length) activeLabels.push(`${extraction.extracted_pois.length} POIs`);
   const detail = activeLabels.length > 0 ? activeLabels.join(' · ') : '— alle Layer ausgeblendet —';

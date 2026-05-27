@@ -348,6 +348,72 @@ export function addPoiRoutes(group: L.LayerGroup, pois: POI[]): void {
   }
 }
 
+// ─── Echte OSM-Wege via Overpass-API ────────────────────────────────────────
+//
+// Holt highway-Wege innerhalb der bbox aus OSM. Antwort wird in localStorage
+// gecached (24h pro bbox-Key). Cancelable beim Component-Unmount via Wrapper.
+
+const OSM_CACHE_KEY_PREFIX = 'scim3_osm_edges_v1';
+const OSM_CACHE_TTL_MS = 24 * 3600 * 1000;
+
+interface OverpassWay {
+  type: 'way';
+  id: number;
+  geometry?: Array<{ lat: number; lon: number }>;
+}
+interface OverpassResponse {
+  elements?: Array<{ type: string; id: number; geometry?: Array<{ lat: number; lon: number }> }>;
+}
+
+export async function fetchOsmEdges(
+  bbox: [number, number, number, number],
+): Promise<Edge[]> {
+  const cacheKey = `${OSM_CACHE_KEY_PREFIX}:${bbox.map((n) => n.toFixed(4)).join(',')}`;
+  try {
+    const raw = localStorage.getItem(cacheKey);
+    if (raw) {
+      const { ts, edges } = JSON.parse(raw) as { ts: number; edges: Edge[] };
+      if (Date.now() - ts < OSM_CACHE_TTL_MS && Array.isArray(edges) && edges.length) {
+        return edges;
+      }
+    }
+  } catch { /* ignore cache fehler */ }
+
+  const [minLon, minLat, maxLon, maxLat] = bbox;
+  const query = `
+    [out:json][timeout:25];
+    (
+      way["highway"~"^(primary|secondary|tertiary|unclassified|residential|service|track|path|footway|cycleway)$"]
+        (${minLat},${minLon},${maxLat},${maxLon});
+    );
+    out geom;
+  `.trim();
+
+  const url = 'https://overpass-api.de/api/interpreter';
+  const resp = await fetch(url, {
+    method: 'POST',
+    body: 'data=' + encodeURIComponent(query),
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+  });
+  if (!resp.ok) throw new Error(`Overpass error: ${resp.status}`);
+  const data = (await resp.json()) as OverpassResponse;
+
+  const edges: Edge[] = (data.elements ?? [])
+    .filter((e): e is OverpassWay => e.type === 'way' && Array.isArray(e.geometry))
+    .map((e) => ({
+      edge_id: `osm_${e.id}`,
+      geometry: {
+        coordinates: (e.geometry ?? []).map((g) => [g.lon, g.lat] as [number, number]),
+      },
+    }));
+
+  try {
+    localStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), edges }));
+  } catch { /* localStorage voll oder gesperrt — egal */ }
+
+  return edges;
+}
+
 // ─── Base-Tile-URLs ──────────────────────────────────────────────────────────
 
 export const TILE_OSM_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
