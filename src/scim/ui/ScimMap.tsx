@@ -44,11 +44,10 @@ export default function ScimMap({ result }: Props) {
 
     const map = L.map(el, {
       zoomControl: true,
-      // Smootheres Wheel-Zoom (default 60)
-      wheelPxPerZoomLevel: 100,
-      // Stufenlose Zoom-Schritte
-      zoomSnap: 0,
-      zoomDelta: 0.5,
+      zoomSnap: 0,        // stufenlos
+      zoomDelta: 1,       // 1 voller Step pro Wheel-Tick
+      wheelPxPerZoomLevel: 40,
+      wheelDebounceTime: 20,
     });
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors',
