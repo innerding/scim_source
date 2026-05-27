@@ -8,6 +8,10 @@ import type { PoiModelState } from '../poi-model/poiModel.types';
 import type { RouteLayerModelState } from '../route-layer-model/routeLayerModel.types';
 import RepresentBuildTetrahedron from './RepresentBuildTetrahedron';
 import type { RepresentBuildFace } from './RepresentBuildTetrahedron';
+import {
+  addHeatLayer, addPoiRoutes,
+  TILE_OSM_URL, TILE_OSM_ATTR, TILE_MESH_URL, TILE_MESH_ATTR,
+} from './colourMeshOverlay';
 
 interface Props {
   result: ScimPipelineResult;
@@ -27,18 +31,21 @@ interface LayerVisibility {
   boundary: boolean;
   routes: boolean;
   pois: boolean;
+  colourmesh: boolean;
 }
 
 const DEFAULT_VISIBILITY: LayerVisibility = {
   boundary: true,
-  routes: true,
+  routes: false,
   pois: true,
+  colourmesh: true,
 };
 
 export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const layerGroupRef = useRef<L.LayerGroup | null>(null);
+  const baseTileRef = useRef<L.TileLayer | null>(null);
   const [vis, setVis] = useState<LayerVisibility>(DEFAULT_VISIBILITY);
 
   // Init Leaflet map once (guard against StrictMode double-invoke).
@@ -54,8 +61,11 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
       wheelDebounceTime: 0,
       preferCanvas: true,
     });
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors',
+    // Initiale Base-Tile entspricht der Default-Visibility (Mesh an -> reduzierte Karte).
+    const initialUrl = DEFAULT_VISIBILITY.colourmesh ? TILE_MESH_URL : TILE_OSM_URL;
+    const initialAttr = DEFAULT_VISIBILITY.colourmesh ? TILE_MESH_ATTR : TILE_OSM_ATTR;
+    baseTileRef.current = L.tileLayer(initialUrl, {
+      attribution: initialAttr,
       maxZoom: 19,
     }).addTo(map);
 
@@ -67,8 +77,25 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
       map.remove();
       mapRef.current = null;
       layerGroupRef.current = null;
+      baseTileRef.current = null;
     };
   }, []);
+
+  // Base-Tile-Layer austauschen, wenn der Colour-Mesh-Modus toggelt.
+  useEffect(() => {
+    const map = mapRef.current;
+    const oldBase = baseTileRef.current;
+    if (!map || !oldBase) return;
+    const wantUrl = vis.colourmesh ? TILE_MESH_URL : TILE_OSM_URL;
+    const wantAttr = vis.colourmesh ? TILE_MESH_ATTR : TILE_OSM_ATTR;
+    // Vermeide Tausch wenn schon korrekt (Leaflet-internes _url-Feld).
+    const currentUrl = (oldBase as unknown as { _url: string })._url;
+    if (currentUrl === wantUrl) return;
+    map.removeLayer(oldBase);
+    baseTileRef.current = L.tileLayer(wantUrl, {
+      attribution: wantAttr, maxZoom: 19,
+    }).addTo(map);
+  }, [vis.colourmesh]);
 
   // Container kann resized werden (Collapsible-Container) — Map neu einladen
   useEffect(() => {
@@ -137,6 +164,12 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
       }
     }
 
+    // Colour-Mesh: Heat-Layer aus Fake-Load + POI-zu-POI Routen mit Glow.
+    if (vis.colourmesh && boundary?.computed_boundary.bbox && extraction?.extracted_pois) {
+      addHeatLayer(layerGroup, boundary.computed_boundary.bbox, extraction.extracted_pois);
+      addPoiRoutes(layerGroup, extraction.extracted_pois);
+    }
+
     // POIs
     if (vis.pois && extraction?.extracted_pois) {
       for (const poi of extraction.extracted_pois) {
@@ -189,6 +222,7 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
 
   const activeLabels: string[] = [];
   if (vis.boundary && boundary?.computed_boundary.bbox) activeLabels.push('Boundary');
+  if (vis.colourmesh) activeLabels.push('Colour-Mesh');
   if (vis.routes && routeLayerModel?.segments?.length) activeLabels.push(`${routeLayerModel.segments.length} Routen`);
   if (vis.pois && extraction?.extracted_pois?.length) activeLabels.push(`${extraction.extracted_pois.length} POIs`);
   const detail = activeLabels.length > 0 ? activeLabels.join(' · ') : '— alle Layer ausgeblendet —';
@@ -264,6 +298,7 @@ function Header({
         }}>
           <LayerToggle label="Boundary" checked={vis.boundary} onChange={(v) => setVis({ ...vis, boundary: v })} />
           <LayerToggle label="POIs" checked={vis.pois} onChange={(v) => setVis({ ...vis, pois: v })} />
+          <LayerToggle label="Colour-Mesh" checked={vis.colourmesh} onChange={(v) => setVis({ ...vis, colourmesh: v })} />
           <LayerToggle label="Routen / Edges" checked={vis.routes} onChange={(v) => setVis({ ...vis, routes: v })} />
         </div>
       )}
