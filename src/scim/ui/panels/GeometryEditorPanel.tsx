@@ -33,31 +33,12 @@ const CATALOGS = [
 ];
 
 const DRAFT_KEY = 'scim3_geometry_draft';
-const P01_LEGACY_KEY = 'scim3_representation';
 
 interface Draft {
   geometryId: string | 'new';
   name: string;
   region: string;
   polygon: Position[] | null;
-}
-
-// Legacy P01 stored polygon as [lat, lon][] (umgekehrt zu GeoJSON [lon, lat]).
-// Hier konvertieren wir auf die GeoJSON-Konvention.
-function readP01LegacyPolygon(): { name: string; polygon: Position[] | null } | null {
-  try {
-    const raw = localStorage.getItem(P01_LEGACY_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as { name?: string; polygon?: [number, number][] | null };
-    if (!parsed || !parsed.name) return null;
-    const ring = parsed.polygon ?? null;
-    if (!ring) return { name: parsed.name, polygon: null };
-    // [lat, lon] -> [lon, lat]
-    const geo: Position[] = ring.map(([lat, lon]) => [lon, lat]);
-    return { name: parsed.name, polygon: geo };
-  } catch {
-    return null;
-  }
 }
 
 function loadDraft(): Draft {
@@ -81,7 +62,6 @@ export default function GeometryEditorPanel() {
   const poiLayerRef = useRef<L.LayerGroup | null>(null);
 
   const initial = useMemo(loadDraft, []);
-  const legacyP01 = useMemo(readP01LegacyPolygon, []);
   const [geometryId, setGeometryId] = useState<string | 'new'>(initial.geometryId);
   const [name, setName] = useState(initial.name);
   const [region, setRegion] = useState(initial.region);
@@ -185,26 +165,6 @@ export default function GeometryEditorPanel() {
   useEffect(() => {
     setTimeout(() => mapRef.current?.invalidateSize(), 200);
   }, []);
-
-  // P01-Legacy-Polygon in den Editor uebernehmen (Migrations-Helper).
-  // Ueberschreibt aktuellen Stand — User-Bestaetigung vor Aufruf.
-  const onLoadP01Legacy = () => {
-    if (!legacyP01 || !legacyP01.polygon) return;
-    const map = mapRef.current;
-    if (!map) return;
-    if (polygonLayerRef.current) {
-      map.removeLayer(polygonLayerRef.current);
-      polygonLayerRef.current = null;
-    }
-    setGeometryId('new');
-    setName(legacyP01.name);
-    setRegion('');
-    setPolygon(legacyP01.polygon);
-    const latlngs = legacyP01.polygon.map(([lng, lat]) => [lat, lng] as [number, number]);
-    const poly = L.polygon(latlngs, { color: '#0074d9' }).addTo(map);
-    polygonLayerRef.current = poly;
-    map.fitBounds(poly.getBounds(), { padding: [30, 30] });
-  };
 
   // Geometry-Wechsel laedt neue Daten in die Map
   const onChangeGeometry = (id: string | 'new') => {
@@ -330,24 +290,6 @@ export default function GeometryEditorPanel() {
           placeholder="z.B. Gmunden"
           style={{ fontSize: 12, padding: '3px 6px', borderRadius: 4, border: '1px solid #cbd5e0', width: 120 }}
         />
-
-        {legacyP01 && legacyP01.polygon && (
-          <button
-            onClick={() => {
-              if (confirm(`P01-Polygon "${legacyP01.name}" (${legacyP01.polygon!.length} Punkte) übernehmen? Der aktuelle Editor-Stand wird überschrieben.`)) {
-                onLoadP01Legacy();
-              }
-            }}
-            style={{
-              fontSize: 11, padding: '3px 10px', cursor: 'pointer',
-              border: '1px solid #f6ad55', borderRadius: 4,
-              background: '#fffbeb', color: '#7c2d12',
-            }}
-            title="Polygon aus P01-localStorage (Legacy) in den Editor laden"
-          >
-            ↓ P01 übernehmen
-          </button>
-        )}
 
         <span style={{ flex: 1 }} />
 

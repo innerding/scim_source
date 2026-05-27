@@ -27,24 +27,6 @@ interface Props {
   onJumpTo: (panelId: string) => void;
 }
 
-// ─── localStorage-Lookup fuer den alten P01-Polygon (Migrations-Hinweis) ───
-interface StoredP01Rep {
-  name: string;
-  polygon: [number, number][] | null;
-}
-
-function readP01Polygon(): StoredP01Rep | null {
-  try {
-    const raw = localStorage.getItem('scim3_representation');
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as StoredP01Rep;
-    if (!parsed || !parsed.name) return null;
-    return parsed;
-  } catch {
-    return null;
-  }
-}
-
 // ─── Sub-Sections ───────────────────────────────────────────────────────────
 
 function Section({
@@ -155,7 +137,6 @@ function ListItem({
 // ─── Hauptpanel ─────────────────────────────────────────────────────────────
 
 export default function WorkspacePanel({ onJumpTo }: Props) {
-  const localPolygon = useMemo(() => readP01Polygon(), []);
   const [showWizard, setShowWizard] = useState(false);
 
   const catalogs: CatalogRef[] = useMemo(() => {
@@ -219,16 +200,6 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
               action={{ label: 'Im Editor öffnen', onClick: () => onJumpTo('geometry_editor') }}
             />
           ))
-        )}
-        {localPolygon && (
-          <div style={{
-            marginTop: 8, padding: '8px 12px', fontSize: 11,
-            background: '#fff5f0', border: '1px solid #fed7aa', borderRadius: 4,
-            color: '#7c2d12',
-          }}>
-            <strong>Migrations-Hinweis:</strong> dein P01-Polygon „{localPolygon.name}"
-            {localPolygon.polygon ? ` (${localPolygon.polygon.length} Punkte)` : ' (noch nicht gezeichnet)'} liegt nur im Browser-localStorage. Wave 2b bekommt einen „Übernehmen"-Knopf, der daraus ein gitbares data/geometries/*.json macht.
-          </div>
         )}
       </Section>
 
