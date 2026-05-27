@@ -9,7 +9,7 @@ import type { RouteLayerModelState } from '../route-layer-model/routeLayerModel.
 import RepresentBuildTetrahedron from './RepresentBuildTetrahedron';
 import type { RepresentBuildFace } from './RepresentBuildTetrahedron';
 import {
-  addHeatLayer, addPoiRoutes,
+  addRoadHeatMesh, addPoiRoutes,
   TILE_OSM_URL, TILE_OSM_ATTR, TILE_MESH_URL, TILE_MESH_ATTR,
 } from './colourMeshOverlay';
 
@@ -164,10 +164,11 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
       }
     }
 
-    // Colour-Mesh: Heat-Layer aus Fake-Load + POI-zu-POI Routen mit Glow.
-    if (vis.colourmesh && boundary?.computed_boundary.bbox && extraction?.extracted_pois) {
-      addHeatLayer(layerGroup, boundary.computed_boundary.bbox, extraction.extracted_pois);
-      addPoiRoutes(layerGroup, extraction.extracted_pois);
+    // Colour-Mesh: Heat *entlang der Strassen* + POI-zu-POI Routen mit Glow.
+    if (vis.colourmesh && boundary?.computed_boundary.bbox && graph?.edges) {
+      const pois = extraction?.extracted_pois ?? [];
+      addRoadHeatMesh(layerGroup, graph.edges, boundary.computed_boundary.bbox, pois);
+      addPoiRoutes(layerGroup, pois);
     }
 
     // POIs

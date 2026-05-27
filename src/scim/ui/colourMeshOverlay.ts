@@ -1,54 +1,45 @@
-// Colour-Mesh Overlay — Phase 1: Fake-Load Heatmap + POI-zu-POI Routen mit Glow.
+// Colour-Mesh Overlay — Phase 1.5: Heat *entlang der Straßen* statt freier
+// Heat-Wolke. Jede OSM-Edge bekommt eine pseudo-zufaellige Last und wird als
+// Heat-Pipe gerendert (weisser Glow + farbige Hauptlinie). Zwischen POIs
+// laufen smoothe Bezier-Routen (wenn >= 2 POIs vorhanden).
 //
-// Idee: Innerhalb der Geometry erzeugen wir ein heat-pipe-iges Mesh aus
-// pseudo-zufaelligen Last-Punkten (Fake-Load, kein realer Bezug). Darauf
-// werden POIs als Knoten gelegt; zwischen nahen POIs spannen wir geglaettete
-// Routen mit zweilagigem Rendering (breite weisse Glow-Linie + farbige
-// Hauptlinie). Heat- und Routen-Farben sprechen dieselbe Sprache.
-//
-// Spaeter (Phase 2): echte Load-Daten ersetzen Fake-Load, BCK/BAK navigiert
-// auf den Routen.
+// Fake-Load = Summe gaussian-Bumps von synthetischen Hotspots + POI-Positionen.
+// Spaeter (Phase 2): echte Telco-Load.
 
 import L from 'leaflet';
-import 'leaflet.heat';
 
-// Typen-Stub fuer leaflet.heat (kein offizielles @types-Paket).
-type HeatPoint = [number, number, number]; // [lat, lon, intensity 0..1]
-interface HeatLayerOptions {
-  radius?: number;
-  blur?: number;
-  maxZoom?: number;
-  max?: number;
-  minOpacity?: number;
-  gradient?: Record<number, string>;
-}
-type HeatLayer = L.Layer & { setLatLngs(points: HeatPoint[]): HeatLayer };
-const heatLayer = (points: HeatPoint[], opts?: HeatLayerOptions): HeatLayer =>
-  (L as unknown as { heatLayer: (p: HeatPoint[], o?: HeatLayerOptions) => HeatLayer })
-    .heatLayer(points, opts);
+// ─── Farbpalette: heat-pipe, kein gelber Sumpf ───────────────────────────────
 
-// Heat-Gradient: heat-pipe-Look (cool blau -> magenta -> warm).
-export const HEAT_GRADIENT: Record<number, string> = {
-  0.0: '#1e3a5f',
-  0.2: '#0099ff',
-  0.4: '#00d4aa',
-  0.6: '#ffd700',
-  0.8: '#ff8c00',
-  1.0: '#ff4e6e',
-};
+const HEAT_STOPS: Array<{ at: number; color: [number, number, number] }> = [
+  { at: 0.00, color: [30, 58, 95]    },  // #1e3a5f — deep navy
+  { at: 0.25, color: [0, 153, 255]   },  // #0099ff — electric blue
+  { at: 0.50, color: [0, 212, 170]   },  // #00d4aa — cyan-teal
+  { at: 0.75, color: [192, 132, 252] },  // #c084fc — lavender
+  { at: 1.00, color: [236, 72, 153]  },  // #ec4899 — magenta
+];
 
-// Route-Farben aus dem Heat-Gradient, fuer visuelle Konsistenz.
-const ROUTE_COLORS = ['#0099ff', '#00d4aa', '#ffd700', '#ff8c00', '#ff4e6e'];
-
-interface POI {
-  poi_id: string;
-  center: { coordinates: [number, number] }; // [lon, lat]
-  name?: string;
+function lerp(a: number, b: number, t: number): number {
+  return a + (b - a) * t;
 }
 
-// ─── Fake-Load Heat-Punkte erzeugen ──────────────────────────────────────────
+function heatColor(t: number): string {
+  const u = Math.max(0, Math.min(1, t));
+  for (let i = 0; i < HEAT_STOPS.length - 1; i++) {
+    const a = HEAT_STOPS[i], b = HEAT_STOPS[i + 1];
+    if (u <= b.at) {
+      const f = (u - a.at) / (b.at - a.at || 1);
+      const r = Math.round(lerp(a.color[0], b.color[0], f));
+      const g = Math.round(lerp(a.color[1], b.color[1], f));
+      const bl = Math.round(lerp(a.color[2], b.color[2], f));
+      return `rgb(${r},${g},${bl})`;
+    }
+  }
+  const last = HEAT_STOPS[HEAT_STOPS.length - 1].color;
+  return `rgb(${last[0]},${last[1]},${last[2]})`;
+}
 
-// Deterministisches Pseudo-Random (mulberry32), damit das Mesh stabil bleibt.
+// ─── Pseudo-Random ───────────────────────────────────────────────────────────
+
 function makeRng(seed: number): () => number {
   let a = seed >>> 0;
   return () => {
@@ -59,67 +50,116 @@ function makeRng(seed: number): () => number {
   };
 }
 
-export function generateFakeHeatPoints(
+// ─── Synthetische Hotspots + Load-Funktion ───────────────────────────────────
+
+interface POI {
+  poi_id: string;
+  center: { coordinates: [number, number] }; // [lon, lat]
+  name?: string;
+}
+
+interface Edge {
+  edge_id: string;
+  geometry: { coordinates: [number, number][] }; // [lon, lat] pairs
+}
+
+interface Hotspot {
+  lat: number;
+  lon: number;
+  strength: number;  // 0..1 Peak
+  sigma: number;     // Lat/Lon-Reichweite (Gauss-sigma)
+}
+
+function generateHotspots(
   bbox: [number, number, number, number],
   pois: POI[],
-  count: number = 600,
-): HeatPoint[] {
+): Hotspot[] {
   const [minLon, minLat, maxLon, maxLat] = bbox;
   const lonSpan = maxLon - minLon;
   const latSpan = maxLat - minLat;
   const rng = makeRng(42);
-  const points: HeatPoint[] = [];
+  const hotspots: Hotspot[] = [];
 
-  // 1) Streupunkte ueber bbox (Grundrauschen).
-  for (let i = 0; i < count * 0.4; i++) {
-    const lon = minLon + rng() * lonSpan;
-    const lat = minLat + rng() * latSpan;
-    const intensity = 0.15 + rng() * 0.35;
-    points.push([lat, lon, intensity]);
+  // 4 synthetische Hotspots verteilt ueber bbox.
+  for (let i = 0; i < 4; i++) {
+    hotspots.push({
+      lat: minLat + 0.18 * latSpan + rng() * 0.64 * latSpan,
+      lon: minLon + 0.18 * lonSpan + rng() * 0.64 * lonSpan,
+      strength: 0.65 + rng() * 0.35,
+      sigma: 0.08 * Math.max(lonSpan, latSpan),
+    });
   }
-
-  // 2) Cluster-Punkte um POIs herum (Hotspots).
-  for (const poi of pois) {
-    const [plon, plat] = poi.center.coordinates;
-    const cluster = 6 + Math.floor(rng() * 10);
-    for (let i = 0; i < cluster; i++) {
-      const r = 0.0008 + rng() * 0.0022;
-      const angle = rng() * Math.PI * 2;
-      const lon = plon + Math.cos(angle) * r;
-      const lat = plat + Math.sin(angle) * r * 0.65;
-      const intensity = 0.55 + rng() * 0.45;
-      points.push([lat, lon, intensity]);
-    }
+  // POIs werden ebenfalls Hotspots (etwas staerker).
+  for (const p of pois) {
+    hotspots.push({
+      lat: p.center.coordinates[1],
+      lon: p.center.coordinates[0],
+      strength: 0.85,
+      sigma: 0.05 * Math.max(lonSpan, latSpan),
+    });
   }
-
-  return points;
+  return hotspots;
 }
 
-export function addHeatLayer(
+function loadAt(lat: number, lon: number, hotspots: Hotspot[]): number {
+  let total = 0;
+  for (const h of hotspots) {
+    const dLat = (lat - h.lat) / h.sigma;
+    const dLon = (lon - h.lon) / h.sigma;
+    const d2 = dLat * dLat + dLon * dLon;
+    total = Math.max(total, h.strength * Math.exp(-d2));
+  }
+  return Math.min(1, total);
+}
+
+// ─── Edge-Heat: jede Strasse bekommt eine Heat-Pipe ──────────────────────────
+
+export function addRoadHeatMesh(
   group: L.LayerGroup,
+  edges: Edge[],
   bbox: [number, number, number, number],
   pois: POI[],
 ): void {
-  const points = generateFakeHeatPoints(bbox, pois);
-  const layer = heatLayer(points, {
-    radius: 28,
-    blur: 38,
-    maxZoom: 17,
-    minOpacity: 0.35,
-    gradient: HEAT_GRADIENT,
-  });
-  layer.addTo(group);
+  if (!edges || edges.length === 0) return;
+  const hotspots = generateHotspots(bbox, pois);
+
+  for (const edge of edges) {
+    const coords = edge.geometry.coordinates;
+    if (!coords || coords.length < 2) continue;
+    // LatLon-Reihe aus GeoJSON [lon,lat] -> Leaflet [lat,lon]
+    const latLngs: [number, number][] = coords.map(([lon, lat]) => [lat, lon]);
+    // Last am Mittelpunkt der Edge (genuegt fuer den Look)
+    const mid = latLngs[Math.floor(latLngs.length / 2)];
+    const t = loadAt(mid[0], mid[1], hotspots);
+    const color = heatColor(t);
+
+    // Glow: weiss, breiter, halbtransparent
+    L.polyline(latLngs, {
+      color: '#ffffff',
+      weight: 7,
+      opacity: 0.32 + 0.18 * t,
+      lineCap: 'round',
+      lineJoin: 'round',
+    }).addTo(group);
+
+    // Hauptlinie: heat color
+    L.polyline(latLngs, {
+      color,
+      weight: 3.2,
+      opacity: 0.95,
+      lineCap: 'round',
+      lineJoin: 'round',
+    }).addTo(group);
+  }
 }
 
-// ─── POI-zu-POI Routen mit Glow ──────────────────────────────────────────────
+// ─── POI-zu-POI Routen (smooth Bezier) ───────────────────────────────────────
 
 function distSq(a: [number, number], b: [number, number]): number {
   const dx = a[0] - b[0], dy = a[1] - b[1];
   return dx * dx + dy * dy;
 }
 
-// k-NN Routen-Graph: pro POI bis zu k naechste Nachbarn verbinden, Duplikate
-// werden via "kleinerer-zuerst"-Konvention vermieden.
 export function buildPoiRoutes(pois: POI[], k: number = 3): Array<[POI, POI]> {
   const edges = new Set<string>();
   const result: Array<[POI, POI]> = [];
@@ -139,7 +179,6 @@ export function buildPoiRoutes(pois: POI[], k: number = 3): Array<[POI, POI]> {
   return result;
 }
 
-// Quadratische Bezier mit leichtem Versatz fuer die "smooth"-Optik.
 function bezierBetween(
   aLatLon: [number, number],
   bLatLon: [number, number],
@@ -150,7 +189,6 @@ function bezierBetween(
   const [bLat, bLon] = bLatLon;
   const mLat = (aLat + bLat) / 2;
   const mLon = (aLon + bLon) / 2;
-  // Senkrechte (in Lat/Lon-Raum approximiert) zur Verbindungslinie
   const dLat = bLat - aLat, dLon = bLon - aLon;
   const len = Math.hypot(dLat, dLon) || 1;
   const cLat = mLat + (-dLon / len) * len * curveFactor;
@@ -167,47 +205,39 @@ function bezierBetween(
 }
 
 export function addPoiRoutes(group: L.LayerGroup, pois: POI[]): void {
+  // Braucht mindestens 2 POIs.
   if (pois.length < 2) return;
   const edges = buildPoiRoutes(pois, 3);
 
-  let colorIdx = 0;
   for (const [a, b] of edges) {
     const aLatLon: [number, number] = [a.center.coordinates[1], a.center.coordinates[0]];
     const bLatLon: [number, number] = [b.center.coordinates[1], b.center.coordinates[0]];
     const curve = bezierBetween(aLatLon, bLatLon);
 
-    // 1) Weisser Glow darunter (breiter, halbtransparent).
+    // Glow breiter und weicher als die Strassen-Heat-Pipes
     L.polyline(curve, {
       color: '#ffffff',
-      weight: 11,
-      opacity: 0.45,
+      weight: 13,
+      opacity: 0.42,
       lineCap: 'round',
       lineJoin: 'round',
     }).addTo(group);
 
-    // 2) Farbige Hauptlinie obendrauf.
-    const color = ROUTE_COLORS[colorIdx % ROUTE_COLORS.length];
-    colorIdx++;
     L.polyline(curve, {
-      color,
-      weight: 4.5,
-      opacity: 0.92,
+      color: '#ec4899',  // Magenta-Akzent: POI-Routen sind die warmen Achsen
+      weight: 4.8,
+      opacity: 0.95,
       lineCap: 'round',
       lineJoin: 'round',
     }).addTo(group);
   }
 }
 
-// ─── Base-Tile-Layer im Mesh-Modus: weniger Strassen ─────────────────────────
-//
-// Im Colour-Mesh-Modus tauschen wir die volle OSM-Kachel gegen eine
-// reduziertere Variante (CartoDB Positron no-labels), damit das Mesh nicht
-// vom Strassennetz konkurriert wird.
+// ─── Base-Tile-URLs ──────────────────────────────────────────────────────────
 
 export const TILE_OSM_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 export const TILE_OSM_ATTR = '© OpenStreetMap contributors';
 
 export const TILE_MESH_URL =
-  'https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png';
-export const TILE_MESH_ATTR =
-  '© OpenStreetMap contributors, © CARTO';
+  'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png';
+export const TILE_MESH_ATTR = '© OpenStreetMap contributors, © CARTO';
