@@ -46,7 +46,7 @@ export default function ScimMap({ result }: Props) {
       zoomControl: true,
       zoomSnap: 0,        // stufenlos
       zoomDelta: 1,       // 1 voller Step pro Wheel-Tick
-      wheelPxPerZoomLevel: 7,
+      wheelPxPerZoomLevel: 3,
       wheelDebounceTime: 0,
       preferCanvas: true,
     });
