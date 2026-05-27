@@ -16,6 +16,8 @@ interface Props {
   activeTab?: TabId;
   onSelect: (id: string) => void;
   onGoTo?: (id: string, tab?: TabId) => void;
+  onInspectorToggle?: () => void;   // Trapez ueber dem Mond ruft das auf
+  onManualOpen?: () => void;        // Reader-Icon ruft das auf
   panelStatus?: Record<string, StatusColor>;
 }
 
@@ -124,7 +126,7 @@ function arcFromActive(activeId: string): RepresentBuildArc | undefined {
   return undefined;
 }
 
-export default function Navigator({ activeId, onSelect, onGoTo, panelStatus = {} }: Props) {
+export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggle, onManualOpen, panelStatus = {} }: Props) {
   const go = onGoTo ?? ((id: string) => onSelect(id));
   const pipelineGroups = [1, 2, 3, 4] as const;
   const role = useRole();
@@ -139,7 +141,32 @@ export default function Navigator({ activeId, onSelect, onGoTo, panelStatus = {}
       flexDirection: 'column',
       overflowY: 'auto',
       padding: '12px 6px 12px',
+      position: 'relative',
     }}>
+      {/* Inspector — Pergament-Trapez ueber dem Mond.
+          Perspektivisch: oben breit (Gap zu li/re/oben), unten schmaler.
+          88% transluzent, kein Stroke. Klick toggelt die Map. */}
+      {onInspectorToggle && (
+        <svg
+          viewBox="0 0 178 28"
+          width={178}
+          height={28}
+          onClick={onInspectorToggle}
+          style={{
+            position: 'absolute', top: 8, left: '50%',
+            transform: 'translateX(-50%)',
+            cursor: 'pointer', zIndex: 5,
+          }}
+        >
+          <title>Inspector — Sicht oeffnen/schliessen</title>
+          <polygon
+            points="0,0 178,0 154,28 24,28"
+            fill="#e8d4a8"
+            fillOpacity={0.12}
+            stroke="none"
+          />
+        </svg>
+      )}
       {/* Nacktes Logo — Iconset alleine, beschnitten auf 107.5 x 51.122.
           Wrapper zentriert die 0.88-skalierte Box links/rechts.
           Hex-Layer pulsiert; Dim-Wert um 50% tiefer als zuvor. */}
@@ -172,6 +199,30 @@ export default function Navigator({ activeId, onSelect, onGoTo, panelStatus = {}
             50%       { opacity: 1; }
           }
         `}</style>
+      </div>
+
+      {/* Manual + Reader — Asymmetrie und ihre Aufloesung.
+          Manual (links): Datei-Glyph, sitzt da, ist nicht klickbar.
+          Reader (rechts): symmetrischer Akt, klickbar, oeffnet das Manual. */}
+      <div style={{
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        padding: '0 14px', marginBottom: 6, flexShrink: 0,
+      }}>
+        <span
+          title="Manual (ohne Leser stumm)"
+          style={{
+            fontSize: 14, color: '#4a6a8a', opacity: 0.55,
+            userSelect: 'none', cursor: 'default',
+          }}
+        >📄</span>
+        <span
+          title="Manual lesen"
+          onClick={onManualOpen}
+          style={{
+            fontSize: 14, color: '#a0aec0',
+            userSelect: 'none', cursor: onManualOpen ? 'pointer' : 'default',
+          }}
+        >📖</span>
       </div>
 
       {/* ── Represent Build — zentrales Tetraeder-Control ──────────────────── */}
