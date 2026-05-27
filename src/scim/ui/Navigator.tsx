@@ -4,7 +4,7 @@ import {
   RUNTIME_BUILDER_REGISTRY, VERSIONEN_REGISTRY, WORKSPACE_DESCRIPTOR,
   GEOMETRY_EDITOR_DESCRIPTOR, CATALOG_DESCRIPTOR,
 } from './panelRegistry';
-import logoBase from '../../assets/logo-base.svg';
+import logoBaseNaked from '../../assets/logo-base-naked.svg';
 import logoHex from '../../assets/logo-hex.svg';
 import { useRole } from './RoleContext';
 import RepresentBuildTetrahedron from './RepresentBuildTetrahedron';
@@ -149,7 +149,7 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
         marginBottom: 6, flexShrink: 0,
       }}>
         <img
-          src={logoBase}
+          src={logoBaseNaked}
           alt="SCIM3"
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
         />
