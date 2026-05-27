@@ -103,6 +103,40 @@ export default function RepresentationWizard({ onClose }: Props) {
     return JSON.stringify(obj, null, 2);
   }, [valid, proposedId, name, effectiveGeometryId, catalogId, note]);
 
+  // Geometry-JSON aus dem Draft (nur wenn DRAFT verwendet wird), damit der
+  // Operator nicht extra in den Editor wechseln muss.
+  const geometryJson = useMemo<string | null>(() => {
+    if (!isDraftSelected || !draft || !draft.polygon || draft.polygon.length < 3) return null;
+    const ring = [...draft.polygon];
+    if (
+      ring[0][0] !== ring[ring.length - 1][0] ||
+      ring[0][1] !== ring[ring.length - 1][1]
+    ) ring.push(ring[0]);
+    const obj = {
+      type: 'Feature',
+      properties: {
+        name: draft.name || 'Unbenannt',
+        region: draft.region || undefined,
+        source: 'Operator-gezeichnet in SCIM Geometry-Editor',
+        drawn_at: new Date().toISOString().slice(0, 10),
+      },
+      geometry: {
+        type: 'Polygon',
+        coordinates: [ring],
+      },
+    };
+    return JSON.stringify(obj, null, 2);
+  }, [isDraftSelected, draft]);
+
+  const [copiedGeo, setCopiedGeo] = useState(false);
+  const onCopyGeo = () => {
+    if (!geometryJson) return;
+    navigator.clipboard.writeText(geometryJson).then(() => {
+      setCopiedGeo(true);
+      setTimeout(() => setCopiedGeo(false), 1500);
+    });
+  };
+
   const onCopy = () => {
     if (!json) return;
     navigator.clipboard.writeText(json).then(() => {
@@ -182,12 +216,34 @@ export default function RepresentationWizard({ onClose }: Props) {
               <div style={{
                 fontSize: 11, color: '#7c2d12', marginTop: 6,
                 background: '#fffaf0', border: '1px solid #ed8936',
-                borderRadius: 4, padding: '6px 8px', lineHeight: 1.45,
+                borderRadius: 4, padding: '8px 10px', lineHeight: 1.55,
               }}>
                 <strong>Achtung:</strong> Du verwendest eine DRAFT-Geometry. Für ein
-                funktionierendes Deploy musst du <em>zwei</em> Dateien committen:<br />
-                1) <code>data/geometries/{effectiveGeometryId}.json</code> (Geometry-Export)<br />
-                2) <code>data/representations/{proposedId}.json</code> (diese Representation)
+                funktionierendes Deploy musst du <em>zwei</em> Dateien committen:
+                <div style={{
+                  marginTop: 6, display: 'flex', alignItems: 'center', gap: 8,
+                }}>
+                  <span style={{ flex: 1 }}>
+                    1) <code>data/geometries/{effectiveGeometryId}.json</code>
+                  </span>
+                  <button
+                    onClick={onCopyGeo}
+                    disabled={!geometryJson}
+                    style={{
+                      fontSize: 11, padding: '3px 10px',
+                      cursor: geometryJson ? 'pointer' : 'not-allowed',
+                      border: '1px solid #ed8936', borderRadius: 3, fontWeight: 600,
+                      background: copiedGeo ? '#ed8936' : '#fff',
+                      color: copiedGeo ? '#fff' : '#9c4221',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {copiedGeo ? '✓ Geometry kopiert' : 'Geometry kopieren'}
+                  </button>
+                </div>
+                <div style={{ marginTop: 4 }}>
+                  2) <code>data/representations/{proposedId}.json</code> (unten ▾)
+                </div>
               </div>
             )}
             {GEOMETRIES.length === 0 && !draft && (
