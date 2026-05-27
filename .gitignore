@@ -4,3 +4,5 @@ dist/
 *.local
 api_key.md
 .claude/
+.wrangler/
+worker/.wrangler/
