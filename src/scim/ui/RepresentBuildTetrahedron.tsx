@@ -65,13 +65,14 @@ const FACES: Array<{
   labelX: number;
   labelY: number;
 }> = [
+  // labelX/Y = geometrischer Schwerpunkt = (p1+p2+p3)/3
   {
     id: 'geometry_draw',
     shortLabel: 'geo',
     longLabel: 'Geometry Draw',
     points: `${-S / 2},${-H / 3} ${S / 2},${-H / 3} 0,${-R}`,
     labelX: 0,
-    labelY: -H / 3 - (R - H / 3) / 2 + 1,
+    labelY: (-H / 3 + -H / 3 + -R) / 3,
   },
   {
     id: 'represent_organisation',
@@ -79,23 +80,23 @@ const FACES: Array<{
     longLabel: 'Represent Organisation',
     points: `${-S / 2},${-H / 3} ${S / 2},${-H / 3} 0,${2 * H / 3}`,
     labelX: 0,
-    labelY: H / 6,
+    labelY: (-H / 3 + -H / 3 + 2 * H / 3) / 3,
   },
   {
     id: 'catalog_magazination',
     shortLabel: 'cat',
     longLabel: 'Catalog Magazination',
     points: `${-S / 2},${-H / 3} 0,${2 * H / 3} ${-S},${2 * H / 3}`,
-    labelX: -S / 2,
-    labelY: H * 0.40,
+    labelX: (-S / 2 + 0 + -S) / 3,
+    labelY: (-H / 3 + 2 * H / 3 + 2 * H / 3) / 3,
   },
   {
     id: 'represent_inspection',
     shortLabel: 'ins',
     longLabel: 'Represent Inspection',
     points: `${S / 2},${-H / 3} 0,${2 * H / 3} ${S},${2 * H / 3}`,
-    labelX: S / 2,
-    labelY: H * 0.40,
+    labelX: (S / 2 + 0 + S) / 3,
+    labelY: (-H / 3 + 2 * H / 3 + 2 * H / 3) / 3,
   },
 ];
 

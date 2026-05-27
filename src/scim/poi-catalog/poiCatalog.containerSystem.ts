@@ -130,7 +130,7 @@ export const CONTAINER_SYSTEM: ContainerSpec[] = [
   {
     bucket: 'Regenerate', subcategory: 'Regenerate_Water',
     geometry_id: 'geo_3_droplet',
-    color: '#0066ff', color_label: 'blau',
+    color: '#0099ff', color_label: 'blau',
     description: 'Trinkwasser · Klo · See · Hallenbad · Badeplatz',
   },
 

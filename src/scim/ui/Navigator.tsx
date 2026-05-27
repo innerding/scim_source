@@ -178,7 +178,7 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
           activeFace={faceFromActive(activeId)}
           activeArc={arcFromActive(activeId)}
           variant="dark"
-          size={170}
+          size={153}
           showLabels
           onFaceClick={(f) => {
             if (f === 'geometry_draw') go('geometry_editor');
@@ -200,8 +200,7 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
         </div>
       </div>
 
-      {/* ── Workspace / Geometry-Editor als Listen-Fallback ────────────────── */}
-      <SectionDivider />
+      {/* ── Workspace / Geometry-Editor / Katalog / SystemAdjust ──────────── */}
       <NavItem
         id={WORKSPACE_DESCRIPTOR.id}
         icon={WORKSPACE_DESCRIPTOR.icon}
@@ -228,12 +227,25 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
           onClick={() => onSelect(CATALOG_DESCRIPTOR.id)}
         />
       )}
+      {(() => {
+        const p01 = PANEL_REGISTRY.find((p) => p.id === 'P01');
+        return p01 ? (
+          <NavItem
+            id={p01.id}
+            icon={p01.icon}
+            label={p01.label}
+            status={panelStatus[p01.id] ?? 'grey'}
+            isActive={activeId === p01.id}
+            onClick={() => onSelect(p01.id)}
+          />
+        ) : null;
+      })()}
 
-      {/* ── Package Pipeline ───────────────────────────────────────────────── */}
+      {/* ── Package Pipeline (ohne P01 — der sitzt jetzt unter Katalog) ───── */}
       <SectionDivider />
       <SectionHeader title="Package Pipeline" />
       {pipelineGroups.map((g, gi) => {
-        const panels = PANEL_REGISTRY.filter((p: PanelDescriptor) => p.group === g);
+        const panels = PANEL_REGISTRY.filter((p: PanelDescriptor) => p.group === g && p.id !== 'P01');
         return (
           <div key={g}>
             {gi > 0 && <Divider />}
