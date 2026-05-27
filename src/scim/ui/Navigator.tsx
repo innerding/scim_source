@@ -176,7 +176,7 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
 
       {/* ── Represent Build — zentrales Tetraeder-Control ──────────────────── */}
       <div style={{
-        padding: '14px 12px 8px', display: 'flex', flexDirection: 'column',
+        padding: '14px 12px 24px', display: 'flex', flexDirection: 'column',
         alignItems: 'center', gap: 6, flexShrink: 0,
       }}>
         <RepresentBuildTetrahedron
