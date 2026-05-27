@@ -5,13 +5,16 @@ export const mockRegioContentState: RegioContentState = {
   source: 'mock',
   loaded_at: '2026-05-21T00:00:00.000Z',
   region: {
-    region_id: 'region_hochwab_nord',
+    region_id: 'region_lichtenberg',
     region_name: 'Lichtenberg',
     region_type: 'trail_area',
     country_code: 'AT',
     default_language: 'de',
     timezone: 'Europe/Vienna',
-    bbox: [15.0, 47.5, 15.4, 47.8],
+    // Geschrumpft Mai 2026: war [15.0, 47.5, 15.4, 47.8] (Hochwab-Region,
+    // falsche Geografie, ~40×33 km). Jetzt echte Lichtenberg-bei-Linz-Area,
+    // ~5×5 km um Sender/Giselawarte/Gasthaus zur Gis.
+    bbox: [14.23, 48.37, 14.28, 48.41],
   },
   approved_pois: [
     {
@@ -22,7 +25,7 @@ export const mockRegioContentState: RegioContentState = {
       category: 'alpine_hut',
       candidate_class: 'safe_relevant',
       status: 'approved',
-      center: { type: 'Point', coordinates: [15.21, 47.64] },
+      center: { type: 'Point', coordinates: [14.256, 48.385] },
       radius_meters: 50,
       comparison_margin_meters: 25,
       effective_comparison_radius_meters: 75,
@@ -39,7 +42,7 @@ export const mockRegioContentState: RegioContentState = {
       source: 'osm',
       name: 'Nicht relevanter Wegweiser',
       category: 'information',
-      center: { type: 'Point', coordinates: [15.23, 47.65] },
+      center: { type: 'Point', coordinates: [14.258, 48.386] },
       rejected_reason: 'not_stay_relevant',
       rejected_by: 'operator_mock',
       rejected_at: '2026-05-21T00:00:00.000Z',
@@ -53,7 +56,7 @@ export const mockRegioContentState: RegioContentState = {
       name: 'Aussichtspunkt zur Prüfung',
       category: 'viewpoint',
       candidate_class: 'safe_relevant',
-      center: { type: 'Point', coordinates: [15.25, 47.66] },
+      center: { type: 'Point', coordinates: [14.261, 48.388] },
       suggested_radius_meters: 35,
       suggested_comparison_margin_meters: 25,
       review_reason: 'Operator-Freigabe ausstehend',
@@ -110,8 +113,8 @@ export const mockRegioContentState: RegioContentState = {
       geometry: {
         type: 'LineString',
         coordinates: [
-          [15.20, 47.63],
-          [15.22, 47.64],
+          [14.252, 48.383],
+          [14.260, 48.387],
         ],
       },
       label: 'Saisonale Sperre Beispielweg',
