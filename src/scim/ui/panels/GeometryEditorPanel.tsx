@@ -102,6 +102,15 @@ export default function GeometryEditorPanel() {
       center: [47.9, 13.8],
       zoom: 13,
       scrollWheelZoom: true,
+      // Smoother Pan/Zoom (Google-Maps-haftig, soweit Leaflet eben kann)
+      zoomSnap: 0,
+      zoomDelta: 0.5,
+      wheelPxPerZoomLevel: 100,
+      zoomAnimation: true,
+      markerZoomAnimation: true,
+      fadeAnimation: true,
+      inertia: true,
+      inertiaDeceleration: 2000,
     });
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
