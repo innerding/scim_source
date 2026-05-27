@@ -1,1 +1,44 @@
-pbpaste > data/geometries/lichtenberg.json
+{
+  "type": "Feature",
+  "properties": {
+    "name": "Lichtenberg",
+    "region": "Böhmerwald",
+    "source": "Operator-gezeichnet in SCIM Geometry-Editor",
+    "drawn_at": "2026-05-27"
+  },
+  "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [
+          14.22938,
+          48.40576
+        ],
+        [
+          14.253622,
+          48.404358
+        ],
+        [
+          14.260627,
+          48.385768
+        ],
+        [
+          14.265965,
+          48.370271
+        ],
+        [
+          14.245615,
+          48.369016
+        ],
+        [
+          14.226823,
+          48.386284
+        ],
+        [
+          14.22938,
+          48.40576
+        ]
+      ]
+    ]
+  }
+}
