@@ -972,7 +972,7 @@ const SPECIAL_GLYPHS_UNITS: SpecialGlyphItem[] = [
 ];
 
 const SPECIAL_GLYPHS_STARS: SpecialGlyphItem[] = [
-  { glyphId: 'stern',  label: 'Stern gold-gefüllt (Hotel-Klassifikation)', trigger: 'N-Stern / N Stern / N Sterne', example: '3-Stern Superior' },
+  { glyphId: 'stern',  label: 'Stern gefüllt (Hotel-Klassifikation)', trigger: 'N-Stern / N Stern / N Sterne', example: '3-Stern Superior' },
   { glyphId: 'star-5', label: 'Stern fünfeckig (outline)', trigger: '★★★ oder N★', example: '★★★ Superior' },
   { glyphId: 'star-6', label: 'Stern sechseckig', trigger: '(kein Auto-Trigger)', example: '—' },
 ];
