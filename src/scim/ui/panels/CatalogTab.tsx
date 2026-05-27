@@ -423,12 +423,15 @@ function CoordEdit({ poi, onChange }: {
   poi: MergedPoi;
   onChange: (changes: Partial<Omit<CatalogPoi, 'id'>>) => void;
 }) {
-  const [lonStr, setLonStr] = useState(String(poi.coord[0]));
-  const [latStr, setLatStr] = useState(String(poi.coord[1]));
+  // Coords werden immer auf 5 Nachkommastellen gepaddet (auch trailing zeros),
+  // damit Operator sieht: '13.81500' = exakt 5-stellig genau, nicht '13.815'
+  // = unklar ob Praezision fehlt.
+  const [lonStr, setLonStr] = useState(poi.coord[0].toFixed(5));
+  const [latStr, setLatStr] = useState(poi.coord[1].toFixed(5));
 
   useEffect(() => {
-    setLonStr(String(poi.coord[0]));
-    setLatStr(String(poi.coord[1]));
+    setLonStr(poi.coord[0].toFixed(5));
+    setLatStr(poi.coord[1].toFixed(5));
   }, [poi.coord[0], poi.coord[1]]);
 
   const commit = (newLon: string, newLat: string) => {
