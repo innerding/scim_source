@@ -27,13 +27,14 @@ export type RepresentBuildArc =
   | 'manual';
 
 interface Props {
-  activeFace: RepresentBuildFace;
+  activeFace?: RepresentBuildFace;     // hervorgehobene Triangle (optional)
+  activeArc?: RepresentBuildArc;       // hervorgehobenes Bogen-Segment (optional)
   onFaceClick?: (face: RepresentBuildFace) => void;
   onArcClick?: (arc: RepresentBuildArc) => void;
   onInspectorToggle?: () => void;
-  size?: number;          // pixel-Hoehe der Gesamtfigur
+  size?: number;
   variant?: 'dark' | 'light';
-  showLabels?: boolean;   // Triangle-Beschriftungen einblenden
+  showLabels?: boolean;
 }
 
 // ─── Geometrie ──────────────────────────────────────────────────────────────
@@ -66,7 +67,7 @@ const FACES: Array<{
 }> = [
   {
     id: 'geometry_draw',
-    shortLabel: 'Geometry',
+    shortLabel: 'geo',
     longLabel: 'Geometry Draw',
     points: `${-S / 2},${-H / 3} ${S / 2},${-H / 3} 0,${-R}`,
     labelX: 0,
@@ -74,7 +75,7 @@ const FACES: Array<{
   },
   {
     id: 'represent_organisation',
-    shortLabel: 'Organisation',
+    shortLabel: 'org',
     longLabel: 'Represent Organisation',
     points: `${-S / 2},${-H / 3} ${S / 2},${-H / 3} 0,${2 * H / 3}`,
     labelX: 0,
@@ -82,7 +83,7 @@ const FACES: Array<{
   },
   {
     id: 'catalog_magazination',
-    shortLabel: 'Catalog',
+    shortLabel: 'cat',
     longLabel: 'Catalog Magazination',
     points: `${-S / 2},${-H / 3} 0,${2 * H / 3} ${-S},${2 * H / 3}`,
     labelX: -S / 2,
@@ -90,7 +91,7 @@ const FACES: Array<{
   },
   {
     id: 'represent_inspection',
-    shortLabel: 'Inspect',
+    shortLabel: 'ins',
     longLabel: 'Represent Inspection',
     points: `${S / 2},${-H / 3} 0,${2 * H / 3} ${S},${2 * H / 3}`,
     labelX: S / 2,
@@ -105,15 +106,17 @@ const FACE_BY_ID: Record<RepresentBuildFace, typeof FACES[number]> =
 // Bezeichnung pro Arc — wie sie clockwise zwischen den Vertices liegen.
 const ARCS: Array<{
   id: RepresentBuildArc;
-  label: string;
-  startDeg: number;   // SVG-Winkel (0° = rechts, im Uhrzeigersinn)
+  shortLabel: string;     // 3-Letter-Abkuerzung
+  longLabel: string;
+  startDeg: number;       // SVG-Winkel (0° = rechts, im Uhrzeigersinn)
   endDeg: number;
   labelAngleDeg: number;
 }> = [
   // Top (-90°) → Bottom-Right (30°): zwischen Geometry und Inspection
   {
     id: 'regio_content',
-    label: 'Regio Content',
+    shortLabel: 'thr',
+    longLabel: 'Regio Content (Threshold)',
     startDeg: -90,
     endDeg: 30,
     labelAngleDeg: -30,
@@ -121,15 +124,17 @@ const ARCS: Array<{
   // Bottom-Right (30°) → Bottom-Left (150°): zwischen Inspection und Catalog
   {
     id: 'manual',
-    label: 'Manual',
+    shortLabel: 'man',
+    longLabel: 'Manual',
     startDeg: 30,
     endDeg: 150,
     labelAngleDeg: 90,
   },
-  // Bottom-Left (150°) → Top (270° = -90° + 360°): zwischen Catalog und Geometry
+  // Bottom-Left (150°) → Top (270°): zwischen Catalog und Geometry
   {
     id: 'system_adjust',
-    label: 'System Adjust',
+    shortLabel: 'adj',
+    longLabel: 'System Adjust',
     startDeg: 150,
     endDeg: 270,
     labelAngleDeg: 210,
@@ -165,6 +170,7 @@ function describeArcSegment(startDeg: number, endDeg: number, gapDeg: number): s
 
 export default function RepresentBuildTetrahedron({
   activeFace,
+  activeArc,
   onFaceClick,
   onArcClick,
   onInspectorToggle,
@@ -178,11 +184,14 @@ export default function RepresentBuildTetrahedron({
   const triangleActiveFill = isDark ? '#2b6cb0' : '#1a365d';
   const triangleActiveStroke = isDark ? '#63b3ed' : '#1a365d';
   const triangleInactiveStroke = isDark ? '#2d4a6a' : '#a0aec0';
-  const triangleLabelActive = isDark ? '#fff' : '#fff';
+  const triangleLabelActive = '#fff';
   const triangleLabelInactive = isDark ? '#4a6a8a' : '#718096';
-  const arcFill = isDark ? '#1a2535' : '#edf2f7';
-  const arcStroke = isDark ? '#2d4a6a' : '#cbd5e0';
-  const arcLabelColor = isDark ? '#a0aec0' : '#4a5568';
+  const arcFillInactive = isDark ? '#1a2535' : '#edf2f7';
+  const arcFillActive = isDark ? '#2b6cb0' : '#1a365d';
+  const arcStrokeInactive = isDark ? '#2d4a6a' : '#cbd5e0';
+  const arcStrokeActive = isDark ? '#63b3ed' : '#1a365d';
+  const arcLabelInactive = isDark ? '#a0aec0' : '#4a5568';
+  const arcLabelActive = '#fff';
 
   // viewBox mit Padding fuer Bogen-Beschriftung
   const labelPadding = 14;
@@ -202,6 +211,10 @@ export default function RepresentBuildTetrahedron({
         const path = describeArcSegment(a.startDeg, a.endDeg, ARC_GAP_DEG);
         const [lx, ly] = polarToCartesian(a.labelAngleDeg, R + ARC_THICKNESS / 2 + 6);
         const clickable = !!onArcClick;
+        const isActive = a.id === activeArc;
+        const fill = isActive ? arcFillActive : arcFillInactive;
+        const stroke = isActive ? arcStrokeActive : arcStrokeInactive;
+        const labelColor = isActive ? arcLabelActive : arcLabelInactive;
         return (
           <g
             key={a.id}
@@ -210,12 +223,13 @@ export default function RepresentBuildTetrahedron({
           >
             <path
               d={path}
-              fill={arcFill}
-              stroke={arcStroke}
-              strokeWidth={0.8}
+              fill={fill}
+              stroke={stroke}
+              strokeWidth={isActive ? 1.2 : 0.8}
               strokeLinejoin="round"
+              className={isActive ? 'rb-active-tile' : undefined}
             >
-              <title>{a.label}</title>
+              <title>{a.longLabel}</title>
             </path>
             {showLabels && (
               <text
@@ -223,12 +237,13 @@ export default function RepresentBuildTetrahedron({
                 y={ly}
                 fontSize={5}
                 fontFamily="system-ui, sans-serif"
-                fill={arcLabelColor}
+                fontWeight={isActive ? 700 : 500}
+                fill={labelColor}
                 textAnchor="middle"
                 dominantBaseline="middle"
                 style={{ pointerEvents: 'none' }}
               >
-                {a.label}
+                {a.shortLabel}
               </text>
             )}
           </g>

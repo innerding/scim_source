@@ -7,13 +7,21 @@ import IntroScreen from './scim/ui/IntroScreen';
 import { RoleContext } from './scim/ui/RoleContext';
 import type { Role } from './scim/ui/RoleContext';
 import RepresentBuildManualModal from './scim/ui/RepresentBuildManualModal';
+import type { TabId } from './scim/ui/panelRegistry';
 
 export default function App() {
   const [role, setRole] = useState<Role | null>(null);
   const result = useScimPipeline();
   const [activeId, setActiveId] = useState('P01');
+  const [activeTab, setActiveTab] = useState<TabId>('input');
   const [mapCollapsed, setMapCollapsed] = useState(false);
   const [showManual, setShowManual] = useState(false);
+
+  // Wrapper: wenn Panel wechselt, default-Tab 'input' setzen
+  const goTo = (id: string, tab: TabId = 'input') => {
+    setActiveId(id);
+    setActiveTab(tab);
+  };
 
   if (role === null) {
     return <IntroScreen onAuth={setRole} />;
@@ -24,11 +32,19 @@ export default function App() {
       <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
         <Navigator
           activeId={activeId}
-          onSelect={setActiveId}
+          activeTab={activeTab}
+          onSelect={(id) => goTo(id)}
+          onGoTo={goTo}
           onInspectorToggle={() => setMapCollapsed((c) => !c)}
           onManualOpen={() => setShowManual(true)}
         />
-        <PanelWorkspace activeId={activeId} result={result} onJumpTo={setActiveId} />
+        <PanelWorkspace
+          activeId={activeId}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          result={result}
+          onJumpTo={(id) => goTo(id)}
+        />
         <div style={{
           flexShrink: 0,
           borderLeft: '1px solid #1a2535',
@@ -40,9 +56,9 @@ export default function App() {
           <ScimMap
             result={result}
             onNavigate={(face) => {
-              if (face === 'geometry_draw') setActiveId('geometry_editor');
-              else if (face === 'catalog_magazination') setActiveId('P02');
-              else if (face === 'represent_organisation') setActiveId('workspace');
+              if (face === 'geometry_draw') goTo('geometry_editor');
+              else if (face === 'catalog_magazination') goTo('P02', 'catalog');
+              else if (face === 'represent_organisation') goTo('workspace');
             }}
           />
         </div>

@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import type { TabId } from './panelRegistry';
 import {
   PANEL_REGISTRY, SYSTEM_DESCRIPTOR, AI_INTERFACE_DESCRIPTOR,
@@ -24,6 +23,8 @@ import GeometryEditorPanel from './panels/GeometryEditorPanel';
 
 interface Props {
   activeId: string;
+  activeTab: TabId;
+  onTabChange: (tab: TabId) => void;
   result: ScimPipelineResult;
   onJumpTo?: (panelId: string) => void;
 }
@@ -166,8 +167,7 @@ function PanelContent({ activeId, activeTab, result, onJumpTo }: {
   }
 }
 
-export default function PanelWorkspace({ activeId, result, onJumpTo }: Props) {
-  const [activeTab, setActiveTab] = useState<TabId>('input');
+export default function PanelWorkspace({ activeId, activeTab, onTabChange, result, onJumpTo }: Props) {
   const role = useRole();
 
   // Resolve tabs for the current entry
@@ -206,7 +206,7 @@ export default function PanelWorkspace({ activeId, result, onJumpTo }: Props) {
       minWidth: 0,
     }}>
       <PanelHeader title={entry.label} subtitle={subtitle} />
-      <TabBar tabs={tabs} active={activeTab} onSelect={setActiveTab} />
+      <TabBar tabs={tabs} active={activeTab} onSelect={onTabChange} />
       {/* Geometry-Editor braucht volle Hoehe ohne Padding */}
       {activeId === GEOMETRY_EDITOR_DESCRIPTOR.id ? (
         <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>

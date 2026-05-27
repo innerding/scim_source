@@ -8,11 +8,14 @@ import logoBase from '../../assets/logo-base.svg';
 import logoHex from '../../assets/logo-hex.svg';
 import { useRole } from './RoleContext';
 import RepresentBuildTetrahedron from './RepresentBuildTetrahedron';
-import type { RepresentBuildFace } from './RepresentBuildTetrahedron';
+import type { RepresentBuildFace, RepresentBuildArc } from './RepresentBuildTetrahedron';
+import type { TabId } from './panelRegistry';
 
 interface Props {
   activeId: string;
+  activeTab?: TabId;
   onSelect: (id: string) => void;
+  onGoTo?: (id: string, tab?: TabId) => void;
   onInspectorToggle?: () => void;
   onManualOpen?: () => void;
   panelStatus?: Record<string, StatusColor>;
@@ -105,16 +108,23 @@ function SectionDivider() {
   );
 }
 
-// Derive which tetrahedron-face is currently "active" from the activeId.
-function faceFromActive(activeId: string): RepresentBuildFace {
+// Derive which tetrahedron-face is currently "active" from the activeId+activeTab.
+function faceFromActive(activeId: string, activeTab?: TabId): RepresentBuildFace | undefined {
   if (activeId === 'geometry_editor') return 'geometry_draw';
-  if (activeId === 'P02') return 'catalog_magazination';
+  if (activeId === 'P02' && activeTab === 'catalog') return 'catalog_magazination';
   if (activeId === 'workspace') return 'represent_organisation';
-  // Default: Organisation (Workspace is the home)
-  return 'represent_organisation';
+  return undefined;
 }
 
-export default function Navigator({ activeId, onSelect, onInspectorToggle, onManualOpen, panelStatus = {} }: Props) {
+// Arc-Highlight: 'thr' wenn auf einem Panel im input-Tab (Regio-Content-Eingabe).
+function arcFromActive(activeId: string, activeTab?: TabId): RepresentBuildArc | undefined {
+  // P02 input == klassische Regio-Content-Eingabe
+  if (activeId === 'P02' && activeTab === 'input') return 'regio_content';
+  return undefined;
+}
+
+export default function Navigator({ activeId, activeTab, onSelect, onGoTo, onInspectorToggle, onManualOpen, panelStatus = {} }: Props) {
+  const go = onGoTo ?? ((id: string) => onSelect(id));
   const pipelineGroups = [1, 2, 3, 4] as const;
   const role = useRole();
 
@@ -164,18 +174,19 @@ export default function Navigator({ activeId, onSelect, onInspectorToggle, onMan
         alignItems: 'center', gap: 6, flexShrink: 0,
       }}>
         <RepresentBuildTetrahedron
-          activeFace={faceFromActive(activeId)}
+          activeFace={faceFromActive(activeId, activeTab)}
+          activeArc={arcFromActive(activeId, activeTab)}
           variant="dark"
           size={170}
           showLabels
           onFaceClick={(f) => {
-            if (f === 'geometry_draw') onSelect('geometry_editor');
-            else if (f === 'catalog_magazination') onSelect('P02');
-            else if (f === 'represent_organisation') onSelect('workspace');
+            if (f === 'geometry_draw') go('geometry_editor');
+            else if (f === 'catalog_magazination') go('P02', 'catalog');
+            else if (f === 'represent_organisation') go('workspace');
           }}
           onArcClick={(a) => {
-            if (a === 'system_adjust') onSelect('P01');
-            else if (a === 'regio_content') onSelect('P02');
+            if (a === 'system_adjust') go('P01');
+            else if (a === 'regio_content') go('P02', 'input');
             else if (a === 'manual') onManualOpen?.();
           }}
           onInspectorToggle={onInspectorToggle}
