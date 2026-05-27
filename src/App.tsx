@@ -20,7 +20,7 @@ export default function App() {
     <RoleContext.Provider value={role}>
       <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
         <Navigator activeId={activeId} onSelect={setActiveId} />
-        <PanelWorkspace activeId={activeId} result={result} />
+        <PanelWorkspace activeId={activeId} result={result} onJumpTo={setActiveId} />
         <div style={{ width: 420, flexShrink: 0, position: 'relative', borderLeft: '1px solid #1a2535' }}>
           <ScimMap result={result} />
         </div>

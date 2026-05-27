@@ -360,6 +360,26 @@ export const VERSIONEN_REGISTRY: VersionenDescriptor[] = [
 
 // ─── System ───────────────────────────────────────────────────────────────────
 
+// ─── Workspace (Gate / Entry-Point fuer Geometrien, Kataloge, Representations) ──
+
+export interface WorkspaceDescriptor {
+  kind: 'workspace';
+  id: 'workspace';
+  label: string;
+  icon: string;
+  tabs: TabDescriptor[];
+}
+
+export const WORKSPACE_DESCRIPTOR: WorkspaceDescriptor = {
+  kind: 'workspace',
+  id: 'workspace',
+  label: 'Workspace',
+  icon: '⌂',
+  tabs: [
+    { id: 'input', label: 'Übersicht', icon: '⌂' },
+  ],
+};
+
 export const SYSTEM_DESCRIPTOR: SystemDescriptor = {
   kind: 'system',
   id: 'system',
@@ -392,6 +412,7 @@ export type NavigatorEntry =
   | { kind: 'runtime_module'; descriptor: RuntimeModuleDescriptor }
   | { kind: 'versionen'; descriptor: VersionenDescriptor }
   | { kind: 'system'; descriptor: SystemDescriptor }
+  | { kind: 'workspace'; descriptor: WorkspaceDescriptor }
   | { kind: 'ai_interface'; descriptor: AiInterfaceDescriptor };
 
 export type StatusColor = 'green' | 'orange' | 'red' | 'grey' | 'blue';

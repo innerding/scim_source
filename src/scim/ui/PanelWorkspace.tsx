@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { TabId } from './panelRegistry';
 import {
   PANEL_REGISTRY, SYSTEM_DESCRIPTOR, AI_INTERFACE_DESCRIPTOR,
-  RUNTIME_BUILDER_REGISTRY, VERSIONEN_REGISTRY,
+  RUNTIME_BUILDER_REGISTRY, VERSIONEN_REGISTRY, WORKSPACE_DESCRIPTOR,
 } from './panelRegistry';
 import type { ScimPipelineResult } from '../pipeline/scimPipeline.types';
 
@@ -18,10 +18,12 @@ import { useRole } from './RoleContext';
 import V01PackagesPanel from './panels/V01PackagesPanel';
 import V02RegionDetailPanel from './panels/V02RegionDetailPanel';
 import V03ActiveMonitorPanel from './panels/V03ActiveMonitorPanel';
+import WorkspacePanel from './panels/WorkspacePanel';
 
 interface Props {
   activeId: string;
   result: ScimPipelineResult;
+  onJumpTo?: (panelId: string) => void;
 }
 
 const TAB_ORDER: TabId[] = ['catalog', 'input', 'result', 'validation', 'leistungsblatt', 'raw'];
@@ -110,12 +112,16 @@ function StubPanel({ id, description }: { id: string; description: string }) {
   );
 }
 
-function PanelContent({ activeId, activeTab, result }: {
+function PanelContent({ activeId, activeTab, result, onJumpTo }: {
   activeId: string;
   activeTab: TabId;
   result: ScimPipelineResult;
+  onJumpTo?: (panelId: string) => void;
 }) {
   const role = useRole();
+  if (activeId === WORKSPACE_DESCRIPTOR.id) {
+    return <WorkspacePanel onJumpTo={onJumpTo ?? (() => {})} />;
+  }
   if (activeId === SYSTEM_DESCRIPTOR.id) {
     return <SystemPanel activeTab={activeTab} result={result} />;
   }
@@ -155,12 +161,13 @@ function PanelContent({ activeId, activeTab, result }: {
   }
 }
 
-export default function PanelWorkspace({ activeId, result }: Props) {
+export default function PanelWorkspace({ activeId, result, onJumpTo }: Props) {
   const [activeTab, setActiveTab] = useState<TabId>('input');
   const role = useRole();
 
   // Resolve tabs for the current entry
   const entry =
+    activeId === WORKSPACE_DESCRIPTOR.id    ? WORKSPACE_DESCRIPTOR :
     activeId === SYSTEM_DESCRIPTOR.id       ? SYSTEM_DESCRIPTOR :
     activeId === AI_INTERFACE_DESCRIPTOR.id ? AI_INTERFACE_DESCRIPTOR :
     RUNTIME_BUILDER_REGISTRY.find((m) => m.id === activeId) ??
@@ -195,7 +202,7 @@ export default function PanelWorkspace({ activeId, result }: Props) {
       <PanelHeader title={entry.label} subtitle={subtitle} />
       <TabBar tabs={tabs} active={activeTab} onSelect={setActiveTab} />
       <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
-        <PanelContent activeId={activeId} activeTab={activeTab} result={result} />
+        <PanelContent activeId={activeId} activeTab={activeTab} result={result} onJumpTo={onJumpTo} />
       </div>
     </div>
   );

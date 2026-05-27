@@ -1,7 +1,7 @@
 import type { PanelDescriptor, StatusColor } from './panelRegistry';
 import {
   PANEL_REGISTRY, SYSTEM_DESCRIPTOR, AI_INTERFACE_DESCRIPTOR,
-  RUNTIME_BUILDER_REGISTRY, VERSIONEN_REGISTRY,
+  RUNTIME_BUILDER_REGISTRY, VERSIONEN_REGISTRY, WORKSPACE_DESCRIPTOR,
 } from './panelRegistry';
 import logoBase from '../../assets/logo-base.svg';
 import logoHex from '../../assets/logo-hex.svg';
@@ -144,7 +144,18 @@ export default function Navigator({ activeId, onSelect, panelStatus = {} }: Prop
         `}</style>
       </div>
 
+      {/* ── Workspace (Gate / Entry-Point) ─────────────────────────────────── */}
+      <NavItem
+        id={WORKSPACE_DESCRIPTOR.id}
+        icon={WORKSPACE_DESCRIPTOR.icon}
+        label={WORKSPACE_DESCRIPTOR.label}
+        status="blue"
+        isActive={activeId === WORKSPACE_DESCRIPTOR.id}
+        onClick={() => onSelect(WORKSPACE_DESCRIPTOR.id)}
+      />
+
       {/* ── Package Pipeline ───────────────────────────────────────────────── */}
+      <SectionDivider />
       <SectionHeader title="Package Pipeline" />
       {pipelineGroups.map((g, gi) => {
         const panels = PANEL_REGISTRY.filter((p: PanelDescriptor) => p.group === g);
