@@ -8,11 +8,39 @@
 import { useMemo, useState } from 'react';
 import { GEOMETRIES } from '../../workspace/workspace.registry';
 import type { RepresentationFile } from '../../workspace/workspace.types';
+import { DRAFT_KEY } from './GeometryEditorPanel';
 
 const CATALOGS = [
   { id: 'gruenberg', name: 'Grünberg' },
   { id: 'lichtenberg', name: 'Lichtenberg' },
 ];
+
+// Draft aus localStorage (gleiches Schema wie WorkspacePanel).
+interface GeometryDraft {
+  geometryId: string | 'new';
+  name: string;
+  region: string;
+  polygon: [number, number][] | null;
+}
+
+function loadGeometryDraft(): GeometryDraft | null {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return null;
+    const d = JSON.parse(raw) as GeometryDraft;
+    if (!d.polygon || d.polygon.length < 3) return null;
+    return d;
+  } catch { return null; }
+}
+
+// Slug aus einem Namen, gleich wie GeometryEditor proposedFileName.
+function slugify(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/[äöüß]/g, (c) => ({ ä: 'ae', ö: 'oe', ü: 'ue', ß: 'ss' }[c] ?? c))
+    .replace(/[^a-z0-9-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
 
 interface Props {
   onClose: () => void;
@@ -25,14 +53,29 @@ export default function RepresentationWizard({ onClose }: Props) {
   const [note, setNote] = useState('');
   const [copied, setCopied] = useState(false);
 
+  // Draft aus dem Editor (localStorage) — selektierbar mit Warnung.
+  const draft = useMemo(() => loadGeometryDraft(), []);
+  const draftId = draft ? `draft:${slugify(draft.name || 'unbenannt')}` : null;
+  const isDraftSelected = !!draftId && geometryId === draftId;
+
   // Vorschlag: wenn Geometry gewaehlt + Name leer → uebernehme Geometry-Namen
   const onChangeGeometry = (id: string) => {
     setGeometryId(id);
     if (!name.trim() && id) {
-      const g = GEOMETRIES.find((x) => x.id === id);
-      if (g) setName(g.name);
+      if (id === draftId && draft) {
+        setName(draft.name || '');
+      } else {
+        const g = GEOMETRIES.find((x) => x.id === id);
+        if (g) setName(g.name);
+      }
     }
   };
+
+  // Effektive geometry_id im JSON: ohne 'draft:'-Praefix (so wuerde die
+  // Datei nach dem Commit heissen)
+  const effectiveGeometryId = isDraftSelected && draft
+    ? slugify(draft.name || 'unbenannt')
+    : geometryId;
 
   // Auto-ID aus dem Namen
   const proposedId = useMemo(() => {
@@ -52,13 +95,13 @@ export default function RepresentationWizard({ onClose }: Props) {
       schema: 'scim3_representation_v1',
       id: proposedId,
       name: name.trim(),
-      geometry_id: geometryId,
+      geometry_id: effectiveGeometryId,
       catalog_id: catalogId || undefined,
       created_at: new Date().toISOString().slice(0, 10),
       note: note.trim() || undefined,
     };
     return JSON.stringify(obj, null, 2);
-  }, [valid, proposedId, name, geometryId, catalogId, note]);
+  }, [valid, proposedId, name, effectiveGeometryId, catalogId, note]);
 
   const onCopy = () => {
     if (!json) return;
@@ -118,16 +161,38 @@ export default function RepresentationWizard({ onClose }: Props) {
             <label style={{ display: 'block', color: '#4a5568', marginBottom: 4, fontWeight: 500 }}>Boundary-Geometry <span style={{ color: '#c53030' }}>*</span></label>
             <select
               value={geometryId} onChange={(e) => onChangeGeometry(e.target.value)}
-              style={{ width: '100%', boxSizing: 'border-box', padding: '5px 8px', fontSize: 12, border: '1px solid #cbd5e0', borderRadius: 4 }}
+              style={{
+                width: '100%', boxSizing: 'border-box',
+                padding: '5px 8px', fontSize: 12, borderRadius: 4,
+                border: isDraftSelected ? '1px solid #ed8936' : '1px solid #cbd5e0',
+                background: isDraftSelected ? '#fffaf0' : 'white',
+              }}
             >
               <option value="">— wähle —</option>
+              {draft && draftId && (
+                <option value={draftId}>
+                  ⚠ {draft.name || 'Unbenannt'} (DRAFT — noch nicht im Repo)
+                </option>
+              )}
               {GEOMETRIES.map((g) => (
                 <option key={g.id} value={g.id}>{g.name} ({g.id})</option>
               ))}
             </select>
-            {GEOMETRIES.length === 0 && (
+            {isDraftSelected && (
+              <div style={{
+                fontSize: 11, color: '#7c2d12', marginTop: 6,
+                background: '#fffaf0', border: '1px solid #ed8936',
+                borderRadius: 4, padding: '6px 8px', lineHeight: 1.45,
+              }}>
+                <strong>Achtung:</strong> Du verwendest eine DRAFT-Geometry. Für ein
+                funktionierendes Deploy musst du <em>zwei</em> Dateien committen:<br />
+                1) <code>data/geometries/{effectiveGeometryId}.json</code> (Geometry-Export)<br />
+                2) <code>data/representations/{proposedId}.json</code> (diese Representation)
+              </div>
+            )}
+            {GEOMETRIES.length === 0 && !draft && (
               <div style={{ fontSize: 11, color: '#7c2d12', marginTop: 4 }}>
-                Keine Geometrien im Repo. Erst eine im Geometry-Editor anlegen und committen.
+                Keine Geometrien im Repo und kein Draft. Erst eine im Geometry-Editor anlegen.
               </div>
             )}
           </div>
