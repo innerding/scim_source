@@ -707,7 +707,7 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
             color: readerRowHover
               ? 'rgba(255, 255, 255, 0.9)'
               : 'rgba(255, 255, 255, 0.06)',
-            transition: 'color 700ms ease-out',
+            transition: 'color 2100ms ease-out',
             userSelect: 'none',
             cursor: 'default',
             position: 'relative',
@@ -727,6 +727,11 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
           style={{
             cursor: onManualOpen ? 'pointer' : 'default',
             userSelect: 'none', flexShrink: 0,
+            // Auf einer Linie mit dem Cosmo-Controls-Text zentriert.
+            // Text hat top: 6 + fontSize 10 -> Mitte bei ~11; SVG ist 18 hoch,
+            // Mitte bei 9; also top: 2 hebt nichts, top: 6 setzt SVG-Mitte
+            // auf gleiche Hoehe wie Text-Mitte.
+            position: 'relative', top: 6,
           }}
         >
           <title>Reader — oeffnet das Usage Manual</title>
@@ -744,7 +749,7 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
           <g
             opacity={readerRowHover ? undefined : 0.03}
             className={readerRowHover ? 'scim-reader-dot-pulse' : undefined}
-            style={{ transition: 'opacity 400ms ease-out' }}
+            style={{ transition: 'opacity 1200ms ease-out' }}
           >
             <circle cx={9} cy={9} r={7}   fill="url(#reader-diode-glow)" />
             <circle cx={9} cy={9} r={2.5} fill="url(#reader-diode-body)" />

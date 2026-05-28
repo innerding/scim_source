@@ -39,11 +39,11 @@ MOND (Logo, Mittelpunkt der Kosmologie)
 MESH (Transmissionsfeld, zwischen Mond und Tetraeder)
   Klick : oeffnet P06 Transmitter (Pattern-Klassifikator).
 
-TETRAEDER OBEN (Apex up - state: fire/Komposit-Tetraeder)
+KOMPOSIT-TETRAEDER (Apex up - fire)
   Faces-Rep-Build:  scb -> P11, org -> Workspace, cat -> Katalog, geo -> Geometry-Editor.
   Arcs-Thresholds:  sys -> P01, rou -> P02, loa -> P09.
 
-TETRAEDER UNTEN (Apex down - state: matter/Substrat-Tetraeder)
+SUBSTRAT-TETRAEDER (Apex down - matter)
   Hover     : bremst auf naechste Face, lockt sie frontal.
   Locked    : drei sichtbare Regionen klickbar.
               Upper       -> toggelt Versionen.

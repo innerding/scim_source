@@ -74,11 +74,11 @@ const FACE_FULL_ANGLES: Record<number, number> = { 0: 30, 1: 270, 2: 150 };
 const STROKE_INACTIVE  = '#2d4a6a';
 const STROKE_W_NORMAL  = 0.8;
 
-const SPEED_DEG_PER_SEC      = 13.5;   // 18 * 0.75 — 25% langsamer
+const SPEED_DEG_PER_SEC      = 18;
 const LOCK_DURATION_MS       = 700;
 const RESUME_RAMP_MS         = 2200;   // sanfter Ease-In nach Hover-Ende
 const HOVER_ENTER_DELAY_MS   = 250;    // Maus muss bleiben, sonst keine Reaktion
-const HOVER_LEAVE_GRACE_MS   = 100;    // kurzes Wegziehen + Rueckkehr haelt Lock
+const HOVER_LEAVE_GRACE_MS   = 500;    // kurzes Wegziehen + Rueckkehr haelt Lock
 
 interface HoverState {
   startTime: number;
