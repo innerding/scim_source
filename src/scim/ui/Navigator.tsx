@@ -643,10 +643,13 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
       {/* Manual + Reader sitzen am Fuss der Kosmologie — unter der gesamten
           Bipyramide (Upper-Tetraeder + Tiefen-Tetraeder), unmittelbar vor
           dem Listenteil. Manual (links): stummer Datei-Glyph. Reader
-          (rechts): unsichtbare Hitbox, oeffnet das Manual-Modal. */}
+          (rechts): unsichtbare Hitbox, oeffnet das Manual-Modal.
+          marginTop: -68 zieht Manual+Reader und alles dahinter
+          (Sektionen, Meta) um weitere 68 px nach oben. */}
       <div style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         padding: '0 14px', marginBottom: 6, flexShrink: 0,
+        marginTop: -68,
       }}>
         <span
           title="Manual (ohne Leser stumm)"
