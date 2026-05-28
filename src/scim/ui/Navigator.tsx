@@ -232,36 +232,66 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
             alt="SCIM3"
             style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
           />
+          {/* Hex visuell auf Faktor 0.85 — mehr Platz fuer die umgebende
+              Mondscheiben-Klickflaeche (siehe ann_051). transform-origin
+              steht auf dem Hex-Mittelpunkt im Logo-viewBox (49.3% x 59.4%). */}
           <img
             src={logoHexNaked}
             alt=""
             style={{
               position: 'absolute', inset: 0, width: '100%', height: '100%',
               animation: 'nav-hex-pulse 3200ms 2000ms ease-in-out infinite',
+              transform: 'scale(0.85)',
+              transformOrigin: '49.3% 59.4%',
             }}
           />
           {/* Mond-Klick-Karte (siehe ann_051):
-              - Aeussere Flaeche → V01 Pakete (R-Bibliothek)
-              - Inneres Hex-Feld → R01 Runtime Shell (App-Shell + Engine)
-              Hex-Overlay liegt mit hoeherem zIndex obenauf, damit ein Klick
-              in der Hex-Region nicht zum Body-Klick durchgeleitet wird. */}
-          <div
-            onClick={() => go('V01')}
-            title="Mond — R-Bibliothek (V01 Pakete)"
+              - Donut-Path (Mondscheibe minus Hex-Hole) → V01 Pakete
+              - Hex-Polygon (auf 0.85 verkleinert)       → R01 Runtime Shell
+              Geometrien aus den Logo-SVGs direkt uebernommen. SVG nutzt
+              identischen viewBox wie das Logo (107.5 x 51.122), damit
+              Koordinaten 1:1 mit dem Bild uebereinanderliegen.
+              pointer-events: 'fill' auf den Pfaden — der SVG-Container
+              selbst bleibt durchlaessig (pointer-events: none). */}
+          <svg
+            viewBox="0 0 107.5 51.122"
+            preserveAspectRatio="none"
             style={{
-              position: 'absolute', inset: 0, cursor: 'pointer', zIndex: 2,
+              position: 'absolute', inset: 0, width: '100%', height: '100%',
+              pointerEvents: 'none',
+              overflow: 'visible',
             }}
-          />
-          <div
-            onClick={(e) => { e.stopPropagation(); go('R01'); }}
-            title="Hex — App-Shell + Engine (R01 Runtime Shell)"
-            style={{
-              position: 'absolute',
-              left: '18%', top: '40%',
-              width: '24%', height: '40%',
-              cursor: 'pointer', zIndex: 3,
-            }}
-          />
+          >
+            {/* Mondscheibe (originaler Pfad aus logo-base-naked.svg) MINUS
+                Hex-Hole (kleines Polygon). fill-rule="evenodd" laesst den
+                Hex-Bereich aus der Klick-Flaeche heraus. */}
+            <path
+              d={
+                'M45.355,45.642c-8.505-4.234-11.982-14.6-7.75-23.107,' +
+                '4.234-8.506,14.599-11.98,23.107-7.749,' +
+                '8.506,4.234,11.983,14.599,7.75,23.106-' +
+                '4.234,8.507-14.597,11.983-23.107,7.75 Z ' +
+                'M52.95,20.79 L61.23,25.57 L61.23,35.13 ' +
+                'L52.95,39.91 L44.67,35.13 L44.67,25.57 Z'
+              }
+              fill="transparent"
+              fillRule="evenodd"
+              onClick={() => go('V01')}
+              style={{ pointerEvents: 'fill', cursor: 'pointer' }}
+            >
+              <title>Mond — R-Bibliothek (V01 Pakete)</title>
+            </path>
+            {/* Hex-Polygon (pointy-top), r=9.5625 = 11.25 * 0.85,
+                Mittelpunkt (52.95, 30.35) — dort wo der visuelle Hex sitzt. */}
+            <polygon
+              points="52.95,20.79 61.23,25.57 61.23,35.13 52.95,39.91 44.67,35.13 44.67,25.57"
+              fill="transparent"
+              onClick={() => go('R01')}
+              style={{ pointerEvents: 'fill', cursor: 'pointer' }}
+            >
+              <title>Hex — App-Shell + Engine (R01 Runtime Shell)</title>
+            </polygon>
+          </svg>
         </div>
         <style>{`
           @keyframes nav-hex-pulse {

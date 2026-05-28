@@ -903,10 +903,23 @@ Vokabular-Triade Feld/Transmitter/Transmission: siehe ann_065.
 3. Mond (App-Shell + R-Bibliothek)
 ==============================================================================
 
-Zwei Klick-Regionen am Logo:
+Zwei Klick-Regionen am Logo, geometrisch sauber definiert:
 
-  Hex-Zentrum      ->  R01 Runtime Shell (App-Grundhuelle + Engine)
-  Mond-Koerper     ->  V01 Pakete (alle veroeffentlichten R's)
+  Hex-Zentrum (Polygon)        ->  R01 Runtime Shell (App-Grundhuelle + Engine)
+  Mondscheibe minus Hex (Ring) ->  V01 Pakete (alle veroeffentlichten R's)
+
+Mechanik:
+  - Hex visuell auf Faktor 0.85 verkleinert (CSS-Transform um Hex-Mittelpunkt),
+    damit die umgebende Klickflaeche groesser wird.
+  - SVG-Overlay mit identischem viewBox wie das Logo (107.5 x 51.122).
+  - Mondscheibe-Pfad direkt aus logo-base-naked.svg uebernommen; ein
+    Hex-Polygon dient als Loch via fill-rule="evenodd".
+  - pointer-events: 'fill' auf den Pfaden — Klicks ausserhalb der Mondscheibe
+    (z.B. auf die kleinen Auswuchs-Elemente an den Ecken) treffen kein
+    Hitbox-Element und tun nichts.
+
+Damit ist die Verteilung eindeutig: Hex-Klick fuehrt immer zu R01,
+Mondscheiben-Klick (ohne Hex) immer zu V01, Restraum inert.
 
 Optionale dritte Region (heute nicht partitioniert):
 
