@@ -1333,7 +1333,12 @@ Ziel, fill="none" liesse Clicks ausserdem durch). Stattdessen:
      cursor: pointer, pointer-events: all. Andere Faces: inert.
   3. Klick auf die locked Face toggelt ihre Sektion auf/zu (mehrfach
      klicken oeffnet und schliesst nacheinander).
-  4. Hover verlassen -> Rotation resumiert vom aktuellen Winkel.
+  4. Hover verlassen -> Rotation resumiert SANFT. Statt abrupter
+     Geschwindigkeits-Rueckkehr auf Basis-Tempo waechst die Speed
+     kubisch (Ease-In) ueber 2200 ms von 0 zurueck auf 18 deg/s —
+     der Tetraeder beschleunigt nicht, er nimmt nur langsam wieder
+     Fahrt auf. Damit gibt es keine spuerbare Beschleunigung,
+     allein die Deceleration bei Hover bleibt als aktive Geste.
 
 Einschraenkung: ueber den Tetraeder kann pro Hover-Lock genau eine
 Sektion getoggelt werden. Mehrere Sektionen gleichzeitig oeffnen geht

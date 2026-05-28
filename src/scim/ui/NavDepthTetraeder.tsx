@@ -76,6 +76,7 @@ const STROKE_W_OPEN    = 1.0;
 
 const SPEED_DEG_PER_SEC = 18;
 const LOCK_DURATION_MS  = 700;
+const RESUME_RAMP_MS    = 2200;   // sanfter Ease-In nach Hover-Ende, kein Speed-Sprung
 
 interface HoverState {
   startTime: number;
@@ -109,12 +110,17 @@ export default function NavDepthTetraeder({ openSections, onToggleSection, size 
   const [hover, setHover] = useState<HoverState | null>(null);
   const [isLocked, setIsLocked] = useState(false);
   const rotationRef = useRef(0);
+  const resumeStartRef = useRef<number | null>(null);  // wann Ease-In-Resume gestartet wurde
 
-  // Animations-Loop
+  // Animations-Loop. Drei Phasen:
+  //   1) hover != null  -> Decelerate (Ease-Out) zum Lock-Winkel
+  //   2) resumeStartRef -> Sanfter Ease-In von 0 zurueck auf Basis-Tempo
+  //   3) sonst          -> Konstante Rotation mit Basis-Tempo
   useEffect(() => {
     let raf: number;
     let last = performance.now();
     const tick = (now: number) => {
+      const dt = (now - last) / 1000;
       if (hover) {
         const elapsed = now - hover.startTime;
         if (elapsed >= LOCK_DURATION_MS) {
@@ -128,8 +134,20 @@ export default function NavDepthTetraeder({ openSections, onToggleSection, size 
           rotationRef.current = angle % 360;
           setRotation(rotationRef.current);
         }
+      } else if (resumeStartRef.current !== null) {
+        const elapsed = now - resumeStartRef.current;
+        if (elapsed >= RESUME_RAMP_MS) {
+          resumeStartRef.current = null;
+          rotationRef.current = (rotationRef.current + dt * SPEED_DEG_PER_SEC) % 360;
+        } else {
+          const t = elapsed / RESUME_RAMP_MS;
+          // Cubic Ease-In — beginnt fast unmerklich, waechst langsam.
+          // Kein Sprung von 0 auf Basis-Tempo, sondern Anlauf.
+          const speedFactor = t * t * t;
+          rotationRef.current = (rotationRef.current + dt * SPEED_DEG_PER_SEC * speedFactor) % 360;
+        }
+        setRotation(rotationRef.current);
       } else {
-        const dt = (now - last) / 1000;
         rotationRef.current = (rotationRef.current + dt * SPEED_DEG_PER_SEC) % 360;
         setRotation(rotationRef.current);
       }
@@ -142,10 +160,14 @@ export default function NavDepthTetraeder({ openSections, onToggleSection, size 
 
   const onMouseEnter = () => {
     if (hover) return;
+    resumeStartRef.current = null;
     setHover(nextFaceLock(rotationRef.current));
     setIsLocked(false);
   };
   const onMouseLeave = () => {
+    // Statt abruptem Speed-Sprung: Resume-Ramp starten. Geschwindigkeit
+    // waechst kubisch von 0 auf Basis-Tempo ueber RESUME_RAMP_MS.
+    resumeStartRef.current = performance.now();
     setHover(null);
     setIsLocked(false);
   };
