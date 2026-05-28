@@ -13,6 +13,7 @@ import RepresentBuildTetrahedron from './RepresentBuildTetrahedron';
 import type { RepresentBuildFace, RepresentBuildArc } from './RepresentBuildTetrahedron';
 import type { TabId } from './panelRegistry';
 import NavTransmissionField from './NavTransmissionField';
+import NavDepthTetraeder from './NavDepthTetraeder';
 
 interface Props {
   activeId: string;
@@ -409,27 +410,47 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
           />
           {/* Layer 2: vier Trapez-Slices als Layer-Monitor (ann_066 Geste 3).
               Reihenfolge entspricht dem "Layer ▾"-Dropdown der ScimMap:
-              Boundary | POIs | Colour-Mesh | Routen. Der Cursor (glowIdx)
-              wandert sequentiell durch die aktiven Slices und ping-pongt
-              an den Enden zurueck. fill-opacity-Transition macht das Auf-
-              und Abklingen weich. */}
-          {inspectorActive && [
-            { points: '0,0 44.5,0 56.5,28 24,28',       label: 'Boundary' },
-            { points: '44.5,0 89,0 89,28 56.5,28',      label: 'POIs' },
-            { points: '89,0 133.5,0 121.5,28 89,28',    label: 'Colour-Mesh' },
-            { points: '133.5,0 178,0 154,28 121.5,28',  label: 'Routen / Edges' },
-          ].map((slice, idx) => (
-            <polygon
-              key={idx}
-              points={slice.points}
-              fill="#ffffff"
-              fillOpacity={glowIdx === idx ? 0.50 : 0}
-              stroke="none"
-              style={{ transition: 'fill-opacity 400ms ease-in-out' }}
-            >
-              <title>Layer-Monitor: {slice.label}</title>
-            </polygon>
-          ))}
+              Boundary | POIs | Colour-Mesh | Routen. Cursor (glowIdx) wandert
+              sequentiell durch die aktiven Slices und ping-pongt zurueck.
+              Jeder Slice traegt einen linearGradient, dessen Peaks an den
+              inneren Naehten sitzen — die Aufhellung sammelt sich rund um
+              die Stoesse, anstatt das Slice als Block aufzuhellen. */}
+          {inspectorActive && (
+            <>
+              <defs>
+                <linearGradient id="firm-grad-end-left" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%"   stopColor="#ffffff" stopOpacity="0" />
+                  <stop offset="100%" stopColor="#ffffff" stopOpacity="1" />
+                </linearGradient>
+                <linearGradient id="firm-grad-mid" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%"   stopColor="#ffffff" stopOpacity="1" />
+                  <stop offset="50%"  stopColor="#ffffff" stopOpacity="0" />
+                  <stop offset="100%" stopColor="#ffffff" stopOpacity="1" />
+                </linearGradient>
+                <linearGradient id="firm-grad-end-right" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%"   stopColor="#ffffff" stopOpacity="1" />
+                  <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+              {[
+                { points: '0,0 44.5,0 56.5,28 24,28',       label: 'Boundary',       grad: 'firm-grad-end-left' },
+                { points: '44.5,0 89,0 89,28 56.5,28',      label: 'POIs',           grad: 'firm-grad-mid' },
+                { points: '89,0 133.5,0 121.5,28 89,28',    label: 'Colour-Mesh',    grad: 'firm-grad-mid' },
+                { points: '133.5,0 178,0 154,28 121.5,28',  label: 'Routen / Edges', grad: 'firm-grad-end-right' },
+              ].map((slice, idx) => (
+                <polygon
+                  key={idx}
+                  points={slice.points}
+                  fill={`url(#${slice.grad})`}
+                  fillOpacity={glowIdx === idx ? 0.50 : 0}
+                  stroke="none"
+                  style={{ transition: 'fill-opacity 400ms ease-in-out' }}
+                >
+                  <title>Layer-Monitor: {slice.label}</title>
+                </polygon>
+              ))}
+            </>
+          )}
         </svg>
       )}
       {/* Globale Gesten-Styles (siehe ann_066). */}
@@ -618,8 +639,30 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
         />
       </div>
 
-      {/* Manual + Reader — sitzen jetzt in der Luft zwischen Tetraeder und
-          Represent-Build-Header. Manual (links): stummer Datei-Glyph.
+      {/* Tiefen-Tetraeder — Substrat-Tetraeder der Bipyramide (ann_060).
+          Punkt-nach-unten stehend, rotierend. Drei Side-Faces toggeln je
+          eine Navigator-Sektion (Package Pipeline / Runtime Builder /
+          Versionen) — reine Fokus-Funktion, kein Panel-Navigation.
+          Siehe ann_051. */}
+      <div style={{
+        padding: '0 12px 18px', display: 'flex', flexDirection: 'column',
+        alignItems: 'center', flexShrink: 0,
+      }}>
+        <NavDepthTetraeder
+          size={130}
+          openSections={(() => {
+            const s = new Set<string>(manuallyOpen);
+            for (const sec of SECTION_DEFS) {
+              if (sectionContainsActive(sec.ids)) s.add(sec.id);
+            }
+            return s;
+          })()}
+          onToggleSection={(secId) => toggleSection(secId)}
+        />
+      </div>
+
+      {/* Manual + Reader — sitzen jetzt unter dem Tiefen-Tetraeder, vor
+          dem Represent-Build-Header. Manual (links): stummer Datei-Glyph.
           Reader (rechts): unsichtbare Hitbox, oeffnet das Manual-Modal. */}
       <div style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',

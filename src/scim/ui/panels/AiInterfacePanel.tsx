@@ -926,6 +926,30 @@ Damit ist die Verteilung eindeutig: Hex-Klick fuehrt immer zu R01,
 Mondscheiben-Klick (ohne Hex) immer zu V01, Restraum inert.
 
 ==============================================================================
+3b. Tiefen-Tetraeder (Substrat der Bipyramide)
+==============================================================================
+
+Der Tiefen-Tetraeder (Punkt-nach-unten, rotierend, ann_060) sitzt im
+Navigator direkt unter dem oberen Tetraeder. Seine drei Side-Faces
+sind klickbar und fungieren als reine Fokus-Instrumente — sie
+toggeln Navigator-Sektionen, navigieren nicht zu Panels:
+
+  Face 0  ->  Sektion "Package Pipeline" (auf/zu)
+  Face 1  ->  Sektion "Runtime Builder"  (auf/zu)
+  Face 2  ->  Sektion "Versionen"        (auf/zu)
+
+Die obere Flaeche (zwischen den drei Top-Vertices) ist visuelle
+Basis ohne Klick. Aktiv-Stand pro Face: Sektion offen (manuell oder
+durch activeId) -> Face leuchtet wie eine aktive Tetraeder-Face,
+mit Pulse.
+
+Konzeptionell: oben (Tetraeder) wirkt komponiert, ruhend, vertikal;
+unten (Tiefen-Tetraeder) wirkt im Werden, rotierend, horizontal —
+die Stoffe sind verschieden, die Aktion auch. Sicheln (ann_052)
+und Faces (oben) bleiben Panel-Navigation, Tiefen-Faces sind
+ausschliesslich Sektion-Toggles.
+
+==============================================================================
 6. Kosmologie-Dim (Doppel-Schrei-Vermeidung)
 ==============================================================================
 
@@ -1267,7 +1291,33 @@ Asymmetrie der Aggregatzustaende (siehe ann_061):
   - Dieselbe Geometrie, gegensaetzliche Materialitaet.
   - Das Transmissionsfeld trennt und verbindet beide.
 
-Konsequenz fuer den Code: keine. Wie ann_055 - die erweiterte Kosmologie sitzt als Schicht ueber Pipeline und Operator-Realitaet, beruehrt sie nicht.`,
+Konsequenz fuer den Code: keine. Wie ann_055 - die erweiterte Kosmologie sitzt als Schicht ueber Pipeline und Operator-Realitaet, beruehrt sie nicht.
+
+Visualisierung (Stand 2026-05-28)
+================================
+
+Der Tiefen-Tetraeder lebt jetzt im Navigator als eigenes SVG
+(NavDepthTetraeder.tsx), platziert direkt unter dem oberen Tetraeder.
+Punkt-nach-unten stehend, rotierend um die vertikale Achse (~20 s
+pro Umlauf, leichter Tilt von 18 Grad fuer Raeumlichkeit).
+
+  - Strokes in der Farbfamilie des oberen Tetraeders (#2d4a6a inaktiv,
+    #63b3ed aktiv). Faces ohne Fill im Ruhestand — das visuelle Gewicht
+    haengt am Stroke, passend zum "Substrat ist noch nicht ausgeformt".
+  - Drei Side-Faces sind klickbar und fungieren als reine Fokus-
+    Instrumente: jeder Klick toggelt eine Navigator-Sektion. Mapping:
+        Face 0 (top0 -> top1)  ->  Sektion "Package Pipeline"
+        Face 1 (top1 -> top2)  ->  Sektion "Runtime Builder"
+        Face 2 (top2 -> top0)  ->  Sektion "Versionen"
+  - Die obere Flaeche (3 Top-Vertices, kein Apex) bleibt visuelle
+    Basis, kein Klick-Target.
+  - Aktiv-Stand pro Face: wenn die zugehoerige Sektion offen ist
+    (egal ob manuell oder durch activeId), bekommt der Face Fill
+    #2b6cb0, hellen Stroke #63b3ed und den .rb-active-tile-Pulse.
+
+Section-Toggle-Funktion und Auto-Expand-Regel aus ann_068 greifen
+unveraendert — der Depth-Tetraeder erweitert die Klickflaeche, ohne
+die Sektion-Mechanik anzufassen.`,
     date: '2026-05-28',
   },
 
@@ -1679,6 +1729,16 @@ Aktiv-Stand des Inspectors (Firmament-Glimmer als Layer-Monitor):
                  bleibt der Cursor stehen — der Slice pulst dann
                  einfach an Ort und Stelle (glow/Pause/glow). Bei
                  keinem aktiven Layer: kein Glimmer.
+  Naht-Gradient  Jeder Slice ist nicht mit Solid-Weiss gefuellt,
+                 sondern mit einem linearGradient, dessen Peaks an
+                 den inneren Naehten sitzen. Aussenkanten faden
+                 zu 0, die Stoesse sind die hellen Stellen. Wirkung:
+                 die Aufhellung sammelt sich um die Stoesse herum,
+                 die Slices wirken nicht mehr als Bloecke sondern
+                 als Naht-Halos. Drei Gradient-Typen:
+                   end-left   (Slice 1)      0  ->  1
+                   mid        (Slice 2,3)    1 -> 0 -> 1
+                   end-right  (Slice 4)      1  ->  0
 
 Wirkung: das Pergament-Trapez bleibt im Ruhezustand vollstaendig wie
 inaktiv. Aktive Layer manifestieren sich als wechselnde, kurze
