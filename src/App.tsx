@@ -38,6 +38,7 @@ export default function App() {
           onSelect={(id) => goTo(id)}
           onGoTo={goTo}
           onInspectorToggle={toggleMap}
+          inspectorActive={!mapCollapsed}
           onManualOpen={() => setShowManual(true)}
         />
         <PanelWorkspace

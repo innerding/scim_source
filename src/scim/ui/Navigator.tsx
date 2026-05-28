@@ -19,6 +19,7 @@ interface Props {
   onSelect: (id: string) => void;
   onGoTo?: (id: string, tab?: TabId) => void;
   onInspectorToggle?: () => void;   // Trapez ueber dem Mond ruft das auf
+  inspectorActive?: boolean;        // true wenn ScimMap rechts offen ist
   onManualOpen?: () => void;        // Reader-Icon ruft das auf
   panelStatus?: Record<string, StatusColor>;
 }
@@ -128,7 +129,7 @@ function arcFromActive(activeId: string): RepresentBuildArc | undefined {
   return undefined;
 }
 
-export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggle, onManualOpen, panelStatus = {} }: Props) {
+export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggle, inspectorActive = false, onManualOpen, panelStatus = {} }: Props) {
   const go = onGoTo ?? ((id: string) => onSelect(id));
   const pipelineGroups = [1, 2, 3, 4] as const;
   const role = useRole();
@@ -194,17 +195,22 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
           <title>Inspector — Sicht oeffnen/schliessen</title>
           {/* Polygon-Remount per Key-Wechsel triggert die Flash-Animation neu.
               Default-Stil ist Pergament-12%; die Animation zuckt kurz nach
-              weiss durch. Siehe ann_066 (Geste 2: Inspector-Blitz). */}
+              weiss durch. Aktiv-Stand (ScimMap offen) erhoeht fillOpacity
+              auf 0.28 und gibt der Form den Aktiv-Atem (siehe ann_066). */}
           <polygon
             key={`flash-${flashId}`}
             points="0,0 178,0 154,28 24,28"
             fill="#e8d4a8"
-            fillOpacity={0.12}
+            fillOpacity={inspectorActive ? 0.28 : 0.12}
             stroke="none"
-            className={flashId > 0 ? 'scim-inspector-flashing' : undefined}
+            className={[
+              flashId > 0 ? 'scim-inspector-flashing' : '',
+              inspectorActive ? 'scim-active-pulse' : '',
+            ].filter(Boolean).join(' ') || undefined}
           />
         </svg>
       )}
+      {/* Globale Gesten-Styles (siehe ann_066). */}
       <style>{`
         @keyframes scim-inspector-flash {
           0%   { fill: #e8d4a8; fill-opacity: 0.12; }
@@ -213,6 +219,13 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
         }
         .scim-inspector-flashing {
           animation: scim-inspector-flash 420ms cubic-bezier(0.2, 0, 0.4, 1) 1;
+        }
+        @keyframes scim-active-breath {
+          0%, 100% { opacity: 0.78; }
+          50%       { opacity: 1.00; }
+        }
+        .scim-active-pulse {
+          animation: scim-active-breath 3200ms ease-in-out infinite;
         }
       `}</style>
       {/* Nacktes Logo — Iconset alleine, beschnitten auf 107.5 x 51.122.
@@ -274,8 +287,9 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
                 'M52.95,20.79 L61.23,25.57 L61.23,35.13 ' +
                 'L52.95,39.91 L44.67,35.13 L44.67,25.57 Z'
               }
-              fill="transparent"
+              fill={activeId === 'V01' ? 'rgba(99, 179, 237, 0.20)' : 'transparent'}
               fillRule="evenodd"
+              className={activeId === 'V01' ? 'scim-active-pulse' : undefined}
               onClick={() => go('V01')}
               style={{ pointerEvents: 'fill', cursor: 'pointer' }}
             >
@@ -285,7 +299,8 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
                 Mittelpunkt (52.95, 30.35) — dort wo der visuelle Hex sitzt. */}
             <polygon
               points="52.95,20.79 61.23,25.57 61.23,35.13 52.95,39.91 44.67,35.13 44.67,25.57"
-              fill="transparent"
+              fill={activeId === 'R01' ? 'rgba(99, 179, 237, 0.20)' : 'transparent'}
+              className={activeId === 'R01' ? 'scim-active-pulse' : undefined}
               onClick={() => go('R01')}
               style={{ pointerEvents: 'fill', cursor: 'pointer' }}
             >
@@ -304,7 +319,7 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
       {/* Transmissionsfeld — animiertes Mesh-Dreieck zwischen Mond und Tetraeder.
           Nimmt keinen Flow-Platz (height: 0), fuellt die 36-px-Luecke ueber
           der Manual+Reader-Zeile als absolute SVG-Overlay. Siehe ann_059. */}
-      <NavTransmissionField onClick={() => go('P06')} />
+      <NavTransmissionField onClick={() => go('P06')} active={activeId === 'P06'} />
 
       {/* Manual + Reader — sitzt am unteren Rand des Transmissionsfelds.
           Verschoben um 36 px nach unten via translateY (Layout-Fluss

@@ -79,9 +79,10 @@ function waveDy(x: number, y: number, t: number): number {
 
 interface NavTransmissionFieldProps {
   onClick?: () => void;       // Klick auf das Mesh leitet auf den Pattern-Klassifikator
+  active?: boolean;           // wenn true: Aktiv-Atem + kraeftigere Kanten (siehe ann_066)
 }
 
-export default function NavTransmissionField({ onClick }: NavTransmissionFieldProps = {}) {
+export default function NavTransmissionField({ onClick, active = false }: NavTransmissionFieldProps = {}) {
   const { nodes, edges } = useMemo(() => buildMesh(), []);
   const lineRefs = useRef<(SVGLineElement | null)[]>([]);
 
@@ -131,6 +132,7 @@ export default function NavTransmissionField({ onClick }: NavTransmissionFieldPr
       <svg
         viewBox={`0 0 ${VB_WIDTH} ${VB_HEIGHT}`}
         preserveAspectRatio="none"
+        className={active ? 'scim-active-pulse' : undefined}
         style={{
           position: 'absolute',
           top: 0,
@@ -165,8 +167,11 @@ export default function NavTransmissionField({ onClick }: NavTransmissionFieldPr
           // wie das Wellen-Mesh der Empty Sea.
           const midY = (a.baseY + b.baseY) / 2;
           const tFade = midY / VB_HEIGHT;
-          const alpha = 0.09 + tFade * 0.63;
-          const width = 0.24 + tFade * 0.94;
+          // Aktiv-Multiplikator macht die Kanten kraeftiger, ohne die
+          // Empty-Sea-Charakteristik (Apex zart, Basis kraeftig) zu verlieren.
+          const k = active ? 1.6 : 1;
+          const alpha = Math.min((0.09 + tFade * 0.63) * k, 0.95);
+          const width = (0.24 + tFade * 0.94) * k;
           return (
             <line
               key={idx}

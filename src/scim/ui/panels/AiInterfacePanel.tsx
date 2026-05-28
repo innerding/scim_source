@@ -1514,6 +1514,61 @@ Geplante weitere Bindungen (nicht implementiert)
 Beide warten auf eine konkrete Operator-Aktion, an die sich der Blitz haengen kann. Ohne Bindung gehoeren sie nicht hierher.
 
 ==============================================================================
+Geste 3 — Aktiv-Atem (Navigations-Quittung "du bist hier")
+==============================================================================
+
+Kontext
+
+Die Tetraeder-Triangles und -Bogensegmente haben heute bereits eine eingebaute Aktiv-Sprache: das aktuell offene Panel hebt sich farblich ab und atmet im 3200-ms-Takt (CSS-Klasse .rb-active-tile im Tetraeder-SVG). Die anderen Klickziele der Kosmologie (Mond-Hex, Mond-Body, Mesh, Inspector) hatten diese Quittung NICHT — eine Inkonsistenz. Wer auf den Mond klickt und R01 oeffnet, bekam zwar das Panel, aber kein visuelles "ja, der Mond-Hex ist jetzt der Aktive".
+
+Diese Geste macht die Aktiv-Quittung universell.
+
+Mechanik-Spec
+
+Eine globale CSS-Klasse .scim-active-pulse (definiert in Navigator.tsx) traegt eine Atem-Animation:
+
+  @keyframes scim-active-breath {
+    0%, 100% { opacity: 0.78; }
+    50%       { opacity: 1.00; }
+  }
+  .scim-active-pulse {
+    animation: scim-active-breath 3200ms ease-in-out infinite;
+  }
+
+Periodisch, sinusartig, gleicher Takt wie die Hex-Pulse-Atmung der Engine — kein zweites Tempo, das die Wahrnehmung zerteilt.
+
+Zusaetzlich erhaelt das aktive Element einen subtilen Aktiv-Fill:
+
+  - Mond-Hex / Mond-Body / (geplant: weitere Mond-Regionen):
+      rgba(99, 179, 237, 0.20)
+      (das Tetraeder-Aktiv-Blau in 20 % Alpha — Familienzugehoerigkeit ohne Schreien)
+  - Inspector:
+      fillOpacity steigt von 0.12 auf 0.28
+      (selbe Pergament-Farbe, nur praesenter — bleibt im Material)
+  - Mesh:
+      kein Aktiv-Fill (Form bleibt offen), aber Multiplikator 1.6 auf
+      Kanten-Alpha und -Strichstaerke. Apex bleibt zart (weil tFade dort
+      klein ist), Basis wird deutlich kraeftiger. Clamping bei alpha 0.95
+      gegen Ausreisser.
+
+Bindung — heute
+
+Das Aktiv-Signal kommt aus dem React-State des Navigators (activeId) und dem App-Level-State (mapCollapsed). Kein Window-Event noetig.
+
+  Mond-Hex                aktiv wenn  activeId === 'R01'
+  Mond-Body               aktiv wenn  activeId === 'V01'
+  Mesh                    aktiv wenn  activeId === 'P06'
+  Inspector (Trapez)      aktiv wenn  inspectorActive === true (= !mapCollapsed)
+
+Tetraeder-Faces/-Arcs nutzen weiterhin ihre lokale .rb-active-tile (gleiches Atem-Konzept, aelter, separates Style-Block in RepresentBuildTetrahedron — bewusst nicht zusammengelegt, weil sie auch in der Light-Variante im ScimMap-Header verwendet werden, wo das Trapez nicht existiert).
+
+Aussage des Aktiv-Atems
+
+"Du bist gerade hier." Jedes Klickziel der Kosmologie quittiert seinen Aktiv-Stand mit demselben sinusartigen Atemzug. Ob der Operator ueber Tetraeder, Mond, Mesh oder Inspector eintritt — der Weg zurueck sieht ueberall gleich aus.
+
+Damit ist die Kosmologie als Navigationssprache geschlossen: jeder klickbare Ort hat (a) Hover-Cursor, (b) Aktiv-Quittung im selben Takt.
+
+==============================================================================
 Regel fuer kuenftige Gesten
 ==============================================================================
 
