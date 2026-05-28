@@ -206,23 +206,46 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
               Default-Stil ist Pergament-12%; die Animation zuckt kurz nach
               weiss durch. Aktiv-Stand (ScimMap offen) erhoeht fillOpacity
               auf 0.28 und gibt der Form den Aktiv-Atem (siehe ann_066). */}
-          {/* Bewusste Ausnahme vom schreienden Aktiv-Stil (ann_066 Geste 3):
-              Das Firmament ist ein Spiegel, nicht ein Schalter. Aktiv-Stand
-              = Pergament-Basis (wie inaktiv), pulst periodisch zu Weiss-60 %
-              auf. Animation 1600 ms — doppelt so schnell wie der Hex-Atem.
-              Inaktive Konstanten (fill, fillOpacity) bleiben Pergament-12 %,
-              die Animation faehrt allein die Aufhellung. */}
+          {/* Layer 1: das eigentliche Pergament-Trapez. Konstant auf Basis-
+              Helligkeit, traegt den Layer-Toggle-Blitz (Geste 2). */}
           <polygon
             key={`flash-${flashId}`}
             points="0,0 178,0 154,28 24,28"
             fill="#e8d4a8"
             fillOpacity={0.12}
             stroke="none"
-            className={[
-              flashId > 0 ? 'scim-inspector-flashing' : '',
-              inspectorActive ? 'scim-firmament-glimmer' : '',
-            ].filter(Boolean).join(' ') || undefined}
+            className={flashId > 0 ? 'scim-inspector-flashing' : undefined}
           />
+          {/* Layer 2: drei Trapez-Slices als wechselnde Teilbereiche der
+              Firmament-Glimmer-Animation (Geste 3, Ausnahme). Nur sichtbar
+              wenn der Inspector aktiv ist. Jeder Slice durchlaeuft denselben
+              Keyframe mit Phasen-Versatz, sodass zu jedem Moment maximal
+              ein Teilbereich aufleuchtet, max. 50 % Weiss, mit Pausen. */}
+          {inspectorActive && (
+            <>
+              <polygon
+                points="0,0 59,0 67,28 24,28"
+                fill="#ffffff"
+                fillOpacity={0}
+                stroke="none"
+                className="scim-firmament-glimmer scim-firmament-glimmer-a"
+              />
+              <polygon
+                points="59,0 119,0 111,28 67,28"
+                fill="#ffffff"
+                fillOpacity={0}
+                stroke="none"
+                className="scim-firmament-glimmer scim-firmament-glimmer-b"
+              />
+              <polygon
+                points="119,0 178,0 154,28 111,28"
+                fill="#ffffff"
+                fillOpacity={0}
+                stroke="none"
+                className="scim-firmament-glimmer scim-firmament-glimmer-c"
+              />
+            </>
+          )}
         </svg>
       )}
       {/* Globale Gesten-Styles (siehe ann_066). */}
@@ -242,17 +265,21 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
         .scim-active-pulse {
           animation: scim-active-breath 3200ms ease-in-out infinite;
         }
-        /* Firmament-Glimmer: Pergament-Basis pulst periodisch zu Weiss-60 %,
-           Aufhellung passiert ueber Interpolation (durchlaeuft natuerlich 20 %
-           und 40 % auf dem Weg nach oben und zurueck). 1600 ms = doppelt so
-           schnell wie der Hex-Atem. Siehe ann_066 Geste 3. */
+        /* Firmament-Glimmer (Geste 3, Ausnahme): drei Slices des Trapezes
+           leuchten phasenversetzt kurz zu Weiss-50 % auf. 70 % der Cycle-
+           Zeit liegt das Slice bei Opacity 0 — Pausen sind eingebaut. Bei
+           4500 ms Cycle und drei Slices mit -1500 ms / -3000 ms Phasen-
+           Offset zuckt nie alles gleichzeitig, immer nur Teilbereiche. */
         @keyframes scim-firmament-glimmer {
-          0%, 100% { fill: #e8d4a8; fill-opacity: 0.12; }
-          50%      { fill: #ffffff; fill-opacity: 0.60; }
+          0%, 70%, 100% { fill-opacity: 0; }
+          85%           { fill-opacity: 0.50; }
         }
         .scim-firmament-glimmer {
-          animation: scim-firmament-glimmer 1600ms ease-in-out infinite;
+          animation: scim-firmament-glimmer 4500ms ease-in-out infinite;
         }
+        .scim-firmament-glimmer-a { animation-delay: 0ms; }
+        .scim-firmament-glimmer-b { animation-delay: -1500ms; }
+        .scim-firmament-glimmer-c { animation-delay: -3000ms; }
       `}</style>
       {/* Nacktes Logo — Iconset alleine, beschnitten auf 107.5 x 51.122.
           Wrapper zentriert die 0.88-skalierte Box links/rechts.

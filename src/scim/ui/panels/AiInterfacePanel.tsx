@@ -1596,22 +1596,37 @@ das Firmament ist ein Spiegel, kein Schalter. Es schaltet sich nicht
 das ist eine andere Art von Quittung.
 
 Aktiv-Stand des Inspectors (Firmament-Glimmer):
-  Basis           parchment #e8d4a8 @ fill-opacity 0.12 (= inaktiv)
-  Peak            white #ffffff @ fill-opacity 0.60
-  Animation       1600 ms ease-in-out infinite (Keyframe scim-firmament-glimmer)
-                  doppelt so schnell wie der Hex-Atem (3200 ms)
+  Konstruktion   zwei Layer.
+                 - Layer 1: das eigentliche Pergament-Trapez,
+                   konstant auf Basis-Helligkeit, traegt weiterhin
+                   den Layer-Toggle-Blitz (Geste 2).
+                 - Layer 2: drei Trapez-Slices (links, mitte, rechts)
+                   als wechselnde Teilbereiche, jeder Slice eine
+                   eigene Polygon-Form, animiert.
+  Slice-Peak     white #ffffff @ fill-opacity 0.50
+  Slice-Ruhe     fill-opacity 0 (vollstaendig durchsichtig)
+  Keyframe       scim-firmament-glimmer:
+                   0 %, 70 %, 100 %  ->  opacity 0 (Pause)
+                   85 %              ->  opacity 0.50 (Peak)
+                 70 % der Cycle-Zeit liegt der Slice bei 0 — sind
+                 die Pausen, die das Dauerblinken aufbrechen.
+  Cycle          4500 ms ease-in-out infinite.
+  Phasen-Offset  Slice A:  0 ms     (Standard)
+                 Slice B: -1500 ms  (ein Drittel voraus)
+                 Slice C: -3000 ms  (zwei Drittel voraus)
+                 Sodass die drei Slices nie gleichzeitig hochzucken,
+                 sondern sich abwechseln. In Summe: ein Slice zuckt,
+                 zwei warten — das Auge sieht stets nur einen
+                 Teilbereich aufleuchten.
 
-Verlauf via CSS-Interpolation: 0.12 -> ... -> 0.60 -> ... -> 0.12.
-Das Auge sieht die Aufhellung natuerlich durch 20 % und 40 % laufen
-auf dem Weg zur 60 %-Spitze und zurueck. Kein Stroke, keine harte Kante.
+Wirkung: das Pergament-Trapez bleibt im Ruhezustand vollstaendig wie
+inaktiv. Nur Teilbereiche zucken periodisch wie fernes Wetterleuchten
+am Pergament-Himmel auf, max. 50 % Weiss-Anteil, mit ausreichend
+Pause zwischen den Aufhellungen. Kein Dauerblinken, keine Synchronie.
 
-Wirkung: das Pergament-Trapez ist im Ruhezustand nicht von "inaktiv"
-zu unterscheiden — und zuckt periodisch wie ein fernes Wetterleuchten
-am Pergament-Himmel auf, doppelt so oft wie die Engine atmet.
-
-Wenn waehrenddessen ein Layer-Toggle den Blitz ausloest, ueberlagert
-die Flash-Animation kurzzeitig den Glimmer (CSS-Cascade), und der
-Glimmer setzt nach 420 ms wieder fort.
+Wenn waehrenddessen ein Layer-Toggle den Blitz ausloest, betrifft das
+nur Layer 1 (das Trapez selbst), nicht die Slices. Beide Gesten
+koexistieren konfliktfrei.
 
 Bindung — heute
 
