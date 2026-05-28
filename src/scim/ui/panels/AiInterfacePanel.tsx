@@ -1017,6 +1017,16 @@ Mechanik: blitzt bei jedem Layer-Toggle in der ScimMap kurz weiss durch (siehe a
 
 Konzept: die einzige bewusste Asymmetrie der Kosmologie (Datei sitzt, Akt liest, siehe ann_052).
 
+Visuelle Position (Stand 2026-05-28): Manual+Reader sitzen im Navigator
+unter dem Tetraeder, in der Luft zwischen Tetraeder-Visual und
+Represent-Build-Section-Header. Die fruehere Position "zwischen Mond
+und Tetraeder" (siehe ann_052 / ann_059, dort als Pole am Transmissions-
+feld) wurde aus Layout-Gruenden aufgegeben — die Luecke unter dem
+Tetraeder war ohnehin leerer Raum, und der Mesh-Tetraeder-Abstand bleibt
+durch einen Spacer erhalten. Konzeptionell darf "Manual+Reader gehoert
+zur Kosmologie der Werkbank" weiterhin gelesen werden, sie sitzen nur
+optisch dichter am Tetraeder als zuvor.
+
 ==============================================================================
 Pflege-Regel
 ==============================================================================

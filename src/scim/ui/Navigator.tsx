@@ -582,39 +582,15 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
       </div>
 
       {/* Transmissionsfeld — animiertes Mesh-Dreieck zwischen Mond und Tetraeder.
-          Nimmt keinen Flow-Platz (height: 0), fuellt die 36-px-Luecke ueber
-          der Manual+Reader-Zeile als absolute SVG-Overlay. Siehe ann_059. */}
+          Nimmt keinen Flow-Platz (height: 0), fuellt die Luecke ueber dem
+          Tetraeder als absolute SVG-Overlay. Siehe ann_059. */}
       <NavTransmissionField onClick={() => go('P06')} active={activeId === 'P06'} />
 
-      {/* Manual + Reader — sitzt am unteren Rand des Transmissionsfelds.
-          Verschoben um 36 px nach unten via translateY (Layout-Fluss
-          unveraendert, Tetraeder darunter ruehrt sich nicht).
-          Manual (links): Datei-Glyph, sitzt da, ist nicht klickbar.
-          Reader (rechts): unsichtbare Hitbox — Icon entfernt, Klickflaeche bleibt
-          (siehe ann_059: das Transmissionsfeld traegt die Bedeutung, das
-          Reader-Glyph war eine vorlaeufige Andeutung). */}
-      <div style={{
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        padding: '0 14px', marginBottom: 6, flexShrink: 0,
-        transform: 'translateY(56px)',
-      }}>
-        <span
-          title="Manual (ohne Leser stumm)"
-          style={{
-            fontSize: 14, color: '#4a6a8a', opacity: 0.55,
-            userSelect: 'none', cursor: 'default',
-          }}
-        >📄</span>
-        <span
-          title="Manual lesen"
-          onClick={onManualOpen}
-          style={{
-            display: 'inline-block',
-            width: 18, height: 18,
-            userSelect: 'none', cursor: onManualOpen ? 'pointer' : 'default',
-          }}
-        />
-      </div>
+      {/* Spacer: ersetzt die fruehere Flow-Hoehe der Manual+Reader-Zeile,
+          haelt damit den vertikalen Abstand zwischen Mesh und Tetraeder
+          unveraendert. Manual+Reader sind jetzt unter dem Tetraeder, in
+          der Luft zwischen Tetraeder-Visual und Represent-Build-Header. */}
+      <div style={{ height: 24, flexShrink: 0 }} />
 
       {/* ── Represent Build — zentrales Tetraeder-Control ──────────────────── */}
       <div style={{
@@ -638,6 +614,31 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
             if (a === 'system_adjust') go('P01');
             else if (a === 'regio_content') go('P02', 'input');
             else if (a === 'load_thresholds') go('P09');
+          }}
+        />
+      </div>
+
+      {/* Manual + Reader — sitzen jetzt in der Luft zwischen Tetraeder und
+          Represent-Build-Header. Manual (links): stummer Datei-Glyph.
+          Reader (rechts): unsichtbare Hitbox, oeffnet das Manual-Modal. */}
+      <div style={{
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        padding: '0 14px', marginBottom: 6, flexShrink: 0,
+      }}>
+        <span
+          title="Manual (ohne Leser stumm)"
+          style={{
+            fontSize: 14, color: '#4a6a8a', opacity: 0.55,
+            userSelect: 'none', cursor: 'default',
+          }}
+        >📄</span>
+        <span
+          title="Manual lesen"
+          onClick={onManualOpen}
+          style={{
+            display: 'inline-block',
+            width: 18, height: 18,
+            userSelect: 'none', cursor: onManualOpen ? 'pointer' : 'default',
           }}
         />
       </div>
