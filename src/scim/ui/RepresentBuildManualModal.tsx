@@ -22,12 +22,14 @@ const MANUAL_BODY = `    VERSION       2026
 
 ────────────────────────────────────────────────────────
 
-INSPECTOR (Pergament-Trapez, oben)
+INSPECTOR (Rep-Build-Observer)
+  System-Mirror auto-compute, Visibility ueber ScimMap rechts.
+
   Klick    : ScimMap rechts ein/ausblenden.
   Glimmer  : ein Slice je aktivem Layer pulst, Cursor wandert.
   Blitz    : pro Layer-Toggle in der ScimMap.
 
-MOND (Logo, Mittelpunkt der Kosmologie)
+MOON (Release Artifacts: App-Shell, Packages, Breath-Colour-Mesh)
   Klick Hex            : oeffnet R01 Runtime Shell.
   Klick Mondkoerper    : oeffnet V01 Pakete.
   Klick Auswuchs       : oeffnet V02 Region-Detail im zugehoerigen Tab.
@@ -36,12 +38,40 @@ MOND (Logo, Mittelpunkt der Kosmologie)
                           Bot-Right = Gaisberg / Salzburg
                           Bot-Left  = Kanton Zuerich (Region offen)
 
-MESH (Transmissionsfeld, zwischen Mond und Tetraeder)
-  Klick : oeffnet P06 Transmitter (Pattern-Klassifikator).
+TRANSMISSION (Mesh zwischen Mond und Komposit-Tetraeder)
+  Klick : oeffnet P06 Transmitter.
+
+  Das Mesh ist die sichtbare Oberflaeche der Pattern-Recognition-
+  Kette: Receptor Fields -> Feature Extraction -> Pattern
+  Classification -> Confidence Scoring -> Priority Queue ->
+  Cache/Lookup -> Dispatcher -> Target App. Der Komposit-Tetraeder
+  feuert klassifizierte Pakete in dieses Feld; was unter der
+  Confidence-Schwelle liegt, wandert in die Priority Queue und
+  wird im naechsten Atemzug neu bewertet. P06 SignalInterpretation
+  ist der namensgebende Transmitter und sortiert in flow /
+  accumulation / ambiguous - das Mesh visualisiert dabei seinen
+  Atem.
 
 KOMPOSIT-TETRAEDER (Apex up - fire)
   Faces-Rep-Build:  scb -> P11, org -> Workspace, cat -> Katalog, geo -> Geometry-Editor.
   Arcs-Thresholds:  sys -> P01, rou -> P02, loa -> P09.
+
+  Panels im Komposit:
+    P11  Package         Bundling der Representation aus Layern,
+                         Geometrien und Katalog-POIs zu einem
+                         versionierten Artefakt.
+    Workspace            Rahmen der Repraesentation: Region,
+                         Bezeichner, Zielgruppe.
+    Katalog              POI-Bestand der Region, kuratiert nach
+                         Buckets und Subkategorien.
+    Geometry-Editor      Polygone, Linien und Punkte direkt auf
+                         der Karte zeichnen.
+    P01  SystemAdjust    Globale Engine-Schwellen - Confidence,
+                         Layer-Gewichte, Routing-Defaults.
+    P02  RegioContent    Regions-spezifische Schwellen und
+                         Content-Parameter, ueberschreibt P01.
+    P09  Engine          Vier Bewertungsmodelle fuer POIs,
+                         feinjustierbar pro Achse.
 
 SUBSTRAT-TETRAEDER (Apex down - matter)
   Hover     : bremst auf naechste Face, lockt sie frontal.
