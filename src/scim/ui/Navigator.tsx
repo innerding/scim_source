@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import type { PanelDescriptor, StatusColor } from './panelRegistry';
 import {
   PANEL_REGISTRY, SYSTEM_DESCRIPTOR, AI_INTERFACE_DESCRIPTOR,
@@ -132,6 +133,26 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
   const pipelineGroups = [1, 2, 3, 4] as const;
   const role = useRole();
 
+  // Transmitter-Pulse: kurzfristiger Input-Modus des Tetraeder-Schwingungs-
+  // Mechanismus (siehe ann_066). Wird per Window-Event "scim:transmitter:pulse"
+  // ausgeloest — z.B. vom P06-Simulation-Tab beim "In Klassifikator schieben".
+  const [transmissionMode, setTransmissionMode] = useState<'default' | 'input'>('default');
+  const pulseTimerRef = useRef<number | null>(null);
+  useEffect(() => {
+    const onPulse = (e: Event) => {
+      const detail = (e as CustomEvent<{ duration?: number }>).detail ?? {};
+      const duration = detail.duration ?? 1500;
+      setTransmissionMode('input');
+      if (pulseTimerRef.current !== null) window.clearTimeout(pulseTimerRef.current);
+      pulseTimerRef.current = window.setTimeout(() => setTransmissionMode('default'), duration);
+    };
+    window.addEventListener('scim:transmitter:pulse', onPulse);
+    return () => {
+      window.removeEventListener('scim:transmitter:pulse', onPulse);
+      if (pulseTimerRef.current !== null) window.clearTimeout(pulseTimerRef.current);
+    };
+  }, []);
+
   return (
     <nav style={{
       width: 210,
@@ -248,6 +269,7 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
           variant="dark"
           size={171}
           showLabels
+          transmissionMode={transmissionMode}
           onFaceClick={(f) => {
             if (f === 'geometry_draw') go('geometry_editor');
             else if (f === 'catalog_magazination') go('catalog');

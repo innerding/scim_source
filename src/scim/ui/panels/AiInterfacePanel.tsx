@@ -1315,6 +1315,69 @@ Sprachregelung
 Damit ist die Verwechslungsgefahr zwischen Feld und Komponente strukturell ausgeschlossen.`,
     date: '2026-05-28',
   },
+
+  {
+    id: 'ann_066',
+    category: 'adr',
+    label: 'Bogensegment-Rotation: Mechanik-Spec + Sandbox-Bindung (Stufe 1)',
+    content: `Kontext
+
+Die drei Bogensegmente (sys / rou / loa) am Tetraeder sind konkave Schirme — Transmissionseingaenge. Ihr Drehzustand bildet ab, ob der Transmitter gerade sendet (Output) oder empfaengt (Input). Bisher (ann_053) war die Drehung nur als "Spaetversion" notiert: "Sphaeren-Boegen drehen sich beim Feuern und geben einen Spalt frei". Diese Annotation praezisiert die Mechanik und bindet sie an einen ersten konkreten Ausloeser.
+
+Mechanik-Spec (Vorgabe)
+
+Zwei Zustaende:
+
+  default = OUTPUT (Ruhestellung, sichtbarer Default)
+    - Bogensegmente in 0°-Rotation
+    - Apex-Spalt zeigt nach oben zum Mond
+    - Strahl kann austreten (Dispatch / Senden)
+
+  input = INPUT (kurzzeitig, ausgeloest durch Aktion)
+    - Bogensegmente rotieren +60° im Uhrzeigersinn (gemeinsame Gruppe, Drehung um Tetraeder-Zentrum)
+    - Der Apex-Spalt wandert um 60° aus der Mond-Achse
+    - Die konkaven Schirme stehen empfangend, kein Beam austretbar
+    - Visuell: kurze, klare Bewegung, kein Animations-Loop
+
+Uebergang: CSS-Transition 480 ms cubic-bezier(0.45, 0, 0.55, 1) (ease-in-out, leicht straff).
+Dauer im Input-Modus: 1500 ms (per Default, parametrisierbar via Event-Detail.duration).
+Gesamte Choreographie eines Pulses: 480 ms rein + 1500 ms halten + 480 ms zurueck = ~2.5 s.
+
+Bindung (Stufe 1, Sandbox)
+
+Heute ein einziger Ausloeser: der "In Klassifikator schieben"-Button im P06-Simulation-Tab.
+
+Implementierung:
+  - P06SimulationForm.tsx dispatcht window.dispatchEvent(new CustomEvent('scim:transmitter:pulse', { detail: { duration: 1500 } })) beim Klick.
+  - Navigator.tsx hoert per addEventListener auf 'scim:transmitter:pulse', setzt transmissionMode='input' fuer die Dauer, danach 'default'.
+  - RepresentBuildTetrahedron.tsx empfaengt transmissionMode als Prop, wrappt die ARCS in <g style={{ transform: rotate(...), transition: ... }}>.
+
+Damit ist die Mechanik vom Event entkoppelt: jeder beliebige Code-Pfad kann das Event ausloesen — heute nur die Sandbox, spaeter weitere.
+
+Aussage des Pulses
+
+"Der Transmitter hat das Signal angenommen." Der Operator drueckt im Simulation-Tab; die Bogensegmente am Tetraeder im Navigator drehen sichtbar in Empfangsstellung; nach 1.5 s schwenken sie zurueck. Das ist eine ehrliche visuelle Quittung — keine Dekoration, sondern Status.
+
+Geplante weitere Bindungen (heute NICHT implementiert)
+
+Stufe 2 — Pipeline-Phasen-Bindung:
+  Waehrend eines Pipeline-Laufs reflektiert die Rotation den aktiven Sphere. Der gerade laufende Schwellen-Layer "schliesst sich" empfangend. Setzt voraus, dass die Pipeline Phasen-Events emittiert.
+
+Stufe 3 — Lifecycle-Bindung (R-Deploy):
+  Vollstaendige Choreographie. Bogen oeffnen, Apex feuert Strahl zum Mond, ein neuer Mond-Tetraeder entsteht/wird umhuellt (siehe ann_053). Choreographie noch nicht ausgearbeitet.
+
+Risiko und Abgrenzung
+
+Eine Mechanik ohne Bindung waere Ornament. Stufe 1 bindet an einen wirklichen Operator-Akt (Sandbox-Klick), darum bleibt sie ehrlich. Wenn spaetere Stufen ohne klare Bindung kommen, ist das ein Anlass zur Pruefung, nicht zum Bauen.
+
+Code-Footprint
+
+  - RepresentBuildTetrahedron.tsx: neue transmissionMode-Prop, <g>-Wrapper um die ARCS-Schleife mit CSS-Transition.
+  - Navigator.tsx: useState + useEffect mit Window-Event-Listener, transmissionMode an Tetraeder durchgereicht.
+  - P06SimulationForm.tsx: window.dispatchEvent auf "In Klassifikator schieben".
+  - Keine API-Aenderung, keine Pipeline-Mutation. ann_055 respektiert.`,
+    date: '2026-05-28',
+  },
 ];
 
 function AnnotationsTab() {

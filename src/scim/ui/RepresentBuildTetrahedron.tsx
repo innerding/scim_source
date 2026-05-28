@@ -34,6 +34,12 @@ interface Props {
   size?: number;
   variant?: 'dark' | 'light';
   showLabels?: boolean;
+  // Transmissions-Modus (siehe ann_066):
+  //  - 'default' (=Output): Bogensegmente in Ruhestellung, Spalt am Apex offen,
+  //    Strahl kann zum Mond austreten.
+  //  - 'input': Schirme rotieren 60° im Uhrzeigersinn — der Apex-Spalt wandert
+  //    weg vom Mond, die konkaven Schirme stehen empfangend.
+  transmissionMode?: 'default' | 'input';
 }
 
 // ─── Geometrie ──────────────────────────────────────────────────────────────
@@ -177,6 +183,7 @@ export default function RepresentBuildTetrahedron({
   size = 100,
   variant = 'dark',
   showLabels = false,
+  transmissionMode = 'default',
 }: Props) {
   const isDark = variant === 'dark';
 
@@ -206,7 +213,17 @@ export default function RepresentBuildTetrahedron({
       viewBox={`${vb} ${vb} ${vbSize} ${vbSize}`}
       style={{ overflow: 'visible', display: 'block' }}
     >
-      {/* Bogensegmente */}
+      {/* Bogensegmente — in einer rotierenden Gruppe gewrappt, damit der
+          Input-/Output-Schwenk smooth animiert. transform-box: view-box
+          verankert die Drehung um den SVG-Ursprung (Tetraeder-Zentrum). */}
+      <g
+        style={{
+          transformBox: 'view-box',
+          transformOrigin: '0 0',
+          transform: `rotate(${transmissionMode === 'input' ? 60 : 0}deg)`,
+          transition: 'transform 480ms cubic-bezier(0.45, 0, 0.55, 1)',
+        }}
+      >
       {ARCS.map((a) => {
         const path = describeArcSegment(a.startDeg, a.endDeg, ARC_GAP_DEG);
         const [lx, ly] = polarToCartesian(a.labelAngleDeg, R + ARC_THICKNESS / 2 + 6);
@@ -249,6 +266,7 @@ export default function RepresentBuildTetrahedron({
           </g>
         );
       })}
+      </g>
 
       {/* Triangles */}
       {FACES.map((f) => {

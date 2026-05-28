@@ -330,7 +330,16 @@ export default function P06SimulationForm({ state }: Props) {
         marginTop: 24, paddingTop: 16, borderTop: '1px solid #e2e8f0',
       }}>
         <button
-          onClick={() => { setSaved(true); setDirty(false); }}
+          onClick={() => {
+            setSaved(true);
+            setDirty(false);
+            // Transmitter-Pulse: Tetraeder-Bogensegmente rotieren kurz in
+            // Input-Stellung (siehe ann_066). Sichtbares Feedback, dass das
+            // Sandbox-Signal angenommen wurde.
+            window.dispatchEvent(
+              new CustomEvent('scim:transmitter:pulse', { detail: { duration: 1500 } }),
+            );
+          }}
           disabled={!dirty}
           style={{
             padding: '8px 20px', fontSize: 13, fontWeight: 600,
