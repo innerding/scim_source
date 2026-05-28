@@ -1,0 +1,4 @@
+# Cloudflare Pages SPA-Fallback
+# Alle unbekannten Pfade -> /index.html, die SPA uebernimmt das Routing.
+# Damit greifen Runtime-URLs wie /boehmerwald/lichtenberg an der Edge.
+/*    /index.html   200
