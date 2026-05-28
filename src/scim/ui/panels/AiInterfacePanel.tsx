@@ -2001,6 +2001,47 @@ ergaenzen mit { id, title, ids }. Auto-Expand und localStorage greifen
 automatisch.`,
     date: '2026-05-28',
   },
+
+  {
+    id: 'ann_069',
+    category: 'business_context',
+    label: 'HISTORISCHE URFASSUNG — Manual (vor Usage-Manual-Umbau)',
+    content: `==============================================================================
+HARTE MARKIERUNG: HISTORISCHE URFASSUNG
+==============================================================================
+
+Die Urfassung des Manuals (geoeffnet via Reader-Glyph im Navigator) war
+bis zum 2026-05-28 ein direkter pre-formatierter Render der Datei
+
+  docs/represent_build.md
+
+(401 Zeilen, Stand 2026-05-27, Titel "Represent Build — Architektur der
+Operator-Werkbank"). Inhalt: ausfuehrliche Doku der Tetraeder-Kosmologie,
+Mond/Hex/Atem-Bilder, Manual+Reader-Konzeption, Lifecycle einer R,
+Sicheln als Beobachtungsfenster, Architektur-Regeln, Roadmap. Verfasst
+nach dem Architektur-Konsens Operator + KI vom Mai 2026.
+
+Diese ausfuehrliche Doku-Fassung wurde am 2026-05-28 zugunsten eines
+verkuerzten "USAGE MANUAL" (Brutalist-Style, Monospace, Befehlston)
+abgeloest. Begruendung: das alte Manual fungierte als Erklaer-Text,
+die Cosmo-Controls erklaeren sich inzwischen selbst — siehe ann_051
+(Klick-Karte) und ann_066 (Gesten). Was im Manual bleiben muss, ist
+nur eine knappe Befehlsreferenz plus eine knappe Leistungsschau, kein
+narrativer Architektur-Text mehr.
+
+Die Quelldatei docs/represent_build.md selbst bleibt im Repo erhalten
+als autoritative Architektur-Doku — nicht als Manual. Wer den
+historischen Render lesen will, kann die Datei direkt im Repo
+einsehen.
+
+Stand vor Umbau: Modal "Represent Build — Manual" mit Pre-Tag-Render
+des markdown-Files, system-ui-Schrift, weisser Hintergrund, einfache
+Schliessen-Funktion.
+
+Diese Annotation existiert als Sucheinstieg fuer kuenftige Sitzungen:
+"Wo war die Urfassung?" -> hier, mit Verweis auf die Quelldatei.`,
+    date: '2026-05-28',
+  },
 ];
 
 function AnnotationsTab() {

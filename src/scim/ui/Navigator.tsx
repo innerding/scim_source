@@ -327,6 +327,10 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
     return () => timers.forEach((t) => clearTimeout(t));
   }, [layerVis, inspectorActive]);
 
+  // Reader-Dot-Hover: Default fast unsichtbar (0.03), bei Hover auf der
+  // Manual+Reader-Zeile pulsiert er hell. "Nimm mich wenn du suchst."
+  const [readerRowHover, setReaderRowHover] = useState(false);
+
   // V02-Region-Sync: V02RegionDetailPanel dispatcht 'scim:v02:region-changed'
   // bei jedem Tab-Wechsel; Navigator spiegelt das hier, damit der passende
   // Mond-Auswuchs "schreiend aktiv" wird. Klick auf einen Auswuchs dispatcht
@@ -450,6 +454,16 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
         }
         .scim-active-pulse {
           animation: scim-active-breath 3200ms ease-in-out infinite;
+        }
+        /* Reader-Dot-Pulse: default unsichtbar (0.03), bei Row-Hover sanftes
+           Pulsieren zwischen 0.5 und 0.9. Wirkt wie eine LED, die "nimm mich
+           wenn du suchst" sagt. */
+        @keyframes scim-reader-dot-pulse {
+          0%, 100% { fill-opacity: 0.5; }
+          50%      { fill-opacity: 0.9; }
+        }
+        .scim-reader-dot-pulse {
+          animation: scim-reader-dot-pulse 1500ms ease-in-out infinite;
         }
         /* Firmament-Glimmer: JS-getrieben (siehe glowIdx-State + useEffect
            im Navigator-Body). CSS-Keyframes entfaellt, weil der Cursor
@@ -641,16 +655,19 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
       </div>
 
       {/* Manual + Reader sitzen am Fuss der Kosmologie — unter der gesamten
-          Bipyramide (Upper-Tetraeder + Tiefen-Tetraeder), unmittelbar vor
-          dem Listenteil. Manual (links): stummer Datei-Glyph. Reader
-          (rechts): unsichtbare Hitbox, oeffnet das Manual-Modal.
-          marginTop: -68 zieht Manual+Reader und alles dahinter
-          (Sektionen, Meta) um weitere 68 px nach oben. */}
-      <div style={{
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        padding: '0 14px', marginBottom: 6, flexShrink: 0,
-        marginTop: -68,
-      }}>
+          Bipyramide. Reader-Dot (●, rechts) ist Default fast unsichtbar
+          (opacity 0.03) und erscheint mit Pulse, wenn die Maus die Zeile
+          beruehrt — wie eine LED, die "nimm mich" sagt nur wenn gesucht.
+          marginTop: -68 zieht Manual+Reader und alles dahinter um weitere
+          68 px nach oben. */}
+      <div
+        onMouseEnter={() => setReaderRowHover(true)}
+        onMouseLeave={() => setReaderRowHover(false)}
+        style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          padding: '0 14px', marginBottom: 6, flexShrink: 0,
+          marginTop: -68,
+        }}>
         <span
           title="Manual (ohne Leser stumm)"
           style={{
@@ -676,15 +693,26 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
             top: 6,
           }}
         >Cosmo-Controls</span>
-        <span
-          title="Manual lesen"
+        {/* Reader-Dot: kleiner SVG-Kreis, default fast unsichtbar (0.03).
+            Bei Hover auf der ganzen Zeile: Pulse 0.5..0.9, Cursor pointer.
+            Klick oeffnet das Usage Manual. */}
+        <svg
+          width={18} height={18} viewBox="0 0 18 18"
           onClick={onManualOpen}
           style={{
-            display: 'inline-block',
-            width: 18, height: 18,
-            userSelect: 'none', cursor: onManualOpen ? 'pointer' : 'default',
+            cursor: onManualOpen ? 'pointer' : 'default',
+            userSelect: 'none', flexShrink: 0,
           }}
-        />
+        >
+          <title>Reader — oeffnet das Usage Manual</title>
+          <circle
+            cx={9} cy={9} r={2.5}
+            fill="#ffffff"
+            fillOpacity={readerRowHover ? undefined : 0.03}
+            className={readerRowHover ? 'scim-reader-dot-pulse' : undefined}
+            style={{ transition: 'fill-opacity 400ms ease-out' }}
+          />
+        </svg>
       </div>
 
       {/* ── Vier kollabierbare Sektionen (siehe ann_068) ──────────────────── */}
