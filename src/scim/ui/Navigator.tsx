@@ -625,6 +625,7 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
       <div style={{
         padding: '22px 12px 22px', display: 'flex', flexDirection: 'column',
         alignItems: 'center', flexShrink: 0,
+        marginTop: -68,   // zieht Depth-T und alles Folgende 68 px nach oben
       }}>
         <NavDepthTetraeder
           size={208}
