@@ -660,7 +660,8 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
         >📄</span>
         {/* Cosmo-Controls — eigene typografische Insel (Italic-Serif),
             zentriert in der Manual+Reader-Zeile (justify-content:
-            space-between sorgt fuer die Aufteilung). */}
+            space-between sorgt fuer die Aufteilung). 6 px-Offset
+            nach unten via relative top. */}
         <span
           style={{
             fontFamily: 'Georgia, "Times New Roman", serif',
@@ -671,6 +672,8 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
             color: 'rgba(255, 255, 255, 0.9)',
             userSelect: 'none',
             cursor: 'default',
+            position: 'relative',
+            top: 6,
           }}
         >Cosmo-Controls</span>
         <span
