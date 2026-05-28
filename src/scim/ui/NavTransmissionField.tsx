@@ -125,7 +125,7 @@ export default function NavTransmissionField({ onClick, active = false }: NavTra
       position: 'relative',
       width: '100%',
       height: 0,                 // nimmt keinen Flow-Platz — der Tetraeder darunter ruehrt sich nicht
-      marginTop: 24,             // schiebt Mesh + alles Folgende um 24 px nach unten
+      marginTop: 0,              // Logo+Inspector haben 24 px uebernommen, Mesh-Position bleibt
       // pointerEvents: 'auto' lokal am SVG-Hitbox-Polygon, der Wrapper bleibt durchlaessig
       flexShrink: 0,
     }}>

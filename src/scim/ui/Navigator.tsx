@@ -91,10 +91,10 @@ function Divider() {
 
 function SectionHeader({ title }: { title: string }) {
   // Im Stil des "Represent Build"-Labels (zentriert, monospace, #4a6a8a)
-  // mit Faktor 1.1: fontSize 9 -> 10.
+  // mit Faktor 1.25: fontSize 10 -> 12.5.
   return (
     <div style={{
-      fontSize: 10, color: '#4a6a8a', textTransform: 'uppercase',
+      fontSize: 12.5, color: '#4a6a8a', textTransform: 'uppercase',
       letterSpacing: '0.10em', fontFamily: 'monospace',
       textAlign: 'center',
       padding: '14px 12px 4px',
@@ -191,7 +191,7 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
           height={28}
           onClick={onInspectorToggle}
           style={{
-            position: 'absolute', top: 8, left: '50%',
+            position: 'absolute', top: 32, left: '50%',
             transform: 'translateX(-50%)',
             cursor: 'pointer', zIndex: 5,
           }}
@@ -237,7 +237,7 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
           Hex-Layer pulsiert; Dim-Wert um 50% tiefer als zuvor. */}
       <div style={{
         display: 'flex', justifyContent: 'center',
-        marginTop: 28, marginBottom: 6, flexShrink: 0,
+        marginTop: 52, marginBottom: 6, flexShrink: 0,
       }}>
         <div style={{
           position: 'relative',
@@ -380,7 +380,7 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
           }}
         />
         <div style={{
-          fontSize: 10, color: '#4a6a8a', textTransform: 'uppercase',
+          fontSize: 12.5, color: '#4a6a8a', textTransform: 'uppercase',
           letterSpacing: '0.10em', fontFamily: 'monospace',
         }}>
           Represent Build
