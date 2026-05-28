@@ -1139,6 +1139,48 @@ Sprachregelung fuer kommende Texte:
 Begruendung der Wahl: Oben und unten sind kategorial verschieden, nicht zwei Pole eines Kontinuums. Zwei eigenstaendige Begriffe (Komposition vs. Substrat) sind deshalb ehrlicher als ein gemeinsames Wort fuer beides. Der Oberbegriff Aggregatzustand verbindet sie, ohne ihre Verschiedenheit zu verwischen.`,
     date: '2026-05-28',
   },
+
+  {
+    id: 'ann_062',
+    category: 'adr',
+    label: 'Repo-Pfad-Diagnose und sicherer Commit-Workflow (Stand 2026-05-28)',
+    content: `Kontext und Ausloeser
+
+Bei dem Versuch, eine Aenderung an src/scim/ui/panels/AiInterfacePanel.tsx live zu schalten, ergab git status - aufgerufen aus /Users/dietmarbroda/SCIM3ClaudeMax/ heraus - eine alarmierende Anzeige: 203 Dateien als "deleted". Bevor irgendetwas committet wurde, Diagnose read-only durchgefuehrt.
+
+Fakten (gemessen, nicht gemutmasst)
+
+- Im Home-Verzeichnis /Users/dietmarbroda/ liegt ein .git, dessen HEAD auf einem alten Stand steht (commit 7a88f23, 24. Mai 2026). Dieser .git betrachtet das gesamte Home als sein Working-Tree.
+- Lokale main: 17 Commits voraus, 199 hinter origin/main. Origin ist die Wahrheit. Die 17 lokalen Commits sind inhaltlich auf origin bereits enthalten, dort an restrukturierten Pfaden (ohne den scim_source/-Wrapper, den der alte Stand hatte).
+- /Users/dietmarbroda/scim_source/ enthaelt nur noch .claude/-Worktree-Metadaten und einen .vite-Cache. Die Quellen wurden physisch nach /Users/dietmarbroda/SCIM3ClaudeMax/scim_source/ verschoben.
+- /Users/dietmarbroda/SCIM3ClaudeMax/scim_source/ ist ein eigenstaendiger Git-Clone von github:innerding/scim_source.git. HEAD = letzter origin/main-Commit (z.B. 942d72f). Branch main. Status sauber bis auf gewollte Edits.
+- Kein Code ist verloren. Inhalt der "deleted" Dateien lebt parallel in (a) der Git-Historie, (b) den Claude-Worktrees vom Home-Repo, (c) dem aktiven Clone in SCIM3ClaudeMax/scim_source/.
+
+Vorgehen - so vorzugehen ist beim naechsten Mal
+
+1. Bevor irgendein Commit angestrebt wird: den Pfad der zu editierenden Datei feststellen (pwd, ls).
+2. Aus dem Verzeichnis der Datei git rev-parse --show-toplevel ausfuehren. Das zeigt, welcher .git zustaendig ist.
+3. Wenn der angezeigte Toplevel /Users/dietmarbroda lautet (Home-Repo): STOPP. Das ist der falsche Repo. Stattdessen in /Users/dietmarbroda/SCIM3ClaudeMax/scim_source/ wechseln und von dort erneut pruefen.
+4. Erst danach git status, git diff, git commit, git push.
+5. Bei jeder Aenderung, die "deleted" zeigt, die nicht beabsichtigt war: nichts stagen. Keine -a- oder -A-Flags. Nicht committen. Erst die Ursache klaeren.
+
+Die drei Pfade auf dieser Maschine - kurz
+
+- /Users/dietmarbroda/SCIM3ClaudeMax/scim_source/  ->  der lebendige Repo. Hier wird gearbeitet, committet und gepusht. Eigenes .git, auf main, synchron mit origin. Der GitHub-Action-Deploy haengt an Pushes auf dieses main (siehe ann_039 fuer den Deploy-Workflow).
+
+- /Users/dietmarbroda/.git + /Users/dietmarbroda/scim_source/  ->  der historische Home-Repo und sein leerer alter Working-Tree-Pfad. Veraltet, desynchronisiert, sieht 203 Phantom-Loeschungen. Nicht anfassen. Wenn jemand hier git add -A oder git commit -a ausfuehrt, werden die Loeschungen gestaged - das ist genau das Risiko, das diese Annotation absichert.
+
+- /Users/dietmarbroda/scim_source/.claude/worktrees/*  ->  Claude-Worktrees, die am Home-Repo haengen. Stehen ebenfalls auf altem Stand (HEAD 7a88f23). Nicht als Commit-Pfad nutzen. Eine SCIM-Session, die hier startet, sieht den alten Code-Stand und nicht den realen.
+
+Konsequenz - die drei Regeln
+
+1. Alle Edits + Commits + Pushes ausschliesslich aus /Users/dietmarbroda/SCIM3ClaudeMax/scim_source/ oder darunter.
+2. Niemals git-Kommandos aus /Users/dietmarbroda/, /Users/dietmarbroda/scim_source/ oder /Users/dietmarbroda/SCIM3ClaudeMax/ (ohne nachfolgendes /scim_source/) ausfuehren.
+3. Die Phantom-Loeschungen im Home-Repo nicht beruehren. Aufraeumen des Home-Repos und der alten Claude-Worktrees ist ein separates Vorhaben. Solange aus jenen Pfaden keine git-Aktion ausgefuehrt wird, ist nichts in Gefahr.
+
+Diese Annotation existiert, damit eine kuenftige Sitzung - ob Mensch oder Claude - dieselbe Diagnose nicht nochmal durchspielen muss, sondern direkt den richtigen Pfad waehlt.`,
+    date: '2026-05-28',
+  },
 ];
 
 function AnnotationsTab() {
