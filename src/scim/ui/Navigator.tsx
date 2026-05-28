@@ -217,7 +217,7 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
       <div style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         padding: '0 14px', marginBottom: 6, flexShrink: 0,
-        transform: 'translateY(36px)',
+        transform: 'translateY(56px)',
       }}>
         <span
           title="Manual (ohne Leser stumm)"

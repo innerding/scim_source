@@ -11,7 +11,7 @@ import { useEffect, useMemo, useRef } from 'react';
 
 const N = 4;                              // Subdivisionsgrad pro Seite
 const VB_WIDTH = 180;
-const VB_HEIGHT = 36;
+const VB_HEIGHT = 29;                     // 36 * 0.8 ≈ 29 — flacheres Blatt
 
 const APEX = { x: VB_WIDTH / 2, y: 0 };           // oben
 const BL   = { x: 0,            y: VB_HEIGHT };    // unten links
@@ -120,6 +120,7 @@ export default function NavTransmissionField() {
       position: 'relative',
       width: '100%',
       height: 0,                 // nimmt keinen Flow-Platz — der Tetraeder darunter ruehrt sich nicht
+      marginTop: 24,             // schiebt Mesh + alles Folgende um 24 px nach unten
       pointerEvents: 'none',     // Klicks gehen durch zur Reader-Hitbox
       flexShrink: 0,
     }}>
@@ -131,7 +132,7 @@ export default function NavTransmissionField() {
           top: 0,
           left: 0,
           width: '100%',
-          height: 36,            // genau die Luecke, die die Manual+Reader-Zeile per translateY(36) freigibt
+          height: VB_HEIGHT,
           overflow: 'visible',
           display: 'block',
         }}
@@ -139,6 +140,15 @@ export default function NavTransmissionField() {
         {edges.map((e, idx) => {
           const a = nodes[e.a];
           const b = nodes[e.b];
+          // Per-Edge Alpha + Strichstaerke nach Empty-Sea-Vorlage:
+          // tFade = 0 am Apex (oben, "fern"), 1 an der Basis (unten, "nah").
+          // Bereiche identisch zu Empty Sea: alpha lerp(0.09, 0.72),
+          // lineWidth lerp(0.24, 1.18). Dadurch dieselbe Farbigkeit
+          // wie das Wellen-Mesh der Empty Sea.
+          const midY = (a.baseY + b.baseY) / 2;
+          const tFade = midY / VB_HEIGHT;
+          const alpha = 0.09 + tFade * 0.63;
+          const width = 0.24 + tFade * 0.94;
           return (
             <line
               key={idx}
@@ -147,8 +157,8 @@ export default function NavTransmissionField() {
               y1={a.baseY}
               x2={b.baseX}
               y2={b.baseY}
-              stroke="rgba(255,255,255,0.42)"
-              strokeWidth={0.4}
+              stroke={`rgba(255,255,255,${alpha.toFixed(3)})`}
+              strokeWidth={Number(width.toFixed(2))}
               vectorEffect="non-scaling-stroke"
             />
           );
