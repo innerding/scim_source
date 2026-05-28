@@ -265,8 +265,8 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
   }, []);
 
   // Layer-Monitor: ScimMap dispatcht 'scim:layers:state' mit dem aktuellen
-  // vis-Objekt. Wir spiegeln das hier und entscheiden je Slice, ob es
-  // glimmern darf. Siehe ann_066 Geste 3.
+  // vis-Objekt. Wir spiegeln das hier und treiben die Firmament-Glimmer-
+  // Sequenz daraus an. Siehe ann_066 Geste 3.
   const [layerVis, setLayerVis] = useState<{
     boundary: boolean; pois: boolean; colourmesh: boolean; routes: boolean;
   }>({ boundary: true, pois: true, colourmesh: true, routes: false });
@@ -278,6 +278,53 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
     window.addEventListener('scim:layers:state', onLayers);
     return () => window.removeEventListener('scim:layers:state', onLayers);
   }, []);
+
+  // Firmament-Glimmer (Geste 3, JS-getrieben):
+  // Cursor laeuft durch die aktiven Layer-Slices nacheinander. Am Ende des
+  // active-Slice-Arrays kehrt er um (Ping-Pong). Inaktive Slices werden
+  // uebersprungen. Pro Slice: ~600 ms Glimmer + ~400 ms Pause, dann Cursor
+  // weiter. Wenn keine Layer aktiv: nichts.
+  const [glowIdx, setGlowIdx] = useState<number | null>(null);
+  useEffect(() => {
+    const activeIndices: number[] = [];
+    if (layerVis.boundary)   activeIndices.push(0);
+    if (layerVis.pois)       activeIndices.push(1);
+    if (layerVis.colourmesh) activeIndices.push(2);
+    if (layerVis.routes)     activeIndices.push(3);
+
+    if (!inspectorActive || activeIndices.length === 0) {
+      setGlowIdx(null);
+      return;
+    }
+
+    let cursor = 0;
+    let direction: 1 | -1 = 1;
+    const timers: number[] = [];
+
+    const startGlow = () => {
+      setGlowIdx(activeIndices[cursor]);
+      timers.push(window.setTimeout(startGap, 600));
+    };
+    const startGap = () => {
+      setGlowIdx(null);
+      timers.push(window.setTimeout(advance, 400));
+    };
+    const advance = () => {
+      if (activeIndices.length > 1) {
+        const next = cursor + direction;
+        if (next >= activeIndices.length || next < 0) {
+          direction = (direction === 1 ? -1 : 1);
+          cursor = cursor + direction;
+        } else {
+          cursor = next;
+        }
+      }
+      startGlow();
+    };
+
+    startGlow();
+    return () => timers.forEach((t) => clearTimeout(t));
+  }, [layerVis, inspectorActive]);
 
   // V02-Region-Sync: V02RegionDetailPanel dispatcht 'scim:v02:region-changed'
   // bei jedem Tab-Wechsel; Navigator spiegelt das hier, damit der passende
@@ -360,53 +407,29 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
             stroke="none"
             className={flashId > 0 ? 'scim-inspector-flashing' : undefined}
           />
-          {/* Layer 2: vier Trapez-Slices, jeder einem Layer in der ScimMap
-              zugeordnet. Ein Slice glimmt nur, wenn sein Layer aktiv ist —
-              das Firmament wird damit zum Layer-Monitor (ann_066 Geste 3).
-              Reihenfolge der Slices entspricht dem "Layer ▾"-Dropdown:
-              Boundary | POIs | Colour-Mesh | Routen. Phasen-Offset 0 /
-              -1125 / -2250 / -3375 ms innerhalb des 4500-ms-Cycles, sodass
-              gleichzeitig aktive Slices nie synchron aufleuchten. */}
-          {inspectorActive && (
-            <>
-              <polygon
-                points="0,0 44.5,0 56.5,28 24,28"
-                fill="#ffffff"
-                fillOpacity={0}
-                stroke="none"
-                className={layerVis.boundary ? 'scim-firmament-glimmer scim-firmament-glimmer-a' : undefined}
-              >
-                <title>Layer-Monitor: Boundary</title>
-              </polygon>
-              <polygon
-                points="44.5,0 89,0 89,28 56.5,28"
-                fill="#ffffff"
-                fillOpacity={0}
-                stroke="none"
-                className={layerVis.pois ? 'scim-firmament-glimmer scim-firmament-glimmer-b' : undefined}
-              >
-                <title>Layer-Monitor: POIs</title>
-              </polygon>
-              <polygon
-                points="89,0 133.5,0 121.5,28 89,28"
-                fill="#ffffff"
-                fillOpacity={0}
-                stroke="none"
-                className={layerVis.colourmesh ? 'scim-firmament-glimmer scim-firmament-glimmer-c' : undefined}
-              >
-                <title>Layer-Monitor: Colour-Mesh</title>
-              </polygon>
-              <polygon
-                points="133.5,0 178,0 154,28 121.5,28"
-                fill="#ffffff"
-                fillOpacity={0}
-                stroke="none"
-                className={layerVis.routes ? 'scim-firmament-glimmer scim-firmament-glimmer-d' : undefined}
-              >
-                <title>Layer-Monitor: Routen / Edges</title>
-              </polygon>
-            </>
-          )}
+          {/* Layer 2: vier Trapez-Slices als Layer-Monitor (ann_066 Geste 3).
+              Reihenfolge entspricht dem "Layer ▾"-Dropdown der ScimMap:
+              Boundary | POIs | Colour-Mesh | Routen. Der Cursor (glowIdx)
+              wandert sequentiell durch die aktiven Slices und ping-pongt
+              an den Enden zurueck. fill-opacity-Transition macht das Auf-
+              und Abklingen weich. */}
+          {inspectorActive && [
+            { points: '0,0 44.5,0 56.5,28 24,28',       label: 'Boundary' },
+            { points: '44.5,0 89,0 89,28 56.5,28',      label: 'POIs' },
+            { points: '89,0 133.5,0 121.5,28 89,28',    label: 'Colour-Mesh' },
+            { points: '133.5,0 178,0 154,28 121.5,28',  label: 'Routen / Edges' },
+          ].map((slice, idx) => (
+            <polygon
+              key={idx}
+              points={slice.points}
+              fill="#ffffff"
+              fillOpacity={glowIdx === idx ? 0.50 : 0}
+              stroke="none"
+              style={{ transition: 'fill-opacity 400ms ease-in-out' }}
+            >
+              <title>Layer-Monitor: {slice.label}</title>
+            </polygon>
+          ))}
         </svg>
       )}
       {/* Globale Gesten-Styles (siehe ann_066). */}
@@ -426,25 +449,12 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
         .scim-active-pulse {
           animation: scim-active-breath 3200ms ease-in-out infinite;
         }
-        /* Firmament-Glimmer (Geste 3, Ausnahme): drei Slices des Trapezes
-           leuchten phasenversetzt kurz zu Weiss-50 % auf. 70 % der Cycle-
-           Zeit liegt das Slice bei Opacity 0 — Pausen sind eingebaut. Bei
-           4500 ms Cycle und drei Slices mit -1500 ms / -3000 ms Phasen-
-           Offset zuckt nie alles gleichzeitig, immer nur Teilbereiche. */
-        @keyframes scim-firmament-glimmer {
-          0%, 70%, 100% { fill-opacity: 0; }
-          85%           { fill-opacity: 0.50; }
-        }
-        .scim-firmament-glimmer {
-          /* alternate-Richtung: jeder Cycle laeuft erst vorwaerts, dann
-             rueckwaerts. Die Slice-Sequenz wird damit bidirektional
-             (Welle prallt am Rand ab, statt zu snappen). */
-          animation: scim-firmament-glimmer 4500ms ease-in-out infinite alternate;
-        }
-        .scim-firmament-glimmer-a { animation-delay: 0ms; }
-        .scim-firmament-glimmer-b { animation-delay: -1125ms; }
-        .scim-firmament-glimmer-c { animation-delay: -2250ms; }
-        .scim-firmament-glimmer-d { animation-delay: -3375ms; }
+        /* Firmament-Glimmer: JS-getrieben (siehe glowIdx-State + useEffect
+           im Navigator-Body). CSS-Keyframes entfaellt, weil der Cursor
+           sequentiell durch die aktiven Layer wandert und am Ende ping-
+           pongt — das laesst sich rein deklarativ nicht ausdruecken. Die
+           weichen Uebergaenge laufen ueber die inline-style-Transition
+           auf jedem Slice-Polygon. */
       `}</style>
       {/* Nacktes Logo — Iconset alleine, beschnitten auf 107.5 x 51.122.
           Wrapper zentriert die 0.88-skalierte Box links/rechts.

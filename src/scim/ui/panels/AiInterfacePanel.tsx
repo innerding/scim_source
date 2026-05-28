@@ -1642,10 +1642,12 @@ Aktiv-Stand des Inspectors (Firmament-Glimmer als Layer-Monitor):
                    den Layer-Toggle-Blitz (Geste 2).
                  - Layer 2: vier Trapez-Slices, je einem Layer in der
                    ScimMap zugeordnet (Boundary | POIs | Colour-Mesh
-                   | Routen, von links nach rechts). Ein Slice glimmt
-                   nur dann, wenn sein Layer aktiv ist — Firmament
-                   wird zum Layer-Monitor. Die Kopplung an die ScimMap
-                   passiert ueber ein "scim:layers:state"-Window-Event.
+                   | Routen, von links nach rechts). Ein einzelner
+                   Cursor wandert sequentiell durch die *aktiven*
+                   Slices und ping-pongt an den Enden zurueck — kein
+                   paralleles Phasen-Versatz-Modell mehr, sondern
+                   eine echte Sequenz. Die Kopplung an die ScimMap
+                   passiert ueber das "scim:layers:state"-Window-Event.
   Slice-Peak     white #ffffff @ fill-opacity 0.50
   Slice-Ruhe     fill-opacity 0 (vollstaendig durchsichtig)
   Keyframe       scim-firmament-glimmer:
@@ -1653,21 +1655,20 @@ Aktiv-Stand des Inspectors (Firmament-Glimmer als Layer-Monitor):
                    85 %              ->  opacity 0.50 (Peak)
                  70 % der Cycle-Zeit liegt der Slice bei 0 — sind
                  die Pausen, die das Dauerblinken aufbrechen.
-  Cycle          4500 ms ease-in-out infinite alternate.
-                 alternate-Richtung macht den Loop bidirektional —
-                 jeder zweite Cycle laeuft rueckwaerts, sodass die
-                 Welle am Rand abprallt statt zu snappen.
-  Phasen-Offset  Slice A:  0 ms      (Boundary)
-                 Slice B: -1125 ms  (POIs, ein Viertel voraus)
-                 Slice C: -2250 ms  (Colour-Mesh, halb voraus)
-                 Slice D: -3375 ms  (Routen, drei Viertel voraus)
-                 Verhindert Synchronie zwischen gleichzeitig aktiven
-                 Slices — sie zucken nacheinander, nicht im Chor.
-                 Mit alternate ergibt sich ueber 9000 ms die volle
-                 Ping-Pong-Sequenz: D, C, B, A, A, B, C, D, dann
-                 wieder D — die zwei Wendepunkt-Peaks liegen dicht
-                 beieinander, sodass es wie ein Abprallen am Rand
-                 wirkt, nicht wie ein Re-Start.
+  Sequenz        Ein JS-getriebener Cursor wandert sequentiell durch
+                 die aktiven Layer-Indizes. Pro Slice: 600 ms Glimmer
+                 + 400 ms Pause, dann Cursor weiter. CSS-Transition
+                 400 ms ease-in-out auf fill-opacity macht das Auf-
+                 und Abklingen weich.
+  Ping-Pong      Am Ende der aktiven Liste kehrt der Cursor um, statt
+                 von vorne zu beginnen. Beispiel mit allen vier Layern
+                 aktiv: Boundary, POIs, Colour-Mesh, Routen, Colour-
+                 Mesh, POIs, Boundary, POIs, ... — jeder Slice glimmt
+                 genau einmal pro Halbzyklus, kein doppelter Endpunkt.
+  Inaktive       Werden uebersprungen. Bei nur einem aktiven Layer
+                 bleibt der Cursor stehen — der Slice pulst dann
+                 einfach an Ort und Stelle (glow/Pause/glow). Bei
+                 keinem aktiven Layer: kein Glimmer.
 
 Wirkung: das Pergament-Trapez bleibt im Ruhezustand vollstaendig wie
 inaktiv. Aktive Layer manifestieren sich als wechselnde, kurze
