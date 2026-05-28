@@ -15,7 +15,7 @@ const MANUAL_BODY = `    VERSION       2026
     Die Architektur des digitalen Systems SCIM3 — Sensus Core Integration
     Model — ist ab Juni 2026 ueber das 3D-visualisierte Navigationstool
     Cosmo Control erklaer- und steuerbar. Diese kleine Cosmology ist mit
-    ueber einem Dutzend Panels verknuepft und ersetzt ein lineares
+    einem Dutzend Panels verknuepft und ersetzt ein lineares
     Pipelinemodell. SCIM3 ist mit heutigem Stand in der Lage, eine MVP
     Ziel-App-Repraesentation auszuwerfen und damit ihre Funktionalitaet
     zu beweisen.
@@ -39,9 +39,9 @@ MOND (Logo, Mittelpunkt der Kosmologie)
 MESH (Transmissionsfeld, zwischen Mond und Tetraeder)
   Klick : oeffnet P06 Transmitter (Pattern-Klassifikator).
 
-TETRAEDER OBEN (Apex oben, statisch)
-  Faces : scb -> P11, org -> Workspace, cat -> Katalog, geo -> Geometry-Editor.
-  Arcs  : sys -> P01, rou -> P02, loa -> P09.
+TETRAEDER OBEN (Apex up - state: fire/Komposit-Tetraeder)
+  Faces-Rep-Build:  scb -> P11, org -> Workspace, cat -> Katalog, geo -> Geometry-Editor.
+  Arcs-Thresholds:  sys -> P01, rou -> P02, loa -> P09.
 
 TETRAEDER UNTEN (Apex unten, rotierend, Substrat-Tetraeder)
   Hover     : bremst auf naechste Face, lockt sie frontal.
