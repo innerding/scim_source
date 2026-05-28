@@ -94,20 +94,76 @@ function Divider() {
   );
 }
 
-function SectionHeader({ title }: { title: string }) {
-  // Im Stil des "Represent Build"-Labels (zentriert, monospace, #4a6a8a)
-  // mit Faktor 1.25: fontSize 10 -> 12.5.
+function SectionHeader({
+  title, count, isOpen, locked, onToggle,
+}: {
+  title: string;
+  count: number;
+  isOpen: boolean;
+  locked: boolean;       // true wenn aktive Sektion (kann nicht zu)
+  onToggle: () => void;
+}) {
+  // Stil des "Represent Build"-Labels (zentriert, monospace, #4a6a8a, fontSize 12.5).
+  // Plus Chevron + Count + Toggle-Verhalten. Locked = aktive Sektion bleibt
+  // visuell offen, der Toggle ist trotzdem klickbar (er aendert das manuell-
+  // offen-Set, was nach Verlassen der Sektion wirkt). Siehe ann_068.
+  return (
+    <button
+      onClick={onToggle}
+      style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+        width: '100%', background: 'transparent', border: 'none',
+        fontSize: 12.5, color: '#4a6a8a', textTransform: 'uppercase',
+        letterSpacing: '0.10em', fontFamily: 'monospace',
+        padding: '14px 12px 4px',
+        cursor: 'pointer', userSelect: 'none', flexShrink: 0,
+      }}
+    >
+      <span style={{ fontSize: 9, opacity: locked ? 0.5 : 0.85 }}>{isOpen ? '▾' : '▸'}</span>
+      <span>{title}</span>
+      <span style={{ opacity: 0.5 }}>({count})</span>
+    </button>
+  );
+}
+
+function SectionBody({ isOpen, children }: { isOpen: boolean; children: React.ReactNode }) {
+  // max-height-Transition fuer ruhiges Auf- und Zuklappen. 800 px reicht fuer
+  // jede Sektion (Pipeline ist die laengste mit 12 Items à ~38 px).
   return (
     <div style={{
-      fontSize: 12.5, color: '#4a6a8a', textTransform: 'uppercase',
-      letterSpacing: '0.10em', fontFamily: 'monospace',
-      textAlign: 'center',
-      padding: '14px 12px 4px',
-      userSelect: 'none', flexShrink: 0,
+      maxHeight: isOpen ? 800 : 0,
+      overflow: 'hidden',
+      transition: 'max-height 280ms ease-in-out',
+      flexShrink: 0,
     }}>
-      {title}
+      {children}
     </div>
   );
+}
+
+// ─── Section-Definitionen + localStorage ─────────────────────────────────────
+//
+// Vier kollabierbare Sektionen. Eine Sektion ist offen, wenn (a) der aktive
+// Panel innerhalb ihrer Ids liegt oder (b) sie im Session-localStorage als
+// manuell offen vermerkt ist. Siehe ann_068.
+
+const SECTION_STORAGE_KEY = 'scim3_nav_sections_open';
+
+function loadOpenSections(): Set<string> {
+  try {
+    const raw = localStorage.getItem(SECTION_STORAGE_KEY);
+    if (!raw) return new Set();
+    const arr = JSON.parse(raw);
+    if (Array.isArray(arr)) return new Set(arr.filter((x: unknown) => typeof x === 'string'));
+    return new Set();
+  } catch {
+    return new Set();
+  }
+}
+
+function saveOpenSections(s: Set<string>): void {
+  try { localStorage.setItem(SECTION_STORAGE_KEY, JSON.stringify(Array.from(s))); }
+  catch { /* localStorage kann disabled sein, kein Hindernis */ }
 }
 
 function SectionDivider() {
@@ -188,6 +244,31 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
     window.addEventListener('scim:layers:state', onLayers);
     return () => window.removeEventListener('scim:layers:state', onLayers);
   }, []);
+
+  // Vier kollabierbare Sektionen — siehe ann_068.
+  const SECTION_DEFS: { id: string; title: string; ids: readonly string[] }[] = [
+    { id: 'represent_build', title: 'Represent Build',
+      ids: ['workspace', 'geometry_editor', 'catalog', 'P01', 'P02'] },
+    { id: 'package_pipeline', title: 'Package Pipeline',
+      ids: ['P03', 'P04', 'P05', 'P06', 'P07', 'P08', 'P09', 'P10', 'P11', 'P12', 'P13', 'P14'] },
+    { id: 'runtime_builder', title: 'Runtime Builder',
+      ids: RUNTIME_BUILDER_REGISTRY.map((m) => m.id) },
+    { id: 'versionen', title: 'Versionen',
+      ids: VERSIONEN_REGISTRY.map((v) => v.id) },
+  ];
+  const [manuallyOpen, setManuallyOpen] = useState<Set<string>>(() => loadOpenSections());
+  const sectionContainsActive = (ids: readonly string[]) => ids.includes(activeId);
+  const isSectionOpen = (sectionId: string, ids: readonly string[]) =>
+    sectionContainsActive(ids) || manuallyOpen.has(sectionId);
+  const toggleSection = (sectionId: string) => {
+    setManuallyOpen((prev) => {
+      const next = new Set(prev);
+      if (next.has(sectionId)) next.delete(sectionId);
+      else next.add(sectionId);
+      saveOpenSections(next);
+      return next;
+    });
+  };
 
   return (
     <nav style={{
@@ -507,111 +588,176 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
             else if (a === 'load_thresholds') go('P09');
           }}
         />
-        <div style={{
-          fontSize: 12.5, color: '#4a6a8a', textTransform: 'uppercase',
-          letterSpacing: '0.10em', fontFamily: 'monospace',
-        }}>
-          Represent Build
-        </div>
       </div>
 
-      {/* ── Workspace / Geometry-Editor / Katalog / SystemAdjust ──────────── */}
-      <NavItem
-        id={WORKSPACE_DESCRIPTOR.id}
-        icon={WORKSPACE_DESCRIPTOR.icon}
-        label={WORKSPACE_DESCRIPTOR.label}
-        status="blue"
-        isActive={activeId === WORKSPACE_DESCRIPTOR.id}
-        onClick={() => onSelect(WORKSPACE_DESCRIPTOR.id)}
-      />
-      <NavItem
-        id={GEOMETRY_EDITOR_DESCRIPTOR.id}
-        icon={GEOMETRY_EDITOR_DESCRIPTOR.icon}
-        label={GEOMETRY_EDITOR_DESCRIPTOR.label}
-        status="blue"
-        isActive={activeId === GEOMETRY_EDITOR_DESCRIPTOR.id}
-        onClick={() => onSelect(GEOMETRY_EDITOR_DESCRIPTOR.id)}
-      />
-      {role === 'operator' && (
-        <NavItem
-          id={CATALOG_DESCRIPTOR.id}
-          icon={CATALOG_DESCRIPTOR.icon}
-          label={CATALOG_DESCRIPTOR.label}
-          status="blue"
-          isActive={activeId === CATALOG_DESCRIPTOR.id}
-          onClick={() => onSelect(CATALOG_DESCRIPTOR.id)}
-        />
-      )}
-      {(['P01', 'P02'] as const).map((pid) => {
-        const p = PANEL_REGISTRY.find((x) => x.id === pid);
-        if (!p) return null;
-        return (
-          <NavItem
-            key={p.id}
-            id={p.id}
-            icon={p.icon}
-            label={p.label}
-            status={panelStatus[p.id] ?? 'grey'}
-            isActive={activeId === p.id}
-            onClick={() => onSelect(p.id)}
-          />
-        );
-      })}
+      {/* ── Vier kollabierbare Sektionen (siehe ann_068) ──────────────────── */}
 
-      {/* ── Package Pipeline (ohne P01/P02 — sitzen jetzt unter Katalog) ──── */}
-      <SectionDivider />
-      <SectionHeader title="Package Pipeline" />
-      {pipelineGroups.map((g, gi) => {
-        const panels = PANEL_REGISTRY.filter((p: PanelDescriptor) => p.group === g && p.id !== 'P01' && p.id !== 'P02');
+      {/* 1. Represent Build — Workspace, Geometry-Editor, Katalog, P01, P02.
+            Default zu, weil Tetraeder die Inhalte schon zeigt. */}
+      {(() => {
+        const sec = SECTION_DEFS[0];
+        const visibleCount = sec.ids.filter((id) => id !== 'catalog' || role === 'operator').length;
+        const isOpen = isSectionOpen(sec.id, sec.ids);
         return (
-          <div key={g}>
-            {gi > 0 && <Divider />}
-            {panels.map((p: PanelDescriptor) => (
+          <>
+            <SectionDivider />
+            <SectionHeader
+              title={sec.title}
+              count={visibleCount}
+              isOpen={isOpen}
+              locked={sectionContainsActive(sec.ids)}
+              onToggle={() => toggleSection(sec.id)}
+            />
+            <SectionBody isOpen={isOpen}>
               <NavItem
-                key={p.id}
-                id={p.id}
-                icon={p.icon}
-                label={p.label}
-                status={panelStatus[p.id] ?? 'grey'}
-                isActive={activeId === p.id}
-                onClick={() => onSelect(p.id)}
+                id={WORKSPACE_DESCRIPTOR.id}
+                icon={WORKSPACE_DESCRIPTOR.icon}
+                label={WORKSPACE_DESCRIPTOR.label}
+                status="blue"
+                isActive={activeId === WORKSPACE_DESCRIPTOR.id}
+                onClick={() => onSelect(WORKSPACE_DESCRIPTOR.id)}
               />
-            ))}
-          </div>
+              <NavItem
+                id={GEOMETRY_EDITOR_DESCRIPTOR.id}
+                icon={GEOMETRY_EDITOR_DESCRIPTOR.icon}
+                label={GEOMETRY_EDITOR_DESCRIPTOR.label}
+                status="blue"
+                isActive={activeId === GEOMETRY_EDITOR_DESCRIPTOR.id}
+                onClick={() => onSelect(GEOMETRY_EDITOR_DESCRIPTOR.id)}
+              />
+              {role === 'operator' && (
+                <NavItem
+                  id={CATALOG_DESCRIPTOR.id}
+                  icon={CATALOG_DESCRIPTOR.icon}
+                  label={CATALOG_DESCRIPTOR.label}
+                  status="blue"
+                  isActive={activeId === CATALOG_DESCRIPTOR.id}
+                  onClick={() => onSelect(CATALOG_DESCRIPTOR.id)}
+                />
+              )}
+              {(['P01', 'P02'] as const).map((pid) => {
+                const p = PANEL_REGISTRY.find((x) => x.id === pid);
+                if (!p) return null;
+                return (
+                  <NavItem
+                    key={p.id}
+                    id={p.id}
+                    icon={p.icon}
+                    label={p.label}
+                    status={panelStatus[p.id] ?? 'grey'}
+                    isActive={activeId === p.id}
+                    onClick={() => onSelect(p.id)}
+                  />
+                );
+              })}
+            </SectionBody>
+          </>
         );
-      })}
+      })()}
 
-      {/* ── Runtime Builder ────────────────────────────────────────────────── */}
-      <SectionDivider />
-      <SectionHeader title="Runtime Builder" />
-      {RUNTIME_BUILDER_REGISTRY.map((m) => (
-        <NavItem
-          key={m.id}
-          id={m.id}
-          icon={m.icon}
-          label={m.label}
-          status="grey"
-          isActive={activeId === m.id}
-          onClick={() => onSelect(m.id)}
-        />
-      ))}
+      {/* 2. Package Pipeline (P03..P14, P01+P02 leben in Represent Build) */}
+      {(() => {
+        const sec = SECTION_DEFS[1];
+        const isOpen = isSectionOpen(sec.id, sec.ids);
+        return (
+          <>
+            <SectionDivider />
+            <SectionHeader
+              title={sec.title}
+              count={sec.ids.length}
+              isOpen={isOpen}
+              locked={sectionContainsActive(sec.ids)}
+              onToggle={() => toggleSection(sec.id)}
+            />
+            <SectionBody isOpen={isOpen}>
+              {pipelineGroups.map((g, gi) => {
+                const panels = PANEL_REGISTRY.filter((p: PanelDescriptor) => p.group === g && p.id !== 'P01' && p.id !== 'P02');
+                if (panels.length === 0) return null;
+                return (
+                  <div key={g}>
+                    {gi > 0 && <Divider />}
+                    {panels.map((p: PanelDescriptor) => (
+                      <NavItem
+                        key={p.id}
+                        id={p.id}
+                        icon={p.icon}
+                        label={p.label}
+                        status={panelStatus[p.id] ?? 'grey'}
+                        isActive={activeId === p.id}
+                        onClick={() => onSelect(p.id)}
+                      />
+                    ))}
+                  </div>
+                );
+              })}
+            </SectionBody>
+          </>
+        );
+      })()}
 
-      {/* ── Versionen ──────────────────────────────────────────────────────── */}
-      <SectionDivider />
-      <SectionHeader title="Versionen" />
-      {VERSIONEN_REGISTRY.map((v) => (
-        <NavItem
-          key={v.id}
-          id={v.id}
-          icon={v.icon}
-          label={v.label}
-          status="grey"
-          isActive={activeId === v.id}
-          onClick={() => onSelect(v.id)}
-        />
-      ))}
+      {/* 3. Runtime Builder */}
+      {(() => {
+        const sec = SECTION_DEFS[2];
+        const isOpen = isSectionOpen(sec.id, sec.ids);
+        return (
+          <>
+            <SectionDivider />
+            <SectionHeader
+              title={sec.title}
+              count={sec.ids.length}
+              isOpen={isOpen}
+              locked={sectionContainsActive(sec.ids)}
+              onToggle={() => toggleSection(sec.id)}
+            />
+            <SectionBody isOpen={isOpen}>
+              {RUNTIME_BUILDER_REGISTRY.map((m) => (
+                <NavItem
+                  key={m.id}
+                  id={m.id}
+                  icon={m.icon}
+                  label={m.label}
+                  status="grey"
+                  isActive={activeId === m.id}
+                  onClick={() => onSelect(m.id)}
+                />
+              ))}
+            </SectionBody>
+          </>
+        );
+      })()}
 
-      {/* ── Meta ───────────────────────────────────────────────────────────── */}
+      {/* 4. Versionen */}
+      {(() => {
+        const sec = SECTION_DEFS[3];
+        const isOpen = isSectionOpen(sec.id, sec.ids);
+        return (
+          <>
+            <SectionDivider />
+            <SectionHeader
+              title={sec.title}
+              count={sec.ids.length}
+              isOpen={isOpen}
+              locked={sectionContainsActive(sec.ids)}
+              onToggle={() => toggleSection(sec.id)}
+            />
+            <SectionBody isOpen={isOpen}>
+              {VERSIONEN_REGISTRY.map((v) => (
+                <NavItem
+                  key={v.id}
+                  id={v.id}
+                  icon={v.icon}
+                  label={v.label}
+                  status="grey"
+                  isActive={activeId === v.id}
+                  onClick={() => onSelect(v.id)}
+                />
+              ))}
+            </SectionBody>
+          </>
+        );
+      })()}
+
+      {/* ── Meta — System + KI-Schnittstelle, immer sichtbar (ann_068) ─────── */}
       <SectionDivider />
 
       <NavItem

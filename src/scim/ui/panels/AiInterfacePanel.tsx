@@ -1794,6 +1794,82 @@ runtime_mvp.md aktualisieren, ggf. nachgeordnete Annotationen historisch
 markieren. Keine zweite Master-Liste anlegen.`,
     date: '2026-05-28',
   },
+
+  {
+    id: 'ann_068',
+    category: 'adr',
+    label: 'Navigator: vier kollabierbare Sektionen mit Auto-Expand',
+    content: `Kontext
+
+Mit der vergroesserten Icon-Glyph-Schrift (1.8x) und der wachsenden Anzahl
+von Panels (28 Items + Meta) war der Navigator deutlich laenger als der
+Screen. Scrollen reicht, ist aber unruhig — und der Operator hat oft nur
+ein bis zwei Sektionen, die er aktuell braucht. Die Kosmologie zeigt die
+wichtigsten Panels ohnehin als Klick-Targets; der Listenteil ist dann
+Doppelarbeit.
+
+Entscheidung
+
+Vier Sektionen im Listenteil sind kollabierbar:
+
+  Represent Build     workspace, geometry_editor, catalog, P01, P02
+  Package Pipeline    P03, P04, P05, P06, P07, P08, P09, P10..P14
+  Runtime Builder     R01..R08
+  Versionen           V01, V02, V03
+
+Default-Zustand: alle vier zu. System und KI-Schnittstelle (Meta-Block)
+bleiben immer sichtbar — sie sind Notausgaenge ohne Kosmologie-Heimat.
+
+Regel — wann ist eine Sektion offen
+====================================
+
+Eine Sektion ist offen, wenn EINE der beiden Bedingungen gilt:
+
+  (a) Sie enthaelt das aktive Panel (activeId in section.ids).
+      Auto-Expand. Der Operator landet automatisch in der richtigen
+      Sektion, wenn er ueber die Kosmologie navigiert oder ein Panel
+      direkt selektiert.
+
+  (b) Sie wurde manuell aufgeklappt (Header-Klick).
+      Der Stand lebt in localStorage unter "scim3_nav_sections_open"
+      als Array von Section-IDs. Bleibt ueber Reloads erhalten.
+
+Folge: eine Sektion mit aktivem Panel kann nicht zugeklappt werden
+(der Header-Klick toggelt zwar das manuell-offen-Set, aber das aktive
+Panel haelt sie offen — sichtbar erst bei Verlassen wirksam).
+
+Vermiedene Nachteile
+====================
+
+  - Aktives Panel unsichtbar: Auto-Expand verhindert das.
+  - Discoverability: jeder Header zeigt Titel + Chevron (▸/▾) + Count
+    in Klammern, etwa "Package Pipeline (12)". Auch im zugeklappten
+    Zustand sieht der Operator was sich dahinter verbirgt.
+  - Sprung-Reflow: max-height-Transition (280 ms ease-in-out). Die
+    Breite des Navigators bleibt fix (210 px) — nur die Hoehe atmet.
+  - Verlorener manueller Stand: localStorage haelt ihn ueber Reloads.
+    Auto-Expand erweitert die offen-Menge, Auto-Collapse passiert nie
+    automatisch.
+
+Visuelles Verhalten
+===================
+
+  - Header: zentriert, monospace, #4a6a8a, fontSize 12.5 — identisch
+    zum frueheren statischen "Represent Build"-Label, das ist
+    visuell die Familie der Uebertitel.
+  - Chevron links vom Titel: ▸ zu, ▾ offen. Wenn die Sektion durch
+    activeId gehalten wird (locked), wird der Chevron leicht
+    abgedunkelt (opacity 0.5) — Hinweis, dass das Toggle gerade nicht
+    sichtbar wirkt.
+  - Count rechts: "(N)" in 50 % Opacity, dezent.
+
+Hinweis fuer kuenftige Sektionen
+
+Neue Top-Level-Sektion? Einfach in SECTION_DEFS in Navigator.tsx
+ergaenzen mit { id, title, ids }. Auto-Expand und localStorage greifen
+automatisch.`,
+    date: '2026-05-28',
+  },
 ];
 
 function AnnotationsTab() {
