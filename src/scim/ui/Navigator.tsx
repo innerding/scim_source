@@ -153,6 +153,17 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
     };
   }, []);
 
+  // Inspector-Blitz: jedes Layer-Toggle in der ScimMap loest ein
+  // "scim:inspector:flash"-Event aus. Der Wert dient als Key fuer den
+  // Polygon-Remount, damit die CSS-Animation pro Event neu gestartet wird.
+  // Siehe ann_066 (Geste 2).
+  const [flashId, setFlashId] = useState<number>(0);
+  useEffect(() => {
+    const onFlash = () => setFlashId((id) => id + 1);
+    window.addEventListener('scim:inspector:flash', onFlash);
+    return () => window.removeEventListener('scim:inspector:flash', onFlash);
+  }, []);
+
   return (
     <nav style={{
       width: 210,
@@ -181,14 +192,29 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
           }}
         >
           <title>Inspector — Sicht oeffnen/schliessen</title>
+          {/* Polygon-Remount per Key-Wechsel triggert die Flash-Animation neu.
+              Default-Stil ist Pergament-12%; die Animation zuckt kurz nach
+              weiss durch. Siehe ann_066 (Geste 2: Inspector-Blitz). */}
           <polygon
+            key={`flash-${flashId}`}
             points="0,0 178,0 154,28 24,28"
             fill="#e8d4a8"
             fillOpacity={0.12}
             stroke="none"
+            className={flashId > 0 ? 'scim-inspector-flashing' : undefined}
           />
         </svg>
       )}
+      <style>{`
+        @keyframes scim-inspector-flash {
+          0%   { fill: #e8d4a8; fill-opacity: 0.12; }
+          18%  { fill: #ffffff; fill-opacity: 0.88; }
+          100% { fill: #e8d4a8; fill-opacity: 0.12; }
+        }
+        .scim-inspector-flashing {
+          animation: scim-inspector-flash 420ms cubic-bezier(0.2, 0, 0.4, 1) 1;
+        }
+      `}</style>
       {/* Nacktes Logo — Iconset alleine, beschnitten auf 107.5 x 51.122.
           Wrapper zentriert die 0.88-skalierte Box links/rechts.
           Hex-Layer pulsiert; Dim-Wert um 50% tiefer als zuvor. */}
@@ -212,6 +238,28 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
             style={{
               position: 'absolute', inset: 0, width: '100%', height: '100%',
               animation: 'nav-hex-pulse 3200ms 2000ms ease-in-out infinite',
+            }}
+          />
+          {/* Mond-Klick-Karte (siehe ann_051):
+              - Aeussere Flaeche → V01 Pakete (R-Bibliothek)
+              - Inneres Hex-Feld → R01 Runtime Shell (App-Shell + Engine)
+              Hex-Overlay liegt mit hoeherem zIndex obenauf, damit ein Klick
+              in der Hex-Region nicht zum Body-Klick durchgeleitet wird. */}
+          <div
+            onClick={() => go('V01')}
+            title="Mond — R-Bibliothek (V01 Pakete)"
+            style={{
+              position: 'absolute', inset: 0, cursor: 'pointer', zIndex: 2,
+            }}
+          />
+          <div
+            onClick={(e) => { e.stopPropagation(); go('R01'); }}
+            title="Hex — App-Shell + Engine (R01 Runtime Shell)"
+            style={{
+              position: 'absolute',
+              left: '18%', top: '40%',
+              width: '24%', height: '40%',
+              cursor: 'pointer', zIndex: 3,
             }}
           />
         </div>

@@ -355,7 +355,12 @@ function LayerToggle({ label, checked, onChange }: { label: string; checked: boo
     }}>
       <input
         type="checkbox" checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
+        onChange={(e) => {
+          onChange(e.target.checked);
+          // Inspector-Blitz: Pergament-Trapez zuckt kurz weiss durch.
+          // Reflexion hat sich neu sortiert. Siehe ann_066 (Geste 2).
+          window.dispatchEvent(new CustomEvent('scim:inspector:flash'));
+        }}
         style={{ cursor: 'pointer' }}
       />
       {label}

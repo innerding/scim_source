@@ -865,24 +865,95 @@ Codebasis liegt unter ~/SCIM3ClaudeMax/scim_source. Deploy bei jedem Push auf ma
   {
     id: 'ann_051',
     category: 'vocabulary',
-    label: 'Tetraeder als zentraler Dienstleister',
-    content: `Der Tetraeder im Navigator ist nicht ein zusaetzliches Pipeline-Element, sondern die zentrale Bedienstelle, ueber die alle Bausteine einer Repraesentation erreichbar sind. Er bedient die existierenden Pipeline-Panels ueber Convenience-Bruecken:
+    label: 'Kosmologie-Klick-Karte: alle Navigations-Zuordnungen',
+    content: `Master-Index der visuellen Klick-Targets in der Kosmologie. Jedes visuelle Element ist entweder bereits einem Panel zugeordnet (Heimat), ein anderer Wirkungstyp (Toggle, Modal), oder noch ohne Heimat (offen). Diese Annotation ist die *einzige* gepflegte Stelle fuer diese Zuordnungen — Aenderungen hier, nirgendwo verteilt.
 
-- 4 Faces (Triangles, Bausteine einer R):
-  scb (Top, Apex) -> P11  Sensus Core Build
-  org (Center)    -> Workspace
-  cat (Bot-Left)  -> Katalog
-  geo (Bot-Right) -> Geometry-Editor
+==============================================================================
+1. Tetraeder (zentrale Bedienstelle einer R)
+==============================================================================
 
-- 3 Spheres (Boegen, Schwellen-Trilogie):
-  sys -> P01  System Thresholds
-  rou -> P02  Route Thresholds (heute; spaeter P10)
-  loa -> P09  Load Thresholds
+Der Tetraeder ist kein zusaetzliches Pipeline-Element, sondern die zentrale Bedienstelle, ueber die alle Bausteine einer Repraesentation erreichbar sind. Er bedient bestehende Panels ueber Convenience-Bruecken (siehe ann_055).
 
-Die Spheres heissen Threshold-Schwellen-Trilogie, weil System (Boundary-Parameter), Route (Scoring-Cutoffs) und Load (POI-Auslastungs-Klassifikation) drei verschiedene Schwellen-Ebenen sind, die einer R Gestalt geben. Manual ist aus den Spheres entfernt und sitzt als File-Glyph (mit Reader-Glyph spiegelbildlich) zwischen Mond und Tetraeder.
+4 Faces (Triangles, Bausteine einer R):
+  scb (Top, Apex)  ->  P11 Package (Sensus Core Build)
+  org (Center)     ->  Workspace
+  cat (Bot-Left)   ->  Katalog
+  geo (Bot-Right)  ->  Geometry-Editor
+
+3 Spheres (Boegen, Schwellen-Trilogie):
+  sys              ->  P01 SystemAdjust
+  rou              ->  P02 RegioContent (heute; spaeter P10)
+  loa              ->  P09 Engine
+
+Die Spheres heissen Threshold-Schwellen-Trilogie, weil System (Boundary-Parameter), Route (Scoring-Cutoffs) und Load (POI-Auslastungs-Klassifikation) drei verschiedene Schwellen-Ebenen sind, die einer R Gestalt geben.
+
+Mechanik: die Bogensegmente koennen rotieren (Input vs. Output, siehe ann_066).
+
+==============================================================================
+2. Transmissionsfeld (das Mesh-Blatt zwischen Mond und Tetraeder)
+==============================================================================
+
+  Mesh-Klick       ->  P06 Transmitter (SignalInterpretation, Pattern-Klassifikation)
+
+Heimat-Analyse und Begruendung der 100-Prozent-Wahl: siehe ann_063.
+Wiring-ADR (Verschiebung Simulation nach P06): siehe ann_064.
+Vokabular-Triade Feld/Transmitter/Transmission: siehe ann_065.
+
+==============================================================================
+3. Mond (App-Shell + R-Bibliothek)
+==============================================================================
+
+Zwei Klick-Regionen am Logo:
+
+  Hex-Zentrum      ->  R01 Runtime Shell (App-Grundhuelle + Engine)
+  Mond-Koerper     ->  V01 Pakete (alle veroeffentlichten R's)
+
+Optionale dritte Region (heute nicht partitioniert):
+
+  Einzelne R-Auswuechse  ->  V02 Region-Detail fuer genau diese R
+                              (kommt, sobald die Auswuechse als separate
+                              Klick-Targets unterscheidbar sind)
+
+Heimat-Analyse fuer die Mond-Klicks (komprimiert):
+
+  Hex
+    R01 Runtime Shell        95 %  exakt das Was-um-die-Engine-haengt;
+                                    bisher kein visueller Einstieg
+    System-Panel             65 %  Konkurrent, hat aber schon Nav-Eintrag
+    V03 Aktiv-Monitor        50 %  ueberschneidet mit Region 2
+
+  Mond-Koerper
+    V01 Pakete              100 %  die Bibliothek der R's, kein Konkurrent
+    V03 Aktiv-Monitor        70 %  zu eng (nur live), unter-greift V01
+    R08 Build & Cache        40 %  eher Werkstatt als Bibliothek
+
+==============================================================================
+4. Inspector (Pergament-Trapez ueber dem Mond)
+==============================================================================
+
+  Klick auf Inspector  ->  ScimMap rechts ein/ausblenden (Toggle, kein Panel)
+
+Konzeptionell: Spiegel der Gesamtheit der Systemwelt (siehe ann_052, Korrektur 2026-05-28).
+
+Mechanik: blitzt bei jedem Layer-Toggle in der ScimMap kurz weiss durch (siehe ann_066, Geste 2).
+
+==============================================================================
+5. Manual + Reader (zwei Pole am Transmissionsfeld)
+==============================================================================
+
+  Manual-Icon (📄)          ->  stumm, keine Aktion (bewusst)
+  Reader-Hitbox (unsichtbar, rechts)  ->  oeffnet Manual-Modal
+
+Konzept: die einzige bewusste Asymmetrie der Kosmologie (Datei sitzt, Akt liest, siehe ann_052).
+
+==============================================================================
+Pflege-Regel
+==============================================================================
+
+Jede neue Klick-Verdrahtung wird in dieser Annotation ergaenzt. Konkurrierende Heimat-Optionen werden hier kurz mit Prozent-Schaetzung aufgenommen, damit kuenftige Diskussionen den Stand kennen. Tiefe Begruendungen (ADR-Charakter) bleiben in ihren eigenen Annotationen (063, 064, 066).
 
 Authoritative Vertiefung: docs/represent_build.md, Abschnitt "Kosmologie-Update Mai 2026".`,
-    date: '2026-05-27',
+    date: '2026-05-28',
   },
 
   {
@@ -1319,8 +1390,14 @@ Damit ist die Verwechslungsgefahr zwischen Feld und Komponente strukturell ausge
   {
     id: 'ann_066',
     category: 'adr',
-    label: 'Bogensegment-Rotation: Mechanik-Spec + Sandbox-Bindung (Stufe 1)',
-    content: `Kontext
+    label: 'Visuelle Gesten der Kosmologie: Mechanik-Specs + Bindungen',
+    content: `Sammelannotation aller visuellen Gesten, die die Kosmologie animieren. Jede Geste hat eine Mechanik-Spec (Zustaende, Timing) und mindestens eine konkrete Bindung an einen echten Operator-Akt — sonst waere sie Dekoration. Neue Gesten kommen hier hinzu, nicht in einer eigenen Annotation.
+
+==============================================================================
+Geste 1 — Bogensegment-Rotation (Tetraeder, Input/Output-Schwenk)
+==============================================================================
+
+Kontext
 
 Die drei Bogensegmente (sys / rou / loa) am Tetraeder sind konkave Schirme — Transmissionseingaenge. Ihr Drehzustand bildet ab, ob der Transmitter gerade sendet (Output) oder empfaengt (Input). Bisher (ann_053) war die Drehung nur als "Spaetversion" notiert: "Sphaeren-Boegen drehen sich beim Feuern und geben einen Spalt frei". Diese Annotation praezisiert die Mechanik und bindet sie an einen ersten konkreten Ausloeser.
 
@@ -1375,7 +1452,64 @@ Code-Footprint
   - RepresentBuildTetrahedron.tsx: neue transmissionMode-Prop, <g>-Wrapper um die ARCS-Schleife mit CSS-Transition.
   - Navigator.tsx: useState + useEffect mit Window-Event-Listener, transmissionMode an Tetraeder durchgereicht.
   - P06SimulationForm.tsx: window.dispatchEvent auf "In Klassifikator schieben".
-  - Keine API-Aenderung, keine Pipeline-Mutation. ann_055 respektiert.`,
+  - Keine API-Aenderung, keine Pipeline-Mutation. ann_055 respektiert.
+
+==============================================================================
+Geste 2 — Inspector-Blitz (Layer-Toggle-Quittung)
+==============================================================================
+
+Kontext
+
+Der Inspector ist Spiegel der gesamten Systemwelt (ann_052, Korrektur). Wenn der Operator ueber das "Layer ▾"-Dropdown in der ScimMap einen Layer aktiviert oder deaktiviert, aendert sich, was der Spiegel reflektiert. Der Blitz ist die ehrliche visuelle Quittung dafuer.
+
+Bild: wie ein Blitz, der Wolken in einem Nachthimmel weiss erstrahlen laesst. Das Pergament-Trapez (12 Prozent Opacity, Beige) zuckt fuer einen Augenblick auf weiss durch und faellt zurueck. Lichtimpuls hinter dem Vorhang der Reflexion.
+
+Mechanik-Spec
+
+Zwei sichtbare Zustaende, asymmetrisch gemischt in einem einzigen Pulse:
+  Ruhe        :  fill #e8d4a8, fill-opacity 0.12
+  Spitze      :  fill #ffffff, fill-opacity 0.88
+
+Timing (CSS-Keyframes "scim-inspector-flash"):
+  0 %     -> Ruhe
+  18 %    -> Spitze   (scharfer Anstieg, ~80 ms)
+  100 %   -> Ruhe     (langsamer Abklang, ~340 ms)
+  Dauer gesamt: 420 ms (cubic-bezier 0.2, 0, 0.4, 1)
+
+Eigener zeitlicher Charakter, damit sich der Blitz nicht mit der Hex-Atmung (3200 ms, periodisch, sinusartig) verwechseln laesst.
+
+Bindung — heute
+
+Heute ein einziger Ausloeser: jedes Klicken einer LayerToggle-Checkbox im "Layer ▾"-Dropdown der ScimMap (Header-Bereich, Boundary / POIs / Colour-Mesh / Routen).
+
+Implementierung:
+  - ScimMap.tsx, LayerToggle.onChange dispatcht window.dispatchEvent(new CustomEvent('scim:inspector:flash')).
+  - Navigator.tsx hoert per addEventListener auf 'scim:inspector:flash', inkrementiert einen flashId-State.
+  - Der Inspector-Polygon erhaelt key={\`flash-\${flashId}\`} — der Remount triggert die CSS-Animation neu.
+
+Damit lassen sich beliebige weitere Trigger ergaenzen, ohne den Inspector zu beruehren.
+
+Aussage des Blitzes
+
+"Die Spiegelung hat sich gerade neu sortiert." Operator klickt eine Layer-Checkbox; der Inspector zuckt; die ScimMap zeigt sofort die neue Layer-Komposition. Der Blitz ist die ehrliche Quittung, nicht Dekoration.
+
+Geplante weitere Bindungen (nicht implementiert)
+
+  - Layer-Set-Wechsel an anderer Stelle (z.B. Workspace-Layer-Manager, sobald es ihn gibt).
+  - Wechsel der aktiven Representation (URL-Pfad-Aenderung) — der Spiegel muesste dann ebenfalls "neu sortieren".
+
+Beide warten auf eine konkrete Operator-Aktion, an die sich der Blitz haengen kann. Ohne Bindung gehoeren sie nicht hierher.
+
+==============================================================================
+Regel fuer kuenftige Gesten
+==============================================================================
+
+Jede neue Geste (Mond-Glimmen, R-Auswuchs-Pulse, was kommt) erhaelt einen eigenen Geste-Abschnitt in dieser Annotation, mit:
+  - Mechanik-Spec (Zustaende, Timing, ggf. Keyframe-Definition)
+  - Bindung (welcher Operator-Akt, welches Event)
+  - Aussage (was sagt die Geste, ohne sie waere es Dekoration)
+
+Ohne Aussage waechst die Liste nicht.`,
     date: '2026-05-28',
   },
 ];
