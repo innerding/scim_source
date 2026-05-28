@@ -1537,19 +1537,54 @@ Eine globale CSS-Klasse .scim-active-pulse (definiert in Navigator.tsx) traegt e
 
 Periodisch, sinusartig, gleicher Takt wie die Hex-Pulse-Atmung der Engine — kein zweites Tempo, das die Wahrnehmung zerteilt.
 
-Zusaetzlich erhaelt das aktive Element einen subtilen Aktiv-Fill:
+Zusaetzlich erhaelt das aktive Element einen SCHREIENDEN Aktiv-Stil, identisch zu den Tetraeder-Faces — Konsistenz schlaegt Subtilitaet. Korrektur einer ersten zu zurueckhaltenden Fassung; Begruendung: die zaghaften Aktiv-Stati waren "fad und individuell", schlechter als gar keiner.
 
-  - Mond-Hex / Mond-Body / (geplant: weitere Mond-Regionen):
-      rgba(99, 179, 237, 0.20)
-      (das Tetraeder-Aktiv-Blau in 20 % Alpha — Familienzugehoerigkeit ohne Schreien)
-  - Inspector:
-      fillOpacity steigt von 0.12 auf 0.28
-      (selbe Pergament-Farbe, nur praesenter — bleibt im Material)
-  - Mesh:
-      kein Aktiv-Fill (Form bleibt offen), aber Multiplikator 1.6 auf
-      Kanten-Alpha und -Strichstaerke. Apex bleibt zart (weil tFade dort
-      klein ist), Basis wird deutlich kraeftiger. Clamping bei alpha 0.95
-      gegen Ausreisser.
+Konstanten (1:1 von Tetraeder-Faces uebernommen):
+  fill          #2b6cb0   (solider, gesaettigter Dunkelblau-Block)
+  stroke        #63b3ed   (heller, klarer Outline)
+  strokeWidth   1.5
+  Pulse-Klasse  .scim-active-pulse
+
+Zuordnung:
+  - Mond-Hex aktiv (activeId === 'R01'):
+      Polygon mit Fill #2b6cb0, Stroke #63b3ed, strokeWidth 1.5, Pulse.
+      Deckt den weissen Hex der Logo-Grafik vollstaendig ab — bewusst,
+      damit der Aktiv-Stand dominant ist (analog zu Tetraeder-Faces,
+      deren Linien beim Aktivwerden ebenfalls vom Fill verdeckt werden).
+
+  - Mond-Body aktiv (activeId === 'V01'):
+      Donut-Pfad (fill-rule evenodd) bekommt denselben Fill und Stroke,
+      damit die ringfoermige Hitbox als geschlossener blauer Ring mit
+      heller Doppelkontur (aussen + Hex-Loch) leuchtet.
+
+  - Mesh aktiv (activeId === 'P06'):
+      Stroke-Farbe wechselt von Empty-Sea-Weiss auf Tetraeder-Aktiv-Blau
+      (#63b3ed). Alpha-Bereich pro Kante steigt von 0.09..0.72 auf
+      0.55..0.95 (Apex bleibt etwas verhaltener, Basis sehr kraeftig).
+      Strichstaerke x 2.2. Empty-Sea-Charakteristik bleibt sichtbar
+      (Verlauf von Apex zu Basis), nur ist der ganze Faecher jetzt blau
+      und schreiend statt weiss und zart.
+
+Ausnahme — der Inspector (Firmament)
+====================================
+
+Der Inspector folgt der schreienden Linie bewusst NICHT. Begruendung:
+das Firmament ist ein Spiegel, kein Schalter. Es schaltet sich nicht
+"an", es leuchtet aus der Ferne, wenn die ScimMap geoeffnet ist —
+das ist eine andere Art von Quittung.
+
+Aktiv-Stand des Inspectors:
+  fill          #ffffff     (gleiche Farbe wie der Layer-Toggle-Blitz)
+  fillOpacity   0.18        (sehr viel schwaecher als der Blitz mit 0.88)
+  stroke        none        (keine harte Kante — distantes Glimmen)
+  kein Pulse                (konstant, nicht atmend)
+
+Wirkung: das Pergament-Trapez wechselt von warmem Pergament (0.12 Alpha)
+zu kuehlem distantem Weiss (0.18 Alpha). Der Wechsel ist subtil, aber
+spuerbar — wie ein fernes Wetterleuchten, das stehen bleibt. Wenn dabei
+ein Layer-Toggle den Blitz ausloest, ueberlagert die Animation
+kurzzeitig (Snap zurueck zu Pergament am Animationsende ist sichtbar,
+aber zu kurz, um zu stoeren).
 
 Bindung — heute
 

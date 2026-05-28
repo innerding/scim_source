@@ -201,16 +201,18 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
               Default-Stil ist Pergament-12%; die Animation zuckt kurz nach
               weiss durch. Aktiv-Stand (ScimMap offen) erhoeht fillOpacity
               auf 0.28 und gibt der Form den Aktiv-Atem (siehe ann_066). */}
+          {/* Bewusste Ausnahme vom schreienden Aktiv-Stil (ann_066 Geste 3):
+              Das Firmament ist ein Spiegel, nicht ein Schalter. Aktiv-Stand
+              = konstantes weisses Fern-Glimmen wie der Blitz, nur sehr viel
+              schwaecher und konstant. Kein Pulse, kein Stroke. Inaktiv
+              bleibt warmes Pergament-12 %. */}
           <polygon
             key={`flash-${flashId}`}
             points="0,0 178,0 154,28 24,28"
-            fill="#e8d4a8"
-            fillOpacity={inspectorActive ? 0.28 : 0.12}
+            fill={inspectorActive ? '#ffffff' : '#e8d4a8'}
+            fillOpacity={inspectorActive ? 0.18 : 0.12}
             stroke="none"
-            className={[
-              flashId > 0 ? 'scim-inspector-flashing' : '',
-              inspectorActive ? 'scim-active-pulse' : '',
-            ].filter(Boolean).join(' ') || undefined}
+            className={flashId > 0 ? 'scim-inspector-flashing' : undefined}
           />
         </svg>
       )}
@@ -282,6 +284,9 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
             {/* Mondscheibe (originaler Pfad aus logo-base-naked.svg) MINUS
                 Hex-Hole (kleines Polygon). fill-rule="evenodd" laesst den
                 Hex-Bereich aus der Klick-Flaeche heraus. */}
+            {/* Aktiv-Stand schreiend wie die Tetraeder-Faces:
+                fill #2b6cb0 (solider Block), stroke #63b3ed (heller Outline),
+                strokeWidth 1.5, Pulse. */}
             <path
               d={
                 'M45.355,45.642c-8.505-4.234-11.982-14.6-7.75-23.107,' +
@@ -291,8 +296,10 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
                 'M52.95,20.79 L61.23,25.57 L61.23,35.13 ' +
                 'L52.95,39.91 L44.67,35.13 L44.67,25.57 Z'
               }
-              fill={activeId === 'V01' ? 'rgba(99, 179, 237, 0.20)' : 'transparent'}
+              fill={activeId === 'V01' ? '#2b6cb0' : 'transparent'}
               fillRule="evenodd"
+              stroke={activeId === 'V01' ? '#63b3ed' : undefined}
+              strokeWidth={activeId === 'V01' ? 1.5 : undefined}
               className={activeId === 'V01' ? 'scim-active-pulse' : undefined}
               onClick={() => go('V01')}
               style={{ pointerEvents: 'fill', cursor: 'pointer' }}
@@ -303,7 +310,9 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
                 Mittelpunkt (52.95, 30.35) — dort wo der visuelle Hex sitzt. */}
             <polygon
               points="52.95,20.79 61.23,25.57 61.23,35.13 52.95,39.91 44.67,35.13 44.67,25.57"
-              fill={activeId === 'R01' ? 'rgba(99, 179, 237, 0.20)' : 'transparent'}
+              fill={activeId === 'R01' ? '#2b6cb0' : 'transparent'}
+              stroke={activeId === 'R01' ? '#63b3ed' : undefined}
+              strokeWidth={activeId === 'R01' ? 1.5 : undefined}
               className={activeId === 'R01' ? 'scim-active-pulse' : undefined}
               onClick={() => go('R01')}
               style={{ pointerEvents: 'fill', cursor: 'pointer' }}

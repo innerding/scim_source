@@ -167,11 +167,20 @@ export default function NavTransmissionField({ onClick, active = false }: NavTra
           // wie das Wellen-Mesh der Empty Sea.
           const midY = (a.baseY + b.baseY) / 2;
           const tFade = midY / VB_HEIGHT;
-          // Aktiv-Multiplikator macht die Kanten kraeftiger, ohne die
-          // Empty-Sea-Charakteristik (Apex zart, Basis kraeftig) zu verlieren.
-          const k = active ? 1.6 : 1;
-          const alpha = Math.min((0.09 + tFade * 0.63) * k, 0.95);
-          const width = (0.24 + tFade * 0.94) * k;
+          // Aktiv: Tetraeder-Aktiv-Blau (#63b3ed), Alpha deutlich hoeher
+          // (0.55..0.95), Strichstaerke ~2.2x. Inaktiv: Empty-Sea-Weiss-
+          // Verlauf (siehe ann_066 Geste 3 — schreiend, einheitlich).
+          let stroke: string;
+          let width: number;
+          if (active) {
+            const alpha = Math.min(0.55 + tFade * 0.40, 0.95);
+            stroke = `rgba(99,179,237,${alpha.toFixed(3)})`;
+            width = (0.24 + tFade * 0.94) * 2.2;
+          } else {
+            const alpha = Math.min(0.09 + tFade * 0.63, 0.95);
+            stroke = `rgba(255,255,255,${alpha.toFixed(3)})`;
+            width = 0.24 + tFade * 0.94;
+          }
           return (
             <line
               key={idx}
@@ -180,7 +189,7 @@ export default function NavTransmissionField({ onClick, active = false }: NavTra
               y1={a.baseY}
               x2={b.baseX}
               y2={b.baseY}
-              stroke={`rgba(255,255,255,${alpha.toFixed(3)})`}
+              stroke={stroke}
               strokeWidth={Number(width.toFixed(2))}
               vectorEffect="non-scaling-stroke"
             />
