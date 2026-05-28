@@ -101,9 +101,9 @@ KOMPOSIT-TETRAEDER (Apex up - fire)
                       Aenderungen.
     Authority-Cohort  System schlaegt Kohorten vor, eine Authority
                       bestaetigt die Empfehlung und gibt sie frei.
-    Event-Reps        Ganze Representationen fuer Events bauen —
-                      eigenes Sicherheitsprofil, zeitlich und
-                      scope-begrenzt.
+    Event-Reps        Veranstalter koennen Representationen fuer
+                      Events bauen — eigenes Sicherheitsprofil,
+                      zeitlich und scope-begrenzt.
 
 SUBSTRAT-TETRAEDER (Apex down - matter)
   Klick : toggelt eine Navigator-Sektion.
