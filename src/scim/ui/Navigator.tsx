@@ -201,12 +201,17 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
         `}</style>
       </div>
 
-      {/* Manual + Reader — Asymmetrie und ihre Aufloesung.
+      {/* Manual + Reader — sitzt am unteren Rand des Transmissionsfelds.
+          Verschoben um 36 px nach unten via translateY (Layout-Fluss
+          unveraendert, Tetraeder darunter ruehrt sich nicht).
           Manual (links): Datei-Glyph, sitzt da, ist nicht klickbar.
-          Reader (rechts): symmetrischer Akt, klickbar, oeffnet das Manual. */}
+          Reader (rechts): unsichtbare Hitbox — Icon entfernt, Klickflaeche bleibt
+          (siehe ann_059: das Transmissionsfeld traegt die Bedeutung, das
+          Reader-Glyph war eine vorlaeufige Andeutung). */}
       <div style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         padding: '0 14px', marginBottom: 6, flexShrink: 0,
+        transform: 'translateY(36px)',
       }}>
         <span
           title="Manual (ohne Leser stumm)"
@@ -219,10 +224,11 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
           title="Manual lesen"
           onClick={onManualOpen}
           style={{
-            fontSize: 14, color: '#a0aec0',
+            display: 'inline-block',
+            width: 18, height: 18,
             userSelect: 'none', cursor: onManualOpen ? 'pointer' : 'default',
           }}
-        >📖</span>
+        />
       </div>
 
       {/* ── Represent Build — zentrales Tetraeder-Control ──────────────────── */}
