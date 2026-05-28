@@ -77,7 +77,11 @@ function waveDy(x: number, y: number, t: number): number {
 
 // ─── Komponente ───────────────────────────────────────────────────────────────
 
-export default function NavTransmissionField() {
+interface NavTransmissionFieldProps {
+  onClick?: () => void;       // Klick auf das Mesh leitet auf den Pattern-Klassifikator
+}
+
+export default function NavTransmissionField({ onClick }: NavTransmissionFieldProps = {}) {
   const { nodes, edges } = useMemo(() => buildMesh(), []);
   const lineRefs = useRef<(SVGLineElement | null)[]>([]);
 
@@ -121,7 +125,7 @@ export default function NavTransmissionField() {
       width: '100%',
       height: 0,                 // nimmt keinen Flow-Platz — der Tetraeder darunter ruehrt sich nicht
       marginTop: 24,             // schiebt Mesh + alles Folgende um 24 px nach unten
-      pointerEvents: 'none',     // Klicks gehen durch zur Reader-Hitbox
+      // pointerEvents: 'auto' lokal am SVG-Hitbox-Polygon, der Wrapper bleibt durchlaessig
       flexShrink: 0,
     }}>
       <svg
@@ -135,8 +139,22 @@ export default function NavTransmissionField() {
           height: VB_HEIGHT,
           overflow: 'visible',
           display: 'block',
+          pointerEvents: 'none',         // SVG-Rechteck selbst inert
         }}
       >
+        {/* Klick-Hitbox in Triangle-Form — transparente Polygon-Flaeche.
+            pointer-events: auto setzt sich gegen den durchlaessigen Wrapper
+            durch; cursor: pointer signalisiert Klickbarkeit. */}
+        {onClick && (
+          <polygon
+            points={`${APEX.x},${APEX.y} ${BR.x},${BR.y} ${BL.x},${BL.y}`}
+            fill="transparent"
+            onClick={onClick}
+            style={{ pointerEvents: 'auto', cursor: 'pointer' }}
+          >
+            <title>Transmission — Pattern-Klassifikator oeffnen</title>
+          </polygon>
+        )}
         {edges.map((e, idx) => {
           const a = nodes[e.a];
           const b = nodes[e.b];

@@ -205,7 +205,7 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
       {/* Transmissionsfeld — animiertes Mesh-Dreieck zwischen Mond und Tetraeder.
           Nimmt keinen Flow-Platz (height: 0), fuellt die 36-px-Luecke ueber
           der Manual+Reader-Zeile als absolute SVG-Overlay. Siehe ann_059. */}
-      <NavTransmissionField />
+      <NavTransmissionField onClick={() => go('P06')} />
 
       {/* Manual + Reader — sitzt am unteren Rand des Transmissionsfelds.
           Verschoben um 36 px nach unten via translateY (Layout-Fluss

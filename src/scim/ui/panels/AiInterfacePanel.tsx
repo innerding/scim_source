@@ -1238,6 +1238,46 @@ Option A waere der schmalere Einstieg, falls erstmal keine neue Sektion angelegt
 Stand 2026-05-28: Entscheidung steht aus. Diese Annotation haelt die Analyse fest, damit die Entscheidung beim naechsten Auftakt nicht wieder von vorn beginnt.`,
     date: '2026-05-28',
   },
+
+  {
+    id: 'ann_064',
+    category: 'adr',
+    label: 'Simulation von P04 nach P06 — P06 als Mesh-Klick-Ziel',
+    content: `Kontext
+
+Die Szenario-Simulation (off_season / normal / peak / event mit Intensitaets-Slider) lebte bisher unter P04 TelcoLoad als Mode-Switch. P04 hatte damit eine Doppel-Identitaet: einerseits Real-Signal-Eingang, andererseits Synthetik-Generator. Das verwischte, was die SCIM eigentlich tut.
+
+Auch in der Analyse aus ann_063 wurde P06 SignalInterpretation als der einzige 100-Prozent-Kandidat fuer das Transmissionsfeld-Klick-Ziel identifiziert — weil Pattern Classification *die* Transmissions-Kernoperation ist.
+
+Entscheidung
+
+  - P04 TelcoLoad wird zur puren Feature-Extraction-Stelle. Nur noch Real-Signal-Anzeige. Kein Mode-Switch, keine Szenarien.
+  - P06 SignalInterpretation bekommt einen neuen Tab "Simulation" (Icon 🎭) zwischen "Eingabe" und "Ergebnis". Dort lebt die Sandbox: Szenario-Karten + Intensitaets-Slider + Signal-Vorschau.
+  - Das Mesh im Navigator (NavTransmissionField) wird klickbar. Ein Klick fuehrt zu P06 — auf den Default-Tab (Eingabe), von dort ist die Simulation einen Tab entfernt.
+
+Begruendung
+
+  1. Saubere Schichten: P04 = Ingest. P06 = Routing / Klassifikation. Die Simulation gehoert semantisch zu dem, was sie *testet*, nicht zu dem, was sie *vortaeuscht*.
+  2. P06 wird zum echten Transmissions-Hub: Mesh-Klick fuehrt hin, und vor Ort sieht der Operator sowohl die Klassifikator-Schwellen (Eingabe-Tab) als auch die Sandbox (Simulation-Tab) im selben Panel.
+  3. Die Arbeitsgrundlage Pattern-Routing stimmt geometrisch: "Multi-Signal Receiver -> Feature Extraction -> Pattern Classification" — der Receiver kann real (P04) oder synthetisch (P06.simulation) sein; sortiert wird in P06.
+  4. P06 ist heute noch auto_computed — der bisherige Eingabe-Tab traegt nur Schwellenwert-Sliders. Die Simulation als zweiter Tab macht P06 zu einem ernsthaften Steuer-Panel.
+
+Umsetzung — was sich konkret geaendert hat
+
+  - Neu: src/scim/ui/panels/P06SimulationForm.tsx (extrahiert aus dem alten P04, leichte Header-Anpassung).
+  - Aendert: src/scim/ui/panels/P04TelcoLoadForm.tsx — Mode-Switch und Simulations-Logik entfernt, nur Live-Anzeige bleibt. Hinweis-Box verweist auf den neuen Ort.
+  - Aendert: src/scim/ui/panelRegistry.ts — neuer TabId 'simulation', neue Tab-Liste P06_TABS, P06.tabs zeigt darauf.
+  - Aendert: src/scim/ui/PanelWorkspace.tsx — 'simulation' in TAB_ORDER, neuer Case im Render-Switch (heute nur fuer P06 implementiert).
+  - Aendert: src/scim/ui/NavTransmissionField.tsx — onClick-Prop, transparente Polygon-Hitbox in Dreiecksform, cursor: pointer.
+  - Aendert: src/scim/ui/Navigator.tsx — uebergibt onClick={() => go('P06')} an das Mesh.
+
+Konsequenzen
+
+  - Bestehende Pipeline-Logik unveraendert. dependsOn von P06 bleibt ['P04', 'P05']. Die Sandbox-Werte werden lokal manipuliert, kein Pipeline-Schreibzugriff (Persistenz folgt in SML-4 — entspricht dem Vor-Verhalten unter P04).
+  - Die Prozent-Schaetzung aus ann_063 wird durch diesen Schritt ehrlicher: P06 ist jetzt zu 100 Prozent das Mesh-Klick-Ziel, P04 faellt auf eine reine Feature-Extraction-Rolle zurueck.
+  - Der neue TabId 'simulation' ist generisch genug, dass spaeter andere Panels eigene Sandbox-Tabs anlegen koennen, ohne den Tab-Mechanismus zu erweitern.`,
+    date: '2026-05-28',
+  },
 ];
 
 function AnnotationsTab() {

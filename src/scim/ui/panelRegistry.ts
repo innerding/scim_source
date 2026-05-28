@@ -3,7 +3,7 @@
 
 export type InputMode = 'user_form' | 'auto_computed' | 'semi_auto' | 'optional';
 
-export type TabId = 'catalog' | 'input' | 'result' | 'validation' | 'raw' | 'leistungsblatt';
+export type TabId = 'catalog' | 'input' | 'result' | 'validation' | 'raw' | 'leistungsblatt' | 'simulation';
 
 export interface TabDescriptor {
   id: TabId;
@@ -48,6 +48,16 @@ const STANDARD_TABS: TabDescriptor[] = [
   { id: 'result',     label: 'Ergebnis',   icon: '◎' },
   { id: 'validation', label: 'Validierung', icon: '⚑' },
   { id: 'raw',        label: 'Rohdaten',   icon: '{}' },
+];
+
+// P06 SignalInterpretation hat zusaetzlich einen Simulation-Tab — Sandbox fuer
+// die Pattern-Klassifikation, frueher unter P04 TelcoLoad. Siehe ann_064.
+const P06_TABS: TabDescriptor[] = [
+  { id: 'input',      label: 'Eingabe',     icon: '✎' },
+  { id: 'simulation', label: 'Simulation',  icon: '🎭' },
+  { id: 'result',     label: 'Ergebnis',    icon: '◎' },
+  { id: 'validation', label: 'Validierung', icon: '⚑' },
+  { id: 'raw',        label: 'Rohdaten',    icon: '{}' },
 ];
 
 // (Katalog ist seit Umbau ein eigenes Panel — siehe CATALOG_DESCRIPTOR.)
@@ -136,7 +146,7 @@ export const PANEL_REGISTRY: PanelDescriptor[] = [
     inputMode: 'auto_computed',
     isBlocking: false,
     contextKey: 'signal_interpretation',
-    tabs: STANDARD_TABS,
+    tabs: P06_TABS,
   },
 
   // ── Gruppe 2: Räumliche Grundlage ─────────────────────────────────────────

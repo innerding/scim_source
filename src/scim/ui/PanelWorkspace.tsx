@@ -11,6 +11,8 @@ import PanelInputForm from './panels/PanelInputForm';
 import PanelResult from './panels/PanelResult';
 import PanelValidation from './panels/PanelValidation';
 import PanelRaw from './panels/PanelRaw';
+import P06SimulationForm from './panels/P06SimulationForm';
+import type { TelcoLoadState } from '../telco-load/telcoLoad.types';
 import SystemPanel from './panels/SystemPanel';
 import AiInterfacePanel from './panels/AiInterfacePanel';
 import CatalogTab from './panels/CatalogTab';
@@ -29,7 +31,7 @@ interface Props {
   onJumpTo?: (panelId: string) => void;
 }
 
-const TAB_ORDER: TabId[] = ['catalog', 'input', 'result', 'validation', 'leistungsblatt', 'raw'];
+const TAB_ORDER: TabId[] = ['catalog', 'input', 'simulation', 'result', 'validation', 'leistungsblatt', 'raw'];
 
 function TabBar({
   tabs, active, onSelect,
@@ -159,6 +161,12 @@ function PanelContent({ activeId, activeTab, result, onJumpTo }: {
 
   switch (activeTab) {
     case 'input':      return <PanelInputForm panel={panel} result={result} />;
+    case 'simulation': {
+      // Heute nur fuer P06 implementiert (Pattern-Klassifikator-Sandbox, ann_064).
+      if (panel.id !== 'P06') return null;
+      const ctx = result.success ? (result.context as unknown as Record<string, unknown>) : null;
+      return <P06SimulationForm state={ctx?.telco_load as TelcoLoadState | undefined} />;
+    }
     case 'result':     return <PanelResult panel={panel} result={result} />;
     case 'validation': return <PanelValidation panel={panel} result={result} />;
     case 'raw':        return <PanelRaw panel={panel} result={result} />;
