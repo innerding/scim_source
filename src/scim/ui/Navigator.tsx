@@ -166,6 +166,40 @@ function saveOpenSections(s: Set<string>): void {
   catch { /* localStorage kann disabled sein, kein Hindernis */ }
 }
 
+// ─── Mond-Auswuchs-Konfiguration ─────────────────────────────────────────────
+//
+// Blob-Pfade direkt aus logo-base-naked.svg uebernommen. Hitbox folgt damit
+// exakt der sichtbaren Form. regionMatch ist die REGION_MAP-ID (V01PackagesPanel),
+// damit die Auswuchs-Aktivierung mit V02-Tabs synchronisiert ist. null bedeutet
+// "noch keine Region in REGION_MAP" — Klick navigiert dann zu V02 ohne Tab-Select.
+
+const MOND_AUSWUCHS_CONFIG: ReadonlyArray<{
+  pathD: string;
+  regionMatch: string | null;
+  label: string;
+}> = [
+  {
+    pathD: 'M14.802,8.585c-.507,3.935-4.122,6.722-8.058,6.217C2.809,14.295.02,10.68.527,6.744c.245-1.902,1.219-3.597,2.743-4.773,1.524-1.177,3.41-1.689,5.314-1.443,1.903.245,3.598,1.219,4.774,2.743,1.175,1.524,1.688,3.411,1.443,5.314Z',
+    regionMatch: 'skg',
+    label: 'Grünberg — Salzkammergut',
+  },
+  {
+    pathD: 'M74.741,18.11c-.571-.741-.82-1.659-.701-2.585.119-.926.593-1.751,1.333-2.323.741-.571,1.654-.821,2.585-.701,1.914.246,3.27,2.004,3.024,3.919-.246,1.914-2.002,3.273-3.919,3.024-.926-.119-1.751-.593-2.323-1.334Z',
+    regionMatch: 'böhmerwald',
+    label: 'Lichtenberg — Böhmerwald',
+  },
+  {
+    pathD: 'M22.601,42.624c.725.939,1.04,2.102.889,3.274-.311,2.425-2.537,4.151-4.965,3.833h0c-2.425-.313-4.144-2.54-3.832-4.965s2.536-4.144,4.965-3.833c1.173.151,2.218.751,2.942,1.69Z',
+    regionMatch: null,
+    label: 'Kanton Zürich (Region noch nicht im Index)',
+  },
+  {
+    pathD: 'M106.491,46.274c-.354,2.746-2.876,4.699-5.622,4.338-1.329-.171-2.512-.851-3.333-1.915-.82-1.063-1.177-2.38-1.006-3.708.082-.633.286-1.23.586-1.774,0-.001.002,0,.003-.002.002-.002,0-.005.001-.008.328-.592.771-1.12,1.324-1.547.89-.686,1.956-1.049,3.058-1.049.216,0,.433.014.651.042,1.329.172,2.511.851,3.332,1.914s1.177,2.38,1.006,3.708Z',
+    regionMatch: 'salzburg',
+    label: 'Gaisberg — Salzburg',
+  },
+];
+
 function SectionDivider() {
   return (
     <div style={{
@@ -243,6 +277,20 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
     };
     window.addEventListener('scim:layers:state', onLayers);
     return () => window.removeEventListener('scim:layers:state', onLayers);
+  }, []);
+
+  // V02-Region-Sync: V02RegionDetailPanel dispatcht 'scim:v02:region-changed'
+  // bei jedem Tab-Wechsel; Navigator spiegelt das hier, damit der passende
+  // Mond-Auswuchs "schreiend aktiv" wird. Klick auf einen Auswuchs dispatcht
+  // umgekehrt 'scim:v02:select-region' an V02.
+  const [v02Region, setV02Region] = useState<string | null>(null);
+  useEffect(() => {
+    const onChanged = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (typeof detail === 'string') setV02Region(detail);
+    };
+    window.addEventListener('scim:v02:region-changed', onChanged);
+    return () => window.removeEventListener('scim:v02:region-changed', onChanged);
   }, []);
 
   // Vier kollabierbare Sektionen — siehe ann_068.
@@ -483,40 +531,34 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
             >
               <title>Hex — App-Shell + Engine (R01 Runtime Shell)</title>
             </polygon>
-            {/* Mond-Auswuechse — vier kleine Kreise rund um die Mondscheibe.
-                Klick fuehrt zu V02 Region-Detail (Filter pro R folgt, sobald
-                V02 dies unterstuetzt). Nur die Kreise sind klickbar, nicht
-                die feinen Strokes, mit denen sie am Mond haengen.
-                Koordinaten aus logo-base-naked.svg geschaetzt:
-                  top-left   (~7, 8)   -> Gruenberg / Salzkammergut
-                  top-right  (~77, 16) -> Lichtenberg / Boehmerwald
-                  bot-left   (~18, 45) -> Kanton Zuerich (Representation tbd)
-                  bot-right  (~101, 46) -> Gaisberg / Salzburg
-                Aktiv-Stand: schreiend wie die Tetraeder-Faces, wenn V02
-                offen ist (heute fuer alle vier; per-R Aktivierung mit
-                spaeterer V02-Filter-Logik). */}
-            {([
-              { cx: 7,   cy: 8,  r: 5, region: 'salzkammergut', rep: 'gruenberg',   label: 'Gruenberg — Salzkammergut' },
-              { cx: 77,  cy: 16, r: 4, region: 'boehmerwald',   rep: 'lichtenberg', label: 'Lichtenberg — Boehmerwald' },
-              { cx: 18,  cy: 45, r: 4, region: 'kanton_zuerich', rep: null,         label: 'Kanton Zuerich (R noch offen)' },
-              { cx: 101, cy: 46, r: 5, region: 'salzburg',      rep: 'gaisberg',    label: 'Gaisberg — Salzburg' },
-            ] as const).map(({ cx, cy, r, region, rep, label }) => {
-              const isAct = activeId === 'V02';
+            {/* Mond-Auswuechse — vier echte Blob-Pfade direkt aus
+                logo-base-naked.svg uebernommen. Hitbox folgt exakt der
+                sichtbaren Form, kein Approximations-Versatz mehr.
+                Aktiv-Stand: schreiend wie Tetraeder-Faces, AUSSER bei
+                Kanton Zuerich (regionMatch null) — dort waere kein
+                V02-Tab vorhanden. Region-Sync mit V02 ueber Window-Event
+                'scim:v02:select-region'. Siehe ann_051. */}
+            {MOND_AUSWUCHS_CONFIG.map(({ pathD, regionMatch, label }) => {
+              const isAct = activeId === 'V02' && regionMatch !== null && v02Region === regionMatch;
               return (
-                <circle
-                  key={`auswuchs-${region}`}
-                  cx={cx} cy={cy} r={r}
+                <path
+                  key={`auswuchs-${label}`}
+                  d={pathD}
                   fill={isAct ? '#2b6cb0' : 'transparent'}
                   stroke={isAct ? '#63b3ed' : undefined}
                   strokeWidth={isAct ? 1.0 : undefined}
                   className={isAct ? 'scim-active-pulse' : undefined}
-                  onClick={() => go('V02')}
+                  onClick={() => {
+                    if (regionMatch) {
+                      window.dispatchEvent(new CustomEvent('scim:v02:select-region', { detail: regionMatch }));
+                    }
+                    go('V02');
+                  }}
                   style={{ pointerEvents: 'fill', cursor: 'pointer' }}
-                  data-region={region}
-                  data-rep={rep ?? ''}
+                  data-region={regionMatch ?? 'unbound'}
                 >
                   <title>{label}</title>
-                </circle>
+                </path>
               );
             })}
           </svg>

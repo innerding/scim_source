@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { usePackagesApi, type PackageEntry } from './usePackagesApi';
 import { REGION_MAP } from './V01PackagesPanel';
 import packageIcon     from '../../../assets/Package.svg';
@@ -150,6 +150,25 @@ export default function V02RegionDetailPanel() {
   const [selectedRegionId, setSelectedRegionId] = useState(REGION_MAP[0].id);
   const { activate, archive, isConfigured } = usePackagesApi(selectedRegionId);
   const region = REGION_MAP.find((r) => r.id === selectedRegionId) ?? REGION_MAP[0];
+
+  // Region-Sync mit den Mond-Auswuechsen (siehe ann_051):
+  // - Jeder Tab-Wechsel dispatcht 'scim:v02:region-changed', damit der
+  //   passende Auswuchs im Navigator "schreiend" wird.
+  // - Auf 'scim:v02:select-region' hoeren wir, damit der Auswuchs-Klick
+  //   im Navigator den Tab umschaltet.
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('scim:v02:region-changed', { detail: selectedRegionId }));
+  }, [selectedRegionId]);
+  useEffect(() => {
+    const onSet = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (typeof detail === 'string' && REGION_MAP.some((r) => r.id === detail)) {
+        setSelectedRegionId(detail);
+      }
+    };
+    window.addEventListener('scim:v02:select-region', onSet);
+    return () => window.removeEventListener('scim:v02:select-region', onSet);
+  }, []);
 
   if (!isConfigured) {
     return (

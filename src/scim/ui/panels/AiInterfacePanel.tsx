@@ -947,17 +947,43 @@ V02, V03, System, KI-Schnittstelle) bleiben voll sichtbar — sie haben
 keine visuelle Heimat in der Kosmologie und sind nur ueber den
 Listenteil erreichbar.
 
-Dritte Region — vier Mond-Auswuechse als klickbare Kreise (Stand 2026-05-28):
+Dritte Region — vier Mond-Auswuechse als klickbare Pfade (Stand 2026-05-28):
 
-  Top-Left   (~7, 8)    ->  V02  (Gruenberg / Salzkammergut)
-  Top-Right  (~77, 16)  ->  V02  (Lichtenberg / Boehmerwald)
-  Bot-Left   (~18, 45)  ->  V02  (Kanton Zuerich, R noch nicht definiert)
-  Bot-Right  (~101, 46) ->  V02  (Gaisberg / Salzburg)
+  Top-Left   ->  V02 Tab "Salzkammergut"   (Gruenberg)
+  Top-Right  ->  V02 Tab "Boehmerwald"      (Lichtenberg)
+  Bot-Left   ->  V02 (kein Tab-Match)        (Kanton Zuerich, Region noch nicht in REGION_MAP)
+  Bot-Right  ->  V02 Tab "Salzburg"          (Gaisberg)
 
-Nur die Kreise sind Klick-Hitboxen; die feinen Strokes, mit denen die
-Auswuechse am Mond haengen, bleiben inert. Per-R-Filterung in V02
-steht noch aus — heute fuehren alle vier auf V02 generisch, die
-Zuordnung lebt im data-region / data-rep-Attribut und im title-Tag.
+Hitboxen sind die ECHTEN Blob-Pfade direkt aus logo-base-naked.svg —
+keine Approximations-Kreise mehr, die Klickflaeche folgt exakt der
+sichtbaren Form. Pfade leben als Konstante MOND_AUSWUCHS_CONFIG in
+Navigator.tsx, jedes Element mit regionMatch (REGION_MAP-ID) und label.
+
+Region-Sync mit V02 (Auswuchs-Aktiv-Zustand)
+----------------------------------------------
+
+V02 hat heute schon einen Region-Tab-Switcher (REGION_MAP, 3 Regionen).
+Die Mond-Auswuechse synchronisieren sich darauf via zwei Window-Events:
+
+  scim:v02:region-changed   V02 -> Navigator
+                             Bei jedem Tab-Wechsel in V02 (auch Mount)
+                             dispatcht V02 die selectedRegionId.
+                             Navigator spiegelt das in v02Region-State,
+                             der passende Auswuchs wird "schreiend aktiv".
+
+  scim:v02:select-region    Navigator -> V02
+                             Auswuchs-Klick dispatcht die regionMatch-ID,
+                             V02 hoert darauf und schaltet den Tab um.
+
+Der Aktiv-Zustand pro Auswuchs ist damit:
+  isActive = (activeId === 'V02') && (v02Region === regionMatch)
+           && (regionMatch !== null)
+
+Kanton Zuerich (regionMatch null) erhaelt nie den Aktiv-Stand, weil
+es keinen passenden Tab in REGION_MAP gibt — der Auswuchs bleibt
+sichtbar klickbar (Navigation zu V02), aber ohne Schreien. Sobald
+'kanton_zuerich' in REGION_MAP eingetragen ist, greift die Symmetrie
+automatisch.
 
 Heimat-Analyse fuer die Mond-Klicks (komprimiert):
 
