@@ -8,35 +8,42 @@ interface Props {
   onClose: () => void;
 }
 
-const MANUAL_BODY = `    VERSION       2026
-    AUTHOR        Dietmar Broda
-    CO-AUTHOR     Claude Opus 4.7 / Claude Code
+const MANUAL_BODY = `    JAHR                     2026
+    SOFTWARE-ARCHITECTURE    Dietmar Broda
+    CODE-EXECUTION           Claude Opus 4.7 / Claude Code
+    LLM-ASSISTANCE           Chat-GPT 5.5 Thinking
 
     Die Architektur des digitalen Systems SCIM3 — Sensus Core Integration
     Model — ist ab Juni 2026 ueber das 3D-visualisierte Navigationstool
-    Cosmo Control erklaer- und steuerbar. Diese kleine Cosmology ist mit
-    einem Dutzend Panels verknuepft und ersetzt ein lineares
-    Pipelinemodell. SCIM3 ist mit heutigem Stand in der Lage, eine MVP
-    Ziel-App-Repraesentation auszuwerfen und damit ihre Funktionalitaet
-    zu beweisen.
+    Cosmo Control erklaer- und navigierbar. SCIM3 ist mit heutigem Stand
+    in der Lage, eine MVP Ziel-App-Repraesentation zu publizieren und
+    damit seine Funktionalitaet zu beweisen.
 
 ────────────────────────────────────────────────────────
 
-INSPECTOR (Rep-Build-Observer)
-  System-Mirror auto-compute, Visibility ueber ScimMap rechts.
+Sektionen ohne 'Stand:'-Hinweis gelten als arbeitsbereit.
 
-  Klick    : ScimMap rechts ein/ausblenden.
-  Glimmer  : ein Slice je aktivem Layer pulst, Cursor wandert.
-  Blitz    : pro Layer-Toggle in der ScimMap.
+INSPECTOR (Rep-Build-Observer)
+  Der Inspector wirkt wie ein Spiegel der Representation: er
+  errechnet ihren Build-Status fortlaufend selbsttaetig; die
+  ScimMap rechts macht das Ergebnis sichtbar.
+
+  Klick : ScimMap rechts ein/ausblenden.
+  Layer : Boundary, Routes, POIs, Colourmesh (vier zur Auswahl).
 
 MOON (Release Artifacts: App-Shell, Packages, Breath-Colour-Mesh)
-  Klick Hex            : oeffnet R01 Runtime Shell.
-  Klick Mondkoerper    : oeffnet V01 Pakete.
-  Klick Auswuchs       : oeffnet V02 Region-Detail im zugehoerigen Tab.
-                          Top-Left  = Gruenberg / Salzkammergut
-                          Top-Right = Lichtenberg / Boehmerwald
-                          Bot-Right = Gaisberg / Salzburg
-                          Bot-Left  = Kanton Zuerich (Region offen)
+  Hex                = Sechseck im Mond-Zentrum.
+  Mondkoerper        = die volle Mondscheibe.
+  Extension          = die seitlichen Auswuechse.
+  Breath-Colour-Mesh = der atmende, eingefaerbte Karten-Layer
+                       der aktiven Region.
+
+  Klick Hex          : oeffnet R01 Runtime Shell.
+  Klick Mondkoerper  : oeffnet V01 Pakete.
+  Klick Extension    : oeffnet V02 Region-Detail im zugehoerigen Tab.
+                        Top-Left  = Gruenberg / Salzkammergut
+                        Top-Right = Lichtenberg / Boehmerwald
+                        Bot-Right = Gaisberg / Salzburg (prepared)
 
 TRANSMISSION (Mesh zwischen Mond und Komposit-Tetraeder)
   Klick : oeffnet P06 Transmitter.
@@ -45,16 +52,25 @@ TRANSMISSION (Mesh zwischen Mond und Komposit-Tetraeder)
   Kette: Receptor Fields -> Feature Extraction -> Pattern
   Classification -> Confidence Scoring -> Priority Queue ->
   Cache/Lookup -> Dispatcher -> Target App. Der Komposit-Tetraeder
-  feuert klassifizierte Pakete in dieses Feld; was unter der
-  Confidence-Schwelle liegt, wandert in die Priority Queue und
-  wird im naechsten Atemzug neu bewertet. P06 SignalInterpretation
-  ist der namensgebende Transmitter und sortiert in flow /
-  accumulation / ambiguous - das Mesh visualisiert dabei seinen
-  Atem.
+  feuert klassifizierte Pakete in dieses Feld. P06
+  SignalInterpretation heisst im Panel-Header Transmitter und
+  sortiert eingehende Signale in drei Klassen — flow (fliessendes
+  Signal), accumulation (Stau-/Sammel-Signal), ambiguous
+  (mehrdeutig).
+
+  Stand: nur ein Bruchteil funktional. Aus der Kette sitzt heute
+  P06 als Klassifikator; Priority Queue, Cache/Lookup und
+  Dispatcher existieren konzeptuell, aber nicht als eigene Panels.
 
 KOMPOSIT-TETRAEDER (Apex up - fire)
-  Faces-Rep-Build:  scb -> P11, org -> Workspace, cat -> Katalog, geo -> Geometry-Editor.
-  Arcs-Thresholds:  sys -> P01, rou -> P02, loa -> P09.
+  Klick Face : scb -> P11, org -> Workspace,
+               cat -> Katalog, geo -> Editor.
+  Klick Arc  : sys -> P01, rou -> P02, loa -> P09.
+
+  Die drei Arcs sind als konkave Signal-Catcher modelliert —
+  Schalen-Schirme, die Threshold-Treffer aus dem Transmissionsfeld
+  einfangen und an die zustaendigen Engine-Panels (P01/P02/P09)
+  weiterreichen.
 
   Panels im Komposit:
     P11  Package         Bundling der Representation aus Layern,
@@ -64,24 +80,36 @@ KOMPOSIT-TETRAEDER (Apex up - fire)
                          Bezeichner, Zielgruppe.
     Katalog              POI-Bestand der Region, kuratiert nach
                          Buckets und Subkategorien.
-    Geometry-Editor      Polygone, Linien und Punkte direkt auf
+    Editor               Polygone, Linien und Punkte direkt auf
                          der Karte zeichnen.
-    P01  SystemAdjust    Globale Engine-Schwellen - Confidence,
+    P01  SystemAdjust    Globale Engine-Schwellen — Confidence,
                          Layer-Gewichte, Routing-Defaults.
     P02  RegioContent    Regions-spezifische Schwellen und
                          Content-Parameter, ueberschreibt P01.
     P09  Engine          Vier Bewertungsmodelle fuer POIs,
                          feinjustierbar pro Achse.
 
+  Stand: architektonisch vorbereitet auf Multi-Editor-Betrieb.
+  Die Bauteile sind so geschnitten, dass parallele Schreibzugriffe
+  von Operator und Gestalter konfliktfrei werden koennen;
+  kuratierte POI-Pflege liesse sich auf regionale Dashboards
+  emigrieren — betrieben von regionalen Kuratoren und beauftragten
+  Gestaltern direkt vor Ort.
+
 SUBSTRAT-TETRAEDER (Apex down - matter)
-  Hover     : bremst auf naechste Face, lockt sie frontal.
-  Locked    : drei sichtbare Regionen klickbar.
-              Upper       -> toggelt Versionen.
-              Lower-Left  -> toggelt Package Pipeline.
-              Lower-Right -> toggelt Runtime Builder.
+  Klick : toggelt eine Navigator-Sektion.
+            Upper       -> Versionen
+            Lower-Left  -> Package Pipeline
+            Lower-Right -> Runtime Builder
+
+  Stand: nur ein Bruchteil funktional. Eine rasche SCIM-Ausrollung
+  auf eine Region wie das Salzkammergut braeuchte hier echtes
+  Lifecycle- und Workflow-Werkzeug statt reiner Sichtbarmachung
+  der spaerlich gefuellten Pipeline-Panels (P03, P04, P05, P07,
+  P08, P10, P12, P13, P14).
 
 READER (am Fuss der Kosmologie)
-  Reader (●)   : oeffnet dieses Dokument.
+  Klick : oeffnet dieses Dokument.
 
 ────────────────────────────────────────────────────────
 
@@ -90,9 +118,10 @@ LEISTUNGEN
   Quellcode                       ~36.000 Zeilen TypeScript/TSX
   Tests                           518 in 33 Test-Dateien
   Pipeline                        14 P-Panels + 7 Compute-Module
-  Region-Katalog                  2 Regionen, 60 POIs gesamt
+  Region-Katalog                  3 Regionen, 60 POIs gesamt
                                     Gruenberg    49 POIs, 12 Subkategorien
                                     Lichtenberg  11 POIs, OSM + Wiki-recherchiert
+                                    Gaisberg     prepared
   Icon-Bibliothek                 49 SVG-Assets (POI-Icons + Glyphs + Frame)
   Annotationen                    53 Eintraege als KI-Briefing-Material
   Kosmologie-Klick-Karte          19 Hitboxen verdrahtet
@@ -102,6 +131,13 @@ LEISTUNGEN
   QR-Generierung                  automatisiert je Representation
   Auto-Deploy                     Cloudflare Pages bei jedem main-Push
   Git-Historie                    232 Commits
+
+────────────────────────────────────────────────────────
+
+SUMMARY
+
+  Der architektonische Rahmen wirkt stabil; ob er die erwartete
+  Codefuelle im Vollausbau tragen kann, gilt es erst zu beweisen.
 
   released for review
 `;
@@ -140,7 +176,7 @@ export default function RepresentBuildManualModal({ onClose }: Props) {
           fontFamily: 'ui-monospace, "SF Mono", Consolas, monospace',
           fontSize: 13, lineHeight: 1.55, color: '#1a202c',
         }}>
-          <div style={{ fontWeight: 700, marginBottom: 14 }}>USAGE MANUAL</div>
+          <div style={{ fontWeight: 700, marginBottom: 14 }}>USAGE MANUAL &amp; SCIM-STATE</div>
           <pre style={{ margin: 0, fontFamily: 'inherit', fontSize: 'inherit', whiteSpace: 'pre-wrap' }}>
             {MANUAL_BODY}
           </pre>
