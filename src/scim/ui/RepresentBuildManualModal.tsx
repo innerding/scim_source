@@ -89,12 +89,21 @@ KOMPOSIT-TETRAEDER (Apex up - fire)
     P09  Engine          Vier Bewertungsmodelle fuer POIs,
                          feinjustierbar pro Achse.
 
-  Stand: architektonisch vorbereitet auf Multi-Editor-Betrieb.
-  Die Bauteile sind so geschnitten, dass parallele Schreibzugriffe
-  von Operator und Gestalter konfliktfrei werden koennen;
-  kuratierte POI-Pflege liesse sich auf regionale Dashboards
-  emigrieren — betrieben von regionalen Kuratoren und beauftragten
-  Gestaltern direkt vor Ort.
+  Stand: architektonisch vorbereitet auf Mehrbenutzer-Betrieb. Die
+  Bauteile tragen mehrere Anwendungsfaelle, die ueber dem heutigen
+  MVP hinausreichen:
+
+    Multi-Editor      Operator und Gestalter schreiben parallel
+                      am selben Komposit, konfliktfrei.
+    Regional-Pflege   POI-Kuratierung emigriert in regionale
+                      Dashboards (Kuratoren und Gestalter vor Ort).
+    Governance        Schreib- und Freigaberechte, Audit der
+                      Aenderungen.
+    Authority-Cohort  System schlaegt Kohorten vor, eine Authority
+                      bestaetigt die Empfehlung und gibt sie frei.
+    Event-Reps        Ganze Representationen fuer Events bauen —
+                      eigenes Sicherheitsprofil, zeitlich und
+                      scope-begrenzt.
 
 SUBSTRAT-TETRAEDER (Apex down - matter)
   Klick : toggelt eine Navigator-Sektion.
