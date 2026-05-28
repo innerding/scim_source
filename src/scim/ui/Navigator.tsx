@@ -482,8 +482,8 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
            die Radialverlaufs-Fuellung des LED-Koerpers + Glow erhalten
            bleibt. */
         @keyframes scim-reader-dot-pulse {
-          0%, 100% { opacity: 0.55; }
-          50%      { opacity: 0.95; }
+          0%, 100% { opacity: 1;   }
+          50%      { opacity: 0.8; }
         }
         .scim-reader-dot-pulse {
           animation: scim-reader-dot-pulse 1500ms ease-in-out infinite;

@@ -50,8 +50,7 @@ SUBSTRAT-TETRAEDER (Apex down - matter)
               Lower-Left  -> toggelt Package Pipeline.
               Lower-Right -> toggelt Runtime Builder.
 
-MANUAL / READER (am Fuss der Kosmologie)
-  Manual (📄)  : stumm.
+READER (am Fuss der Kosmologie)
   Reader (●)   : oeffnet dieses Dokument.
 
 ────────────────────────────────────────────────────────
