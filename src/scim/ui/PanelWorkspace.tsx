@@ -1,5 +1,6 @@
 import type { TabId } from './panelRegistry';
 import {
+  KOSMOLOGIE_IDS,
   PANEL_REGISTRY, SYSTEM_DESCRIPTOR, AI_INTERFACE_DESCRIPTOR,
   RUNTIME_BUILDER_REGISTRY, VERSIONEN_REGISTRY, WORKSPACE_DESCRIPTOR,
   GEOMETRY_EDITOR_DESCRIPTOR, CATALOG_DESCRIPTOR,
@@ -77,15 +78,18 @@ function TabBar({
   );
 }
 
-function PanelHeader({ title, subtitle }: { title: string; subtitle: string }) {
+function PanelHeader({ title, subtitle, dimmed }: { title: string; subtitle: string; dimmed?: boolean }) {
   // Header passt zum dunklen Navigator-Strip: dunkler Hintergrund,
   // Titel in Weiss mit 90 % Opacity, Untertitel in halber Helligkeit.
+  // dimmed=true (Panel ist in der Kosmologie schon visuell vertreten):
+  // gesamter Header auf 60 % opacity — kein Doppel-Schrei. Siehe ann_051.
   return (
     <div style={{
       padding: '14px 20px 12px',
       borderBottom: '1px solid #1a2535',
       background: '#0d1520',
       flexShrink: 0,
+      opacity: dimmed ? 0.6 : 1,
     }}>
       <div style={{ fontSize: 15, fontWeight: 600, color: 'rgba(255, 255, 255, 0.9)', fontFamily: 'system-ui, sans-serif' }}>
         {title}
@@ -215,7 +219,7 @@ export default function PanelWorkspace({ activeId, activeTab, onTabChange, resul
       overflow: 'hidden',
       minWidth: 0,
     }}>
-      <PanelHeader title={entry.label} subtitle={subtitle} />
+      <PanelHeader title={entry.label} subtitle={subtitle} dimmed={KOSMOLOGIE_IDS.has(activeId)} />
       <TabBar tabs={tabs} active={activeTab} onSelect={onTabChange} />
       {/* Geometry-Editor braucht volle Hoehe ohne Padding */}
       {activeId === GEOMETRY_EDITOR_DESCRIPTOR.id ? (

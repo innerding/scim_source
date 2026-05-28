@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { PanelDescriptor, StatusColor } from './panelRegistry';
 import {
+  KOSMOLOGIE_IDS,
   PANEL_REGISTRY, SYSTEM_DESCRIPTOR, AI_INTERFACE_DESCRIPTOR,
   RUNTIME_BUILDER_REGISTRY, VERSIONEN_REGISTRY, WORKSPACE_DESCRIPTOR,
   GEOMETRY_EDITOR_DESCRIPTOR, CATALOG_DESCRIPTOR,
@@ -42,11 +43,15 @@ function Dot({ status }: { status: StatusColor }) {
 }
 
 function NavItem({
-  icon, label, status, isActive, onClick,
+  id, icon, label, status, isActive, onClick,
 }: {
   id: string; icon: string; label: string; status: StatusColor;
   isActive: boolean; onClick: () => void;
 }) {
+  // Items, die in der Kosmologie schon visuell vertreten sind, werden im
+  // Navigator-Listenteil auf 60 % gedimmt — kein Doppel-Schrei. Siehe ann_051.
+  const inKosmologie = KOSMOLOGIE_IDS.has(id);
+  const dimStyle = inKosmologie ? { opacity: 0.6 } : undefined;
   return (
     <div
       onClick={onClick}
@@ -72,8 +77,8 @@ function NavItem({
       }}
     >
       {/* Icon-Glyph: monochrom, Faktor 1.8 ggue. urspruenglichem 13 -> 23 */}
-      <span style={{ fontSize: 23, width: 32, textAlign: 'center', flexShrink: 0 }}>{icon}</span>
-      <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+      <span style={{ fontSize: 23, width: 32, textAlign: 'center', flexShrink: 0, ...dimStyle }}>{icon}</span>
+      <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', ...dimStyle }}>
         {label}
       </span>
       <Dot status={status} />
@@ -203,16 +208,20 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
               auf 0.28 und gibt der Form den Aktiv-Atem (siehe ann_066). */}
           {/* Bewusste Ausnahme vom schreienden Aktiv-Stil (ann_066 Geste 3):
               Das Firmament ist ein Spiegel, nicht ein Schalter. Aktiv-Stand
-              = konstantes weisses Fern-Glimmen wie der Blitz, nur sehr viel
-              schwaecher und konstant. Kein Pulse, kein Stroke. Inaktiv
-              bleibt warmes Pergament-12 %. */}
+              = Pergament-Basis (wie inaktiv), pulst periodisch zu Weiss-60 %
+              auf. Animation 1600 ms — doppelt so schnell wie der Hex-Atem.
+              Inaktive Konstanten (fill, fillOpacity) bleiben Pergament-12 %,
+              die Animation faehrt allein die Aufhellung. */}
           <polygon
             key={`flash-${flashId}`}
             points="0,0 178,0 154,28 24,28"
-            fill={inspectorActive ? '#ffffff' : '#e8d4a8'}
-            fillOpacity={inspectorActive ? 0.18 : 0.12}
+            fill="#e8d4a8"
+            fillOpacity={0.12}
             stroke="none"
-            className={flashId > 0 ? 'scim-inspector-flashing' : undefined}
+            className={[
+              flashId > 0 ? 'scim-inspector-flashing' : '',
+              inspectorActive ? 'scim-firmament-glimmer' : '',
+            ].filter(Boolean).join(' ') || undefined}
           />
         </svg>
       )}
@@ -232,6 +241,17 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
         }
         .scim-active-pulse {
           animation: scim-active-breath 3200ms ease-in-out infinite;
+        }
+        /* Firmament-Glimmer: Pergament-Basis pulst periodisch zu Weiss-60 %,
+           Aufhellung passiert ueber Interpolation (durchlaeuft natuerlich 20 %
+           und 40 % auf dem Weg nach oben und zurueck). 1600 ms = doppelt so
+           schnell wie der Hex-Atem. Siehe ann_066 Geste 3. */
+        @keyframes scim-firmament-glimmer {
+          0%, 100% { fill: #e8d4a8; fill-opacity: 0.12; }
+          50%      { fill: #ffffff; fill-opacity: 0.60; }
+        }
+        .scim-firmament-glimmer {
+          animation: scim-firmament-glimmer 1600ms ease-in-out infinite;
         }
       `}</style>
       {/* Nacktes Logo — Iconset alleine, beschnitten auf 107.5 x 51.122.
@@ -299,7 +319,7 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
               fill={activeId === 'V01' ? '#2b6cb0' : 'transparent'}
               fillRule="evenodd"
               stroke={activeId === 'V01' ? '#63b3ed' : undefined}
-              strokeWidth={activeId === 'V01' ? 1.5 : undefined}
+              strokeWidth={activeId === 'V01' ? 1.0 : undefined}
               className={activeId === 'V01' ? 'scim-active-pulse' : undefined}
               onClick={() => go('V01')}
               style={{ pointerEvents: 'fill', cursor: 'pointer' }}
@@ -312,7 +332,7 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
               points="52.95,20.79 61.23,25.57 61.23,35.13 52.95,39.91 44.67,35.13 44.67,25.57"
               fill={activeId === 'R01' ? '#2b6cb0' : 'transparent'}
               stroke={activeId === 'R01' ? '#63b3ed' : undefined}
-              strokeWidth={activeId === 'R01' ? 1.5 : undefined}
+              strokeWidth={activeId === 'R01' ? 1.0 : undefined}
               className={activeId === 'R01' ? 'scim-active-pulse' : undefined}
               onClick={() => go('R01')}
               style={{ pointerEvents: 'fill', cursor: 'pointer' }}

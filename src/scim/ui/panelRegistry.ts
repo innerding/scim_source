@@ -445,3 +445,20 @@ export type NavigatorEntry =
   | { kind: 'ai_interface'; descriptor: AiInterfaceDescriptor };
 
 export type StatusColor = 'green' | 'orange' | 'red' | 'grey' | 'blue';
+
+// IDs der Panels, die in der Kosmologie schon visuell vertreten sind
+// (Tetraeder-Faces/-Arcs, Mesh, Mond-Klickregionen). Ihre Navigator-Eintraege
+// und Panel-Titel werden auf 60 % opacity gedimmt, weil die Kosmologie sie
+// schon prominent zeigt — kein Doppel-Schrei. Siehe ann_051.
+export const KOSMOLOGIE_IDS: ReadonlySet<string> = new Set([
+  // Tetraeder-Spheres (Schwellen-Arcs)
+  'P01', 'P02', 'P09',
+  // Tetraeder-Apex
+  'P11',
+  // Tetraeder-Faces
+  'workspace', 'catalog', 'geometry_editor',
+  // Mesh
+  'P06',
+  // Mond
+  'R01', 'V01',
+]);

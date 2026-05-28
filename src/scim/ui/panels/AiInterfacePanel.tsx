@@ -921,6 +921,28 @@ Mechanik:
 Damit ist die Verteilung eindeutig: Hex-Klick fuehrt immer zu R01,
 Mondscheiben-Klick (ohne Hex) immer zu V01, Restraum inert.
 
+==============================================================================
+6. Kosmologie-Dim (Doppel-Schrei-Vermeidung)
+==============================================================================
+
+Panels, die in der Kosmologie schon visuell vertreten sind, werden im
+Navigator-Listenteil und im Panel-Header auf 60 % opacity gedimmt — sie
+brauchen die textuelle Prominenz nicht mehr, weil die Kosmologie sie
+zeigt.
+
+Liste der gedimmten IDs (KOSMOLOGIE_IDS in panelRegistry.ts):
+
+  Tetraeder-Spheres:   P01, P02, P09
+  Tetraeder-Apex:      P11
+  Tetraeder-Faces:     workspace, catalog, geometry_editor
+  Mesh:                P06
+  Mond:                R01, V01
+
+Andere Panels (P03, P04, P05, P07, P08, P10, P12, P13, P14, R02-R08,
+V02, V03, System, KI-Schnittstelle) bleiben voll sichtbar — sie haben
+keine visuelle Heimat in der Kosmologie und sind nur ueber den
+Listenteil erreichbar.
+
 Optionale dritte Region (heute nicht partitioniert):
 
   Einzelne R-Auswuechse  ->  V02 Region-Detail fuer genau diese R
@@ -1573,18 +1595,23 @@ das Firmament ist ein Spiegel, kein Schalter. Es schaltet sich nicht
 "an", es leuchtet aus der Ferne, wenn die ScimMap geoeffnet ist —
 das ist eine andere Art von Quittung.
 
-Aktiv-Stand des Inspectors:
-  fill          #ffffff     (gleiche Farbe wie der Layer-Toggle-Blitz)
-  fillOpacity   0.18        (sehr viel schwaecher als der Blitz mit 0.88)
-  stroke        none        (keine harte Kante — distantes Glimmen)
-  kein Pulse                (konstant, nicht atmend)
+Aktiv-Stand des Inspectors (Firmament-Glimmer):
+  Basis           parchment #e8d4a8 @ fill-opacity 0.12 (= inaktiv)
+  Peak            white #ffffff @ fill-opacity 0.60
+  Animation       1600 ms ease-in-out infinite (Keyframe scim-firmament-glimmer)
+                  doppelt so schnell wie der Hex-Atem (3200 ms)
 
-Wirkung: das Pergament-Trapez wechselt von warmem Pergament (0.12 Alpha)
-zu kuehlem distantem Weiss (0.18 Alpha). Der Wechsel ist subtil, aber
-spuerbar — wie ein fernes Wetterleuchten, das stehen bleibt. Wenn dabei
-ein Layer-Toggle den Blitz ausloest, ueberlagert die Animation
-kurzzeitig (Snap zurueck zu Pergament am Animationsende ist sichtbar,
-aber zu kurz, um zu stoeren).
+Verlauf via CSS-Interpolation: 0.12 -> ... -> 0.60 -> ... -> 0.12.
+Das Auge sieht die Aufhellung natuerlich durch 20 % und 40 % laufen
+auf dem Weg zur 60 %-Spitze und zurueck. Kein Stroke, keine harte Kante.
+
+Wirkung: das Pergament-Trapez ist im Ruhezustand nicht von "inaktiv"
+zu unterscheiden — und zuckt periodisch wie ein fernes Wetterleuchten
+am Pergament-Himmel auf, doppelt so oft wie die Engine atmet.
+
+Wenn waehrenddessen ein Layer-Toggle den Blitz ausloest, ueberlagert
+die Flash-Animation kurzzeitig den Glimmer (CSS-Cascade), und der
+Glimmer setzt nach 420 ms wieder fort.
 
 Bindung — heute
 

@@ -242,7 +242,7 @@ export default function RepresentBuildTetrahedron({
               d={path}
               fill={fill}
               stroke={stroke}
-              strokeWidth={isActive ? 1.2 : 0.8}
+              strokeWidth={isActive ? 1.0 : 0.8}
               strokeLinejoin="round"
               className={isActive ? 'rb-active-tile' : undefined}
             >
@@ -273,7 +273,7 @@ export default function RepresentBuildTetrahedron({
         const isActive = f.id === activeFace;
         const fill = isActive ? triangleActiveFill : 'transparent';
         const stroke = isActive ? triangleActiveStroke : triangleInactiveStroke;
-        const strokeWidth = isActive ? 1.6 : 1;
+        const strokeWidth = isActive ? 1.0 : 1;
         const opacity = isActive ? 1 : 0.85;
         const clickable = !isActive && !!onFaceClick;
         return (

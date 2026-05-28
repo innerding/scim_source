@@ -175,7 +175,7 @@ export default function NavTransmissionField({ onClick, active = false }: NavTra
           if (active) {
             const alpha = Math.min(0.55 + tFade * 0.40, 0.95);
             stroke = `rgba(99,179,237,${alpha.toFixed(3)})`;
-            width = (0.24 + tFade * 0.94) * 2.2;
+            width = (0.24 + tFade * 0.94) * 1.55;
           } else {
             const alpha = Math.min(0.09 + tFade * 0.63, 0.95);
             stroke = `rgba(255,255,255,${alpha.toFixed(3)})`;
