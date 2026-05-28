@@ -1278,6 +1278,43 @@ Konsequenzen
   - Der neue TabId 'simulation' ist generisch genug, dass spaeter andere Panels eigene Sandbox-Tabs anlegen koennen, ohne den Tab-Mechanismus zu erweitern.`,
     date: '2026-05-28',
   },
+
+  {
+    id: 'ann_065',
+    category: 'vocabulary',
+    label: 'Transmitter — die Komponente im Transmissionsfeld',
+    content: `Die Kosmologie hatte bisher eine Luecke. Benannt waren:
+
+  - Transmissionsfeld (ann_059) — das **Wo**: das Medium, das triangulaere Mesh-Blatt zwischen Mond und Tetraeder.
+  - Transmission (Arbeitsgrundlage) — der **Akt**: die bidirektionale Bewegung von Signalen.
+
+Aber kein Wort fuer den **Akteur** — die technische Komponente, die *im* Feld *aktiv* tut. "Transmitter" fuellt diese Luecke.
+
+Die Dreiheit ist damit komplett:
+
+  Transmissionsfeld    Medium     das Mesh-Blatt, sichtbar oben im Navigator
+  Transmitter          Akteur     die Komponente unten im Pipeline-Substrat (P06)
+  Transmission         Akt        die bidirektionale Bewegung, die geschieht
+
+Geometrische Lesart (siehe ann_060)
+
+Der Transmitter lebt verborgen im **unteren Tetraeder** (Substrat, hart-unbestimmt, vor-formuliert). Das Feld liegt visuell am Floatpunkt der Bipyramide, also auf der Empty-Sea-Oberflaeche. Der Mond (Engine + R-Bibliothek) sitzt am oberen Apex.
+
+Wenn der Operator das Feld im Navigator anklickt, holt er den Transmitter aus dem Substrat herauf — das ist die Verbindung Substrat -> Feld -> Komposition.
+
+Heute zugewiesen
+
+P06 SignalInterpretation traegt jetzt den Panel-Header **Transmitter**, mit der bisherigen technischen Bezeichnung als Untertitel. Das Mesh-Klick-Ziel (siehe ann_064) ist deshalb auch der Transmitter — nicht nur ein "Pattern Classifier", sondern der namensgebende Akteur der Transmission.
+
+Sprachregelung
+
+  - "Transmitter" ist immer P06, immer der Substrat-Akteur. Andere Pipeline-Bausteine sind keine Transmitter.
+  - "Transmission" ist der Vorgang, nicht ein Objekt.
+  - "Transmissionsfeld" ist das Mesh, nicht der Transmitter.
+
+Damit ist die Verwechslungsgefahr zwischen Feld und Komponente strukturell ausgeschlossen.`,
+    date: '2026-05-28',
+  },
 ];
 
 function AnnotationsTab() {
