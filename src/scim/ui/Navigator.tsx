@@ -663,6 +663,10 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
         padding: '22px 12px 22px', display: 'flex', flexDirection: 'column',
         alignItems: 'center', flexShrink: 0,
         marginTop: -68,   // zieht Depth-T und alles Folgende 68 px nach oben
+        // pointerEvents:none -> Wrapper-Padding deckt sonst den loa-Arc
+        // des Upper-Tetraeders zu (negative margin schiebt ihn drueber).
+        // Die NavDepthTetraeder-Komponente setzt ihre eigenen Pointer-Events.
+        pointerEvents: 'none',
       }}>
         <NavDepthTetraeder
           size={208}
