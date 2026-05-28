@@ -1302,8 +1302,9 @@ Punkt-nach-unten stehend, rotierend um die vertikale Achse (~20 s
 pro Umlauf, leichter Tilt von 18 Grad fuer Raeumlichkeit).
 
   - Strokes in der Farbfamilie des oberen Tetraeders (#2d4a6a inaktiv,
-    #63b3ed aktiv). Faces ohne Fill im Ruhestand — das visuelle Gewicht
-    haengt am Stroke, passend zum "Substrat ist noch nicht ausgeformt".
+    #63b3ed bei offener Sektion). Faces ohne Fill — das visuelle Gewicht
+    haengt allein am Stroke, passend zum "Substrat ist noch nicht
+    ausgeformt".
   - Drei Side-Faces sind klickbar und fungieren als reine Fokus-
     Instrumente: jeder Klick toggelt eine Navigator-Sektion. Mapping:
         Face 0 (top0 -> top1)  ->  Sektion "Package Pipeline"
@@ -1311,13 +1312,38 @@ pro Umlauf, leichter Tilt von 18 Grad fuer Raeumlichkeit).
         Face 2 (top2 -> top0)  ->  Sektion "Versionen"
   - Die obere Flaeche (3 Top-Vertices, kein Apex) bleibt visuelle
     Basis, kein Klick-Target.
-  - Aktiv-Stand pro Face: wenn die zugehoerige Sektion offen ist
-    (egal ob manuell oder durch activeId), bekommt der Face Fill
-    #2b6cb0, hellen Stroke #63b3ed und den .rb-active-tile-Pulse.
+  - Open-Section-Feedback (Stroke): wenn die zugehoerige Sektion offen
+    ist, bekommt die Face den helleren Stroke #63b3ed und die Pulse-
+    Animation — auch waehrend die Face mit-rotiert. So ist an der
+    rotierenden Bipyramide jederzeit ablesbar, welche Sektionen
+    geoeffnet sind. Mehrere offene Faces gleichzeitig sind moeglich
+    (z.B. wenn der Operator mehrere Sektionen manuell aufgeklappt hat).
 
-Section-Toggle-Funktion und Auto-Expand-Regel aus ann_068 greifen
-unveraendert — der Depth-Tetraeder erweitert die Klickflaeche, ohne
-die Sektion-Mechanik anzufassen.`,
+Klick-Mechanik (Hover-Bremse + Lock)
+-------------------------------------
+
+Direkt-Klick auf eine rotierende Face waere muehsam (bewegliches
+Ziel, fill="none" liesse Clicks ausserdem durch). Stattdessen:
+
+  1. Hover auf den Tetraeder -> Bremse setzt ein.
+     Rotation interpoliert mit Ease-Out (700 ms) auf den naechsten
+     Voll-Frontal-Winkel der naechstliegenden Face. Dort bleibt sie
+     stehen, solange Hover anhaelt.
+  2. Locked Face (im Voll-Frontal) ist die einzig klickbare Face.
+     cursor: pointer, pointer-events: all. Andere Faces: inert.
+  3. Klick auf die locked Face toggelt ihre Sektion auf/zu (mehrfach
+     klicken oeffnet und schliesst nacheinander).
+  4. Hover verlassen -> Rotation resumiert vom aktuellen Winkel.
+
+Einschraenkung: ueber den Tetraeder kann pro Hover-Lock genau eine
+Sektion getoggelt werden. Mehrere Sektionen gleichzeitig oeffnen geht
+nur ueber den Listenteil (Header-Klick). Das ist beabsichtigt — die
+Tetraeder-Mechanik ist Fokus, nicht Bulk-Manipulation.
+
+Voll-Frontal-Winkel pro Face (in Grad, gegen die vertikale Drehachse):
+  Face 0:  30 deg
+  Face 1: 270 deg
+  Face 2: 150 deg`,
     date: '2026-05-28',
   },
 
@@ -1729,16 +1755,17 @@ Aktiv-Stand des Inspectors (Firmament-Glimmer als Layer-Monitor):
                  bleibt der Cursor stehen — der Slice pulst dann
                  einfach an Ort und Stelle (glow/Pause/glow). Bei
                  keinem aktiven Layer: kein Glimmer.
-  Naht-Gradient  Jeder Slice ist nicht mit Solid-Weiss gefuellt,
-                 sondern mit einem linearGradient, dessen Peaks an
-                 den inneren Naehten sitzen. Aussenkanten faden
-                 zu 0, die Stoesse sind die hellen Stellen. Wirkung:
-                 die Aufhellung sammelt sich um die Stoesse herum,
-                 die Slices wirken nicht mehr als Bloecke sondern
-                 als Naht-Halos. Drei Gradient-Typen:
-                   end-left   (Slice 1)      0  ->  1
-                   mid        (Slice 2,3)    1 -> 0 -> 1
-                   end-right  (Slice 4)      1  ->  0
+  Fill           Solid #ffffff. Gradient-Experimente (Block-Gradient
+                 in der Slice-Flaeche; fette Naht-Stroke mit
+                 vertikalem Fade) wurden ausprobiert und wieder
+                 verworfen — "ein stoerriges Firmament". Die Mirror-
+                 Reflex-Qualitaet bleibt allein durch die zwei
+                 vorhandenen Gesten getragen: Geste 2 (Blitz bei
+                 Layer-Toggle) als diskreter Reflex, Geste 3 (Layer-
+                 Monitor-Sequenz) als kontinuierlicher Reflex.
+                 Ein Spiegel braucht keine zusaetzliche Animation
+                 auf sich selbst — alles, was er ausdrueckt, kommt
+                 aus dem, was er reflektiert.
 
 Wirkung: das Pergament-Trapez bleibt im Ruhezustand vollstaendig wie
 inaktiv. Aktive Layer manifestieren sich als wechselnde, kurze

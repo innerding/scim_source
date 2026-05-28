@@ -409,60 +409,29 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
             className={flashId > 0 ? 'scim-inspector-flashing' : undefined}
           />
           {/* Layer 2: vier Trapez-Slices als Layer-Monitor (ann_066 Geste 3).
-              Slices haben Solid-Weiss-Fill (wie ursprueglich). Zusaetzlich
-              tragen die drei inneren Naht-Linien einen fetten weissen
-              Stroke, dessen Opazitaet vertikal von Mitte (1) zu Top/Bottom
-              (0) ausfaden — die Aufhellung "haengt" am Stoss wie ein
-              Lichtstreifen. Jede Naht leuchtet, wenn einer ihrer beiden
-              angrenzenden Slices glimmert. */}
-          {inspectorActive && (
-            <>
-              <defs>
-                <linearGradient id="seam-stroke-grad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%"   stopColor="#ffffff" stopOpacity="0" />
-                  <stop offset="50%"  stopColor="#ffffff" stopOpacity="1" />
-                  <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
-                </linearGradient>
-              </defs>
-              {[
-                { points: '0,0 44.5,0 56.5,28 24,28',       label: 'Boundary' },
-                { points: '44.5,0 89,0 89,28 56.5,28',      label: 'POIs' },
-                { points: '89,0 133.5,0 121.5,28 89,28',    label: 'Colour-Mesh' },
-                { points: '133.5,0 178,0 154,28 121.5,28',  label: 'Routen / Edges' },
-              ].map((slice, idx) => (
-                <polygon
-                  key={idx}
-                  points={slice.points}
-                  fill="#ffffff"
-                  fillOpacity={glowIdx === idx ? 0.50 : 0}
-                  stroke="none"
-                  style={{ transition: 'fill-opacity 400ms ease-in-out' }}
-                >
-                  <title>Layer-Monitor: {slice.label}</title>
-                </polygon>
-              ))}
-              {/* Drei innere Naht-Linien. Stroke fadet vertikal von Mitte
-                  zu Top/Bottom hin transparent. Glimmt wenn einer der
-                  beiden angrenzenden Slices aktiv ist. */}
-              {[
-                { x1: 44.5,  y1: 0, x2: 56.5,  y2: 28, neighbors: [0, 1] },
-                { x1: 89,    y1: 0, x2: 89,    y2: 28, neighbors: [1, 2] },
-                { x1: 133.5, y1: 0, x2: 121.5, y2: 28, neighbors: [2, 3] },
-              ].map((seam, sidx) => {
-                const isAct = glowIdx !== null && seam.neighbors.includes(glowIdx);
-                return (
-                  <line
-                    key={`seam-${sidx}`}
-                    x1={seam.x1} y1={seam.y1} x2={seam.x2} y2={seam.y2}
-                    stroke="url(#seam-stroke-grad)"
-                    strokeWidth={2.5}
-                    strokeOpacity={isAct ? 1 : 0}
-                    style={{ transition: 'stroke-opacity 400ms ease-in-out' }}
-                  />
-                );
-              })}
-            </>
-          )}
+              Solid-Weiss-Fill mit fill-opacity-Transition. JS-getriebener
+              Cursor laeuft sequentiell durch die aktiven Layer-Slices und
+              ping-pongt am Ende zurueck. Nach kurzem Gradient-Ausflug
+              wieder zurueck auf den stabilen pre-Gradient-Stand: der
+              Spiegel hat seine Reflexe (Geste 2 Blitz + Geste 3 Sequenz),
+              das reicht. */}
+          {inspectorActive && [
+            { points: '0,0 44.5,0 56.5,28 24,28',       label: 'Boundary' },
+            { points: '44.5,0 89,0 89,28 56.5,28',      label: 'POIs' },
+            { points: '89,0 133.5,0 121.5,28 89,28',    label: 'Colour-Mesh' },
+            { points: '133.5,0 178,0 154,28 121.5,28',  label: 'Routen / Edges' },
+          ].map((slice, idx) => (
+            <polygon
+              key={idx}
+              points={slice.points}
+              fill="#ffffff"
+              fillOpacity={glowIdx === idx ? 0.50 : 0}
+              stroke="none"
+              style={{ transition: 'fill-opacity 400ms ease-in-out' }}
+            >
+              <title>Layer-Monitor: {slice.label}</title>
+            </polygon>
+          ))}
         </svg>
       )}
       {/* Globale Gesten-Styles (siehe ann_066). */}
@@ -654,7 +623,7 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
           Versionen) — reine Fokus-Funktion, kein Panel-Navigation.
           Siehe ann_051. */}
       <div style={{
-        padding: '72px 12px 18px', display: 'flex', flexDirection: 'column',
+        padding: '22px 12px 22px', display: 'flex', flexDirection: 'column',
         alignItems: 'center', flexShrink: 0,
       }}>
         <NavDepthTetraeder
