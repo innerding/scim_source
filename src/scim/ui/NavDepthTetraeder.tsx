@@ -265,7 +265,12 @@ export default function NavDepthTetraeder({ openSections, onToggleSection, size 
     <div
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
-      style={{ display: 'inline-block', lineHeight: 0, pointerEvents: 'auto' }}
+      style={{
+        display: 'inline-block', lineHeight: 0, pointerEvents: 'auto',
+        // Klicks duerfen keinen Text-Selection-Range in benachbarte Spans
+        // ziehen (sonst wird "Cosmo-Controls" blau hinterlegt).
+        userSelect: 'none', WebkitUserSelect: 'none',
+      }}
     >
     <svg
       width={size}
