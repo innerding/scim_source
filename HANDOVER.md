@@ -1,5 +1,14 @@
 # Handover — 2026-05-27 (Session-Ende)
 
+> **Update 2026-05-28** — Tetraeder-Kosmologie + USAGE MANUAL & SCIM-STATE
+> freigegeben. Manual ist jetzt das zentrale Erklärmodell (Bedienhinweise +
+> Stand-Notizen pro Sektion + Summary). Nächster Arbeitsblock: Lichtenberg-
+> MVP-Bauplan — Master-Index liegt in `ann_067`
+> (`src/scim/ui/panels/AiInterfacePanel.tsx`), autoritative UX-Spec in
+> [docs/runtime_mvp.md](docs/runtime_mvp.md). Empfohlene Reihenfolge dort,
+> Schritt 1 = vier Runtime-Code-Stücke (`router.ts`, `repContext.ts`,
+> ScimMap-Bindung an active R, `_redirects`).
+
 ## TL;DR für den nächsten Claude
 
 Sehr produktive Session. Drei große Themenblöcke abgeschlossen, ein vierter
