@@ -53,12 +53,14 @@ function tilt(p: { x: number; y: number; z: number }) {
   };
 }
 
-// Side-Face-Index -> Sektion. Face i = (apex, top[i], top[(i+1) % 3]).
-const FACE_TO_SECTION: Record<number, DepthFaceSection> = {
-  0: 'package_pipeline',
-  1: 'runtime_builder',
-  2: 'versionen',
-};
+// Position-basiertes Section-Mapping fuer die 3 sichtbaren 2D-Regionen
+// (siehe ann_060 / ann_051). Beim Locken zeigt der Tetraeder im Wireframe
+// drei umschlossene Regionen — Upper (oben, kleiner) + Lower-Left + Lower-Right.
+// Die Zuordnung bleibt ueber alle Lock-Winkel konstant; der 3D-Face-Index
+// ist dafuer irrelevant.
+const REGION_UPPER_SECTION:      DepthFaceSection = 'versionen';
+const REGION_LOWER_LEFT_SECTION: DepthFaceSection = 'package_pipeline';
+const REGION_LOWER_RIGHT_SECTION: DepthFaceSection = 'runtime_builder';
 
 // Der Voll-Frontal-Winkel pro Face (in Grad). Empirisch: die Face zeigt
 // am stillsten zur Kamera, wenn der Mittel-Azimut zwischen ihren beiden
@@ -70,9 +72,7 @@ const FACE_TO_SECTION: Record<number, DepthFaceSection> = {
 const FACE_FULL_ANGLES: Record<number, number> = { 0: 30, 1: 270, 2: 150 };
 
 const STROKE_INACTIVE  = '#2d4a6a';
-const STROKE_OPEN      = '#63b3ed';
 const STROKE_W_NORMAL  = 0.8;
-const STROKE_W_OPEN    = 1.0;
 
 const SPEED_DEG_PER_SEC = 18;
 const LOCK_DURATION_MS  = 700;
@@ -184,13 +184,15 @@ export default function NavDepthTetraeder({ openSections, onToggleSection, size 
   });
   const apex = tilt({ x: 0, y: APEX_Y, z: 0 });
 
+  // Wireframe: 4 3D-Faces, gesorted back-to-front fuer korrekte Tiefen-
+  // Reihenfolge. Keine Section-Faerbung mehr (das uebernimmt die Region-
+  // Schicht beim Lock).
   const faces = [
-    { key: 'top',    vertices: [tops[0], tops[1], tops[2]], sectionId: null as DepthFaceSection | null, faceIdx: -1 },
-    { key: 'side-0', vertices: [apex, tops[0], tops[1]],     sectionId: FACE_TO_SECTION[0],              faceIdx: 0 },
-    { key: 'side-1', vertices: [apex, tops[1], tops[2]],     sectionId: FACE_TO_SECTION[1],              faceIdx: 1 },
-    { key: 'side-2', vertices: [apex, tops[2], tops[0]],     sectionId: FACE_TO_SECTION[2],              faceIdx: 2 },
+    { key: 'top',    vertices: [tops[0], tops[1], tops[2]] },
+    { key: 'side-0', vertices: [apex, tops[0], tops[1]]     },
+    { key: 'side-1', vertices: [apex, tops[1], tops[2]]     },
+    { key: 'side-2', vertices: [apex, tops[2], tops[0]]     },
   ];
-
   const sorted = faces
     .map((f) => ({ ...f, centroidZ: f.vertices.reduce((s, v) => s + v.z, 0) / f.vertices.length }))
     .sort((a, b) => a.centroidZ - b.centroidZ);
@@ -198,7 +200,30 @@ export default function NavDepthTetraeder({ openSections, onToggleSection, size 
   const polyPoints = (verts: typeof tops) =>
     verts.map((v) => `${v.x.toFixed(2)},${v.y.toFixed(2)}`).join(' ');
 
-  const lockedFaceIdx = isLocked && hover ? hover.faceIdx : null;
+  // Region-Berechnung — nur sinnvoll im Lock-Zustand, weil dort genau eine
+  // der drei Top-Vertices als "back" (kleinstes z') in die Mitte projiziert
+  // und die anderen zwei links/rechts liegen. Die drei 2D-Regionen sind:
+  //   Upper       = (left-Top, right-Top, back-Top)         [die TOP-Face]
+  //   Lower-Left  = (apex, left-Top, back-Top)
+  //   Lower-Right = (apex, right-Top, back-Top)
+  const lockRegions = (() => {
+    if (!isLocked) return null;
+    // Back-Vertex: niedrigstes z' (= am weitesten von Kamera weg)
+    let backIdx = 0;
+    for (let i = 1; i < 3; i++) {
+      if (tops[i].z < tops[backIdx].z) backIdx = i;
+    }
+    const otherIdx = [0, 1, 2].filter((i) => i !== backIdx);
+    otherIdx.sort((a, b) => tops[a].x - tops[b].x);   // kleineres x = links
+    const leftTop  = tops[otherIdx[0]];
+    const rightTop = tops[otherIdx[1]];
+    const backTop  = tops[backIdx];
+    return [
+      { vertices: [leftTop, rightTop, backTop], sectionId: REGION_UPPER_SECTION,       label: 'Versionen (Upper)' },
+      { vertices: [apex,    leftTop,  backTop], sectionId: REGION_LOWER_LEFT_SECTION,  label: 'Package Pipeline (Lower-Left)' },
+      { vertices: [apex,    rightTop, backTop], sectionId: REGION_LOWER_RIGHT_SECTION, label: 'Runtime Builder (Lower-Right)' },
+    ];
+  })();
 
   return (
     <div
@@ -212,33 +237,35 @@ export default function NavDepthTetraeder({ openSections, onToggleSection, size 
       viewBox="-50 -15 100 75"
       style={{ display: 'block', overflow: 'visible' }}
     >
-      {sorted.map((f) => {
-        const isOpenFace = f.sectionId !== null && openSections.has(f.sectionId);
-        const isLockedFace = f.faceIdx === lockedFaceIdx;
-        const clickable = isLockedFace && f.sectionId !== null;
+      {/* Wireframe: 4 3D-Faces in Tiefen-Reihenfolge. Keine Section-Faerbung,
+          das uebernimmt die Region-Schicht (siehe unten). */}
+      {sorted.map((f) => (
+        <polygon
+          key={f.key}
+          points={polyPoints(f.vertices)}
+          fill="none"
+          stroke={STROKE_INACTIVE}
+          strokeWidth={STROKE_W_NORMAL}
+          strokeLinejoin="round"
+          style={{ pointerEvents: 'none', opacity: 0.85 }}
+        />
+      ))}
+      {/* Region-Hit-Targets (nur im Lock-Zustand). Drei sichtbare 2D-Regionen
+          des Tetraeder-Wireframes, jede zur Sektion gemappt. Tint im Fill,
+          wenn die Sektion offen ist; transparent sonst. Klick toggelt. */}
+      {lockRegions !== null && lockRegions.map((r) => {
+        const isOpen = openSections.has(r.sectionId);
         return (
           <polygon
-            key={f.key}
-            points={polyPoints(f.vertices)}
-            fill="none"
-            stroke={isOpenFace ? STROKE_OPEN : STROKE_INACTIVE}
-            strokeWidth={isOpenFace ? STROKE_W_OPEN : STROKE_W_NORMAL}
-            strokeLinejoin="round"
-            onClick={clickable && f.sectionId ? () => onToggleSection(f.sectionId!) : undefined}
-            style={{
-              cursor: clickable ? 'pointer' : 'default',
-              opacity: isOpenFace ? 1 : 0.85,
-              pointerEvents: clickable ? 'all' : 'none',
-              transition: 'stroke 200ms ease-out, stroke-width 200ms ease-out',
-            }}
-            className={isOpenFace ? 'rb-active-tile' : undefined}
+            key={`region-${r.sectionId}`}
+            points={polyPoints(r.vertices)}
+            fill={isOpen ? 'rgba(99, 179, 237, 0.28)' : 'transparent'}
+            stroke="none"
+            onClick={() => onToggleSection(r.sectionId)}
+            style={{ pointerEvents: 'all', cursor: 'pointer' }}
+            className={isOpen ? 'rb-active-tile' : undefined}
           >
-            <title>
-              {f.sectionId === 'package_pipeline' ? 'Package Pipeline (Sektion togglen)' :
-               f.sectionId === 'runtime_builder'  ? 'Runtime Builder (Sektion togglen)' :
-               f.sectionId === 'versionen'        ? 'Versionen (Sektion togglen)' :
-               'Tetraeder-Basis (Substrat)'}
-            </title>
+            <title>{r.label}</title>
           </polygon>
         );
       })}

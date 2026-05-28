@@ -1301,23 +1301,25 @@ Der Tiefen-Tetraeder lebt jetzt im Navigator als eigenes SVG
 Punkt-nach-unten stehend, rotierend um die vertikale Achse (~20 s
 pro Umlauf, leichter Tilt von 18 Grad fuer Raeumlichkeit).
 
-  - Strokes in der Farbfamilie des oberen Tetraeders (#2d4a6a inaktiv,
-    #63b3ed bei offener Sektion). Faces ohne Fill — das visuelle Gewicht
-    haengt allein am Stroke, passend zum "Substrat ist noch nicht
-    ausgeformt".
-  - Drei Side-Faces sind klickbar und fungieren als reine Fokus-
-    Instrumente: jeder Klick toggelt eine Navigator-Sektion. Mapping:
-        Face 0 (top0 -> top1)  ->  Sektion "Package Pipeline"
-        Face 1 (top1 -> top2)  ->  Sektion "Runtime Builder"
-        Face 2 (top2 -> top0)  ->  Sektion "Versionen"
-  - Die obere Flaeche (3 Top-Vertices, kein Apex) bleibt visuelle
-    Basis, kein Klick-Target.
-  - Open-Section-Feedback (Stroke): wenn die zugehoerige Sektion offen
-    ist, bekommt die Face den helleren Stroke #63b3ed und die Pulse-
-    Animation — auch waehrend die Face mit-rotiert. So ist an der
-    rotierenden Bipyramide jederzeit ablesbar, welche Sektionen
-    geoeffnet sind. Mehrere offene Faces gleichzeitig sind moeglich
-    (z.B. wenn der Operator mehrere Sektionen manuell aufgeklappt hat).
+  - Wireframe-Strokes in der Farbfamilie des oberen Tetraeders
+    (#2d4a6a, strokeWidth 0.8). Faces ohne Fill — das Gewicht haengt
+    am Stroke, passend zum "Substrat ist noch nicht ausgeformt".
+  - Drei 2D-REGIONEN (statt 3D-Faces) sind klickbar im Lock-Zustand.
+    Hintergrund: das Wireframe schliesst beim Lock drei sichtbare
+    Regionen ein (Upper, Lower-Left, Lower-Right). Die dem Operator
+    sichtbaren Regionen bleiben ueber alle drei Lock-Winkel an
+    derselben 2D-Position; nur ihre 3D-Face-Zuordnung rotiert mit.
+    Wir mappen daher per POSITION, nicht per 3D-Face-Index:
+        Upper-Region        ->  Sektion "Versionen"
+        Lower-Left-Region   ->  Sektion "Package Pipeline"
+        Lower-Right-Region  ->  Sektion "Runtime Builder"
+  - Open-Section-Feedback: die zugehoerige REGION wird translucent
+    blau eingefaerbt (rgba(99, 179, 237, 0.28)) mit Pulse-Klasse.
+    Sichtbar nur im Lock-Zustand — waehrend der Rotation ist das
+    Wireframe neutral (Wahrheits-Quelle fuer offene Sektionen ist
+    dann der Listenteil unten).
+  - Mehrere offene Regionen gleichzeitig moeglich (entspricht
+    mehreren manuell aufgeklappten Sektionen im Listenteil).
 
 Klick-Mechanik (Hover-Bremse + Lock)
 -------------------------------------

@@ -658,6 +658,21 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
             userSelect: 'none', cursor: 'default',
           }}
         >📄</span>
+        {/* Cosmo-Controls — eigene typografische Insel (Italic-Serif),
+            zentriert in der Manual+Reader-Zeile (justify-content:
+            space-between sorgt fuer die Aufteilung). */}
+        <span
+          style={{
+            fontFamily: 'Georgia, "Times New Roman", serif',
+            fontStyle: 'italic',
+            fontSize: 10,
+            fontWeight: 400,
+            letterSpacing: '0.02em',
+            color: 'rgba(255, 255, 255, 0.9)',
+            userSelect: 'none',
+            cursor: 'default',
+          }}
+        >Cosmo-Controls</span>
         <span
           title="Manual lesen"
           onClick={onManualOpen}
