@@ -661,9 +661,10 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
         />
       </div>
 
-      {/* Manual + Reader — sitzen jetzt unter dem Tiefen-Tetraeder, vor
-          dem Represent-Build-Header. Manual (links): stummer Datei-Glyph.
-          Reader (rechts): unsichtbare Hitbox, oeffnet das Manual-Modal. */}
+      {/* Manual + Reader sitzen am Fuss der Kosmologie — unter der gesamten
+          Bipyramide (Upper-Tetraeder + Tiefen-Tetraeder), unmittelbar vor
+          dem Listenteil. Manual (links): stummer Datei-Glyph. Reader
+          (rechts): unsichtbare Hitbox, oeffnet das Manual-Modal. */}
       <div style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         padding: '0 14px', marginBottom: 6, flexShrink: 0,
