@@ -307,7 +307,10 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
           85%           { fill-opacity: 0.50; }
         }
         .scim-firmament-glimmer {
-          animation: scim-firmament-glimmer 4500ms ease-in-out infinite;
+          /* alternate-Richtung: jeder Cycle laeuft erst vorwaerts, dann
+             rueckwaerts. Die Slice-Sequenz wird damit bidirektional
+             (Welle prallt am Rand ab, statt zu snappen). */
+          animation: scim-firmament-glimmer 4500ms ease-in-out infinite alternate;
         }
         .scim-firmament-glimmer-a { animation-delay: 0ms; }
         .scim-firmament-glimmer-b { animation-delay: -1125ms; }

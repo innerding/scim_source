@@ -1619,13 +1619,21 @@ Aktiv-Stand des Inspectors (Firmament-Glimmer als Layer-Monitor):
                    85 %              ->  opacity 0.50 (Peak)
                  70 % der Cycle-Zeit liegt der Slice bei 0 — sind
                  die Pausen, die das Dauerblinken aufbrechen.
-  Cycle          4500 ms ease-in-out infinite.
+  Cycle          4500 ms ease-in-out infinite alternate.
+                 alternate-Richtung macht den Loop bidirektional —
+                 jeder zweite Cycle laeuft rueckwaerts, sodass die
+                 Welle am Rand abprallt statt zu snappen.
   Phasen-Offset  Slice A:  0 ms      (Boundary)
                  Slice B: -1125 ms  (POIs, ein Viertel voraus)
                  Slice C: -2250 ms  (Colour-Mesh, halb voraus)
                  Slice D: -3375 ms  (Routen, drei Viertel voraus)
                  Verhindert Synchronie zwischen gleichzeitig aktiven
                  Slices — sie zucken nacheinander, nicht im Chor.
+                 Mit alternate ergibt sich ueber 9000 ms die volle
+                 Ping-Pong-Sequenz: D, C, B, A, A, B, C, D, dann
+                 wieder D — die zwei Wendepunkt-Peaks liegen dicht
+                 beieinander, sodass es wie ein Abprallen am Rand
+                 wirkt, nicht wie ein Re-Start.
 
 Wirkung: das Pergament-Trapez bleibt im Ruhezustand vollstaendig wie
 inaktiv. Aktive Layer manifestieren sich als wechselnde, kurze
