@@ -174,6 +174,21 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
     return () => window.removeEventListener('scim:inspector:flash', onFlash);
   }, []);
 
+  // Layer-Monitor: ScimMap dispatcht 'scim:layers:state' mit dem aktuellen
+  // vis-Objekt. Wir spiegeln das hier und entscheiden je Slice, ob es
+  // glimmern darf. Siehe ann_066 Geste 3.
+  const [layerVis, setLayerVis] = useState<{
+    boundary: boolean; pois: boolean; colourmesh: boolean; routes: boolean;
+  }>({ boundary: true, pois: true, colourmesh: true, routes: false });
+  useEffect(() => {
+    const onLayers = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail && typeof detail === 'object') setLayerVis(detail);
+    };
+    window.addEventListener('scim:layers:state', onLayers);
+    return () => window.removeEventListener('scim:layers:state', onLayers);
+  }, []);
+
   return (
     <nav style={{
       width: 210,
@@ -216,34 +231,51 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
             stroke="none"
             className={flashId > 0 ? 'scim-inspector-flashing' : undefined}
           />
-          {/* Layer 2: drei Trapez-Slices als wechselnde Teilbereiche der
-              Firmament-Glimmer-Animation (Geste 3, Ausnahme). Nur sichtbar
-              wenn der Inspector aktiv ist. Jeder Slice durchlaeuft denselben
-              Keyframe mit Phasen-Versatz, sodass zu jedem Moment maximal
-              ein Teilbereich aufleuchtet, max. 50 % Weiss, mit Pausen. */}
+          {/* Layer 2: vier Trapez-Slices, jeder einem Layer in der ScimMap
+              zugeordnet. Ein Slice glimmt nur, wenn sein Layer aktiv ist —
+              das Firmament wird damit zum Layer-Monitor (ann_066 Geste 3).
+              Reihenfolge der Slices entspricht dem "Layer ▾"-Dropdown:
+              Boundary | POIs | Colour-Mesh | Routen. Phasen-Offset 0 /
+              -1125 / -2250 / -3375 ms innerhalb des 4500-ms-Cycles, sodass
+              gleichzeitig aktive Slices nie synchron aufleuchten. */}
           {inspectorActive && (
             <>
               <polygon
-                points="0,0 59,0 67,28 24,28"
+                points="0,0 44.5,0 56.5,28 24,28"
                 fill="#ffffff"
                 fillOpacity={0}
                 stroke="none"
-                className="scim-firmament-glimmer scim-firmament-glimmer-a"
-              />
+                className={layerVis.boundary ? 'scim-firmament-glimmer scim-firmament-glimmer-a' : undefined}
+              >
+                <title>Layer-Monitor: Boundary</title>
+              </polygon>
               <polygon
-                points="59,0 119,0 111,28 67,28"
+                points="44.5,0 89,0 89,28 56.5,28"
                 fill="#ffffff"
                 fillOpacity={0}
                 stroke="none"
-                className="scim-firmament-glimmer scim-firmament-glimmer-b"
-              />
+                className={layerVis.pois ? 'scim-firmament-glimmer scim-firmament-glimmer-b' : undefined}
+              >
+                <title>Layer-Monitor: POIs</title>
+              </polygon>
               <polygon
-                points="119,0 178,0 154,28 111,28"
+                points="89,0 133.5,0 121.5,28 89,28"
                 fill="#ffffff"
                 fillOpacity={0}
                 stroke="none"
-                className="scim-firmament-glimmer scim-firmament-glimmer-c"
-              />
+                className={layerVis.colourmesh ? 'scim-firmament-glimmer scim-firmament-glimmer-c' : undefined}
+              >
+                <title>Layer-Monitor: Colour-Mesh</title>
+              </polygon>
+              <polygon
+                points="133.5,0 178,0 154,28 121.5,28"
+                fill="#ffffff"
+                fillOpacity={0}
+                stroke="none"
+                className={layerVis.routes ? 'scim-firmament-glimmer scim-firmament-glimmer-d' : undefined}
+              >
+                <title>Layer-Monitor: Routen / Edges</title>
+              </polygon>
             </>
           )}
         </svg>
@@ -278,8 +310,9 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
           animation: scim-firmament-glimmer 4500ms ease-in-out infinite;
         }
         .scim-firmament-glimmer-a { animation-delay: 0ms; }
-        .scim-firmament-glimmer-b { animation-delay: -1500ms; }
-        .scim-firmament-glimmer-c { animation-delay: -3000ms; }
+        .scim-firmament-glimmer-b { animation-delay: -1125ms; }
+        .scim-firmament-glimmer-c { animation-delay: -2250ms; }
+        .scim-firmament-glimmer-d { animation-delay: -3375ms; }
       `}</style>
       {/* Nacktes Logo — Iconset alleine, beschnitten auf 107.5 x 51.122.
           Wrapper zentriert die 0.88-skalierte Box links/rechts.
@@ -366,6 +399,42 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
             >
               <title>Hex — App-Shell + Engine (R01 Runtime Shell)</title>
             </polygon>
+            {/* Mond-Auswuechse — vier kleine Kreise rund um die Mondscheibe.
+                Klick fuehrt zu V02 Region-Detail (Filter pro R folgt, sobald
+                V02 dies unterstuetzt). Nur die Kreise sind klickbar, nicht
+                die feinen Strokes, mit denen sie am Mond haengen.
+                Koordinaten aus logo-base-naked.svg geschaetzt:
+                  top-left   (~7, 8)   -> Gruenberg / Salzkammergut
+                  top-right  (~77, 16) -> Lichtenberg / Boehmerwald
+                  bot-left   (~18, 45) -> Kanton Zuerich (Representation tbd)
+                  bot-right  (~101, 46) -> Gaisberg / Salzburg
+                Aktiv-Stand: schreiend wie die Tetraeder-Faces, wenn V02
+                offen ist (heute fuer alle vier; per-R Aktivierung mit
+                spaeterer V02-Filter-Logik). */}
+            {([
+              { cx: 7,   cy: 8,  r: 5, region: 'salzkammergut', rep: 'gruenberg',   label: 'Gruenberg — Salzkammergut' },
+              { cx: 77,  cy: 16, r: 4, region: 'boehmerwald',   rep: 'lichtenberg', label: 'Lichtenberg — Boehmerwald' },
+              { cx: 18,  cy: 45, r: 4, region: 'kanton_zuerich', rep: null,         label: 'Kanton Zuerich (R noch offen)' },
+              { cx: 101, cy: 46, r: 5, region: 'salzburg',      rep: 'gaisberg',    label: 'Gaisberg — Salzburg' },
+            ] as const).map(({ cx, cy, r, region, rep, label }) => {
+              const isAct = activeId === 'V02';
+              return (
+                <circle
+                  key={`auswuchs-${region}`}
+                  cx={cx} cy={cy} r={r}
+                  fill={isAct ? '#2b6cb0' : 'transparent'}
+                  stroke={isAct ? '#63b3ed' : undefined}
+                  strokeWidth={isAct ? 1.0 : undefined}
+                  className={isAct ? 'scim-active-pulse' : undefined}
+                  onClick={() => go('V02')}
+                  style={{ pointerEvents: 'fill', cursor: 'pointer' }}
+                  data-region={region}
+                  data-rep={rep ?? ''}
+                >
+                  <title>{label}</title>
+                </circle>
+              );
+            })}
           </svg>
         </div>
         <style>{`

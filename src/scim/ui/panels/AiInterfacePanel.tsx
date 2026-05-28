@@ -943,11 +943,17 @@ V02, V03, System, KI-Schnittstelle) bleiben voll sichtbar — sie haben
 keine visuelle Heimat in der Kosmologie und sind nur ueber den
 Listenteil erreichbar.
 
-Optionale dritte Region (heute nicht partitioniert):
+Dritte Region — vier Mond-Auswuechse als klickbare Kreise (Stand 2026-05-28):
 
-  Einzelne R-Auswuechse  ->  V02 Region-Detail fuer genau diese R
-                              (kommt, sobald die Auswuechse als separate
-                              Klick-Targets unterscheidbar sind)
+  Top-Left   (~7, 8)    ->  V02  (Gruenberg / Salzkammergut)
+  Top-Right  (~77, 16)  ->  V02  (Lichtenberg / Boehmerwald)
+  Bot-Left   (~18, 45)  ->  V02  (Kanton Zuerich, R noch nicht definiert)
+  Bot-Right  (~101, 46) ->  V02  (Gaisberg / Salzburg)
+
+Nur die Kreise sind Klick-Hitboxen; die feinen Strokes, mit denen die
+Auswuechse am Mond haengen, bleiben inert. Per-R-Filterung in V02
+steht noch aus — heute fuehren alle vier auf V02 generisch, die
+Zuordnung lebt im data-region / data-rep-Attribut und im title-Tag.
 
 Heimat-Analyse fuer die Mond-Klicks (komprimiert):
 
@@ -1595,14 +1601,17 @@ das Firmament ist ein Spiegel, kein Schalter. Es schaltet sich nicht
 "an", es leuchtet aus der Ferne, wenn die ScimMap geoeffnet ist —
 das ist eine andere Art von Quittung.
 
-Aktiv-Stand des Inspectors (Firmament-Glimmer):
+Aktiv-Stand des Inspectors (Firmament-Glimmer als Layer-Monitor):
   Konstruktion   zwei Layer.
                  - Layer 1: das eigentliche Pergament-Trapez,
                    konstant auf Basis-Helligkeit, traegt weiterhin
                    den Layer-Toggle-Blitz (Geste 2).
-                 - Layer 2: drei Trapez-Slices (links, mitte, rechts)
-                   als wechselnde Teilbereiche, jeder Slice eine
-                   eigene Polygon-Form, animiert.
+                 - Layer 2: vier Trapez-Slices, je einem Layer in der
+                   ScimMap zugeordnet (Boundary | POIs | Colour-Mesh
+                   | Routen, von links nach rechts). Ein Slice glimmt
+                   nur dann, wenn sein Layer aktiv ist — Firmament
+                   wird zum Layer-Monitor. Die Kopplung an die ScimMap
+                   passiert ueber ein "scim:layers:state"-Window-Event.
   Slice-Peak     white #ffffff @ fill-opacity 0.50
   Slice-Ruhe     fill-opacity 0 (vollstaendig durchsichtig)
   Keyframe       scim-firmament-glimmer:
@@ -1611,18 +1620,18 @@ Aktiv-Stand des Inspectors (Firmament-Glimmer):
                  70 % der Cycle-Zeit liegt der Slice bei 0 — sind
                  die Pausen, die das Dauerblinken aufbrechen.
   Cycle          4500 ms ease-in-out infinite.
-  Phasen-Offset  Slice A:  0 ms     (Standard)
-                 Slice B: -1500 ms  (ein Drittel voraus)
-                 Slice C: -3000 ms  (zwei Drittel voraus)
-                 Sodass die drei Slices nie gleichzeitig hochzucken,
-                 sondern sich abwechseln. In Summe: ein Slice zuckt,
-                 zwei warten — das Auge sieht stets nur einen
-                 Teilbereich aufleuchten.
+  Phasen-Offset  Slice A:  0 ms      (Boundary)
+                 Slice B: -1125 ms  (POIs, ein Viertel voraus)
+                 Slice C: -2250 ms  (Colour-Mesh, halb voraus)
+                 Slice D: -3375 ms  (Routen, drei Viertel voraus)
+                 Verhindert Synchronie zwischen gleichzeitig aktiven
+                 Slices — sie zucken nacheinander, nicht im Chor.
 
 Wirkung: das Pergament-Trapez bleibt im Ruhezustand vollstaendig wie
-inaktiv. Nur Teilbereiche zucken periodisch wie fernes Wetterleuchten
-am Pergament-Himmel auf, max. 50 % Weiss-Anteil, mit ausreichend
-Pause zwischen den Aufhellungen. Kein Dauerblinken, keine Synchronie.
+inaktiv. Aktive Layer manifestieren sich als wechselnde, kurze
+Aufhellungen ihres Teilbereichs (max. 50 % Weiss), inaktive Layer-
+Slices bleiben dunkel. Das Firmament ist damit keine Dekoration mehr,
+sondern eine ehrliche Anzeige: was leuchtet, lebt gerade auf der Karte.
 
 Wenn waehrenddessen ein Layer-Toggle den Blitz ausloest, betrifft das
 nur Layer 1 (das Trapez selbst), nicht die Slices. Beide Gesten

@@ -52,6 +52,13 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
   const layerGroupRef = useRef<L.LayerGroup | null>(null);
   const baseTileRef = useRef<L.TileLayer | null>(null);
   const [vis, setVis] = useState<LayerVisibility>(DEFAULT_VISIBILITY);
+
+  // Layer-Monitor: jeden vis-Wechsel an die Welt mitteilen, damit das
+  // Firmament im Navigator weiss, welcher Slice glimmen darf
+  // (siehe ann_066 Geste 3).
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('scim:layers:state', { detail: vis }));
+  }, [vis]);
   const [osmEdges, setOsmEdges] = useState<OsmEdge[]>([]);
   const [osmStatus, setOsmStatus] = useState<'idle' | 'loading' | 'ok' | 'failed'>('idle');
 
