@@ -59,7 +59,7 @@ function NavItem({
         borderRadius: 4,
         background: isActive ? '#1e3a5f' : 'transparent',
         color: isActive ? '#e0eeff' : '#a0aec0',
-        fontSize: 12,
+        fontSize: 11,                          // Label: Faktor 0.9 (12 -> 11)
         fontFamily: 'monospace',
         userSelect: 'none',
         transition: 'background 0.1s',
@@ -71,7 +71,8 @@ function NavItem({
         if (!isActive) (e.currentTarget as HTMLDivElement).style.background = 'transparent';
       }}
     >
-      <span style={{ fontSize: 13, width: 18, textAlign: 'center', flexShrink: 0 }}>{icon}</span>
+      {/* Icon-Glyph: monochrom, Faktor 1.8 ggue. urspruenglichem 13 -> 23 */}
+      <span style={{ fontSize: 23, width: 32, textAlign: 'center', flexShrink: 0 }}>{icon}</span>
       <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
         {label}
       </span>
@@ -89,10 +90,13 @@ function Divider() {
 }
 
 function SectionHeader({ title }: { title: string }) {
+  // Im Stil des "Represent Build"-Labels (zentriert, monospace, #4a6a8a)
+  // mit Faktor 1.1: fontSize 9 -> 10.
   return (
     <div style={{
-      fontSize: 9, fontWeight: 700, letterSpacing: '0.13em',
-      color: '#2d4a6a', textTransform: 'uppercase',
+      fontSize: 10, color: '#4a6a8a', textTransform: 'uppercase',
+      letterSpacing: '0.10em', fontFamily: 'monospace',
+      textAlign: 'center',
       padding: '14px 12px 4px',
       userSelect: 'none', flexShrink: 0,
     }}>
@@ -376,7 +380,7 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
           }}
         />
         <div style={{
-          fontSize: 9, color: '#4a6a8a', textTransform: 'uppercase',
+          fontSize: 10, color: '#4a6a8a', textTransform: 'uppercase',
           letterSpacing: '0.10em', fontFamily: 'monospace',
         }}>
           Represent Build

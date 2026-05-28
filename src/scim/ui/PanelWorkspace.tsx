@@ -78,17 +78,19 @@ function TabBar({
 }
 
 function PanelHeader({ title, subtitle }: { title: string; subtitle: string }) {
+  // Header passt zum dunklen Navigator-Strip: dunkler Hintergrund,
+  // Titel in Weiss mit 90 % Opacity, Untertitel in halber Helligkeit.
   return (
     <div style={{
       padding: '14px 20px 12px',
-      borderBottom: '1px solid #e2e8f0',
-      background: '#fff',
+      borderBottom: '1px solid #1a2535',
+      background: '#0d1520',
       flexShrink: 0,
     }}>
-      <div style={{ fontSize: 15, fontWeight: 600, color: '#1a365d', fontFamily: 'system-ui, sans-serif' }}>
+      <div style={{ fontSize: 15, fontWeight: 600, color: 'rgba(255, 255, 255, 0.9)', fontFamily: 'system-ui, sans-serif' }}>
         {title}
       </div>
-      <div style={{ fontSize: 12, color: '#718096', marginTop: 3, fontFamily: 'system-ui, sans-serif' }}>
+      <div style={{ fontSize: 12, color: 'rgba(255, 255, 255, 0.5)', marginTop: 3, fontFamily: 'system-ui, sans-serif' }}>
         {subtitle}
       </div>
     </div>
