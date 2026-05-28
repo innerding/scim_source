@@ -575,7 +575,11 @@ Reihenfolge nicht starr. Wann was gebaut wird, haengt vom konkreten Bedarf der P
     id: 'ann_047',
     category: 'next_intent',
     label: 'Naechste Absicht - POI-Rendering und Interaktion in der Ziel-App',
-    content: `Die SCIM3-Ziel-App (mobil und tablet, kartenzentriert) zeigt die im Katalog gepflegten POI-Daten gemaess folgender Schicht-Logik. Diese Annotation beschreibt die geplante Darstellung; die App ist noch nicht implementiert (Phase Z, nach Promotion-Pipeline Phase 4).
+    content: `(Historisch seit 2026-05-28 — UX-Spezifikation lebt jetzt in docs/runtime_mvp.md (autoritativ) und ist als Master-Index in ann_067 zusammengefuehrt. Diese Annotation bleibt als Verlaufseintrag erhalten; ihr Inhalt darf nicht mehr als Soll-Quelle gelesen werden.)
+
+---
+
+Die SCIM3-Ziel-App (mobil und tablet, kartenzentriert) zeigt die im Katalog gepflegten POI-Daten gemaess folgender Schicht-Logik. Diese Annotation beschreibt die geplante Darstellung; die App ist noch nicht implementiert (Phase Z, nach Promotion-Pipeline Phase 4).
 
 Sichtbar auf der Karte (ohne Interaktion):
   - POI-Composite (Container + Icon + ggf. Elevation-Decoration) als Marker an der Coord
@@ -1126,7 +1130,11 @@ Diese Liste ist eine Wette, kein Beweis. Wir behalten uns vor, die Hypothesen zu
     id: 'ann_058',
     category: 'next_intent',
     label: 'R-Konsument bauen — bis dahin ist Representation Manifest-only',
-    content: `Heute, Stand 2026-05-27: Eine data/representations/*.json-Datei ist ein Manifest ohne Konsument. Sie wird in der Workspace-Liste angezeigt - aber von Map, Pipeline, Mesh nicht gelesen. Eine Versprechungs-Datei.
+    content: `(Historisch seit 2026-05-28 — die vier-Stuecke-Liste lebt jetzt in ann_067 (Lichtenberg-MVP-Bauplan, Master-Index) als Teil von Stufe 1. Diese Annotation bleibt als Verlaufseintrag erhalten; aktuelle Reihenfolge bitte aus ann_067 ziehen.)
+
+---
+
+Heute, Stand 2026-05-27: Eine data/representations/*.json-Datei ist ein Manifest ohne Konsument. Sie wird in der Workspace-Liste angezeigt - aber von Map, Pipeline, Mesh nicht gelesen. Eine Versprechungs-Datei.
 
 Vier kleine Code-Stuecke heben sie auf "wirksam":
 
@@ -1672,6 +1680,118 @@ Jede neue Geste (Mond-Glimmen, R-Auswuchs-Pulse, was kommt) erhaelt einen eigene
   - Aussage (was sagt die Geste, ohne sie waere es Dekoration)
 
 Ohne Aussage waechst die Liste nicht.`,
+    date: '2026-05-28',
+  },
+
+  {
+    id: 'ann_067',
+    category: 'next_intent',
+    label: 'Lichtenberg-MVP-Bauplan (Master-Index)',
+    content: `Ziel
+====
+
+Lichtenberg als funktionale MVP-App fuer den Reviewer abrufbar machen ueber
+scim3.diesenpark.com/boehmerwald/lichtenberg. Geometrie + POIs + Wishlist +
+Route + Guidance. Bonus (Time-Switcher / BAK / Alternativ-Routen) bewusst
+zurueckgestellt — Stufe 2.
+
+Autoritative Referenzen
+=======================
+
+Tiefe Spec immer dort, nicht hier:
+- docs/runtime_mvp.md         UX-Flow + drei Stufen, autoritativ
+- HANDOVER.md (2026-05-27)    Stand und Vier-Stuecke-Plan
+- ann_051                     Klick-Karte aller Verdrahtungen
+- ann_064 / ann_065           Mesh / Transmitter
+- ann_066                     Gesten der Kosmologie
+
+Was heute steht
+===============
+
+- data/geometries/lichtenberg.json              committed
+- data/representations/rep-lichtenberg.json     committed (Manifest ohne Konsument)
+- Colour-Mesh entlang OSM-Wege (Overpass)        live
+- Mond-Auswuchs top-right -> V02                 verdrahtet (generisch, Per-R-Filter offen)
+- Kosmologie als Navigationskarte                vollstaendig
+
+Stufe 1 — MVP-Kern (Pflicht fuer Reviewer-Stand)
+================================================
+
+Vier R-Konsument-Code-Stuecke (kein Panel, ein Commit pro Stueck):
+  1. public/_redirects                           Cloudflare-SPA-Fallback
+  2. src/runtime/router.ts                       pathname -> Representation
+  3. src/runtime/repContext.ts                   RepresentationContext, active R global
+  4. ScimMap reagiert auf active R               Bounds fitten, OSM holen, POIs aus rep.catalog_id
+
+Runtime-Flow-Module (Stufe-1-Logik, siehe runtime_mvp.md):
+  - src/runtime/routeSolver.ts                   Dijkstra durch OSM-Edges + POIs
+  - src/runtime/wishlist.ts                      POI-Auswahl + Reorder
+  - src/runtime/guidance.ts                      Next-Stop, Position-Marker, Tap-basiert
+  - src/runtime/positionMarker.tsx               Pfeil-Marker auf der Karte
+  - Wishlist-Bottom-Sheet                        neu
+  - Next-Stop-Card                               neu
+  - Tour-Ende-Sheet                              neu
+
+Operator-Panel-Ausbau (damit Release sichtbar wird):
+  - Workspace                                    "Publish to CDN"-Aktion pro R
+  - V01 Pakete                                   Liste aller R's mit Status + CDN-URL
+  - V02 Region-Detail                            Per-Region-Filter (Auswuchs-Klick)
+  - V03 Aktiv-Monitor                            aktive R pro Region + QR
+  - P11 Package                                  neuer Tab "Preview" — Bundle vor Release
+  - P14 Release                                  echter CDN-Upload (heute teils Mock)
+
+Konsumenten-Panel-Ausbau (heute Stubs, werden Sicht / Konfig / Preview in SCIM):
+  - R01 Runtime Shell                            Tab "URL & Routing" — Inspektor
+  - R03 Package Loader                           Tab "Cache-Inspektor"
+  - R05 Local State                              Tab "Wishlist & Tour-State"
+  - R07 Karte & Guidance                         Tab "Preview" — Runtime-Flow inside SCIM
+                                                  (das Panel, das dem Reviewer gezeigt wird)
+
+Stufe 2 — Bonus-Demo (Wow-Moment, nach Stufe 1)
+===============================================
+
+Time-Switcher in der Toolbar, Fake-Load-Time-Variation, BAK-Banner,
+Alternativ-Routen-Berechnung, Vergleich-Card. Vollstaendig in
+runtime_mvp.md Bonus-Sektion spezifiziert.
+
+Stufe 3 — Polish
+================
+
+Echte Geolocation mit Fallback, persistente Tour-Historie (localStorage),
+Share-Link, QR-Code-Tour, PWA-Tuning. Siehe runtime_mvp.md Stufe 3.
+
+Empfohlene Reihenfolge
+======================
+
+  1. Die vier Code-Stuecke aus Stufe 1 (Routing + Context + ScimMap-Bindung).
+     Je ein Commit. Damit wirkt die Lichtenberg-URL erstmals.
+  2. R07 Karte & Guidance "Preview"-Tab — der Reviewer-Stand inside SCIM.
+  3. V01 / V02 / V03 als sichtbaren Operator-Workflow ausbauen
+     (Workspace -> Publish -> Aktiv-Monitor mit QR).
+  4. Runtime-Flow-Module: routeSolver, wishlist, guidance. Erst dann ist
+     Stufe 1 zu Ende.
+  5. Bonus + Polish zurueckhalten bis Stufe 1 stabil ist.
+
+Konsolidierung — was diese Annotation ersetzt
+=============================================
+
+Als Master-Index ersetzt diese Annotation die Plan-Aspekte von:
+  - ann_058   "R-Konsument bauen ..."         markiert historisch
+              (vier-Stuecke-Liste lebt hier weiter, dort als Verlauf)
+  - ann_047   "POI-Rendering ... Ziel-App"    markiert historisch
+              (UX-Spec autoritativ in docs/runtime_mvp.md, hier nur Index)
+
+ann_058 und ann_047 bleiben als Verlauf lesbar, sind aber nicht mehr
+Soll-Quelle. Andere benachbarte Annotationen (ann_046 Katalog-Editor,
+ann_063 Transmission-Heimat-Analyse, ann_066 Gesten) bleiben unangetastet,
+weil sie eigenen Scope haben.
+
+Pflege-Regel
+============
+
+Wenn der Plan sich aendert: hier eintragen, betroffene Detail-Doku in
+runtime_mvp.md aktualisieren, ggf. nachgeordnete Annotationen historisch
+markieren. Keine zweite Master-Liste anlegen.`,
     date: '2026-05-28',
   },
 ];
