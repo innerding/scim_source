@@ -74,9 +74,11 @@ const FACE_FULL_ANGLES: Record<number, number> = { 0: 30, 1: 270, 2: 150 };
 const STROKE_INACTIVE  = '#2d4a6a';
 const STROKE_W_NORMAL  = 0.8;
 
-const SPEED_DEG_PER_SEC = 18;
-const LOCK_DURATION_MS  = 700;
-const RESUME_RAMP_MS    = 2200;   // sanfter Ease-In nach Hover-Ende, kein Speed-Sprung
+const SPEED_DEG_PER_SEC      = 18;
+const LOCK_DURATION_MS       = 700;
+const RESUME_RAMP_MS         = 2200;   // sanfter Ease-In nach Hover-Ende
+const HOVER_ENTER_DELAY_MS   = 250;    // Maus muss bleiben, sonst keine Reaktion
+const HOVER_LEAVE_GRACE_MS   = 500;    // kurzes Wegziehen + Rueckkehr haelt Lock
 
 interface HoverState {
   startTime: number;
@@ -158,18 +160,52 @@ export default function NavDepthTetraeder({ openSections, onToggleSection, size 
     return () => cancelAnimationFrame(raf);
   }, [hover, isLocked]);
 
+  // Hover-Debounce + Leave-Grace: der Tetraeder reagiert nicht auf jede
+  // Maus-Bewegung, sondern verlangt Aufmerksamkeit (250 ms verweilen) und
+  // verzeiht kurzes Wegziehen (500 ms Grace). Damit bleibt er ruhig und
+  // wuerdig, statt nervoes jedem Hover hinterherzuhecheln.
+  const enterTimerRef = useRef<number | null>(null);
+  const leaveTimerRef = useRef<number | null>(null);
+  useEffect(() => () => {
+    if (enterTimerRef.current !== null) clearTimeout(enterTimerRef.current);
+    if (leaveTimerRef.current !== null) clearTimeout(leaveTimerRef.current);
+  }, []);
+
   const onMouseEnter = () => {
+    // Maus kommt zurueck waehrend Grace-Period: Lock halten, nichts tun.
+    if (leaveTimerRef.current !== null) {
+      clearTimeout(leaveTimerRef.current);
+      leaveTimerRef.current = null;
+      return;
+    }
     if (hover) return;
-    resumeStartRef.current = null;
-    setHover(nextFaceLock(rotationRef.current));
-    setIsLocked(false);
+    if (enterTimerRef.current !== null) return;
+    // Erst nach 250 ms Verweilen die Bremse einleiten.
+    enterTimerRef.current = window.setTimeout(() => {
+      enterTimerRef.current = null;
+      if (hover) return;
+      resumeStartRef.current = null;
+      setHover(nextFaceLock(rotationRef.current));
+      setIsLocked(false);
+    }, HOVER_ENTER_DELAY_MS);
   };
   const onMouseLeave = () => {
-    // Statt abruptem Speed-Sprung: Resume-Ramp starten. Geschwindigkeit
-    // waechst kubisch von 0 auf Basis-Tempo ueber RESUME_RAMP_MS.
-    resumeStartRef.current = performance.now();
-    setHover(null);
-    setIsLocked(false);
+    // Maus war nur am Vorbeistreichen — nichts war committed.
+    if (enterTimerRef.current !== null) {
+      clearTimeout(enterTimerRef.current);
+      enterTimerRef.current = null;
+      return;
+    }
+    if (!hover) return;
+    if (leaveTimerRef.current !== null) return;
+    // Grace-Period: 500 ms still stehen lassen. Kommt die Maus in dieser
+    // Zeit zurueck, bleibt der Lock. Erst danach Resume-Ramp.
+    leaveTimerRef.current = window.setTimeout(() => {
+      leaveTimerRef.current = null;
+      resumeStartRef.current = performance.now();
+      setHover(null);
+      setIsLocked(false);
+    }, HOVER_LEAVE_GRACE_MS);
   };
 
   // Vertex-Positions je aktuellem Winkel

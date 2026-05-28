@@ -455,12 +455,14 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
         .scim-active-pulse {
           animation: scim-active-breath 3200ms ease-in-out infinite;
         }
-        /* Reader-Dot-Pulse: default unsichtbar (0.03), bei Row-Hover sanftes
-           Pulsieren zwischen 0.5 und 0.9. Wirkt wie eine LED, die "nimm mich
-           wenn du suchst" sagt. */
+        /* Reader-Dot-Pulse: default unsichtbar (Gruppen-Opacity 0.03),
+           bei Row-Hover sanftes Pulsieren zwischen 0.55 und 0.95.
+           Animation auf Gruppen-Opacity (nicht fill-opacity), damit
+           die Radialverlaufs-Fuellung des LED-Koerpers + Glow erhalten
+           bleibt. */
         @keyframes scim-reader-dot-pulse {
-          0%, 100% { fill-opacity: 0.5; }
-          50%      { fill-opacity: 0.9; }
+          0%, 100% { opacity: 0.55; }
+          50%      { opacity: 0.95; }
         }
         .scim-reader-dot-pulse {
           animation: scim-reader-dot-pulse 1500ms ease-in-out infinite;
@@ -693,9 +695,13 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
             top: 6,
           }}
         >Cosmo-Controls</span>
-        {/* Reader-Dot: kleiner SVG-Kreis, default fast unsichtbar (0.03).
-            Bei Hover auf der ganzen Zeile: Pulse 0.5..0.9, Cursor pointer.
-            Klick oeffnet das Usage Manual. */}
+        {/* Reader-Dot als blaue LED:
+            - LED-Koerper mit Radialverlauf (heller Kern -> mittleres Blau ->
+              dunkler Blau-Rand) wie ein echtes Diodengehaeuse.
+            - Aeusserer Glow als zweiter Radialverlauf, blaue Aura.
+            - Default-Gruppen-Opacity 0.03 (fast unsichtbar — auf Standby).
+            - Hover auf der Zeile: Pulse zwischen 0.55 und 0.95.
+            - Klick oeffnet das Usage Manual. */}
         <svg
           width={18} height={18} viewBox="0 0 18 18"
           onClick={onManualOpen}
@@ -705,13 +711,25 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
           }}
         >
           <title>Reader — oeffnet das Usage Manual</title>
-          <circle
-            cx={9} cy={9} r={2.5}
-            fill="#ffffff"
-            fillOpacity={readerRowHover ? undefined : 0.03}
+          <defs>
+            <radialGradient id="reader-diode-body" cx="0.5" cy="0.5" r="0.5">
+              <stop offset="0%"   stopColor="#dbeafe" stopOpacity="1" />
+              <stop offset="55%"  stopColor="#3b82f6" stopOpacity="1" />
+              <stop offset="100%" stopColor="#1e3a8a" stopOpacity="1" />
+            </radialGradient>
+            <radialGradient id="reader-diode-glow" cx="0.5" cy="0.5" r="0.5">
+              <stop offset="0%"   stopColor="#60a5fa" stopOpacity="0.55" />
+              <stop offset="100%" stopColor="#60a5fa" stopOpacity="0" />
+            </radialGradient>
+          </defs>
+          <g
+            opacity={readerRowHover ? undefined : 0.03}
             className={readerRowHover ? 'scim-reader-dot-pulse' : undefined}
-            style={{ transition: 'fill-opacity 400ms ease-out' }}
-          />
+            style={{ transition: 'opacity 400ms ease-out' }}
+          >
+            <circle cx={9} cy={9} r={7}   fill="url(#reader-diode-glow)" />
+            <circle cx={9} cy={9} r={2.5} fill="url(#reader-diode-body)" />
+          </g>
         </svg>
       </div>
 
