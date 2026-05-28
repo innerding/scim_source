@@ -43,7 +43,7 @@ TETRAEDER OBEN (Apex up - state: fire/Komposit-Tetraeder)
   Faces-Rep-Build:  scb -> P11, org -> Workspace, cat -> Katalog, geo -> Geometry-Editor.
   Arcs-Thresholds:  sys -> P01, rou -> P02, loa -> P09.
 
-TETRAEDER UNTEN (Apex unten, rotierend, Substrat-Tetraeder)
+TETRAEDER UNTEN (Apex down - state: matter/Substrat-Tetraeder)
   Hover     : bremst auf naechste Face, lockt sie frontal.
   Locked    : drei sichtbare Regionen klickbar.
               Upper       -> toggelt Versionen.

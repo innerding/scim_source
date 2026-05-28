@@ -357,17 +357,38 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
       ids: VERSIONEN_REGISTRY.map((v) => v.id) },
   ];
   const [manuallyOpen, setManuallyOpen] = useState<Set<string>>(() => loadOpenSections());
+  // manuallyClosed ueberschreibt die Auto-Open via activeId — sonst laesst
+  // sich eine Sektion nicht mehr aus dem Depth-T abwaehlen, wenn das aktive
+  // Panel innerhalb der Sektion liegt (z.B. R01 nach Hex-Klick auf den Mond).
+  const [manuallyClosed, setManuallyClosed] = useState<Set<string>>(new Set());
   const sectionContainsActive = (ids: readonly string[]) => ids.includes(activeId);
-  const isSectionOpen = (sectionId: string, ids: readonly string[]) =>
-    sectionContainsActive(ids) || manuallyOpen.has(sectionId);
+  const isSectionOpen = (sectionId: string, ids: readonly string[]) => {
+    if (manuallyOpen.has(sectionId)) return true;
+    if (manuallyClosed.has(sectionId)) return false;
+    return sectionContainsActive(ids);
+  };
   const toggleSection = (sectionId: string) => {
-    setManuallyOpen((prev) => {
-      const next = new Set(prev);
-      if (next.has(sectionId)) next.delete(sectionId);
-      else next.add(sectionId);
-      saveOpenSections(next);
-      return next;
-    });
+    const def = SECTION_DEFS.find((s) => s.id === sectionId);
+    const currentlyOpen = def ? isSectionOpen(sectionId, def.ids) : manuallyOpen.has(sectionId);
+    if (currentlyOpen) {
+      setManuallyOpen((prev) => {
+        if (!prev.has(sectionId)) return prev;
+        const next = new Set(prev); next.delete(sectionId); saveOpenSections(next); return next;
+      });
+      setManuallyClosed((prev) => {
+        if (prev.has(sectionId)) return prev;
+        const next = new Set(prev); next.add(sectionId); return next;
+      });
+    } else {
+      setManuallyClosed((prev) => {
+        if (!prev.has(sectionId)) return prev;
+        const next = new Set(prev); next.delete(sectionId); return next;
+      });
+      setManuallyOpen((prev) => {
+        if (prev.has(sectionId)) return prev;
+        const next = new Set(prev); next.add(sectionId); saveOpenSections(next); return next;
+      });
+    }
   };
 
   return (
@@ -670,17 +691,12 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
           padding: '0 14px', marginBottom: 6, flexShrink: 0,
           marginTop: -68,
         }}>
-        <span
-          title="Manual (ohne Leser stumm)"
-          style={{
-            fontSize: 14, color: '#4a6a8a', opacity: 0.55,
-            userSelect: 'none', cursor: 'default',
-          }}
-        >📄</span>
+        {/* Manual-Icon entfernt — Reader-Dot allein traegt die Geste. */}
+        <span aria-hidden style={{ width: 14, flexShrink: 0 }} />
         {/* Cosmo-Controls — eigene typografische Insel (Italic-Serif),
             zentriert in der Manual+Reader-Zeile (justify-content:
-            space-between sorgt fuer die Aufteilung). 6 px-Offset
-            nach unten via relative top. */}
+            space-between sorgt fuer die Aufteilung). Default 6% white,
+            bei Hover auf der Zeile dimmt es gemuetlich auf 90%. */}
         <span
           style={{
             fontFamily: 'Georgia, "Times New Roman", serif',
@@ -688,7 +704,10 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
             fontSize: 10,
             fontWeight: 400,
             letterSpacing: '0.02em',
-            color: 'rgba(255, 255, 255, 0.9)',
+            color: readerRowHover
+              ? 'rgba(255, 255, 255, 0.9)'
+              : 'rgba(255, 255, 255, 0.06)',
+            transition: 'color 700ms ease-out',
             userSelect: 'none',
             cursor: 'default',
             position: 'relative',
