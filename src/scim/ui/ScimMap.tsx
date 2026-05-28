@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import L from 'leaflet';
 import type { ScimPipelineResult } from '../pipeline/scimPipeline.types';
 import type { GraphState } from '../graph/graph.types';
@@ -12,6 +12,7 @@ import {
   addRoadHeatMesh, addPoiRoutes, fetchOsmEdges,
   TILE_OSM_URL, TILE_OSM_ATTR, TILE_MESH_URL, TILE_MESH_ATTR,
 } from './colourMeshOverlay';
+import { useActiveRepresentation } from '../../runtime/repContext';
 
 interface OsmEdge {
   edge_id: string;
@@ -46,12 +47,46 @@ const DEFAULT_VISIBILITY: LayerVisibility = {
   colourmesh: true,
 };
 
+// Polygon (outer ring) -> [minLon, minLat, maxLon, maxLat].
+function polygonBbox(polygon: ReadonlyArray<readonly [number, number] | ReadonlyArray<number>>): [number, number, number, number] | null {
+  if (!polygon || polygon.length === 0) return null;
+  let minLon = Infinity, minLat = Infinity, maxLon = -Infinity, maxLat = -Infinity;
+  for (const pt of polygon) {
+    const lon = pt[0]; const lat = pt[1];
+    if (typeof lon !== 'number' || typeof lat !== 'number') continue;
+    if (lon < minLon) minLon = lon;
+    if (lat < minLat) minLat = lat;
+    if (lon > maxLon) maxLon = lon;
+    if (lat > maxLat) maxLat = lat;
+  }
+  if (!Number.isFinite(minLon)) return null;
+  return [minLon, minLat, maxLon, maxLat];
+}
+
 export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const layerGroupRef = useRef<L.LayerGroup | null>(null);
   const baseTileRef = useRef<L.TileLayer | null>(null);
   const [vis, setVis] = useState<LayerVisibility>(DEFAULT_VISIBILITY);
+
+  // Aktive Representation aus dem RepresentationContext (Schritt 3).
+  // Wenn gesetzt, ueberschreibt sie die Pipeline-bbox fuer Fit + OSM-Fetch
+  // und zeichnet ihren Polygon-Outline als zusaetzliche Boundary.
+  // POIs aus rep.catalog_id folgen, sobald die Sichtbarkeit (Style, Click)
+  // mit dem User abgestimmt ist — siehe Stopp-Linie ann_067.
+  const activeRep = useActiveRepresentation();
+  const repBbox = useMemo(
+    () => (activeRep ? polygonBbox(activeRep.geometry.polygon) : null),
+    [activeRep],
+  );
+  // Polygon-Ringe als [lat, lon][] fuer Leaflet vorbereiten.
+  const repPolygonLatLng = useMemo(() => {
+    if (!activeRep) return null;
+    const ring = activeRep.geometry.polygon;
+    if (!ring || ring.length < 3) return null;
+    return ring.map((p) => [p[1], p[0]] as [number, number]);
+  }, [activeRep]);
 
   // Layer-Monitor: jeden vis-Wechsel an die Welt mitteilen, damit das
   // Firmament im Navigator weiss, welcher Slice glimmen darf
@@ -113,12 +148,14 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
 
   // OSM-Wege via Overpass holen, sobald colourmesh an und bbox bekannt.
   // Hat einen Cache (24h) — beim zweiten Aufruf sofort da.
+  // Aktive Representation hat Vorrang gegenueber der Pipeline-bbox.
   useEffect(() => {
     if (!vis.colourmesh) return;
-    const bbox = result.success
+    const pipelineBbox = result.success
       ? ((result.context.boundary as unknown as { computed_boundary: { bbox?: [number, number, number, number] } } | undefined)
          ?.computed_boundary?.bbox)
       : undefined;
+    const bbox = repBbox ?? pipelineBbox;
     if (!bbox) return;
     let cancelled = false;
     setOsmStatus('loading');
@@ -134,7 +171,7 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
         setOsmStatus('failed');
       });
     return () => { cancelled = true; };
-  }, [vis.colourmesh, result]);
+  }, [vis.colourmesh, result, repBbox]);
 
   // Container kann resized werden (Collapsible-Container) — Map neu einladen
   useEffect(() => {
@@ -164,6 +201,19 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
         weight: 1.5,
         fillOpacity: 0.04,
         dashArray: '6 4',
+      }).addTo(layerGroup);
+    }
+
+    // Aktive Representation: Polygon der Geometrie als zusaetzlicher
+    // Outline, damit klar ist welche R die Karte heute fuehrt.
+    // Visuelle Sprache analog zur Boundary, aber durchgezogen und etwas
+    // praesenter — gleiche Farbpalette, kein neuer Stil.
+    if (vis.boundary && repPolygonLatLng) {
+      L.polygon(repPolygonLatLng, {
+        color: '#0074d9',
+        weight: 1.5,
+        opacity: 0.9,
+        fillOpacity: 0.05,
       }).addTo(layerGroup);
     }
 
@@ -230,8 +280,11 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
       }
     }
 
-    // Fit auf Boundary, einmalig beim Mount (nicht bei jedem Toggle)
-    if (boundary?.computed_boundary.bbox) {
+    // Fit: aktive R hat Vorrang, sonst Pipeline-Boundary, sonst Graph-Knoten.
+    if (repBbox) {
+      const [minLon, minLat, maxLon, maxLat] = repBbox;
+      map.fitBounds([[minLat, minLon], [maxLat, maxLon]], { padding: [24, 24] });
+    } else if (boundary?.computed_boundary.bbox) {
       const [minLon, minLat, maxLon, maxLat] = boundary.computed_boundary.bbox;
       map.fitBounds([[minLat, minLon], [maxLat, maxLon]], { padding: [24, 24] });
     } else if (graph?.nodes && graph.nodes.length > 0) {
@@ -242,7 +295,7 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
         [Math.max(...lats), Math.max(...lons)],
       ]);
     }
-  }, [result, vis, osmEdges]);
+  }, [result, vis, osmEdges, repBbox, repPolygonLatLng]);
 
   if (!result.success) {
     return (
