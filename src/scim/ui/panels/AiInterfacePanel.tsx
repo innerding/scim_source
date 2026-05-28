@@ -905,9 +905,9 @@ Schluesselbilder:
 
 - Sicheln: Die drei sichelfoermigen Raeume zwischen aeusseren Triangles und den darueberliegenden Boegen sind kosmologisch reserviert als Beobachtungs-Fenster in den Prozess. Heute leer, vorbereitet.
 
-- Inspector als Firmament: Das Pergament-Trapez ueber dem Mond ist die alles-sehende Sicht-Decke. Konzeptionell, kein eigener Baustein. Funktional toggelt der Klick die ScimMap rechts ein/aus.
+- Inspector als Spiegel (Korrektur 2026-05-28): Das Pergament-Trapez ueber dem Mond ist KEINE Wellen-Mesh-Oberflaeche wie die Empty Sea. Es ist ein Spiegel, der die Gesamtheit der kleinen Systemwelt darunter reflektiert - eine Flaechenreflexion, keine Oberflaechenbewegung. Konzeptionell die Firmament-Ebene, technisch kein eigener Baustein. Funktional toggelt der Klick die ScimMap rechts ein/aus. Manual und Reader sind keine Inspector-Elemente; sie gehoeren in eine eigene Schicht (siehe ann_059).
 
-- Manual + Reader: Datei-Glyph (stumm) links zwischen Mond und Tetraeder, Reader-Glyph (klickbar) rechts spiegelbildlich. Die einzige bewusste Asymmetrie - der Leser erzeugt die Symmetrie durch den Akt des Lesens.`,
+- Manual + Reader: Datei-Glyph (stumm) links zwischen Mond und Tetraeder, Reader-Glyph (klickbar) rechts spiegelbildlich. Die einzige bewusste Asymmetrie - der Leser erzeugt die Symmetrie durch den Akt des Lesens. Konzeptionell sitzen sie als Pole an den Raendern des Transmissionsfelds (siehe ann_059), nicht im Inspector.`,
     date: '2026-05-27',
   },
 
@@ -1034,6 +1034,110 @@ Referenzen:
 - docs/represent_build.md "Roadmap" Punkt 1
 - docs/runtime_mvp.md "Stufenplan" Stufen 1+2`,
     date: '2026-05-27',
+  },
+
+  // ── Session 2026-05-28: Kosmologie-Korrekturen und -Erweiterungen ───────────
+  // Aufgenommen im Dialog mit dem Operator. Aenderung gegen ann_052:
+  //   - Inspector ist Spiegel, nicht Wellen-Mesh (dort korrigiert).
+  //   - Manual + Reader sind keine Inspector-Elemente, sondern Pole des
+  //     Transmissionsfelds.
+  // Neu eingefuehrt:
+  //   - Transmissionsfeld (ann_059)
+  //   - Tiefen-Tetraeder + Dreiecks-Bipyramide (ann_060)
+  //   - Aggregatzustand-Terminologie: Komposition / Substrat (ann_061)
+
+  {
+    id: 'ann_059',
+    category: 'vocabulary',
+    label: 'Transmissionsfeld zwischen Mond und Tetraeder',
+    content: `Das Transmissionsfeld ist die aktive Schicht zwischen Mond (oben) und Tetraeder (Mitte). Es ist kein eigenes Geschoepf, sondern ein triangulaerer Ausschnitt aus der Empty Sea: derjenige Bereich, auf dem der Tetraeder floatet - seine Bodenflaeche. Diese Bodenflaeche ist zugleich die geteilte Mittelflaeche der Dreiecks-Bipyramide (siehe ann_060).
+
+Stofflichkeit:
+  - Selbe Materialitaet wie die Empty Sea: ein Wellen-Mesh in Bewegung.
+  - Aber: begrenzt (durch die Bodenflaeche des Tetraeders, nicht unendlich) und ohne Tiefe (kein Meer, sondern ein Blatt-im-Wind).
+  - "Wo das Meer endet, beginnt das Blatt."
+
+Funktion - bidirektional:
+  - Abwaerts: Engine im Mond -> Transmissionsfeld -> Schirme (die Threshold-Bogensegmente, "konvexe Empfangsschirme") fangen Signale -> Sicheln sortieren.
+  - Aufwaerts: Tetraeder-Apex buendelt -> Strahl durch das Transmissionsfeld -> Mond (Deploy, siehe ann_053).
+  - Beide Wege durchstroemen das Feld, also ist Stillstand falsch - es atmet wie der Hex.
+
+Manual und Reader (siehe ann_052) sitzen als Pole an den Raendern dieses Feldes:
+  - 📄 Manual (links): das stumme Dokument, der gespeicherte Cache / die Lookup-Tabelle.
+  - 📖 Reader (rechts): der aktive Akt des Lesens, der das Manual zum Sprechen bringt.
+  - In der Mitte: das Transmissionsfeld selbst, dargestellt als bewegtes Mesh-Blatt.
+
+Abgrenzung Inspector <-> Transmissionsfeld:
+  - Inspector spiegelt von oben (Firmament, Spiegel, ruhend).
+  - Transmissionsfeld traegt von unten (Bodenflaeche, Mesh-Blatt, stroemend).
+  - Beide sind Membranen, aber verschiedener Natur und Funktion.
+
+Stand 2026-05-28: Begriff entschieden im Dialog mit dem Operator. Visualisierung im Navigator (zwischen Logo-Hex und Tetraeder) in Konzeption. Heute liegen dort nur 📄 und 📖 als rohe Andeutungen ohne das Feld dazwischen.
+
+Herkunft des Begriffs: Verdichtung der "Arbeitsgrundlage Priorisiertes Pattern-Routing-System" auf das, was sie in der SCIM-Kosmologie konkret bedeutet - das Medium, durch das gerichtete Signale zwischen Sender (Mond-Engine) und Empfaenger (Tetraeder-Composition) wandern.`,
+    date: '2026-05-28',
+  },
+
+  {
+    id: 'ann_060',
+    category: 'vocabulary',
+    label: 'Tiefen-Tetraeder und Dreiecks-Bipyramide',
+    content: `Erweiterung der Kosmologie unterhalb der Empty Sea (Stand 2026-05-28).
+
+Bisher: ein Tetraeder floatet auf der Empty Sea, Apex zeigt nach oben zum Mond.
+
+Neu: ein zweiter, spiegelbildlicher Tetraeder dockt am Boden des ersten an. Die gemeinsame Bodenflaeche der beiden ist die Wasserlinie - also genau das Transmissionsfeld aus ann_059. Visuell wie der Schwimmer eines Anglers: oben aus dem Wasser, unten im Wasser.
+
+Geometrische Form:
+  Zwei Tetraeder, an einer Dreiecksflaeche miteinander verbunden, bilden eine Dreiecks-Bipyramide (auch: triangulare Bipyramide; bei regulaeren Tetraedern Johnson-Koerper J12). 5 Ecken (2 Apices oben+unten, 3 in der gemeinsamen Mittelebene), 9 Kanten, 6 dreieckige Aussenflaechen. Die gemeinsame Innenflaeche verschwindet geometrisch.
+  Nicht zu verwechseln mit dem Sterntetraeder (Stella octangula) - das sind sich durchdringende Tetraeder mit gemeinsamem Zentrum, nicht aneinandergrenzende mit gemeinsamer Flaeche.
+
+Dreifache Lesart der geteilten Flaeche:
+  - Geometrisch: gemeinsame Basis zweier Tetraeder.
+  - Phaenomenologisch: Wasserlinie, Floatpunkt.
+  - Funktional: Transmissionsblatt (siehe ann_059).
+
+Was im Tiefen-Tetraeder sitzt:
+  - Compute (die Rechenkraft, die der Operator nutzt).
+  - Der Operator selbst (menschliche Intention).
+  - Alles, was zur Package-Build-Pipeline gehoert, aber noch nicht ausdefiniert / ausformuliert ist.
+
+Atemrichtung des Operators:
+  Der Operator atmet den Raum oberhalb der Empty Sea - seine Quelle liegt unten (im Tiefen-Tetraeder), aber sein Wirken richtet sich nach oben in den ausformulierten Raum hinein.
+
+Asymmetrie der Aggregatzustaende (siehe ann_061):
+  - Oben (Mond-zugewandter Tetraeder): Komposition - weich + bestimmt.
+  - Unten (Operator-zugewandter Tetraeder): Substrat - hart + unbestimmt.
+  - Dieselbe Geometrie, gegensaetzliche Materialitaet.
+  - Das Transmissionsfeld trennt und verbindet beide.
+
+Konsequenz fuer den Code: keine. Wie ann_055 - die erweiterte Kosmologie sitzt als Schicht ueber Pipeline und Operator-Realitaet, beruehrt sie nicht.`,
+    date: '2026-05-28',
+  },
+
+  {
+    id: 'ann_061',
+    category: 'vocabulary',
+    label: 'Aggregatzustand: Komposition (oben), Substrat (unten)',
+    content: `Klaerung der Begriffe fuer die Materialitaet der beiden Tetraeder (siehe ann_060). Entschieden im Dialog mit dem Operator am 2026-05-28.
+
+Problem: "Stofflichkeit" war als Arbeitsbegriff zu philosophie-schwer und unklar. "Partikel" oder "Energieteilchen" committet vorzeitig auf eine diskrete Substanz-Sprache, die fuer den oberen Tetraeder (weich + bestimmt) nicht passt.
+
+Festgelegt:
+  - Oben (Mond-zugewandter Tetraeder): Komposition - das bereits Komponierte, Geformte, die R im Werden. Weich, weil im Fluss; bestimmt, weil bereits in Form gebracht.
+  - Unten (Operator-zugewandter Tetraeder): Substrat - das tragende Material, das noch nicht geformt ist. Hart in seiner Praesenz; unbestimmt, weil noch nicht ausgesprochen. Compute, Operator-Intention, ungebauter Pipeline-Stoff.
+
+Oberbegriff: Aggregatzustand.
+  Physikalisch klar (fest / fluessig / gas / plasma), traegt die Soft/Hard-Polaritaet ohne Substanz-Commitment. Einsetzbar, wenn beide Tetraeder zugleich angesprochen werden ("die zwei Aggregatzustaende der Bipyramide").
+
+Sprachregelung fuer kommende Texte:
+  - "Die Komposition im oberen Tetraeder" - statt "Stoff oben".
+  - "Das Substrat im Tiefen-Tetraeder" - statt "Materie unten".
+  - "Aggregatzustand" als Sammelbegriff, wenn die Polaritaet selbst thematisiert wird.
+  - "Stofflichkeit" nur in narrativen / poetischen Passagen, traegt aber nicht mehr die konzeptionelle Last.
+
+Begruendung der Wahl: Oben und unten sind kategorial verschieden, nicht zwei Pole eines Kontinuums. Zwei eigenstaendige Begriffe (Komposition vs. Substrat) sind deshalb ehrlicher als ein gemeinsames Wort fuer beides. Der Oberbegriff Aggregatzustand verbindet sie, ohne ihre Verschiedenheit zu verwischen.`,
+    date: '2026-05-28',
   },
 ];
 
