@@ -1181,6 +1181,63 @@ Konsequenz - die drei Regeln
 Diese Annotation existiert, damit eine kuenftige Sitzung - ob Mensch oder Claude - dieselbe Diagnose nicht nochmal durchspielen muss, sondern direkt den richtigen Pfad waehlt.`,
     date: '2026-05-28',
   },
+
+  {
+    id: 'ann_063',
+    category: 'next_intent',
+    label: 'Transmission technisch verorten — Heimat-Analyse und Empfehlung',
+    content: `Frage
+
+Wo in der bestehenden SCIM-Konzeption koennte die technische Umsetzung des Transmissions-Konzepts (Arbeitsgrundlage Pattern-Routing + ann_059) untergebracht werden?
+
+Analyse — wo die Transmissions-Funktionen heute stecken
+
+Die Arbeitsgrundlage beschreibt das Transmissions-System als Kette: Receptor Fields -> Feature Extraction -> Pattern Classification -> Confidence Scoring -> Priority Queue -> Cache/Lookup -> Dispatcher -> Target App. Gegen die heutigen Panels gemappt:
+
+  - Receptor Fields / Schirme        konzeptuell: Bogensegmente sys/rou/loa; technisch: P01, P02, P09 (Threshold-Editoren)
+  - Feature Extraction               P04 TelcoLoad (Signal-Import + Kalibrierung)
+  - Pattern Classification           P06 SignalInterpretation (flow / accumulation / ambiguous - exakter Treffer)
+  - Confidence Scoring               P09 Engine (4 Modelle, POI-Bewertung)
+  - Threshold-Filter                 P10 Route + Layer (semi_auto, editierbare Score-Schwellen)
+  - Priority Queue                   nirgends explizit
+  - Cache / Lookup / Templates       nirgends als Panel - implizit in R2/D1 (ann_030, ann_037)
+  - Bundling (Apex buendelt)         P11 Package
+  - Dispatcher / Router              P14 Release + cloudflare worker, kein eigenes Panel
+  - Receive-Side (Target App)        R03 Package Loader, R04 Package Validator
+
+Befund
+
+Die Transmission ist ueber Pipeline und Runtime Builder *verteilt*, hat aber **kein integriertes Panel**, das sie als geschlossenes architektonisches Konzept zeigt. Zwei Funktionen fehlen gaenzlich als eigenstaendige Sicht: **Priority Queue** und **Cache/Lookup-Tabellen**.
+
+Drei Heimat-Optionen
+
+A. P11 Package um einen Transmission-Tab erweitern.
+   Sanft, kein neuer Navigations-Pfad. Der Tab traegt die Mapping-Tabelle plus die fehlenden Stuecke Priority Queue + Cache als explizite UI-Elemente.
+
+B. Neue Sektion "Transmission" zwischen Package Pipeline und Runtime Builder.
+   Geometrisch konsistent zur Bipyramide (ann_060): Pipeline (Substrat unten) -> **Transmission (Feld in der Mitte)** -> Runtime Builder (Komposition oben). Modulvorschlaege:
+     T01 Receptor Fields         (Schirme / Threshold-Edges, bezieht P01/P02/P09)
+     T02 Pattern Router          (P06 + P09 + P10 gebuendelt)
+     T03 Priority Queue + Cache  (neu - schliesst die heutige Luecke)
+     T04 Dispatcher              (P14 + Worker gebuendelt)
+   Die Module waeren - wie der Tetraeder zu seinen Pipeline-Panels (ann_055) - **Sicht-Layer ueber bestehender Pipeline**, keine neue Logik.
+
+C. System-Panel um einen Transmission-Tab erweitern.
+   Bliebe naeher an Dokumentation als an technischer Implementierung. System ist sowieso die Meta-Sicht; aber das Transmissions-Konzept will eher eine eigene Buehne als einen weiteren System-Tab.
+
+Empfehlung — Option B
+
+Drei Gruende:
+
+  1. Geometrisch konsistent zur Bipyramide (ann_060): das Transmissionsfeld sitzt geometrisch zwischen Tetraeder und Mond. Eine Sektion zwischen Package Pipeline (unten) und Runtime Builder (oben) bildet das in der Navigation 1:1 ab.
+  2. Deckt die zwei heutigen Luecken (Priority Queue, Cache) explizit ab, statt sie weiter implizit zu lassen.
+  3. Respektiert die Architekturregel aus ann_055: keine Pipeline-Mutation, nur eine Schicht darueber. Die Module sind Sichten, die existierende Pipeline-Bausteine buendeln; die Pipeline-Logik bleibt unberuehrt.
+
+Option A waere der schmalere Einstieg, falls erstmal keine neue Sektion angelegt werden soll.
+
+Stand 2026-05-28: Entscheidung steht aus. Diese Annotation haelt die Analyse fest, damit die Entscheidung beim naechsten Auftakt nicht wieder von vorn beginnt.`,
+    date: '2026-05-28',
+  },
 ];
 
 function AnnotationsTab() {
