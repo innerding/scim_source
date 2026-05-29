@@ -133,6 +133,10 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   // (Tracing-Vorlage). Toggle separat, default aus.
   const inspectorView = useInspectorView();
   const [showInspectorRef, setShowInspectorRef] = useState(false);
+  // Snap-Quelle aus Inspector-R (Umbauplan C): rasten Stuetzpunkte beim Zeichnen
+  // auf die Punkte/Kanten der lila Vorlage ein. Nur sinnvoll, wenn die Vorlage
+  // sichtbar ist.
+  const [snapToTemplate, setSnapToTemplate] = useState(true);
 
   // Ebenen-Steuerleiste (Umbauplan A): Dimmer + On/Off je Layer, auf beide Tabs
   // wirksam. (1) OSM-Tiles, (2) editierbare Boundary, (3) Inspector-R-Vorlage.
@@ -209,6 +213,13 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
 
     // Zeichen-Controls nur im Umriss-Tab (Init startet dort).
     addBoundaryControls(map);
+
+    // Snapping global aktiv (Umbauplan C): beim Zeichnen/Editieren rasten
+    // Stuetzpunkte auf nahe Snap-Ziele ein. Welche Layer als Ziel gelten,
+    // steuert pro Layer das snapIgnore-Flag — die Inspector-R-Vorlage wird
+    // unten gezielt freigegeben.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (map as any).pm.setGlobalOptions?.({ snappable: true, snapDistance: 18, snapSegment: true });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const ringOf = (layer: any): Position[] =>
@@ -346,6 +357,14 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     inspectorRefRef.current?.setStyle({ opacity: inspectorOpacity, fillOpacity: inspectorOpacity * 0.05 });
   }, [inspectorOpacity, showInspectorRef, inspectorView]);
 
+  // Snap-Quelle (C): snapIgnore am Vorlage-Layer live umschalten. Snap nur,
+  // wenn die Vorlage auch sichtbar ist — sonst raste man auf Unsichtbares ein.
+  useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const layer = inspectorRefRef.current as any;
+    if (layer?.options) layer.options.snapIgnore = !(snapToTemplate && showInspectorRef);
+  }, [snapToTemplate, showInspectorRef, inspectorView]);
+
   // Slot 2 (B): Masken-Boundary dimmen/abschalten. Farbe (orange/gestrichelt)
   // bleibt erhalten, nur Opacity wird gesteuert.
   useEffect(() => {
@@ -406,9 +425,13 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       opacity: 0.85,
       fillOpacity: 0.04,
       dashArray: '4 3',
+      // interactive:false schuetzt die Vorlage vor Edit-/Remove-Klicks; Geoman
+      // berechnet Snapping rein geometrisch, also bleibt sie trotzdem Snap-Ziel.
       interactive: false,
+      // pmIgnore NICHT setzen — sonst bekommt der Layer kein layer.pm und faellt
+      // aus der Geoman-Snap-Liste. snapIgnore steuert die Teilnahme am Snapping.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      pmIgnore: true as any,
+      snapIgnore: !snapToTemplate as any,
     });
     layer.addTo(map);
     inspectorRefRef.current = layer;
@@ -682,6 +705,33 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
           disabled={!inspectorView}
           disabledHint="Inspector zeigt keine R — im rechten Header eine wählen"
         />
+        {/* Snap-Quelle (C): einrasten auf die Vorlage-Punkte/Kanten */}
+        <label
+          title={
+            !inspectorView ? 'Inspector zeigt keine R'
+              : !showInspectorRef ? 'Vorlage erst einblenden'
+              : 'Beim Zeichnen/Editieren auf die Punkte und Kanten der lila Vorlage einrasten'
+          }
+          style={{
+            display: 'flex', alignItems: 'center', gap: 4,
+            opacity: (!inspectorView || !showInspectorRef) ? 0.45 : 1,
+            cursor: (!inspectorView || !showInspectorRef) ? 'not-allowed' : 'pointer',
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={snapToTemplate}
+            disabled={!inspectorView || !showInspectorRef}
+            onChange={(e) => setSnapToTemplate(e.target.checked)}
+            style={{ cursor: (!inspectorView || !showInspectorRef) ? 'not-allowed' : 'pointer' }}
+          />
+          <span style={{
+            fontSize: 11, fontWeight: 600,
+            color: (snapToTemplate && showInspectorRef && inspectorView) ? '#8b3fbf' : '#718096',
+          }}>
+            ⊹ einrasten
+          </span>
+        </label>
       </div>
 
       {/* Umriss-Toolbar (nur im Umriss-Tab) */}
