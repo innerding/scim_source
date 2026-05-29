@@ -2152,12 +2152,75 @@ Stopp-Linien bei der Umsetzung
 
 UI-Entscheidungen, die mit dem Operator abzustimmen sind:
   - Boundary vs. Path: zwei Tabs oder ein Modus-Switch?
-  - Violett-Schattierung B/C: gleicher Ton mit Pattern-Unterschied
-    oder zwei verschiedene Toene?
   - Welches Default-Mapping Endnutzer-Anzeige <-> Layer-Typ
     (z. B. C = "Asphalt-Hinweis"-Pin auf der Ziel-App).
-  - Wording im Drawer-Toolbar (z. B. "B-Wanderweg" vs.
-    "Manueller Wanderweg" vs. "Pfad zeichnen").`,
+  - Wording im Drawer-Toolbar.
+
+Verfeinerung 2026-05-29 Abend (Operator-Konkretisierung)
+========================================================
+
+Vor der Pause hat der Operator die UI- und Farbentscheidungen
+geschaerft. Diese ueberschreiben die Skizze weiter oben.
+
+1) Highway-Typ-Filter-Dropdown — Layout
+
+  - Breit statt hoch (Karte soll nicht verdeckt werden).
+  - Drei Bloecke NEBENEINANDER, jeder mit 2 Spalten.
+    Bloecke:
+      a) Strassen           default: gesamter Block AUS
+                            (Block-Toggle on/off, dann einzeln
+                            anwaehlbar wenn aufgeklappt)
+      b) Pfade & Wege       am Lichtenberg keine Unterscheidung
+                            zwischen Pfad und Wanderweg noetig
+                            (Block-Toggle, dann einzeln per
+                            Dropdown an/ab)
+      c) Service / Zonen    wenig Eintraege, einfach nebeneinander
+
+2) Reduktion der einzeln gezeigten Typen
+
+  Default-Vorbelegung statt feiner Voll-Auswahl. Der Operator
+  klappt nur auf, wenn er feinjustieren will.
+
+3) OSM-Darstellung im Drawer
+
+  - duenner Stroke
+  - DIMMBAR (Slider oder Toggle "OSM dezent")
+  - Stroke-Staerke einstellbar
+  - OSM-Knoten koennen geloescht werden (Operator-Override:
+    "diese Edge gehoert nicht in mein Wegnetz"). Persistenz im
+    selben paths-File als Exklusion-Liste, Form:
+      excluded_osm_ids: [...]
+    Damit ist die Overlay-Schicht NICHT mehr rein additiv —
+    auch subtraktive Operator-Aktionen sind moeglich.
+
+4) Farb-Konvention im Drawer (UEBERSCHREIBT die obigen Violett-Vorschlaege)
+
+  - OSM (A)                    grau, duenn, dimmbar
+  - Operator-Verbindungen (B)  BLAU
+                               (Wege, die an bestehende OSM-
+                               Knoten anschliessen / Luecken
+                               zu POIs schliessen)
+  - Operator-Asphalt (C)       SCHWARZ
+                               (Asphalt-Strecken zum Anschluss
+                               oder Lueckenschluss)
+
+  Begruendung: Schwarz fuer Asphalt ist metaphorisch direkt,
+  Blau distanziert die Operator-Hand sichtbar von OSM-Grau,
+  und Violett bleibt frei fuer den Inspector-Compare-Modus
+  (ann_067-Verwandtschaft).
+
+5) Was das nicht aendert
+
+  - Drei-Schicht-Modell A/B/C bleibt
+  - Datenformat data/paths/<region>.geojson bleibt
+  - Heat-Pipe bleibt im rechten Inspector, nicht im Drawer
+  - Migration des Filters P02 -> Drawer bleibt
+  - POI-Anker als Phase 7 bleibt
+
+Diese Verfeinerung ist die *aktuelle* Soll-Quelle fuer die
+naechste Session. Earliest above wins nur, wenn hier widerspruchs-
+los; widerspruchsbehaftete Details (Violett, Voll-Filter-Set)
+sind ueberschrieben.`,
     date: '2026-05-29',
   },
 ];
