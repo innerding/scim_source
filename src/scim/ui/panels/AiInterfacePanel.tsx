@@ -2322,7 +2322,295 @@ Vorbereitungs-Checklist fuer naechste Session
   3. Komponierte Wegnetz-Komposer (A + auto-aufgenommene kurze
      Asphalt-Edges)
   4. Drawer-Panel-Shell + Filter-Sektionen
-  5. POI-Anker-Code (Variante A oder B)`,
+  5. POI-Anker-Code (Variante A oder B)
+
+Hinweis 2026-05-29: ann_071 ist durch ann_072 inhaltlich abgeloest.
+Der dort skizzierte einzelne L_max-Slider wird in ann_072 zur
+Per-Klasse-Schwelle (Nebenstrasse / Landstrasse). Diese Annotation
+bleibt als Verlaufseintrag erhalten.`,
+    date: '2026-05-29',
+  },
+
+  {
+    id: 'ann_072',
+    category: 'next_intent',
+    label: 'Wanderwegnetz-Filter + Drawer-Panel (Konsolidierte Soll-Spec)',
+    content: `Operator-Spec 2026-05-29 spaet: ausfuehrliches Konzept fuer
+ein konfigurierbares Wanderwegnetz aus OSM-Daten. Subsumiert
+inhaltlich ann_070 (Drawer + Drei-Schicht) und ann_071 (Laengen-
+Filter). Sollte als Soll-Quelle der naechsten Session gelten,
+beide Vorgaenger sind als Verlaufseintraege gekennzeichnet.
+
+Grundidee
+=========
+
+Je Gebiet ein Wanderwegnetz aus OSM ableiten. OSM bleibt objektive
+Datenbasis — die Entscheidung, welche Elemente fuer dieses Gebiet
+als Wanderwegnetz gelten, liegt in der eigenen Gebietskonfiguration.
+Kein Eingriff in OSM, keine Re-Klassifikation. Sauberes Ableitungs-
+Layer "darueber".
+
+Primaere Wegklassen
+===================
+
+Grundsaetzlich aufgenommen:
+
+  highway=track            Forst-/Wirtschaftsweg
+  highway=footway          Fussweg
+  highway=path             Pfad
+  highway=steps            Treppe
+  highway=pedestrian       Fussgaengerbereich
+  highway=bridleway        Reitweg — nur wenn Fussverkehr erlaubt
+                           oder plausibel zulaessig
+
+Konnektor-Klassen
+=================
+
+Strassen sind keine Wanderwege, koennen aber als kurze Konnektoren
+ins Wegnetz, wenn topologisch sinnvoll. Strasse bleibt in OSM
+Strasse, wird im eigenen Wegnetz als Konnektor gefuehrt.
+
+  Nebenstrassen
+    OSM: service, residential, living_street, unclassified
+    Default: aktiv, max_laenge_meter 80
+    Bedingung: verbindet zwei primaere Wegsegmente oder primaer ↔
+    Zugangspunkt
+
+  Landstrassen
+    OSM: tertiary, secondary, primary
+    Default: aktiv, max_laenge_meter 20
+    Bedingung: nur kurze Querung / unvermeidbare Verbindung
+    Zusatz: Fussverkehr nicht verboten, moeglichst Gehweg/Querung
+
+Ausschluss-Regeln
+=================
+
+Abschnitte raus, wenn fuer Fussgaenger nicht nutzbar oder nicht
+oeffentlich:
+
+  foot=no
+  access=private
+  access=no
+
+Pro Region erweiterbar.
+
+Topologie-Gate
+==============
+
+Konnektor nur, wenn echte gemeinsame OSM-Knoten zwischen Pfad und
+Strasse existieren — keine geometrische Naehe-Heuristik. Pfade
+muessen am Strassenstueck wirklich aufsetzen, sonst kein Mit-Nutzen.
+
+  Pfad ---- Node A ==== Strassenabschnitt ==== Node B ---- Pfad
+
+Strasse bleibt OSM-Strasse, A-B-Stueck wird im eigenen Netz als
+Konnektor gefuehrt.
+
+Gebietskonfiguration (Format)
+=============================
+
+  {
+    "gebiet": "lichtenberg",
+    "primaere_wege": {
+      "track": true,
+      "footway": true,
+      "path": true,
+      "steps": true,
+      "pedestrian": true,
+      "bridleway": "nur_wenn_foot_erlaubt"
+    },
+    "konnektoren": {
+      "nebenstrasse": { "aktiv": true, "max_laenge_meter": 80 },
+      "landstrasse":  { "aktiv": true, "max_laenge_meter": 20 }
+    },
+    "ausschluesse": {
+      "foot_no": true,
+      "access_private": true,
+      "access_no": true
+    },
+    "diagnose": {
+      "luecken_markieren": true,
+      "sackgassen_ausblenden": true,
+      "sackgasse_poi_ausnahme_meter": 30,
+      "sackgasse_keep_list": []
+    }
+  }
+
+Persistenz: zuerst localStorage pro Region, dann committed nach
+data/regio_paths/<region>.json via Bridge. Worker-Pfad-Whitelist
+ergaenzen.
+
+Ableitungs-Pipeline
+===================
+
+Reihenfolge der Filter-/Komposer-Schritte:
+
+  1. OSM-Fetch (Overpass) fuer Region-Boundary-bbox
+  2. Primaer-Filter (highway in primaere_wege-Whitelist)
+  3. Ausschluss-Filter (foot/access)
+  4. Konnektor-Filter:
+       a) Strasse?
+       b) Topologisch zwischen primaeren Segmenten?
+       c) Laenge unter Klassen-Schwelle?
+       Alle drei ja => Konnektor aufnehmen
+  5. Boundary-Crop: Edges ausserhalb fallen, Edges am Schnitt
+     splitten am Boundary-Polygon
+  6. Graph-Komposition: shared-Coord -> shared Node-ID,
+     Union-Find fuer Komponenten
+  7. Gap-Detection: mehrere Komponenten => kandidat-Luecken
+       Heuristik: zwei Endpunkte verschiedener Komponenten naeher
+       als 2 * max_laenge_meter (groesster Konnektor-Wert)
+       => Luecken-Marker rot, klickbar fuer Operator-Entscheid
+  8. Dead-end-Filter: Leaf-Nodes (degree 1) identifizieren,
+       default ausblenden
+       Ausnahme: letzte Y m fuehren zu POI im Catalog
+         (Distanz Knoten ↔ POI <= sackgasse_poi_ausnahme_meter)
+       Ausnahme: Knoten in sackgasse_keep_list
+  9. Heatmap-Ready-Output:
+       { nodes: [{id, coord}], edges: [{id, from, to, geom, source: 'primary' | 'konnektor:nebenstr' | 'konnektor:landstr'}] }
+
+Drawer-Panel (heute Geometry-Editor) wird zu "Drawer"
+=====================================================
+
+Konsolidierung: Geometry-Editor wird umbenannt + erweitert.
+
+Zwei Tabs:
+  Boundary — heutige Funktion 1:1 (Polygon zeichnen, exportieren,
+             commit via Bridge)
+  Path     — neuer Tab, gleiche Leaflet-Sicht, anderes Werkzeug-Set
+
+Beide teilen das grosse Leaflet-Canvas — Maps-Init und View-State
+sind shared, nur die aktiven Layer / Werkzeuge wechseln.
+
+Path-Tab-Layout:
+
+  +-----------+-----------------------------+
+  | Filter-   |                             |
+  | Menue     |    Leaflet-Canvas           |
+  | (links,   |                             |
+  | ausklapp- |                             |
+  | bar via   |                             |
+  | schmalem  |                             |
+  | Rand)     |                             |
+  +-----------+-----------------------------+
+
+Filter-Menue-Sektionen (alle ausklappbar):
+
+  - Region (vorgeladen aus Inspector)
+  - Primaere Wegklassen (Checkboxen)
+  - Konnektoren
+      Nebenstrasse: on/off + Slider max_m
+      Landstrasse:  on/off + Slider max_m
+  - Ausschluesse (Checkboxen)
+  - Diagnose
+      Luecken markieren (on/off)
+      Sackgassen ausblenden (on/off)
+      POI-Ausnahme-Distanz (Slider)
+  - Aktionen
+      [Anwenden] — Pipeline neu rechnen, Karte aktualisieren
+      [Commit zu Repo] — Config nach data/regio_paths/<region>.json
+
+Visualisierung im Path-Tab
+==========================
+
+  Primaere Wege          gruen-blau, weight 2, opacity 0.85
+  Konnektor-Nebenstrasse blau, weight 2, opacity 0.85, dashed
+  Konnektor-Landstrasse  rot-orange, weight 2, opacity 0.85, dashed
+  Boundary               heller Outline (wie heute)
+  Luecken-Marker         rote Kreise an verdaechtigen Endpunkten,
+                         klickbar fuer Erlauben/Verweigern
+  Sackgassen             gelb gestrichelt wenn aktiv im Output,
+                         grau wenn ausgeblendet
+  POIs                   wie heute, orientierend
+
+Beziehung zu ann_070 / ann_071
+==============================
+
+ann_070 (Drawer + A/B/C-Schicht): teilweise ueberholt. Drawer-Name
+und Tab-Struktur bleiben. Die manuellen B- und C-Schichten werden
+durch die automatische Pipeline ersetzt — fuer Layer-C-Aequivalent
+sorgt der Konnektor-Filter. Manuelles Zeichnen von Wegen ist nicht
+mehr Teil des MVP. (Wenn jemals noetig fuer Ausreisser, kann es als
+spaetere Erweiterung wieder rein, mit eigenem Layer im
+Konfig-Format.) Farb-Konvention ann_070 (grau/blau/schwarz) wird
+durch die obige Klassen-Farbpalette ersetzt.
+
+ann_071 (Laengen-Filter): ersetzt durch Per-Klasse-Schwellen oben.
+ann_071 bleibt Verlaufseintrag, ist nicht mehr Soll-Quelle.
+
+Werkzeuge
+=========
+
+  - Haversine inline fuer Edge-Laengen
+  - Eigene Union-Find fuer Komponenten-Analyse (~30 Z. Code)
+  - Spatial-Index fuer Nearest-Neighbor (zwei Endpunkte-Naehe,
+    POI ↔ Knoten) — z. B. simples Grid-Hashing oder kdbush
+  - Boundary-Crop: Polygon-LineString-Intersection — Turf.js
+    bietet booleanIntersects, lineSplit; eigener Code waere
+    aufwendig. Turf.js-Sub-Modul (turf/line-split) als Dependency
+    rechtfertigt sich hier.
+
+Turf.js-Entscheid: erst beim Bauen pragmatisch; Tendenz zu Sub-Modul
+fuer Crop, Rest selbst.
+
+Build-Phasen
+============
+
+  Phase 1  Drawer-Panel-Shell (Boundary/Path-Tabs mit shared Leaflet,
+           Tab-Wechsel ohne Karten-Reinit)
+  Phase 2  Path-Tab Filter-Menue: alle Sektionen ohne Wirkung,
+           nur UI + localStorage-Persistenz
+  Phase 3  Filter-Engine: OSM-Filter (Primaer + Ausschluss) +
+           Visualisierung
+  Phase 4  Konnektor-Filter (Klassen + Laengen-Schwelle + Topologie-
+           Gate)
+  Phase 5  Graph-Composer + Boundary-Crop
+  Phase 6  Gap-Detection + Luecken-Marker
+  Phase 7  Dead-end-Filter + POI-Ausnahme + Keep-List
+  Phase 8  Heatmap-Ready-Output (nodes/edges-Struktur)
+  Phase 9  Commit-Bridge fuer data/regio_paths/<region>.json
+           (Worker-Whitelist erweitern: data/regio_paths/[a-z0-9_-]+\\.json)
+  Phase 10 P02-Migration (Highway-Typ-Filter raus aus P02, ist
+           jetzt im Drawer/Path-Tab)
+
+Phasen 1-10 ist Spannweite Drawer+Wegnetz-MVP. Geschaetzt ~10-12 h,
+verteilbar auf 3-4 Sessions.
+
+POI-Anker als anschliessende Phase 11
+=====================================
+
+Sobald Heatmap-Ready-Output steht (Phase 8), faellt POI-Anker
+trivial: pro POI nearest Node im Graph, Distanz speichern,
+Plausibilitaets-Schwelle (z. B. ≤ 30 m gruen, > 30 m orange).
+Visualisierung als duenne Linie POI ↔ Anker.
+
+Operator hatte am selben Abend angemerkt: "Anker-Code schreiben".
+Damit ist auch das adressiert.
+
+Stopp-Linien (UI / Pixel / Wording)
+====================================
+
+Beim Bauen mit Operator abstimmen:
+  - Tabs vs. Modus-Switch im Drawer (eher Tabs, schlicht)
+  - Filter-Menue: kollabierbares Side-Panel vs. modaler Dialog
+  - Schmaler Rand-Streifen zum Ein-/Ausklappen: Pixel-Detail
+  - Exakte Farbpalette der Wegklassen (Skizze oben, fein abstimmen)
+  - Wording "Konnektor" / "Nebenstrasse" / "Landstrasse" — sind die
+    Begriffe operator-tauglich, oder besser deutsch-laien-verstaendlich?
+  - Default-Schwellen 80 / 20 m: am Lichtenberg pruefen
+  - Sackgassen-Visualisierung: gelb ist Vorschlag, evt. anders
+
+Aufraeumen vor dem Bauen
+========================
+
+Vor Phase 1 lohnt sich eine Aufraeum-Runde:
+  - HANDOVER.md auf aktuellen Stand
+  - panelRegistry: Geometry-Editor ggf. schon als "Drawer"
+    umbenennen
+  - ann_067 Master-Index aktualisieren (Drawer + Wegnetz als
+    Stufe-1-relevante Operator-Werkzeuge?)
+  - alte Annotationen, die nicht mehr Soll-Quelle sind, als
+    historisch markieren`,
     date: '2026-05-29',
   },
 ];
