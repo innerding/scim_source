@@ -3,9 +3,10 @@
 // Zwei interne Tabs auf einem gemeinsamen Leaflet-Canvas:
 //   Umriss  — Boundary-Geometrie zeichnen/editieren/committen (Funktion 1:1
 //             wie der fruehere Geometry-Editor)
-//   Wegnetz — konfigurierbares Wanderwegnetz aus OSM (Filter-Menue). In
-//             Phase 2 nur UI + localStorage-Persistenz, keine Ableitungs-
-//             Wirkung. Engine folgt ab Phase 3.
+//   Wegnetz — konfigurierbares Wanderwegnetz aus OSM (Filter-Menue). Ab
+//             Phase 3 lebt der Primaer-/Ausschluss-Filter: "Anwenden" laedt
+//             OSM (Overpass) fuer die Region-Boundary und zeichnet die
+//             primaeren Wege. Konnektoren/Luecken/Sackgassen folgen ab Phase 4.
 //
 // Der Tab-Wechsel re-initialisiert die Karte NICHT — Map-Init und View-State
 // sind shared, nur die aktiven Werkzeuge/Layer wechseln.
@@ -25,6 +26,7 @@ import { commitToRepo, type CommitResult } from '../../../runtime/commitBridge';
 import {
   loadPathConfig, savePathConfig, type PathConfig, type BridlewayMode,
 } from '../../regio-content/pathConfig';
+import { deriveWanderwegnetz, type PathFetchResult } from '../../regio-content/pathEngine';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import gruenbergMd from '../../../../data/grunberg_pois_plan.md?raw';
@@ -94,8 +96,16 @@ export default function DrawerPanel({ onJumpTo }: Props) {
   const polygonLayerRef = useRef<L.Layer | null>(null);
   const poiLayerRef = useRef<L.LayerGroup | null>(null);
   const inspectorRefRef = useRef<L.Polygon | null>(null);
+  const pathLayerRef = useRef<L.LayerGroup | null>(null);
+  const pathAbortRef = useRef<AbortController | null>(null);
 
   const [tab, setTab] = useState<DrawerTab>('umriss');
+
+  // Wegnetz-Ableitung (Phase 3): Status + letztes Ergebnis fuer die Legende.
+  type PathStatus = 'idle' | 'loading' | 'done' | 'error';
+  const [pathStatus, setPathStatus] = useState<PathStatus>('idle');
+  const [pathError, setPathError] = useState<string>('');
+  const [pathResult, setPathResult] = useState<PathFetchResult | null>(null);
 
   // Inspector-Compare: das Polygon der vom Inspector gezeigten R kann
   // als read-only Referenz in Violett unter den Editor gelegt werden
@@ -169,6 +179,7 @@ export default function DrawerPanel({ onJumpTo }: Props) {
     });
 
     poiLayerRef.current = L.layerGroup().addTo(map);
+    pathLayerRef.current = L.layerGroup().addTo(map);
     mapRef.current = map;
 
     // Initial polygon
@@ -184,6 +195,7 @@ export default function DrawerPanel({ onJumpTo }: Props) {
       mapRef.current = null;
       polygonLayerRef.current = null;
       poiLayerRef.current = null;
+      pathLayerRef.current = null;
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -293,6 +305,60 @@ export default function DrawerPanel({ onJumpTo }: Props) {
     }
   }, [overlayCatalogId]);
 
+  // Wegnetz auf den Map-Layer zeichnen. Phase 3: nur primaere Wege
+  // (gruen-blau), Konnektor-Kandidaten bleiben unsichtbar bis Phase 4.
+  const renderPath = (res: PathFetchResult | null) => {
+    const layer = pathLayerRef.current;
+    if (!layer) return;
+    layer.clearLayers();
+    if (!res) return;
+    for (const edge of res.edges) {
+      if (edge.source !== 'primary') continue;
+      L.polyline(edge.points, {
+        color: '#1f9d8f',
+        weight: 2,
+        opacity: 0.85,
+      }).addTo(layer);
+    }
+  };
+
+  // [Anwenden] im Wegnetz-Tab: Boundary-bbox -> Overpass -> Filter -> Render.
+  const onApplyPath = async (cfg: PathConfig) => {
+    const geo = inspectorView?.geometry;
+    if (!geo || !geo.polygon || geo.polygon.length < 3) {
+      setPathStatus('error');
+      setPathError('Keine Region-Boundary aktiv. Im Inspector eine Representation mit Polygon wählen.');
+      return;
+    }
+    // Laufende Anfrage abbrechen
+    pathAbortRef.current?.abort();
+    const ctrl = new AbortController();
+    pathAbortRef.current = ctrl;
+
+    setPathStatus('loading');
+    setPathError('');
+    try {
+      const res = await deriveWanderwegnetz(geo.polygon, cfg, ctrl.signal);
+      if (ctrl.signal.aborted) return;
+      setPathResult(res);
+      renderPath(res);
+      setPathStatus('done');
+    } catch (err) {
+      if (ctrl.signal.aborted) return;
+      setPathStatus('error');
+      setPathError(err instanceof Error ? err.message : String(err));
+    }
+  };
+
+  // Regionswechsel (andere Inspector-R): alte Wegnetz-Ableitung verwerfen.
+  useEffect(() => {
+    pathAbortRef.current?.abort();
+    setPathStatus('idle');
+    setPathError('');
+    setPathResult(null);
+    renderPath(null);
+  }, [inspectorView?.geometry.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Export-JSON erzeugen
   const exportJson = useMemo(() => {
     if (!polygon || polygon.length < 3) return null;
@@ -377,7 +443,7 @@ export default function DrawerPanel({ onJumpTo }: Props) {
         <span style={{ flex: 1 }} />
         {tab === 'wegnetz' && (
           <span style={{ fontSize: 10, color: '#a0aec0', fontStyle: 'italic', marginBottom: 4 }}>
-            Phase 2 · Konfiguration ohne Ableitungs-Wirkung
+            Phase 3 · Primär-Filter live · Konnektoren ab Phase 4
           </span>
         )}
       </div>
@@ -485,6 +551,10 @@ export default function DrawerPanel({ onJumpTo }: Props) {
             gebiet={inspectorView?.geometry.id ?? ''}
             gebietLabel={inspectorView?.geometry.name ?? ''}
             onResized={() => setTimeout(() => mapRef.current?.invalidateSize(), 60)}
+            onApply={onApplyPath}
+            status={pathStatus}
+            error={pathError}
+            result={pathResult}
           />
         )}
         <div ref={mapContainerRef} style={{ flex: 1, minHeight: 0, minWidth: 0 }} />
@@ -527,15 +597,18 @@ export default function DrawerPanel({ onJumpTo }: Props) {
 // ─── Wegnetz-Filter-Menue (Phase 2: UI + localStorage, keine Wirkung) ─────────
 
 function PathFilterMenu({
-  gebiet, gebietLabel, onResized,
+  gebiet, gebietLabel, onResized, onApply, status, error, result,
 }: {
   gebiet: string;
   gebietLabel: string;
   onResized: () => void;
+  onApply: (cfg: PathConfig) => void;
+  status: 'idle' | 'loading' | 'done' | 'error';
+  error: string;
+  result: import('../../regio-content/pathEngine').PathFetchResult | null;
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const [cfg, setCfg] = useState<PathConfig>(() => loadPathConfig(gebiet));
-  const [savedFlash, setSavedFlash] = useState(false);
 
   // Bei Gebietswechsel (andere Inspector-R) neue Config laden
   useEffect(() => { setCfg(loadPathConfig(gebiet)); }, [gebiet]);
@@ -703,19 +776,19 @@ function PathFilterMenu({
         <button
           onClick={() => {
             savePathConfig({ ...cfg, gebiet });
-            setSavedFlash(true);
-            setTimeout(() => setSavedFlash(false), 1800);
+            onApply(cfg);
           }}
-          disabled={!gebiet}
+          disabled={!gebiet || status === 'loading'}
           style={{
             fontSize: 12, padding: '7px 12px', fontWeight: 600,
             border: '1px solid #2b6cb0', borderRadius: 5,
-            background: savedFlash ? '#2b6cb0' : '#ebf8ff',
-            color: savedFlash ? 'white' : '#2b6cb0',
-            cursor: gebiet ? 'pointer' : 'not-allowed', opacity: gebiet ? 1 : 0.5,
+            background: status === 'loading' ? '#bee3f8' : '#ebf8ff',
+            color: '#2b6cb0',
+            cursor: (!gebiet || status === 'loading') ? 'not-allowed' : 'pointer',
+            opacity: gebiet ? 1 : 0.5,
           }}
         >
-          {savedFlash ? '✓ gespeichert' : 'Anwenden'}
+          {status === 'loading' ? '… lade OSM' : 'Anwenden'}
         </button>
         <button
           disabled
@@ -728,9 +801,36 @@ function PathFilterMenu({
         >
           Commit zu Repo (Phase 9)
         </button>
+
+        {/* Status / Legende */}
+        {status === 'error' && (
+          <div style={{
+            fontSize: 11, lineHeight: 1.5, padding: '7px 9px', borderRadius: 5,
+            background: '#fff5f5', border: '1px solid #feb2b2', color: '#9b2c2c',
+          }}>
+            ✗ {error}
+          </div>
+        )}
+        {status === 'done' && result && (
+          <div style={{
+            fontSize: 11, lineHeight: 1.6, padding: '7px 9px', borderRadius: 5,
+            background: '#f0fff4', border: '1px solid #9ae6b4', color: '#22543d',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{
+                display: 'inline-block', width: 14, height: 0,
+                borderTop: '2px solid #1f9d8f',
+              }} />
+              <strong>{result.primaryCount}</strong> primäre Wege
+            </div>
+            <div style={{ color: '#718096', marginTop: 2 }}>
+              {result.rawWayCount} OSM-Ways geladen · Konnektoren ab Phase 4
+            </div>
+          </div>
+        )}
         <div style={{ fontSize: 10, color: '#a0aec0', lineHeight: 1.5 }}>
-          „Anwenden" rechnet die Ableitungs-Pipeline neu — die Engine folgt ab
-          Phase 3. Aktuell wird die Konfiguration nur lokal gespeichert.
+          „Anwenden" lädt OSM (Overpass) für die Region-Boundary und zeichnet die
+          primären Wege. Konnektoren, Lücken und Sackgassen folgen ab Phase 4.
         </div>
       </div>
     </div>
