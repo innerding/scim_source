@@ -1,9 +1,16 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type {
   RegioContentState, RegionalParameters, RegioPoi,
   RegionalRestriction, FallbackRoutePolicy, RouteExceedanceBehavior,
 } from '../../regio-content/regioContent.types';
 import { grunbergRegioContentState } from '../../regio-content/regioContent.grunberg';
+import {
+  HIGHWAY_TYPES, defaultIncludedTypes, isCustomized,
+  loadIncludedTypes, resetIncludedTypes, saveIncludedTypes,
+  type OsmHighwayType,
+} from '../../regio-content/edgeTypeConfig';
+import { useInspectorView } from '../../../runtime/repContext';
+import { slugify } from '../../../runtime/router';
 
 interface Props {
   state?: RegioContentState;
@@ -184,6 +191,47 @@ export default function P02RegioContentForm({ state }: Props) {
   const pendingCount = base.pending_pois.length;
   const rejectedCount = base.rejected_pois.length;
 
+  // ── ColourMesh-Kantentypen-Sektion ──────────────────────────────────────
+  //
+  // Zielt auf die Region, die der Inspector aktuell zeigt (Compare-Wahl
+  // im rechten Header oder URL-aktive R). Wenn nichts aktiv ist, wird
+  // der Default-Slug verwendet. Persistenz in localStorage pro Region.
+  const inspectorView = useInspectorView();
+  const regionSlug = useMemo(
+    () => slugify(inspectorView?.geometry.region ?? '') || 'default',
+    [inspectorView],
+  );
+  const regionLabel = inspectorView?.geometry.region ?? 'default';
+  const [includedTypes, setIncludedTypesState] = useState<OsmHighwayType[]>(
+    () => loadIncludedTypes(regionSlug),
+  );
+  // Region-Wechsel (Inspector dreht auf andere R) -> Neuladen.
+  useMemo(() => {
+    setIncludedTypesState(loadIncludedTypes(regionSlug));
+  }, [regionSlug]);
+
+  const includedSet = useMemo(() => new Set(includedTypes), [includedTypes]);
+  const toggleType = (t: OsmHighwayType) => {
+    setIncludedTypesState((prev) => {
+      const next = prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t];
+      saveIncludedTypes(regionSlug, next);
+      // Mesh-Konsumenten dynamisch informieren — ScimMap kann darauf
+      // hoeren und Overpass mit neuer Filter-Liste neu fetchen.
+      window.dispatchEvent(new CustomEvent('scim:edge-types:changed', {
+        detail: { regionSlug, types: next },
+      }));
+      return next;
+    });
+  };
+  const resetEdgeTypes = () => {
+    resetIncludedTypes(regionSlug);
+    const defaults = defaultIncludedTypes();
+    setIncludedTypesState(defaults);
+    window.dispatchEvent(new CustomEvent('scim:edge-types:changed', {
+      detail: { regionSlug, types: defaults },
+    }));
+  };
+
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 580 }}>
 
@@ -314,6 +362,82 @@ export default function P02RegioContentForm({ state }: Props) {
           {base.regional_restrictions.map((r) => <RestrictionRow key={r.restriction_id} r={r} />)}
         </>
       )}
+
+      {/* ColourMesh-Kantentypen */}
+      <SectionTitle>
+        ColourMesh-Kantentypen
+        <span style={{
+          marginLeft: 8, fontWeight: 400, color: '#a0aec0',
+          textTransform: 'none', letterSpacing: 0,
+        }}>
+          · Region: <code style={{ fontFamily: 'monospace' }}>{regionLabel}</code>
+          {isCustomized(regionSlug) && (
+            <span style={{ color: '#dd6b20', marginLeft: 6 }}>(angepasst)</span>
+          )}
+        </span>
+      </SectionTitle>
+      <div style={{ fontSize: 11, color: '#718096', marginBottom: 10, lineHeight: 1.5 }}>
+        Welche OSM-<code>highway=*</code>-Typen sollen ueberhaupt im ColourMesh
+        erscheinen? Wander-R will Pfade und Forststrassen drin, Stadt-R
+        eher Fusswege und Radwege. Die Auswahl gilt fuer die aktuell vom
+        Inspector gezeigte Region — Persistenz in localStorage.
+      </div>
+      {(['road', 'service', 'path'] as const).map((group) => {
+        const groupLabel = { road: 'Strassen', service: 'Wege & Zonen', path: 'Pfade & Wege' }[group];
+        const items = HIGHWAY_TYPES.filter((t) => t.group === group);
+        return (
+          <div key={group} style={{ marginBottom: 10 }}>
+            <div style={{
+              fontSize: 10, fontWeight: 600, color: '#718096', textTransform: 'uppercase',
+              letterSpacing: '0.06em', marginBottom: 4,
+            }}>
+              {groupLabel}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 4 }}>
+              {items.map((h) => {
+                const on = includedSet.has(h.type);
+                return (
+                  <label
+                    key={h.type}
+                    title={h.hint}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 6,
+                      padding: '4px 8px', borderRadius: 3,
+                      background: on ? '#ebf8ff' : '#f7fafc',
+                      border: `1px solid ${on ? '#bee3f8' : '#e2e8f0'}`,
+                      cursor: 'pointer', fontSize: 12,
+                    }}
+                  >
+                    <input
+                      type="checkbox" checked={on}
+                      onChange={() => toggleType(h.type)}
+                      style={{ cursor: 'pointer' }}
+                    />
+                    <span style={{ color: on ? '#2b6cb0' : '#4a5568', flex: 1 }}>{h.label}</span>
+                    <code style={{ fontSize: 10, color: '#a0aec0', fontFamily: 'monospace' }}>{h.type}</code>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+      <div style={{
+        marginTop: 6, display: 'flex', alignItems: 'center', gap: 10,
+        fontSize: 11, color: '#718096',
+      }}>
+        <span>{includedTypes.length} von {HIGHWAY_TYPES.length} aktiv</span>
+        <button
+          onClick={resetEdgeTypes}
+          style={{
+            fontSize: 11, padding: '2px 10px', cursor: 'pointer',
+            background: 'transparent', color: '#718096',
+            border: '1px solid #cbd5e0', borderRadius: 3,
+          }}
+        >
+          Defaults (Wander-Profil)
+        </button>
+      </div>
 
       {/* Button bar */}
       <div style={{
