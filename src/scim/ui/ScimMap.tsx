@@ -194,26 +194,23 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
     const routeLayerModel = ctx.route_layer_model as unknown as RouteLayerModelState | undefined;
 
     // Boundary
-    if (vis.boundary && boundary?.computed_boundary.bbox) {
-      const [minLon, minLat, maxLon, maxLat] = boundary.computed_boundary.bbox;
-      L.rectangle([[minLat, minLon], [maxLat, maxLon]], {
-        color: '#0074d9',
-        weight: 1.5,
-        fillOpacity: 0.04,
-        dashArray: '6 4',
-      }).addTo(layerGroup);
-    }
-
-    // Aktive Representation: Polygon der Geometrie als zusaetzlicher
-    // Outline, damit klar ist welche R die Karte heute fuehrt.
-    // Visuelle Sprache analog zur Boundary, aber durchgezogen und etwas
-    // praesenter — gleiche Farbpalette, kein neuer Stil.
+    //   Wenn eine R aktiv ist, fuehrt sie die Sicht — das Pipeline-Rechteck
+    //   wird unterdrueckt, der R-Polygon-Outline ersetzt es. Damit liegt
+    //   nicht mehr das Gruenberg-Default unter Lichtenberg.
     if (vis.boundary && repPolygonLatLng) {
       L.polygon(repPolygonLatLng, {
         color: '#0074d9',
         weight: 1.5,
         opacity: 0.9,
         fillOpacity: 0.05,
+      }).addTo(layerGroup);
+    } else if (vis.boundary && boundary?.computed_boundary.bbox) {
+      const [minLon, minLat, maxLon, maxLat] = boundary.computed_boundary.bbox;
+      L.rectangle([[minLat, minLon], [maxLat, maxLon]], {
+        color: '#0074d9',
+        weight: 1.5,
+        fillOpacity: 0.04,
+        dashArray: '6 4',
       }).addTo(layerGroup);
     }
 
@@ -228,8 +225,9 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
       }
     }
 
-    // Routes
-    if (vis.routes && routeLayerModel?.segments) {
+    // Routes aus dem Pipeline-RouteLayerModel. Mit aktiver R aus dem Bild —
+    // R-eigene Routen kommen aus routeSolver (Stufe-1-Modul, folgt).
+    if (vis.routes && !activeRep && routeLayerModel?.segments) {
       for (const seg of routeLayerModel.segments) {
         if (!seg.visible) continue;
         const coords = edgeGeom.get(seg.edge_id);
@@ -256,15 +254,32 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
     // Colour-Mesh: Heat *entlang der Strassen* + POI-zu-POI Routen mit Glow.
     // Bevorzugt OSM-Wege (echte Geometrie); waehrend des Ladens / bei Fehler
     // faellt addRoadHeatMesh intern auf synthetische Edges zurueck.
-    if (vis.colourmesh && boundary?.computed_boundary.bbox) {
-      const pois = extraction?.extracted_pois ?? [];
-      const edgesToRender = osmEdges.length > 0 ? osmEdges : (graph?.edges ?? []);
-      addRoadHeatMesh(layerGroup, edgesToRender, boundary.computed_boundary.bbox, pois);
-      addPoiRoutes(layerGroup, pois);
+    //
+    // Wenn eine R aktiv ist:
+    //   - bbox kommt aus dem R-Polygon (repBbox), nicht aus der Pipeline
+    //   - kein Fallback auf graph.edges (das waere Pipeline-Default und wuerde
+    //     die alten Gruenberg-Edges unter Lichtenberg legen). Solange Overpass
+    //     noch nicht durch ist, lieber kein Mesh als das falsche.
+    //   - Pipeline-POIs werden nicht in die R-Sicht gezeichnet — die richtigen
+    //     POIs kommen ueber rep.catalog_id, eigene Iteration.
+    const meshBbox = repBbox ?? boundary?.computed_boundary.bbox;
+    if (vis.colourmesh && meshBbox) {
+      const pois = activeRep ? [] : (extraction?.extracted_pois ?? []);
+      const edgesToRender = osmEdges.length > 0
+        ? osmEdges
+        : (activeRep ? [] : (graph?.edges ?? []));
+      if (edgesToRender.length > 0) {
+        addRoadHeatMesh(layerGroup, edgesToRender, meshBbox, pois);
+      }
+      if (pois.length > 0) {
+        addPoiRoutes(layerGroup, pois);
+      }
     }
 
-    // POIs
-    if (vis.pois && extraction?.extracted_pois) {
+    // POIs aus dem Pipeline-Extraction. Wenn eine R aktiv ist, gehoeren
+    // diese POIs nicht zur Sicht — sie kaemen aus rep.catalog_id und werden
+    // in einer eigenen Iteration verkabelt.
+    if (vis.pois && !activeRep && extraction?.extracted_pois) {
       for (const poi of extraction.extracted_pois) {
         const [lon, lat] = poi.center.coordinates;
         const loadClass = poiLoadClass.get(poi.poi_id) ?? 'unknown';
@@ -295,7 +310,7 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
         [Math.max(...lats), Math.max(...lons)],
       ]);
     }
-  }, [result, vis, osmEdges, repBbox, repPolygonLatLng]);
+  }, [result, vis, osmEdges, repBbox, repPolygonLatLng, activeRep]);
 
   if (!result.success) {
     return (
