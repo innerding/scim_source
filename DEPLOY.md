@@ -9,24 +9,27 @@ aus den GitHub-Secrets/-Variables und schiebt `dist/` per
 (`scim3.diesenpark.com`). Nach Push ~60 Sekunden auf Edge-Propagation warten,
 dann mit Cmd-Shift-R hart reloaden.
 
-## ⚠ Zweiter, kaputter Build-Pfad: CF-Pages-Git-Integration
+## Es gibt nur EINEN Build-Pfad (kein CF-Git-Build, kein Race)
 
-Im Cloudflare-Dashboard ist am Projekt `scim3-operator` **zusaetzlich** eine
-Git-Integration aktiv, die bei jedem Push **selbst** baut. Dieser Build ist
-derzeit leise kaputt (crasht → White Screen) und konkurriert mit dem
-GitHub-Actions-Deploy auf demselben Pages-Projekt:
+`scim3-operator` ist ein **Direct-Upload-Pages-Projekt** — es hat **keine**
+Git-Integration. Im Dashboard (Settings, General) gibt es deshalb keinen
+„Builds & deployments"/„Git integration"-Abschnitt, und unter
+`Deployments` erscheint pro Commit **genau ein** Production-Deploy (Quelle:
+Wrangler-Upload, der die Commit-Message als Metadaten traegt).
 
-> Bei jedem Push laufen beide Builds. Wer zuletzt fertig wird, gewinnt das
-> Deployment. Gewinnt der CF-Pages-Git-Build → White Screen, bis man
-> 60–90 s wartet und hart reloadet (dann hat meist GH Actions ueberholt).
+Damit ist die fruehere Annahme widerlegt, es gebe einen zweiten, parallelen
+CF-Pages-Git-Build, der ein Deploy-Race ausloest. Gibt es nicht. Nichts
+abzuschalten. (Stand 2026-05-29 im Dashboard verifiziert.)
 
-**Empfehlung: CF-Pages-Git-Integration deaktivieren**, damit GitHub Actions
-der einzige Frontend-Deploy ist. Im Dashboard:
-`Workers & Pages → scim3-operator → Settings → Builds & deployments →
-automatische Git-Deployments trennen/deaktivieren`.
+### White Screen nach Deploy — die echte Ursache
 
-Das beruehrt **nicht** den Worker und damit **nicht** R2/D1/Pakete — die
-laufen ueber einen voellig getrennten `wrangler deploy` (siehe unten).
+Wenn nach einem Push kurz ein White Screen kommt, ist es **Stale-Asset-/
+Edge-Propagation**, nicht ein zweiter Build: das neue Bundle hat neue,
+gehashte Chunk-Dateinamen, waehrend Browser/CDN/Service-Worker noch die alte
+`index.html` bzw. alte Chunks halten.
+
+> Fix: 60–90 s warten, dann **Cmd-Shift-R** (Hard-Reload). Geht danach von
+> selbst — kein Code-Bug, kein zweiter Deploy im Spiel.
 
 ## Bedingung (Secrets/Variables)
 
