@@ -2042,6 +2042,124 @@ Diese Annotation existiert als Sucheinstieg fuer kuenftige Sitzungen:
 "Wo war die Urfassung?" -> hier, mit Verweis auf die Quelldatei.`,
     date: '2026-05-28',
   },
+
+  {
+    id: 'ann_070',
+    category: 'next_intent',
+    label: 'Drawer-Panel: Boundary + Path (Konsolidierung Geometry-Editor)',
+    content: `Operator-Konsens 2026-05-29: Statt einen zweiten Editor-Panel
+"Path-Editor" neben Geometry-Editor anzulegen, werden beide in einem
+Erstklass-Panel namens "Drawer" zusammengefuehrt. Geometry-Editor wird
+darin zur "Boundary"-Sicht, die neue Path-Funktion zur "Path"-Sicht.
+Begruendung: im Geometry-Editor ist nicht viel Frequenz, eine eigene
+zweite Welt waere Overhead.
+
+Drei-Schicht-Modell fuer Path (Operator-Praesentation)
+======================================================
+
+Wegnetz = A union B union C, wobei:
+
+  A) OSM-Wahrheit (gefiltert)
+     SCIM nimmt das bestehende Wandernetz aus OSM via Overpass.
+     Highway-Typ-Filter steuert, welche A-Edges drin sind.
+
+  B) Operator-Wanderwege
+     Manuell gezeichnete Wege, die in OSM sichtbar sind aber dort
+     nicht als Wanderweg markiert wurden, oder Lueckenschluesse zu
+     POIs.
+
+  C) Operator-Asphalt-Connectors
+     Manuell gezeichnete Asphalt-/Strassen-Verbindungsstuecke, die
+     Luecken im Wegnetz schliessen oder POIs anschlussfaehig machen.
+
+Ziel-App-Konsequenz: Wege aus Layer C werden dem Endnutzer als
+"vorwiegend Asphalt" gekennzeichnet — Wanderer kann selbst
+entscheiden, ob er den Connector akzeptiert oder umgeht.
+
+Visualisierung im Drawer (KEINE Heat-Map)
+==========================================
+
+Der Drawer braucht keine Heat-Pipe-Visualisierung. Er ist eine
+*Monitor-Sicht* wie sie der Geometry-Editor heute fuer Boundaries
+zeigt — schlicht, fokussiert, ohne Atem-Dynamik. Heat-Mesh gehoert
+in den rechten Inspector (ScimMap), nicht in den Drawer.
+
+  A: dezent, neutral (z. B. duenne graue Linien)
+  B: solide, ueber A erkennbar (z. B. dunkelviolett)
+  C: gestrichelt oder anders gemustert, ueber A erkennbar
+     (z. B. dunkelviolett dashed)
+
+Diese Trennung dient dem Operator beim Zeichnen — er muss erkennen,
+welche Edge OSM-Wahrheit ist und welche von ihm.
+
+Migration des Highway-Typ-Filters
+=================================
+
+Der Filter, der heute (Stand 2026-05-29) in P02 RegioContent unter
+"ColourMesh-Kantentypen" sitzt, wandert in den Path-Bereich des
+Drawer-Panels. Begruendung:
+
+- Der Filter ist Teil der Wegnetz-Komposition, nicht der Routing-
+  Schwellen. Im Drawer bildet er die Arbeitsgrundlage.
+- P02 fokussiert dann sauber auf Schwellen + Content, was seine
+  eigentliche rou-Sphaeren-Heimat ist.
+
+State-Format bleibt regional (localStorage per Region-Slug),
+nur das UI-Zuhause wandert. Keine Daten verloren.
+
+Datenformat
+===========
+
+Pro Region eine Datei: data/paths/<region>.geojson
+
+  FeatureCollection von LineString-Features, jede mit
+    properties: {
+      layer: 'B' | 'C',
+      name: string,
+      drawn_at: ISO-Date,
+      tags?: { highway?, surface?, ... }
+    }
+
+Commit-Bridge: Worker-Whitelist erweitern auf
+  data/paths/[a-z0-9_-]+\\.geojson
+
+MVP-Genuegen
+============
+
+Fuer MVP-Lichtenberg reicht: Operator zieht Layer C ueber die
+fehlenden Asphalt-Bruecken im Lichtenberg-Terrain, B ueber die
+nicht-getaggten Wanderwege, der Inspector zeigt das komplette
+Wegnetz, die Ziel-App nutzt es. Heat-Pipe-Verfeinerungen und
+echte Last-Daten sind Stufe 2 / Stufe 3.
+
+Phasen (siehe Konzept-Skizze 2026-05-29)
+========================================
+
+  Phase 1  Datenformat + path-Registry + Worker-Whitelist
+  Phase 2  Drawer-Panel-Shell (Boundary/Path-Tabs oder -Modi)
+  Phase 3  Geoman-Polyline-Drawing pro Layer (B/C), DRAFT
+  Phase 4  Export + Commit-Bridge fuer data/paths/*.geojson
+  Phase 5  Komposition A union B union C, ScimMap-Integration
+           (B/C als Overlay, nicht in Heat-Pipe gemischt)
+  Phase 6  Migration Highway-Typ-Filter P02 -> Drawer
+
+Phase 1-6 sind die MVP-Spannweite. POI-Anker (Anchor-Mapping POI →
+Knoten im komponierten Wegnetz) folgen als eigene Phase 7, sobald
+der Graph konsolidiert vorliegt.
+
+Stopp-Linien bei der Umsetzung
+==============================
+
+UI-Entscheidungen, die mit dem Operator abzustimmen sind:
+  - Boundary vs. Path: zwei Tabs oder ein Modus-Switch?
+  - Violett-Schattierung B/C: gleicher Ton mit Pattern-Unterschied
+    oder zwei verschiedene Toene?
+  - Welches Default-Mapping Endnutzer-Anzeige <-> Layer-Typ
+    (z. B. C = "Asphalt-Hinweis"-Pin auf der Ziel-App).
+  - Wording im Drawer-Toolbar (z. B. "B-Wanderweg" vs.
+    "Manueller Wanderweg" vs. "Pfad zeichnen").`,
+    date: '2026-05-29',
+  },
 ];
 
 function AnnotationsTab() {
