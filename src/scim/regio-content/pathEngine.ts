@@ -28,10 +28,14 @@ export type EdgeSource = 'primary' | 'connector_candidate';
 export interface PathEdge {
   id: number;            // OSM way id
   highway: string;       // roher highway-Tag
-  source: EdgeSource;    // Phase 3: nur 'primary' wird gerendert
+  source: EdgeSource;    // 'primary' | 'connector_candidate'
   // Leaflet-fertige Punkte ([lat, lng]) entlang der Way-Geometrie.
+  // Bei zugelassenen Konnektoren auf das bridgende Teilstueck zugeschnitten.
   points: [number, number][];
   tags: Record<string, string>;
+  // Teil des aktiven Netzes? Primaere Wege immer; Konnektoren nur nach dem
+  // Gate (gateConnectors): bridgen sie zwei gruene Anschluesse unter Max-Laenge.
+  inNet: boolean;
 }
 
 export interface PathFetchResult {
@@ -124,10 +128,9 @@ export function connectorGroupOf(highway: string): ConnectorGroup | null {
 }
 
 // Gehoert die Kante zum aktiven Netz (rendern + Anker-Snap)?
-export function isNetEdge(edge: PathEdge, cfg: PathConfig): boolean {
-  if (edge.source === 'primary') return true;
-  const g = connectorGroupOf(edge.highway);
-  return g ? cfg.konnektoren[g].aktiv : false;
+// Nach gateConnectors entscheidet allein das inNet-Flag.
+export function isNetEdge(edge: PathEdge): boolean {
+  return edge.inNet;
 }
 
 function classify(ways: OverpassWay[], cfg: PathConfig): PathEdge[] {
@@ -142,13 +145,99 @@ function classify(ways: OverpassWay[], cfg: PathConfig): PathEdge[] {
     if (isPrimaryClass) {
       if (isExcluded(tags, cfg)) continue;
       if (!isPrimaryEnabled(highway, cfg, tags)) continue;
-      edges.push({ id: way.id, highway, source: 'primary', points, tags });
+      edges.push({ id: way.id, highway, source: 'primary', points, tags, inNet: true });
     } else {
-      // Strasse — Konnektor-Kandidat, in Phase 3 nur vorgehalten.
-      edges.push({ id: way.id, highway, source: 'connector_candidate', points, tags });
+      // Strasse — Konnektor-Kandidat; inNet entscheidet erst gateConnectors.
+      edges.push({ id: way.id, highway, source: 'connector_candidate', points, tags, inNet: false });
     }
   }
   return edges;
+}
+
+// ─── Konnektor-Gate (Phase 4) ───────────────────────────────────────────────────
+// Eine Konnektor-Strasse zaehlt nur als das Stueck zwischen zwei gruenen
+// Anschluesse (Endpunkte primaerer Wege), und nur wenn dieses Stueck kuerzer
+// als die Max-Laenge der Gruppe ist. Lange Durchgangsstrassen fliegen damit raus;
+// vom Bridge-Konnektor bleibt nur das relevante Teilstueck (auf points zugeschnitten).
+//
+// Toleranz, ab der ein gruener Endpunkt als "auf dem Konnektor" gilt. Wanderwege
+// enden in der Praxis direkt auf dem Asphalt; ein paar Meter Spiel fangen
+// OSM-/Projektions-Ungenauigkeit ab, ohne fremde Strassen einzusammeln.
+const ATTACH_TOL_M = 10;
+
+const M_LAT = 110540;
+
+// Naechster Punkt auf einer Polyline + Bogenlaenge bis dorthin (Meter, lokal-planar).
+function projectToPolyline(
+  lat: number, lng: number, pts: [number, number][], mLng: number,
+): { s: number; dist: number } {
+  const px = lng * mLng, py = lat * M_LAT;
+  let best = Infinity, bestS = 0, acc = 0;
+  for (let i = 0; i + 1 < pts.length; i++) {
+    const ax = pts[i][1] * mLng, ay = pts[i][0] * M_LAT;
+    const bx = pts[i + 1][1] * mLng, by = pts[i + 1][0] * M_LAT;
+    const dx = bx - ax, dy = by - ay;
+    const len2 = dx * dx + dy * dy;
+    const segLen = Math.sqrt(len2);
+    let t = len2 === 0 ? 0 : ((px - ax) * dx + (py - ay) * dy) / len2;
+    t = Math.max(0, Math.min(1, t));
+    const sx = ax + t * dx, sy = ay + t * dy;
+    const d = Math.hypot(px - sx, py - sy);
+    if (d < best) { best = d; bestS = acc + t * segLen; }
+    acc += segLen;
+  }
+  return { s: bestS, dist: best };
+}
+
+// Polyline auf das Bogenlaengen-Intervall [sLo, sHi] zuschneiden.
+function cropPolyline(
+  pts: [number, number][], sLo: number, sHi: number, mLng: number,
+): [number, number][] {
+  const out: [number, number][] = [];
+  let acc = 0;
+  for (let i = 0; i + 1 < pts.length; i++) {
+    const [aLat, aLng] = pts[i];
+    const [bLat, bLng] = pts[i + 1];
+    const segLen = Math.hypot((bLng - aLng) * mLng, (bLat - aLat) * M_LAT);
+    if (segLen > 0 && acc + segLen >= sLo && acc <= sHi) {
+      const tA = Math.max(0, (sLo - acc) / segLen);
+      const tB = Math.min(1, (sHi - acc) / segLen);
+      const p1: [number, number] = [aLat + (bLat - aLat) * tA, aLng + (bLng - aLng) * tA];
+      const p2: [number, number] = [aLat + (bLat - aLat) * tB, aLng + (bLng - aLng) * tB];
+      if (out.length === 0) out.push(p1);
+      out.push(p2);
+    }
+    acc += segLen;
+  }
+  return out;
+}
+
+function gateConnectors(edges: PathEdge[], cfg: PathConfig): void {
+  // Anschlusspunkte = Endpunkte aller primaeren Wege.
+  const endpoints: [number, number][] = [];
+  for (const e of edges) {
+    if (e.source !== 'primary' || e.points.length < 2) continue;
+    endpoints.push(e.points[0], e.points[e.points.length - 1]);
+  }
+  for (const e of edges) {
+    if (e.source !== 'connector_candidate' || e.points.length < 2) continue;
+    const g = connectorGroupOf(e.highway);
+    if (!g || !cfg.konnektoren[g].aktiv) continue;     // Gruppe deaktiviert → bleibt draussen
+    const maxLen = cfg.konnektoren[g].max_laenge_meter;
+    const mLng = 111320 * Math.cos((e.points[0][0] * Math.PI) / 180);
+
+    const attachS: number[] = [];
+    for (const [eLat, eLng] of endpoints) {
+      const { s, dist } = projectToPolyline(eLat, eLng, e.points, mLng);
+      if (dist <= ATTACH_TOL_M) attachS.push(s);
+    }
+    if (attachS.length < 2) continue;                  // kein Bridge → bleibt draussen
+    const sLo = Math.min(...attachS), sHi = Math.max(...attachS);
+    const span = sHi - sLo;
+    if (span <= 0 || span > maxLen) continue;          // Luecke zu gross → bleibt draussen
+    const cropped = cropPolyline(e.points, sLo, sHi, mLng);
+    if (cropped.length >= 2) { e.points = cropped; e.inNet = true; }
+  }
 }
 
 // ─── Oeffentlicher Einstieg ────────────────────────────────────────────────────
@@ -175,10 +264,11 @@ export async function deriveWanderwegnetz(
   const ways = (json.elements ?? []).filter((el): el is OverpassWay => el.type === 'way');
 
   const edges = classify(ways, cfg);
+  gateConnectors(edges, cfg);
   return {
     edges,
     primaryCount: edges.filter((e) => e.source === 'primary').length,
-    connectorCount: edges.filter((e) => e.source === 'connector_candidate' && isNetEdge(e, cfg)).length,
+    connectorCount: edges.filter((e) => e.source === 'connector_candidate' && e.inNet).length,
     rawWayCount: ways.length,
     bbox,
     fetchedAt: Date.now(),
@@ -232,14 +322,14 @@ function pointInRing(lng: number, lat: number, ring: Position[]): boolean {
 
 // Naechster Punkt auf den primaeren Kanten, lokal-planar projiziert (in Metern).
 // Fuer Regions-Distanzen (< wenige km) ausreichend genau.
-function nearestOnNet(lat: number, lng: number, edges: PathEdge[], cfg: PathConfig): { dist: number; snap: [number, number] | null } {
+function nearestOnNet(lat: number, lng: number, edges: PathEdge[]): { dist: number; snap: [number, number] | null } {
   const mLat = 110540;
   const mLng = 111320 * Math.cos((lat * Math.PI) / 180);
   const px = lng * mLng, py = lat * mLat;
   let best = Infinity;
   let bestSnap: [number, number] | null = null;
   for (const e of edges) {
-    if (!isNetEdge(e, cfg)) continue;
+    if (!e.inNet) continue;
     for (let i = 0; i + 1 < e.points.length; i++) {
       const ax = e.points[i][1] * mLng, ay = e.points[i][0] * mLat;
       const bx = e.points[i + 1][1] * mLng, by = e.points[i + 1][0] * mLat;
@@ -263,13 +353,12 @@ export function anchorPois(
   result: PathFetchResult,
   snapThresholdMeters: number,
   boundary: Position[],
-  cfg: PathConfig,
 ): AnchorSummary {
   const results: AnchorResult[] = pois.map((p) => {
     if (boundary.length >= 3 && !pointInRing(p.lng, p.lat, boundary)) {
       return { text: p.text, poi: [p.lat, p.lng] as [number, number], status: 'outside' as const, distanceMeters: NaN, snap: null };
     }
-    const { dist, snap } = nearestOnNet(p.lat, p.lng, result.edges, cfg);
+    const { dist, snap } = nearestOnNet(p.lat, p.lng, result.edges);
     const status: AnchorStatus = dist < snapThresholdMeters ? 'on_path' : 'connected';
     return { text: p.text, poi: [p.lat, p.lng] as [number, number], status, distanceMeters: dist, snap };
   });

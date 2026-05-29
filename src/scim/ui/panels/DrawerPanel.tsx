@@ -327,14 +327,14 @@ export default function DrawerPanel({ onJumpTo }: Props) {
   // Wegnetz auf den Map-Layer zeichnen. Primaere Wege gruen-blau; aktive
   // Konnektoren (Asphalt) grau darunter, damit sichtbar wird, wie sie Luecken
   // zwischen den Wegen schliessen. Inaktive Konnektoren bleiben unsichtbar.
-  const renderPath = (res: PathFetchResult | null, cfg?: PathConfig) => {
+  const renderPath = (res: PathFetchResult | null) => {
     const layer = pathLayerRef.current;
     if (!layer) return;
     layer.clearLayers();
-    if (!res || !cfg) return;
+    if (!res) return;
     // Konnektoren zuerst (liegen unter den primaeren Wegen).
     for (const edge of res.edges) {
-      if (edge.source === 'primary' || !isNetEdge(edge, cfg)) continue;
+      if (edge.source === 'primary' || !isNetEdge(edge)) continue;
       L.polyline(edge.points, {
         color: '#8a94a6',
         weight: 3,
@@ -410,9 +410,9 @@ export default function DrawerPanel({ onJumpTo }: Props) {
       const res = await deriveWanderwegnetz(geo.polygon, cfg, ctrl.signal);
       if (ctrl.signal.aborted) return;
       setPathResult(res);
-      renderPath(res, cfg);
+      renderPath(res);
 
-      const summary = anchorPois(regionPois(geo.id), res, cfg.anker.snap_schwelle_meter, geo.polygon, cfg);
+      const summary = anchorPois(regionPois(geo.id), res, cfg.anker.snap_schwelle_meter, geo.polygon);
       setAnchorSummary(summary);
       renderAnchors(summary);
 
@@ -921,7 +921,7 @@ function PathFilterMenu({
                 display: 'inline-block', width: 14, height: 0,
                 borderTop: '3px solid #8a94a6',
               }} />
-              <strong>{result.connectorCount}</strong> aktive Konnektoren (Asphalt)
+              <strong>{result.connectorCount}</strong> Bridge-Konnektoren (Asphalt)
             </div>
             <div style={{ color: '#718096', marginTop: 2 }}>
               {result.rawWayCount} OSM-Ways geladen
