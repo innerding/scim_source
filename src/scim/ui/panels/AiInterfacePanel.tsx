@@ -2419,6 +2419,49 @@ Representationswechselknoten (Verbund zweier Representations am selben Gate) —
 eigene Überlegung, hier bewusst nicht ausgeführt.`,
     date: '2026-05-29',
   },
+  {
+    id: 'ann_075',
+    category: 'next_intent',
+    label: 'Represent-Build-Workflow + Drawer-Vorlage & Dimmer (Session-Konsens 2026-05-29)',
+    related_panel: 'geometry_editor',
+    content: `Session-Konsens 2026-05-29. Reihenfolge, in der eine Representation
+gebaut wird, plus die dafür nötigen Drawer-Hilfsmittel.
+
+DER WORKFLOW (Reihenfolge)
+  1. Boundary-Draft   — Umriss im Drawer (Umriss-Tab) zeichnen.
+  2. POI-Katalog      — POIs der Region erfassen/pflegen (Katalog).
+  3. Draft-Representation — auf Basis der COMMITTETEN POIs eine Representation
+                        als Entwurf anlegen.
+  4. Wegnetz          — mit POI-Platzhaltern (wie heute) das Wanderwegnetz
+                        ableiten/filtern (Wegnetz-Tab).
+  5. Neue Boundary darüberzeichnen — über das bestehende Netz eine neue
+                        Boundary legen.
+  6. Maskieren        — mit dieser neuen Boundary das Wegnetz maskieren
+                        (Crop → gate-Knoten, s. ann_074).
+
+VERGLEICH LÄUFT ÜBER FERTIGE REPRESENTATIONS
+Der Inspector-Vergleich genügt über bereits FERTIGE Representations: die im
+Inspector gewählte R wird als read-only Referenz im Drawer eingeblendet
+(violetter Umriss, Toggle „Inspector-R einblenden"). KEIN Vergleich zweier
+selbst gezeichneter Drafts nötig.
+
+VORLAGE-BOUNDARY IM DRAWER (read-only)
+Ergänzend hilfreich: eine Boundary nur als VORLAGE laden — sichtbar, aber NICHT
+veränderbar — zum Drüberzeichnen (Schritt 5). Diese Vorlage ist ein eigener
+Layer, getrennt von der editierbaren Boundary.
+
+DREI DIMMER + DREI ON/OFF (auf beide Tabs wirksam)
+Geteilte Steuerleiste, Opacity-Slider + Sichtbarkeits-Toggle je Layer:
+  1. Karten-Hintergrund (Tiles) — abdimmen für Lesbarkeit der Wege.
+  2. Editierbare Boundary       — Default „immer an".
+  3. Vorlage-Boundary (read-only) — der dritte Slot bekommt damit ein echtes
+     Ziel: die geladene Vorlage zum Drüberzeichnen ein-/ausblenden + dimmen.
+
+ZUSTÄNDIGKEITEN (unverändert)
+Drawer = eine Boundary + ihr Wegnetz bauen. Workspace = Komposition von
+Representations. Inspector = fertige R als Referenz zeigen. Nicht vermischen.`,
+    date: '2026-05-29',
+  },
 ];
 
 function AnnotationsTab() {
