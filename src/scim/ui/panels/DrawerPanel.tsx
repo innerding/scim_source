@@ -244,10 +244,15 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     if (tab === 'umriss') {
       if (!pm.controlsVisible?.()) addBoundaryControls(map);
     } else {
-      // Wegnetz: Boundary nur sichtbar, nicht bearbeitbar.
-      pm.disableGlobalEditMode?.();
-      pm.disableGlobalDragMode?.();
+      // Wegnetz: Boundary nur sichtbar, nicht bearbeitbar. Toolbar entfernen
+      // genuegt (ohne Werkzeuge kein Editieren). Die globalen disable*-Methoden
+      // von Geoman NICHT aufrufen — sie iterieren ueber alle Map-Layer und
+      // greifen auf layer.pm zu; das programmatisch gezeichnete Boundary-Polygon
+      // hat kein pm und liess Geoman crashen (weisser Screen). Stattdessen
+      // gezielt nur am Boundary-Layer den Edit-Modus beenden, falls vorhanden.
       pm.removeControls?.();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (polygonLayerRef.current as any)?.pm?.disable?.();
     }
     setTimeout(() => {
       map.invalidateSize();
