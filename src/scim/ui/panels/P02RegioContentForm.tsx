@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type {
   RegioContentState, RegionalParameters, RegioPoi,
   RegionalRestriction, FallbackRoutePolicy, RouteExceedanceBehavior,
@@ -206,7 +206,7 @@ export default function P02RegioContentForm({ state }: Props) {
     () => loadIncludedTypes(regionSlug),
   );
   // Region-Wechsel (Inspector dreht auf andere R) -> Neuladen.
-  useMemo(() => {
+  useEffect(() => {
     setIncludedTypesState(loadIncludedTypes(regionSlug));
   }, [regionSlug]);
 
