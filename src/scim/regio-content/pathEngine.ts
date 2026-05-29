@@ -155,15 +155,13 @@ function classify(ways: OverpassWay[], cfg: PathConfig): PathEdge[] {
 }
 
 // ─── Konnektor-Gate (Phase 4) ───────────────────────────────────────────────────
-// Eine Konnektor-Strasse zaehlt nur als das Stueck zwischen zwei gruenen
-// Anschluesse (Endpunkte primaerer Wege), und nur wenn dieses Stueck kuerzer
-// als die Max-Laenge der Gruppe ist. Lange Durchgangsstrassen fliegen damit raus;
-// vom Bridge-Konnektor bleibt nur das relevante Teilstueck (auf points zugeschnitten).
-//
-// Toleranz, ab der ein gruener Endpunkt als "auf dem Konnektor" gilt. Wanderwege
-// enden in der Praxis direkt auf dem Asphalt; ein paar Meter Spiel fangen
-// OSM-/Projektions-Ungenauigkeit ab, ohne fremde Strassen einzusammeln.
-const ATTACH_TOL_M = 10;
+// Eine Konnektor-Strasse wird an jedem gruenen Anschlusspunkt (Endpunkt eines
+// primaeren Wegs, innerhalb der Anschluss-Toleranz) zerschnitten. Jedes
+// *benachbarte* Anschluss-Paar wird einzeln als Bridge behalten, sofern sein
+// Teilstueck kuerzer als die Max-Laenge der Gruppe ist. So bekommt jede Gabel
+// ihren eigenen kurzen Asphalt-Stummel; lange Luecken fallen einzeln raus, statt
+// die ganze Strasse zu verwerfen. Die Anschluss-Toleranz ist faktisch der
+// Verschweiss-Regler (cfg.konnektoren.anschluss_toleranz_meter).
 
 const M_LAT = 110540;
 
@@ -212,32 +210,49 @@ function cropPolyline(
   return out;
 }
 
-function gateConnectors(edges: PathEdge[], cfg: PathConfig): void {
+// Liefert die Bridge-Teilstuecke (inNet=true) aus den Konnektor-Kandidaten.
+// Die Original-Kandidaten bleiben mit inNet=false unangetastet im edges-Array.
+function gateConnectors(edges: PathEdge[], cfg: PathConfig): PathEdge[] {
   // Anschlusspunkte = Endpunkte aller primaeren Wege.
   const endpoints: [number, number][] = [];
   for (const e of edges) {
     if (e.source !== 'primary' || e.points.length < 2) continue;
     endpoints.push(e.points[0], e.points[e.points.length - 1]);
   }
+  const tol = cfg.konnektoren.anschluss_toleranz_meter;
+  const bridges: PathEdge[] = [];
   for (const e of edges) {
     if (e.source !== 'connector_candidate' || e.points.length < 2) continue;
     const g = connectorGroupOf(e.highway);
-    if (!g || !cfg.konnektoren[g].aktiv) continue;     // Gruppe deaktiviert → bleibt draussen
+    if (!g || !cfg.konnektoren[g].aktiv) continue;     // Gruppe deaktiviert → keine Bridge
     const maxLen = cfg.konnektoren[g].max_laenge_meter;
     const mLng = 111320 * Math.cos((e.points[0][0] * Math.PI) / 180);
 
-    const attachS: number[] = [];
+    // Bogenlaengen der Anschlusspunkte einsammeln, sortieren, nah beieinander-
+    // liegende (selber Knoten ueber mehrere primaere Ways) zusammenfassen.
+    const raw: number[] = [];
     for (const [eLat, eLng] of endpoints) {
       const { s, dist } = projectToPolyline(eLat, eLng, e.points, mLng);
-      if (dist <= ATTACH_TOL_M) attachS.push(s);
+      if (dist <= tol) raw.push(s);
     }
-    if (attachS.length < 2) continue;                  // kein Bridge → bleibt draussen
-    const sLo = Math.min(...attachS), sHi = Math.max(...attachS);
-    const span = sHi - sLo;
-    if (span <= 0 || span > maxLen) continue;          // Luecke zu gross → bleibt draussen
-    const cropped = cropPolyline(e.points, sLo, sHi, mLng);
-    if (cropped.length >= 2) { e.points = cropped; e.inNet = true; }
+    if (raw.length < 2) continue;
+    raw.sort((a, b) => a - b);
+    const attachS: number[] = [];
+    for (const s of raw) {
+      if (attachS.length === 0 || s - attachS[attachS.length - 1] > 0.5) attachS.push(s);
+    }
+
+    // Jedes benachbarte Paar einzeln als Bridge pruefen.
+    for (let i = 0; i + 1 < attachS.length; i++) {
+      const span = attachS[i + 1] - attachS[i];
+      if (span <= 0 || span > maxLen) continue;        // Luecke zu gross → dieses Paar raus
+      const cropped = cropPolyline(e.points, attachS[i], attachS[i + 1], mLng);
+      if (cropped.length >= 2) {
+        bridges.push({ id: e.id, highway: e.highway, source: 'connector_candidate', points: cropped, tags: e.tags, inNet: true });
+      }
+    }
   }
+  return bridges;
 }
 
 // ─── Oeffentlicher Einstieg ────────────────────────────────────────────────────
@@ -263,12 +278,13 @@ export async function deriveWanderwegnetz(
   const json = await res.json() as { elements?: OverpassWay[] };
   const ways = (json.elements ?? []).filter((el): el is OverpassWay => el.type === 'way');
 
-  const edges = classify(ways, cfg);
-  gateConnectors(edges, cfg);
+  const classified = classify(ways, cfg);
+  const bridges = gateConnectors(classified, cfg);
+  const edges = [...classified, ...bridges];
   return {
     edges,
     primaryCount: edges.filter((e) => e.source === 'primary').length,
-    connectorCount: edges.filter((e) => e.source === 'connector_candidate' && e.inNet).length,
+    connectorCount: bridges.length,
     rawWayCount: ways.length,
     bbox,
     fetchedAt: Date.now(),

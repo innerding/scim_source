@@ -812,6 +812,16 @@ function PathFilterMenu({
           onAktiv={(v) => update((c) => ({ ...c, konnektoren: { ...c.konnektoren, landstrasse: { ...c.konnektoren.landstrasse, aktiv: v } } }))}
           onMax={(v) => update((c) => ({ ...c, konnektoren: { ...c.konnektoren, landstrasse: { ...c.konnektoren.landstrasse, max_laenge_meter: v } } }))}
         />
+        <Slider
+          label="Anschluss-Toleranz"
+          value={cfg.konnektoren.anschluss_toleranz_meter}
+          min={0} max={30} step={1}
+          onChange={(v) => update((c) => ({ ...c, konnektoren: { ...c.konnektoren, anschluss_toleranz_meter: v } }))}
+        />
+        <div style={{ padding: '0 10px', fontSize: 10, color: '#a0aec0', lineHeight: 1.5 }}>
+          Abstand, bis zu dem ein grünes Wegende als auf der Straße liegend gilt
+          (Verschweißen). Größer = mehr Gabeln verbinden, aber Risiko fremder Anschlüsse.
+        </div>
       </Section>
 
       <Section title="Ausschlüsse">

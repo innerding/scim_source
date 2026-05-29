@@ -24,6 +24,9 @@ export interface PathConfig {
   konnektoren: {
     nebenstrasse: { aktiv: boolean; max_laenge_meter: number };
     landstrasse: { aktiv: boolean; max_laenge_meter: number };
+    // Toleranz, ab der ein gruener Weg-Endpunkt als auf dem Konnektor liegend
+    // gilt (faktisch der Verschweiss-Regler). Gelaende-/Daten-abhaengig.
+    anschluss_toleranz_meter: number;
   };
   ausschluesse: {
     foot_no: boolean;
@@ -57,6 +60,7 @@ export function defaultPathConfig(gebiet: string): PathConfig {
     konnektoren: {
       nebenstrasse: { aktiv: true, max_laenge_meter: 80 },
       landstrasse: { aktiv: true, max_laenge_meter: 20 },
+      anschluss_toleranz_meter: 10,
     },
     ausschluesse: {
       foot_no: true,
@@ -91,6 +95,7 @@ export function loadPathConfig(gebiet: string): PathConfig {
       konnektoren: {
         nebenstrasse: { ...fallback.konnektoren.nebenstrasse, ...parsed.konnektoren?.nebenstrasse },
         landstrasse: { ...fallback.konnektoren.landstrasse, ...parsed.konnektoren?.landstrasse },
+        anschluss_toleranz_meter: parsed.konnektoren?.anschluss_toleranz_meter ?? fallback.konnektoren.anschluss_toleranz_meter,
       },
       ausschluesse: { ...fallback.ausschluesse, ...parsed.ausschluesse },
       diagnose: { ...fallback.diagnose, ...parsed.diagnose },
