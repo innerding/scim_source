@@ -2223,6 +2223,108 @@ los; widerspruchsbehaftete Details (Violett, Voll-Filter-Set)
 sind ueberschrieben.`,
     date: '2026-05-29',
   },
+
+  {
+    id: 'ann_071',
+    category: 'next_intent',
+    label: 'Laengen-Filter: kurze Asphaltstrecken automatisch ins Wegnetz',
+    content: `Bessere Idee 2026-05-29 spaet: statt jeden Asphalt-Connector
+manuell als Layer C zu zeichnen (ann_070), nehmen wir die Anschluss-
+Stuecke automatisch ins Wegnetz auf — sobald sie kurz genug sind.
+
+Das ersetzt 80 % der manuellen Layer-C-Arbeit aus ann_070. Manuelle
+Layer-C-Zeichnung bleibt fuer Ausreisser (lange Asphalt-Verbindungen,
+die der Operator trotzdem aufnehmen will).
+
+Regel
+=====
+
+Zusaetzlich zum bestehenden Highway-Typ-Filter ein neuer
+Laengen-Filter:
+
+  Wenn highway_type NICHT in Wander-Whitelist (z. B. service,
+  residential, unclassified, tertiary etc.)
+  UND length <= L_max
+  DANN: Edge wird in das komponierte Wegnetz aufgenommen.
+
+L_max als Schwelle pro Region konfigurierbar (Default-Vorschlag:
+30-60 m, am Lichtenberg vermutlich 30 m).
+
+Optional verfeinert: Edge wird nur aufgenommen, wenn sie zwischen
+zwei sonst getrennten Wander-Komponenten Verbindung schafft
+(Graph-Komponenten-Test). Verhindert, dass irrelevante kurze
+Service-Stuecke das Mesh unnoetig fuellen.
+
+Werkzeuge
+=========
+
+Was wir brauchen:
+  - Laengenberechnung pro Edge (Haversine reicht, oder Turf.js
+    fuer Genauigkeit; Turf.js ist die uebliche Wahl im Browser-
+    Mapping-Stack)
+  - Spatial-Index / Graph-Komponenten-Test (Turf.js: nearestPoint,
+    booleanIntersects; eigene Union-Find fuer Komponenten ist trivial)
+  - Edge-Knoten-Normalisierung (Endpunkte gleich-coord => gleicher
+    Knoten) — bauen wir uns kurz, ~30 Z. Code
+
+Turf.js Dependency-Decision aufschieben bis Bauphase. Eigener
+Haversine-Code reicht erstmal.
+
+Beziehung zum Drawer (ann_070)
+==============================
+
+Drawer behaelt alle Layer (A/B/C + Filter + OSM-Loeschen), aber:
+
+  - Layer-C-Manuell ist seltener noetig (nur Ausreisser)
+  - Im UI gibt es zusaetzlich eine Sektion "Laengen-Filter"
+    mit Slider L_max und (optional) Checkbox "nur wenn
+    luecken-schliessend"
+  - Default: Laengen-Filter AN bei 30 m
+
+Verhaeltnis zu P02 / Migration
+==============================
+
+Der Laengen-Filter sitzt zusammen mit dem Highway-Typ-Filter im
+Drawer (P02 verliert beide). P02 fokussiert auf Routing-Schwellen,
+nicht auf Wegnetz-Komposition.
+
+Phasen-Anpassung zu ann_070
+============================
+
+  Phase 5 (Komposition A union B union C) wird ergaenzt um
+          die Laengen-basierte Auto-Aufnahme von kurzen
+          Asphalt-Edges aus A.
+  Phase 6 (Migration Filter P02 -> Drawer) inkludiert die
+          neue Sektion "Laengen-Filter".
+
+POI-Anker (vorgezogen?)
+=======================
+
+Operator-Hinweis am selben Abend: "Anker-Code schreiben".
+Erinnerung: POI-Anker (POI -> nearest Node im komponierten Wegnetz)
+war als Phase 7 vorgesehen (nach Drawer). Mit dem Laengen-Filter
+oben wird der Graph robuster, Anker-Code wird leichter — nicht mehr
+ueber Luecken in der Mesh stolpern. Reihenfolge kann erwogen werden:
+
+  Variante A  Drawer Phasen 1-6 zuerst, dann Anker (urspruenglich)
+  Variante B  kompakter Graph-Composer + Anker zuerst, Drawer-UI
+              danach (wenn dem Operator das wichtiger ist)
+
+Nicht jetzt entscheiden — die naechste Session beginnt mit Aufraeumen
+("ein bisschen ordnung schaffen auf der SCIM"), dann ist Variante A
+oder B Operator-Entscheidung.
+
+Vorbereitungs-Checklist fuer naechste Session
+=============================================
+
+  1. Aufraeumen — siehe naechste Session-Eroeffnung
+  2. Werkzeuge: Haversine inline oder Turf.js? (kleiner Diskuss)
+  3. Komponierte Wegnetz-Komposer (A + auto-aufgenommene kurze
+     Asphalt-Edges)
+  4. Drawer-Panel-Shell + Filter-Sektionen
+  5. POI-Anker-Code (Variante A oder B)`,
+    date: '2026-05-29',
+  },
 ];
 
 function AnnotationsTab() {
