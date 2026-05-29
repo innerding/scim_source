@@ -2353,6 +2353,72 @@ Ehrliche Quelle ist seit 2026-05-29 DEPLOY.md im Repo.
    sichtbar vor. Neuen Key in GH-Secret + Worker-Secret nachziehen.`,
     date: '2026-05-29',
   },
+  {
+    id: 'ann_074',
+    category: 'invariant',
+    label: 'Geschlossenes Netz — jeder Endknoten ist ein POI (Soll-Quelle Phase 5/7)',
+    related_panel: 'geometry_editor',
+    content: `Konsolidierte System-Erklärung 2026-05-29. Soll-Quelle für die
+Wegnetz-Phasen 5 (Crop) und 7 (Endknoten-Klassifikation).
+
+LEITPRINZIP: GESCHLOSSENES NETZ
+Unser Netz ist im Normalfall geschlossen — das unterscheidet es von anderen
+Routing-Systemen. Daraus folgt: JEDER Endknoten (degree 1) ist ein POI.
+Kein unbegründetes loses Ende.
+
+JEDER POI ERZEUGT EINEN STICH
+Ein POI liegt nie exakt auf einem Pfad → das System legt für jeden POI eine
+Sackgasse (Connector) an. Der Anker ist damit nicht QA, sondern der
+Baumechanismus selbst ("Anker zuerst", vor den Konnektoren).
+
+  Snap-Schwelle (Gelände-Schieber 0,5–6 m, Default ~2 m):
+    Abstand POI↔Pfad < Schwelle  → POI gilt als AUF dem Pfad, kein Stich,
+                                    nur Knoten.
+    Abstand POI↔Pfad ≥ Schwelle  → echter connected-POI-Stich.
+  Gelände-abhängig: im Steilgelände kann ein gerader 2-m-Connector über eine
+  Absturzkante laufen — kleine Toleranz; im Flachen größere zulässig.
+
+ZWEI ENTSTEHUNGS-MECHANISMEN (jeder Endknoten = POI)
+  1. connected-POI — Normalfall Ziel. POI erzeugt von sich aus den Stich auf
+     Overpass. Universell (s. o.).
+  2. translate-/gate-POI — entsteht durch MASKIERUNG: eine durchgehende
+     Verbindung wird am Rand gekappt. Die Maskierung schneidet NICHT am
+     willkürlichen Polygon-Schnittpunkt, sondern am nächsten echten OSM-Knoten
+     INNEN und AUSSEN → es entstehen zwei Knoten:
+       inner-gate-Knoten  — nächster OSM-Knoten innerhalb der Boundary
+       outer-gate-Knoten  — nächster OSM-Knoten außerhalb der Boundary
+     Weil beide auf realen, stabilen OSM-Knoten sitzen, referenzieren zwei
+     Nachbar-Representations dieselben Knoten → deterministische Translation
+     statt Fuzzy-Match. Der inner-gate ist der user-facing Eintritts-/
+     Austrittspunkt; das Paar (inner/outer) dient dem späteren Representations-
+     Verbund. Das ist exakt der frühere "Boundary-Port/amputierte Knoten".
+
+FEHLERREGEL (dritte Sorte)
+Eine BEREITS VORHANDENE OSM-Sackgasse, die weder connected- noch gate-POI ist:
+  - manuell mit POI versehen, ODER
+  - in OSM neutralisieren, ODER
+  - das System wirft sie raus.
+Kein stilles Behalten.
+
+VERWORFEN
+"Umgebende Straße mitnehmen" (Reststück bis Maximallänge fürs Routing) war ein
+missglückter Ansatz und ist gestrichen. Ein Boundary-Schnitt ist der Schnitt.
+
+IST-STAND-KORREKTUR
+Phase 3 schneidet noch NICHT zu — bbox-Fetch zeigt alles bis es irgendwo endet.
+Das Beschneiden auf die Boundary ist Phase 5 (Crop) und erzeugt überhaupt erst
+die gate-Knoten — nicht durch Splitten am Polygon, sondern durch Schnitt am
+nächsten OSM-Knoten innen/außen (inner-gate + outer-gate).
+
+BEGRIFFLICHE UMBENENNUNG
+Der "Dead-End-Filter" (Phase 7) ist in Wahrheit ein ENDKNOTEN-KLASSIFIKATOR /
+Netz-Schließer: jeder Leaf → {connected-POI | gate-POI | Fehler→fix/drop}.
+
+GEPARKT
+Representationswechselknoten (Verbund zweier Representations am selben Gate) —
+eigene Überlegung, hier bewusst nicht ausgeführt.`,
+    date: '2026-05-29',
+  },
 ];
 
 function AnnotationsTab() {
