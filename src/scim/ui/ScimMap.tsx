@@ -12,7 +12,7 @@ import {
   addRoadHeatMesh, addPoiRoutes, fetchOsmEdges,
   TILE_OSM_URL, TILE_OSM_ATTR, TILE_MESH_URL, TILE_MESH_ATTR,
 } from './colourMeshOverlay';
-import { useActiveRepresentation } from '../../runtime/repContext';
+import { useInspectorView } from '../../runtime/repContext';
 
 interface OsmEdge {
   edge_id: string;
@@ -70,12 +70,10 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
   const baseTileRef = useRef<L.TileLayer | null>(null);
   const [vis, setVis] = useState<LayerVisibility>(DEFAULT_VISIBILITY);
 
-  // Aktive Representation aus dem RepresentationContext (Schritt 3).
-  // Wenn gesetzt, ueberschreibt sie die Pipeline-bbox fuer Fit + OSM-Fetch
-  // und zeichnet ihren Polygon-Outline als zusaetzliche Boundary.
-  // POIs aus rep.catalog_id folgen, sobald die Sichtbarkeit (Style, Click)
-  // mit dem User abgestimmt ist — siehe Stopp-Linie ann_067.
-  const activeRep = useActiveRepresentation();
+  // Effektive Sicht des Inspectors: bevorzugt die Operator-Auswahl
+  // (Compare-Modus), faellt auf die URL-aktive R zurueck. Siehe
+  // runtime/repContext.ts → useInspectorView.
+  const activeRep = useInspectorView();
   const repBbox = useMemo(
     () => (activeRep ? polygonBbox(activeRep.geometry.polygon) : null),
     [activeRep],

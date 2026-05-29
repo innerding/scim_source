@@ -36,12 +36,25 @@ export interface ActiveRepresentation {
 }
 
 export interface RepresentationContextValue {
+  // ─── Runtime-Schicht ─────────────────────────────────────────────────
+  // Was die Endnutzer-App zeigt. Default-Quelle fuer alle Anschauer.
   active: ActiveRepresentation | null;
   /** Setze aktive R per Representation-ID. Aktualisiert URL via pushState. */
   setActiveRepresentation: (repId: string) => void;
   /** Setze zurueck, navigiere zu '/'. */
   clearActiveRepresentation: () => void;
-  /** Vollstaendige Registry, hilfreich fuer Listen-Panels. */
+
+  // ─── Operator-Schicht ────────────────────────────────────────────────
+  // Was der Operator gerade *anschaut* — darf von active abweichen
+  // (Compare-Modus, Referenz fuer den Editor). Null = follow active.
+  // URL wird NICHT angefasst, das hier ist Operator-lokal.
+  inspectorView: ActiveRepresentation | null;
+  /** Set: id = follow eine bestimmte R; null = follow active. */
+  setInspectorView: (repId: string | null) => void;
+  /** Effektive Sicht: inspectorView wenn gesetzt, sonst active. */
+  effectiveInspector: ActiveRepresentation | null;
+
+  /** Vollstaendige Registry, hilfreich fuer Listen-Panels und Dropdowns. */
   registry: {
     representations: Representation[];
     geometries: BoundaryGeometry[];
@@ -72,8 +85,17 @@ export interface RepresentationProviderProps {
   children: ReactNode;
 }
 
+function buildView(repId: string): ActiveRepresentation | null {
+  const rep = REPRESENTATIONS.find((r) => r.id === repId);
+  if (!rep) return null;
+  const geo = GEOMETRIES.find((g) => g.id === rep.geometry_id);
+  if (!geo) return null;
+  return { representation: rep, geometry: geo };
+}
+
 export function RepresentationProvider({ children }: RepresentationProviderProps) {
   const [active, setActive] = useState<ActiveRepresentation | null>(() => resolveCurrent());
+  const [inspectorView, setInspectorViewState] = useState<ActiveRepresentation | null>(null);
 
   // Browser-Back/Forward synchronisieren
   useEffect(() => {
@@ -84,11 +106,8 @@ export function RepresentationProvider({ children }: RepresentationProviderProps
   }, []);
 
   const setActiveRepresentation = useCallback((repId: string) => {
-    const rep = REPRESENTATIONS.find((r) => r.id === repId);
-    if (!rep) return;
-    const geo = GEOMETRIES.find((g) => g.id === rep.geometry_id);
-    if (!geo) return;
-    const next: ActiveRepresentation = { representation: rep, geometry: geo };
+    const next = buildView(repId);
+    if (!next) return;
     const nextPath = pathnameForRep(next);
     if (typeof window !== 'undefined' && window.location.pathname !== nextPath) {
       window.history.pushState({}, '', nextPath);
@@ -103,12 +122,28 @@ export function RepresentationProvider({ children }: RepresentationProviderProps
     setActive(null);
   }, []);
 
+  const setInspectorView = useCallback((repId: string | null) => {
+    if (repId === null) {
+      setInspectorViewState(null);
+      return;
+    }
+    setInspectorViewState(buildView(repId));
+  }, []);
+
+  const effectiveInspector = inspectorView ?? active;
+
   const value = useMemo<RepresentationContextValue>(() => ({
     active,
     setActiveRepresentation,
     clearActiveRepresentation,
+    inspectorView,
+    setInspectorView,
+    effectiveInspector,
     registry: { representations: REPRESENTATIONS, geometries: GEOMETRIES },
-  }), [active, setActiveRepresentation, clearActiveRepresentation]);
+  }), [
+    active, setActiveRepresentation, clearActiveRepresentation,
+    inspectorView, setInspectorView, effectiveInspector,
+  ]);
 
   return createElement(RepresentationContext.Provider, { value }, children);
 }
@@ -135,4 +170,13 @@ export function useRepresentationContext(): RepresentationContextValue {
  */
 export function useActiveRepresentation(): ActiveRepresentation | null {
   return useRepresentationContext().active;
+}
+
+/**
+ * Lese-Hook fuer die *Operator-Sicht* — was im Inspector / als Bezugspunkt
+ * gezeigt werden soll. Faellt automatisch auf active zurueck, wenn der
+ * Operator keinen Compare-Modus aktiviert hat.
+ */
+export function useInspectorView(): ActiveRepresentation | null {
+  return useRepresentationContext().effectiveInspector;
 }
