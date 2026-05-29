@@ -815,7 +815,7 @@ function PathFilterMenu({
         <Slider
           label="Anschluss-Toleranz"
           value={cfg.konnektoren.anschluss_toleranz_meter}
-          min={0} max={100} step={1}
+          min={0} max={250} step={5}
           onChange={(v) => update((c) => ({ ...c, konnektoren: { ...c.konnektoren, anschluss_toleranz_meter: v } }))}
         />
         <div style={{ padding: '0 10px', fontSize: 10, color: '#a0aec0', lineHeight: 1.5 }}>
@@ -1022,7 +1022,7 @@ function Connector({
       </label>
       <div style={{ fontSize: 10, color: '#a0aec0', margin: '1px 0 3px 22px', fontFamily: 'monospace' }}>{hint}</div>
       <div style={{ opacity: aktiv ? 1 : 0.4, pointerEvents: aktiv ? 'auto' : 'none' }}>
-        <Slider label="max. Länge" value={max} min={0} max={200} step={10} onChange={onMax} />
+        <Slider label="max. Länge" value={max} min={0} max={500} step={10} onChange={onMax} />
       </div>
     </div>
   );
