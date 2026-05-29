@@ -27,7 +27,7 @@ import {
   loadPathConfig, savePathConfig, type PathConfig, type BridlewayMode,
 } from '../../regio-content/pathConfig';
 import {
-  deriveWanderwegnetz, anchorPois,
+  deriveWanderwegnetz, anchorPois, isNetEdge,
   type PathFetchResult, type AnchorSummary, type PoiInput,
 } from '../../regio-content/pathEngine';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -324,13 +324,23 @@ export default function DrawerPanel({ onJumpTo }: Props) {
     }
   }, [overlayCatalogId]);
 
-  // Wegnetz auf den Map-Layer zeichnen. Phase 3: nur primaere Wege
-  // (gruen-blau), Konnektor-Kandidaten bleiben unsichtbar bis Phase 4.
-  const renderPath = (res: PathFetchResult | null) => {
+  // Wegnetz auf den Map-Layer zeichnen. Primaere Wege gruen-blau; aktive
+  // Konnektoren (Asphalt) grau darunter, damit sichtbar wird, wie sie Luecken
+  // zwischen den Wegen schliessen. Inaktive Konnektoren bleiben unsichtbar.
+  const renderPath = (res: PathFetchResult | null, cfg?: PathConfig) => {
     const layer = pathLayerRef.current;
     if (!layer) return;
     layer.clearLayers();
-    if (!res) return;
+    if (!res || !cfg) return;
+    // Konnektoren zuerst (liegen unter den primaeren Wegen).
+    for (const edge of res.edges) {
+      if (edge.source === 'primary' || !isNetEdge(edge, cfg)) continue;
+      L.polyline(edge.points, {
+        color: '#8a94a6',
+        weight: 3,
+        opacity: 0.7,
+      }).addTo(layer);
+    }
     for (const edge of res.edges) {
       if (edge.source !== 'primary') continue;
       L.polyline(edge.points, {
@@ -400,9 +410,9 @@ export default function DrawerPanel({ onJumpTo }: Props) {
       const res = await deriveWanderwegnetz(geo.polygon, cfg, ctrl.signal);
       if (ctrl.signal.aborted) return;
       setPathResult(res);
-      renderPath(res);
+      renderPath(res, cfg);
 
-      const summary = anchorPois(regionPois(geo.id), res, cfg.anker.snap_schwelle_meter, geo.polygon);
+      const summary = anchorPois(regionPois(geo.id), res, cfg.anker.snap_schwelle_meter, geo.polygon, cfg);
       setAnchorSummary(summary);
       renderAnchors(summary);
 
@@ -511,7 +521,7 @@ export default function DrawerPanel({ onJumpTo }: Props) {
         <span style={{ flex: 1 }} />
         {tab === 'wegnetz' && (
           <span style={{ fontSize: 10, color: '#a0aec0', fontStyle: 'italic', marginBottom: 4 }}>
-            Phase 3 · Primär-Filter live · Konnektoren ab Phase 4
+            Primär-Filter + Konnektoren live · Verschweißen folgt
           </span>
         )}
       </div>
@@ -906,8 +916,15 @@ function PathFilterMenu({
               }} />
               <strong>{result.primaryCount}</strong> primäre Wege
             </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+              <span style={{
+                display: 'inline-block', width: 14, height: 0,
+                borderTop: '3px solid #8a94a6',
+              }} />
+              <strong>{result.connectorCount}</strong> aktive Konnektoren (Asphalt)
+            </div>
             <div style={{ color: '#718096', marginTop: 2 }}>
-              {result.rawWayCount} OSM-Ways geladen · Konnektoren ab Phase 4
+              {result.rawWayCount} OSM-Ways geladen
             </div>
           </div>
         )}
@@ -923,8 +940,9 @@ function PathFilterMenu({
           </div>
         )}
         <div style={{ fontSize: 10, color: '#a0aec0', lineHeight: 1.5 }}>
-          „Anwenden" lädt OSM (Overpass) für die Region-Boundary und zeichnet die
-          primären Wege. Konnektoren, Lücken und Sackgassen folgen ab Phase 4.
+          „Anwenden" lädt OSM (Overpass) für die Region-Boundary und zeichnet
+          primäre Wege (grün) plus aktive Konnektoren (grau). Lücken, Sackgassen
+          und das Verschweißen folgen in späteren Phasen.
         </div>
       </div>
     </div>

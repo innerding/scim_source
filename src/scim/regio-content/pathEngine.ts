@@ -37,6 +37,7 @@ export interface PathEdge {
 export interface PathFetchResult {
   edges: PathEdge[];        // gefiltert (primary) + Konnektor-Kandidaten
   primaryCount: number;
+  connectorCount: number;   // aktive Konnektoren (per Config) — Teil des Netzes
   rawWayCount: number;
   bbox: [number, number, number, number]; // [south, west, north, east]
   fetchedAt: number;
@@ -108,6 +109,27 @@ function isPrimaryEnabled(highway: string, cfg: PathConfig, tags: Record<string,
   }
 }
 
+// ─── Netz-Zugehoerigkeit ───────────────────────────────────────────────────────
+// Das "Netz" = primaere Wege + aktive Konnektoren (Asphalt). Konnektoren werden
+// immer geladen, zaehlen aber nur, wenn ihre Gruppe in der Config aktiv ist.
+export type ConnectorGroup = 'nebenstrasse' | 'landstrasse';
+
+const NEBENSTRASSE = new Set(['service', 'residential', 'living_street', 'unclassified']);
+const LANDSTRASSE = new Set(['tertiary', 'secondary', 'primary']);
+
+export function connectorGroupOf(highway: string): ConnectorGroup | null {
+  if (NEBENSTRASSE.has(highway)) return 'nebenstrasse';
+  if (LANDSTRASSE.has(highway)) return 'landstrasse';
+  return null;
+}
+
+// Gehoert die Kante zum aktiven Netz (rendern + Anker-Snap)?
+export function isNetEdge(edge: PathEdge, cfg: PathConfig): boolean {
+  if (edge.source === 'primary') return true;
+  const g = connectorGroupOf(edge.highway);
+  return g ? cfg.konnektoren[g].aktiv : false;
+}
+
 function classify(ways: OverpassWay[], cfg: PathConfig): PathEdge[] {
   const edges: PathEdge[] = [];
   for (const way of ways) {
@@ -156,6 +178,7 @@ export async function deriveWanderwegnetz(
   return {
     edges,
     primaryCount: edges.filter((e) => e.source === 'primary').length,
+    connectorCount: edges.filter((e) => e.source === 'connector_candidate' && isNetEdge(e, cfg)).length,
     rawWayCount: ways.length,
     bbox,
     fetchedAt: Date.now(),
@@ -209,14 +232,14 @@ function pointInRing(lng: number, lat: number, ring: Position[]): boolean {
 
 // Naechster Punkt auf den primaeren Kanten, lokal-planar projiziert (in Metern).
 // Fuer Regions-Distanzen (< wenige km) ausreichend genau.
-function nearestOnNet(lat: number, lng: number, edges: PathEdge[]): { dist: number; snap: [number, number] | null } {
+function nearestOnNet(lat: number, lng: number, edges: PathEdge[], cfg: PathConfig): { dist: number; snap: [number, number] | null } {
   const mLat = 110540;
   const mLng = 111320 * Math.cos((lat * Math.PI) / 180);
   const px = lng * mLng, py = lat * mLat;
   let best = Infinity;
   let bestSnap: [number, number] | null = null;
   for (const e of edges) {
-    if (e.source !== 'primary') continue;
+    if (!isNetEdge(e, cfg)) continue;
     for (let i = 0; i + 1 < e.points.length; i++) {
       const ax = e.points[i][1] * mLng, ay = e.points[i][0] * mLat;
       const bx = e.points[i + 1][1] * mLng, by = e.points[i + 1][0] * mLat;
@@ -240,12 +263,13 @@ export function anchorPois(
   result: PathFetchResult,
   snapThresholdMeters: number,
   boundary: Position[],
+  cfg: PathConfig,
 ): AnchorSummary {
   const results: AnchorResult[] = pois.map((p) => {
     if (boundary.length >= 3 && !pointInRing(p.lng, p.lat, boundary)) {
       return { text: p.text, poi: [p.lat, p.lng] as [number, number], status: 'outside' as const, distanceMeters: NaN, snap: null };
     }
-    const { dist, snap } = nearestOnNet(p.lat, p.lng, result.edges);
+    const { dist, snap } = nearestOnNet(p.lat, p.lng, result.edges, cfg);
     const status: AnchorStatus = dist < snapThresholdMeters ? 'on_path' : 'connected';
     return { text: p.text, poi: [p.lat, p.lng] as [number, number], status, distanceMeters: dist, snap };
   });
