@@ -5,41 +5,44 @@
 // Resultat ist ein JSON-Inhalt, den der Operator nach data/representations/
 // pasted und committed.
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { GEOMETRIES } from '../../workspace/workspace.registry';
 import type { RepresentationFile } from '../../workspace/workspace.types';
-import { DRAFT_KEY } from './GeometryEditorPanel';
+import { commitToRepo, type CommitResult } from '../../../runtime/commitBridge';
 
 const CATALOGS = [
   { id: 'gruenberg', name: 'Grünberg' },
   { id: 'lichtenberg', name: 'Lichtenberg' },
 ];
 
-// Draft aus localStorage (gleiches Schema wie WorkspacePanel).
-interface GeometryDraft {
-  geometryId: string | 'new';
+// Wizard-DRAFT in localStorage: ueberlebt Reloads und Bauunterbrechungen,
+// erzeugt aber keinen Commit, bis der Operator den Commit-Knopf drueckt.
+// Per Konsens-Entscheidung: Wizard akzeptiert nur committete Geometrien
+// (Variante 1 / sequenziell). Geometry-DRAFTs muessen erst ueber den
+// Geometry-Editor committed werden, dann sind sie hier auswaehlbar.
+const WIZARD_DRAFT_KEY = 'scim3_wizard_draft';
+
+interface WizardDraft {
   name: string;
-  region: string;
-  polygon: [number, number][] | null;
+  geometryId: string;
+  catalogId: string;
+  note: string;
 }
 
-function loadGeometryDraft(): GeometryDraft | null {
+function loadWizardDraft(): WizardDraft {
   try {
-    const raw = localStorage.getItem(DRAFT_KEY);
-    if (!raw) return null;
-    const d = JSON.parse(raw) as GeometryDraft;
-    if (!d.polygon || d.polygon.length < 3) return null;
-    return d;
-  } catch { return null; }
+    const raw = localStorage.getItem(WIZARD_DRAFT_KEY);
+    if (raw) return JSON.parse(raw) as WizardDraft;
+  } catch { /* ignore */ }
+  return { name: '', geometryId: '', catalogId: '', note: '' };
 }
 
-// Slug aus einem Namen, gleich wie GeometryEditor proposedFileName.
-function slugify(s: string): string {
-  return s
-    .toLowerCase()
-    .replace(/[äöüß]/g, (c) => ({ ä: 'ae', ö: 'oe', ü: 'ue', ß: 'ss' }[c] ?? c))
-    .replace(/[^a-z0-9-]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+function saveWizardDraft(d: WizardDraft): void {
+  try { localStorage.setItem(WIZARD_DRAFT_KEY, JSON.stringify(d)); } catch { /* ignore */ }
+}
+
+function clearWizardDraft(): void {
+  try { localStorage.removeItem(WIZARD_DRAFT_KEY); } catch { /* ignore */ }
 }
 
 interface Props {
@@ -47,35 +50,31 @@ interface Props {
 }
 
 export default function RepresentationWizard({ onClose }: Props) {
-  const [name, setName] = useState('');
-  const [geometryId, setGeometryId] = useState<string>('');
-  const [catalogId, setCatalogId] = useState<string>('');
-  const [note, setNote] = useState('');
+  const initial = useMemo(loadWizardDraft, []);
+  const [name, setName] = useState(initial.name);
+  const [geometryId, setGeometryId] = useState<string>(initial.geometryId);
+  const [catalogId, setCatalogId] = useState<string>(initial.catalogId);
+  const [note, setNote] = useState(initial.note);
   const [copied, setCopied] = useState(false);
+  const [committing, setCommitting] = useState(false);
+  const [commitResult, setCommitResult] = useState<CommitResult | null>(null);
 
-  // Draft aus dem Editor (localStorage) — selektierbar mit Warnung.
-  const draft = useMemo(() => loadGeometryDraft(), []);
-  const draftId = draft ? `draft:${slugify(draft.name || 'unbenannt')}` : null;
-  const isDraftSelected = !!draftId && geometryId === draftId;
+  // DRAFT-Auto-Save bei jedem Feld-Tipp — ueberlebt Reloads.
+  useEffect(() => {
+    saveWizardDraft({ name, geometryId, catalogId, note });
+  }, [name, geometryId, catalogId, note]);
 
   // Vorschlag: wenn Geometry gewaehlt + Name leer → uebernehme Geometry-Namen
   const onChangeGeometry = (id: string) => {
     setGeometryId(id);
     if (!name.trim() && id) {
-      if (id === draftId && draft) {
-        setName(draft.name || '');
-      } else {
-        const g = GEOMETRIES.find((x) => x.id === id);
-        if (g) setName(g.name);
-      }
+      const g = GEOMETRIES.find((x) => x.id === id);
+      if (g) setName(g.name);
     }
   };
 
-  // Effektive geometry_id im JSON: ohne 'draft:'-Praefix (so wuerde die
-  // Datei nach dem Commit heissen)
-  const effectiveGeometryId = isDraftSelected && draft
-    ? slugify(draft.name || 'unbenannt')
-    : geometryId;
+  // effectiveGeometryId = geometryId (kein DRAFT-Fall mehr).
+  const effectiveGeometryId = geometryId;
 
   // Auto-ID aus dem Namen
   const proposedId = useMemo(() => {
@@ -103,46 +102,27 @@ export default function RepresentationWizard({ onClose }: Props) {
     return JSON.stringify(obj, null, 2);
   }, [valid, proposedId, name, effectiveGeometryId, catalogId, note]);
 
-  // Geometry-JSON aus dem Draft (nur wenn DRAFT verwendet wird), damit der
-  // Operator nicht extra in den Editor wechseln muss.
-  const geometryJson = useMemo<string | null>(() => {
-    if (!isDraftSelected || !draft || !draft.polygon || draft.polygon.length < 3) return null;
-    const ring = [...draft.polygon];
-    if (
-      ring[0][0] !== ring[ring.length - 1][0] ||
-      ring[0][1] !== ring[ring.length - 1][1]
-    ) ring.push(ring[0]);
-    const obj = {
-      type: 'Feature',
-      properties: {
-        name: draft.name || 'Unbenannt',
-        region: draft.region || undefined,
-        source: 'Operator-gezeichnet in SCIM Geometry-Editor',
-        drawn_at: new Date().toISOString().slice(0, 10),
-      },
-      geometry: {
-        type: 'Polygon',
-        coordinates: [ring],
-      },
-    };
-    return JSON.stringify(obj, null, 2);
-  }, [isDraftSelected, draft]);
-
-  const [copiedGeo, setCopiedGeo] = useState(false);
-  const onCopyGeo = () => {
-    if (!geometryJson) return;
-    navigator.clipboard.writeText(geometryJson).then(() => {
-      setCopiedGeo(true);
-      setTimeout(() => setCopiedGeo(false), 1500);
-    });
-  };
-
   const onCopy = () => {
     if (!json) return;
     navigator.clipboard.writeText(json).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     });
+  };
+
+  const onCommit = async () => {
+    if (!json) return;
+    setCommitting(true);
+    setCommitResult(null);
+    const path = `data/representations/${proposedId}.json`;
+    const result = await commitToRepo({
+      path,
+      content: json,
+      message: `representation: ${proposedId} via Wizard-Bridge`,
+    });
+    setCommitResult(result);
+    setCommitting(false);
+    if (result.ok) clearWizardDraft();
   };
 
   return (
@@ -198,57 +178,22 @@ export default function RepresentationWizard({ onClose }: Props) {
               style={{
                 width: '100%', boxSizing: 'border-box',
                 padding: '5px 8px', fontSize: 12, borderRadius: 4,
-                border: isDraftSelected ? '1px solid #ed8936' : '1px solid #cbd5e0',
-                background: isDraftSelected ? '#fffaf0' : 'white',
+                border: '1px solid #cbd5e0', background: 'white',
               }}
             >
               <option value="">— wähle —</option>
-              {draft && draftId && (
-                <option value={draftId}>
-                  ⚠ {draft.name || 'Unbenannt'} (DRAFT — noch nicht im Repo)
-                </option>
-              )}
               {GEOMETRIES.map((g) => (
                 <option key={g.id} value={g.id}>{g.name} ({g.id})</option>
               ))}
             </select>
-            {isDraftSelected && (
-              <div style={{
-                fontSize: 11, color: '#7c2d12', marginTop: 6,
-                background: '#fffaf0', border: '1px solid #ed8936',
-                borderRadius: 4, padding: '8px 10px', lineHeight: 1.55,
-              }}>
-                <strong>Achtung:</strong> Du verwendest eine DRAFT-Geometry. Für ein
-                funktionierendes Deploy musst du <em>zwei</em> Dateien committen:
-                <div style={{
-                  marginTop: 6, display: 'flex', alignItems: 'center', gap: 8,
-                }}>
-                  <span style={{ flex: 1 }}>
-                    1) <code>data/geometries/{effectiveGeometryId}.json</code>
-                  </span>
-                  <button
-                    onClick={onCopyGeo}
-                    disabled={!geometryJson}
-                    style={{
-                      fontSize: 11, padding: '3px 10px',
-                      cursor: geometryJson ? 'pointer' : 'not-allowed',
-                      border: '1px solid #ed8936', borderRadius: 3, fontWeight: 600,
-                      background: copiedGeo ? '#ed8936' : '#fff',
-                      color: copiedGeo ? '#fff' : '#9c4221',
-                      flexShrink: 0,
-                    }}
-                  >
-                    {copiedGeo ? '✓ Geometry kopiert' : 'Geometry kopieren'}
-                  </button>
-                </div>
-                <div style={{ marginTop: 4 }}>
-                  2) <code>data/representations/{proposedId}.json</code> (unten ▾)
-                </div>
-              </div>
-            )}
-            {GEOMETRIES.length === 0 && !draft && (
+            <div style={{ fontSize: 10, color: '#a0aec0', marginTop: 4 }}>
+              Nur committete Geometrien wählbar. DRAFTs aus dem Editor erst
+              dort „Commit zu main", dann erscheinen sie hier.
+            </div>
+            {GEOMETRIES.length === 0 && (
               <div style={{ fontSize: 11, color: '#7c2d12', marginTop: 4 }}>
-                Keine Geometrien im Repo und kein Draft. Erst eine im Geometry-Editor anlegen.
+                Keine Geometrien im Repo. Erst eine im Geometry-Editor anlegen
+                und committen.
               </div>
             )}
           </div>
@@ -288,6 +233,32 @@ export default function RepresentationWizard({ onClose }: Props) {
           }}>{json}</pre>
         )}
 
+        {/* Commit-Result-Banner */}
+        {commitResult?.ok && (
+          <div style={{
+            margin: '0 18px 10px', padding: '8px 12px', fontSize: 11,
+            color: '#22543d', background: '#f0fff4',
+            border: '1px solid #9ae6b4', borderRadius: 4,
+            display: 'flex', alignItems: 'center', gap: 10,
+          }}>
+            <span>✓ Commit auf main:</span>
+            <a href={commitResult.commit_url} target="_blank" rel="noreferrer"
+               style={{ color: '#2f855a', fontFamily: 'monospace' }}>
+              {commitResult.commit_sha.slice(0, 7)}
+            </a>
+            <span style={{ color: '#718096' }}>· ~60 s bis live.</span>
+          </div>
+        )}
+        {commitResult && !commitResult.ok && (
+          <div style={{
+            margin: '0 18px 10px', padding: '8px 12px', fontSize: 11,
+            color: '#9b2c2c', background: '#fff5f5',
+            border: '1px solid #feb2b2', borderRadius: 4,
+          }}>
+            ✗ Commit fehlgeschlagen ({commitResult.status}): {commitResult.error}
+          </div>
+        )}
+
         {/* Footer */}
         <div style={{
           padding: '10px 16px', borderTop: '1px solid #e2e8f0',
@@ -296,9 +267,23 @@ export default function RepresentationWizard({ onClose }: Props) {
         }}>
           <div style={{ flex: 1, fontSize: 11, color: '#718096' }}>
             {valid
-              ? <>Kopiere und committe nach <code style={{ background: '#fff', padding: '1px 4px', borderRadius: 2 }}>data/representations/{proposedId}.json</code></>
+              ? <>Ziel: <code style={{ background: '#fff', padding: '1px 4px', borderRadius: 2 }}>data/representations/{proposedId}.json</code></>
               : 'Name und Geometry sind Pflicht.'}
           </div>
+          <button
+            onClick={onCommit}
+            disabled={!valid || committing || commitResult?.ok === true}
+            style={{
+              fontSize: 12, padding: '5px 14px',
+              cursor: committing ? 'wait' : ((valid && !commitResult?.ok) ? 'pointer' : 'not-allowed'),
+              border: '1px solid #2f855a', borderRadius: 4, fontWeight: 600,
+              background: !valid ? '#cbd5e0' : (commitResult?.ok ? '#9ae6b4' : '#2f855a'),
+              color: !valid ? '#a0aec0' : (commitResult?.ok ? '#22543d' : 'white'),
+              opacity: committing ? 0.7 : 1,
+            }}
+          >
+            {committing ? '… committe' : (commitResult?.ok ? '✓ committed' : 'Commit zu main')}
+          </button>
           <button
             onClick={onCopy}
             disabled={!valid}
@@ -310,7 +295,7 @@ export default function RepresentationWizard({ onClose }: Props) {
               color: valid ? (copied ? 'white' : '#2b6cb0') : '#a0aec0',
             }}
           >
-            {copied ? '✓ JSON kopiert' : 'JSON in Zwischenablage'}
+            {copied ? '✓ kopiert' : 'In Zwischenablage'}
           </button>
         </div>
       </div>
