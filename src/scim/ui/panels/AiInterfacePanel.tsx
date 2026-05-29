@@ -2422,44 +2422,120 @@ eigene Überlegung, hier bewusst nicht ausgeführt.`,
   {
     id: 'ann_075',
     category: 'next_intent',
-    label: 'Represent-Build-Workflow + Drawer-Vorlage & Dimmer (Session-Konsens 2026-05-29)',
+    label: 'Represent-Build: Workflow (Schritte + System-Soll) & Umbauplan (Session-Konsens 2026-05-29)',
     related_panel: 'geometry_editor',
-    content: `Session-Konsens 2026-05-29. Reihenfolge, in der eine Representation
-gebaut wird, plus die dafür nötigen Drawer-Hilfsmittel.
+    content: `Session-Konsens 2026-05-29. Zwei Teile: (1) beschreibender Workflow mit
+System-Soll pro Schritt (✓ = leistet das System schon, ☐ = offen), (2) Umbauplan
+in technischer Realisierungsreihenfolge mit den Schwierigkeiten.
 
-DER WORKFLOW (Reihenfolge)
-  1. Boundary-Draft   — Umriss im Drawer (Umriss-Tab) zeichnen.
-  2. POI-Katalog      — POIs der Region erfassen/pflegen (Katalog).
-  3. Draft-Representation — auf Basis der COMMITTETEN POIs eine Representation
-                        als Entwurf anlegen.
-  4. Wegnetz          — mit POI-Platzhaltern (wie heute) das Wanderwegnetz
-                        ableiten/filtern (Wegnetz-Tab).
-  5. Neue Boundary darüberzeichnen — über das bestehende Netz eine neue
-                        Boundary legen.
-  6. Maskieren        — mit dieser neuen Boundary das Wegnetz maskieren
-                        (Crop → gate-Knoten, s. ann_074).
+GRUND DES WORKFLOWS
+Der Operator verlor bei den vielen Wegnetz-Auto-Regeln den Faden. Der Workflow
+ordnet die Schritte, trennt Zuständigkeiten (Drawer = eine Boundary + ihr
+Wegnetz; Workspace = Komposition; Inspector = fertige R als Referenz) und legt
+fest, WO committet wird: Catalog committet eigenständig; der Workspace committet
+den Representation-Verbund (Boundary + Katalog-Bindung + Wegnetz) atomar.
 
-VERGLEICH LÄUFT ÜBER FERTIGE REPRESENTATIONS
-Der Inspector-Vergleich genügt über bereits FERTIGE Representations: die im
-Inspector gewählte R wird als read-only Referenz im Drawer eingeblendet
-(violetter Umriss, Toggle „Inspector-R einblenden"). KEIN Vergleich zweier
-selbst gezeichneter Drafts nötig.
+================ TEIL 1 — WORKFLOW (was wird WO der Reihe nach getan) ============
 
-VORLAGE-BOUNDARY IM DRAWER (read-only)
-Ergänzend hilfreich: eine Boundary nur als VORLAGE laden — sichtbar, aber NICHT
-veränderbar — zum Drüberzeichnen (Schritt 5). Diese Vorlage ist ein eigener
-Layer, getrennt von der editierbaren Boundary.
+SCHRITT 1 — BOUNDARY-DRAFT (Drawer · Umriss-Tab)
+Operator zeichnet den groben Umriss. Als Vorlage darf eine im Inspector gewählte
+fertige R (lila, read-only) eingeblendet werden. Der fertige Draft geht als
+Draft-Boundary an den Workspace (dort löschbar oder zurück in den Drawer).
+  ✓ Umriss zeichnen/editieren (Geoman) im Umriss-Tab.
+  ✓ Draft wird lokal gehalten (scim3_geometry_draft) + „Im Editor öffnen" lädt
+    eine committete Boundary aus dem Workspace in den Drawer.
+  ☐ Inspector-R als lila read-only Vorlage-Layer im Drawer einblendbar.
+  ☐ Draft-Boundary explizit an den Workspace übergeben (Lifecycle Draft↔WS).
 
-DREI DIMMER + DREI ON/OFF (auf beide Tabs wirksam)
-Geteilte Steuerleiste, Opacity-Slider + Sichtbarkeits-Toggle je Layer:
-  1. Karten-Hintergrund (Tiles) — abdimmen für Lesbarkeit der Wege.
-  2. Editierbare Boundary       — Default „immer an".
-  3. Vorlage-Boundary (read-only) — der dritte Slot bekommt damit ein echtes
-     Ziel: die geladene Vorlage zum Drüberzeichnen ein-/ausblenden + dimmen.
+SCHRITT 2 — POI-KATALOG (Katalog-Panel)
+POIs der Region erfassen/pflegen. Liefert die Platzhalter für das Wegnetz.
+  ✓ Katalog-Panel mit POI-Erfassung/Pflege (P01/P02, operator-only).
+  ✓ Catalog behält seinen EIGENEN Commit (eigenständig, nicht im WS-Verbund).
+  ☐ Katalog-Draft-Platzhalter sauber an den Workspace weiterreichen.
+
+SCHRITT 3 — DRAFT-REPRESENTATION + WEGNETZBILDUNG (Workspace → Drawer · Wegnetz-Tab)
+Workspace fügt Draft-Boundary + Referenz zur Draft-Representation und schickt sie
+zum Wegnetzbau in den Drawer. Im Wegnetz-Tab: Boundary dimm-/abschaltbar; OSM-
+Hintergrund dimm-/abschaltbar; Inspector-R-Boundary einblendbar/dimmbar, deren
+read-only Punkte als Snap-Quelle nutzbar. Im Umriss-Tab bleibt die Boundary
+korrigierbar.
+  ✓ Wegnetz aus Overpass mit POI-Platzhaltern ableiten/filtern (pathEngine).
+  ✓ Boundary im Wegnetz-Tab read-only sichtbar (kein Editier-Toolbar, kein Crash).
+  ✓ Filter-Menü (Konnektoren, Anschluss-Toleranz, Snap-Schwelle).
+  ☐ Dimmer + On/Off für OSM-Tiles.
+  ☐ Dimmer + On/Off für die editierbare Boundary.
+  ☐ Inspector-R-Boundary als dimm-/abschaltbarer Layer, Punkte als Snap-Quelle.
+
+SCHRITT 4 — NEUE BOUNDARY DARÜBERZEICHNEN & MASKIEREN + COMMIT (Drawer → Workspace)
+Im Umriss-Tab eine NEUE Draft-Boundary über das bestehende Netz legen; mit ihr
+das Wegnetz maskieren (Crop → gate-Knoten, s. ann_074). On/Off genügt, muss nicht
+dimmbar sein. Wird die erste Draft-Umriss-Boundary gelöscht, rückt die zweite in
+ihren Slot. Anschließend committet der Workspace den Verbund atomar.
+  ✓ Maskierungs-Konzept dokumentiert (gate-Knoten, inner/outer-gate; ann_074).
+  ☐ Zweiter Boundary-Slot (Masken-Boundary) zusätzlich zur editierbaren.
+  ☐ Crop/Maskierung: Netz an der Masken-Boundary kappen → gate-Knoten erzeugen.
+  ☐ Slot-Nachrücken, wenn Slot 1 gelöscht wird.
+  ☐ Workspace als atomares Commit-Gate für den Verbund (Boundary+Katalog-Bindung
+    +Wegnetz). Drawer-Button wird „Zurück an Workspace" statt eigenem Repo-Commit.
+
+OFFENE GRUNDFRAGE (geklärt)
+Alles bleibt uncommittet AUSSER den gefetchten committeten Artefakten (read-only).
+Mindestens das Wegnetz MUSS committet werden — das geschieht im Workspace als
+atomarer Verbund-Commit. Catalog committet getrennt (Operator-Entscheid).
+
+================ TEIL 2 — UMBAUPLAN (technische Realisierungsreihenfolge) =========
+
+A. LAYER-STEUERLEISTE (Dimmer + On/Off, beide Tabs)
+   Gemeinsame Leiste über beide Tabs: je Layer Opacity-Slider + Sichtbarkeits-
+   Toggle für (1) OSM-Tiles, (2) editierbare Boundary, (3) Inspector-R-Vorlage.
+   Schwierigkeit: State über Tabwechsel/Remount erhalten; Opacity auf TileLayer
+   vs. Path-Style sauber anwenden.
+
+B. ZWEI-SLOT-BOUNDARY-MODELL
+   Editierbare Boundary von der Masken-Boundary trennen (zwei Slots). Slot-
+   Nachrücken bei Löschen. Schwierigkeit: Geoman-Layer-Identität, klare Trennung
+   welcher Layer editierbar/maskierend ist, Persistenz beider Drafts.
+
+C. SNAP-QUELLE AUS INSPECTOR-R-BOUNDARY
+   Read-only Punkte der eingeblendeten Inspector-R als Snap-Ziele. Schwierigkeit:
+   Snap gegen Fremd-Layer in Geoman; Punkte read-only halten.
+
+D. MASKIERUNG / CROP-ENGINE  (SCHWIERIGSTER TEIL)
+   Wegnetz an der Masken-Boundary kappen, gate-Knoten an Schnittpunkten erzeugen
+   (inner/outer-gate, ann_074). Schwierigkeit: robuste Polygon-Linien-Verschneidung,
+   stabile Knoten-IDs, Wiederholbarkeit, Performance bei großen Netzen.
+
+E. DRAFT-LIFECYCLE DRAWER ↔ WORKSPACE
+   Draft-Boundary an WS übergeben, dort löschen/zurückschicken; Draft-Representation
+   vom WS in den Drawer zum Wegnetzbau. Schwierigkeit: ein konsistentes Draft-Modell
+   statt mehrerer localStorage-Schlüssel; Remount-Sicherheit.
+
+F. WORKSPACE = ATOMARES COMMIT-GATE
+   WS committet Boundary + Katalog-Bindung + Wegnetz in EINEM Schritt. Drawer-Button
+   wird „Zurück an Workspace". Schwierigkeit: Verbund-Schema definieren; Teil-Commits
+   verhindern.
+
+G. CATALOG EIGENER COMMIT + AUSSERHALB-POI-SEMANTIK
+   Catalog committet getrennt; klären, wie „außerhalb der Boundary" liegende POIs
+   behandelt werden. Schwierigkeit: Konsistenz zwischen separat committetem Katalog
+   und dem WS-Verbund.
+
+H. KATEGORIE-ABDECKUNG
+   Sicherstellen, dass alle POI-Kategorien/Container im Flow getragen werden.
+   Schwierigkeit: Vollständigkeit gegen das Plan-Soll (Plan ist Quelle).
+
+QUERSCHNITTS-RISIKEN
+  - Geoman global disable* iteriert ALLE Layer und greift auf layer.pm zu →
+    programmatisch gezeichnete Polygone (ohne .pm) crashen (war der Weiße-Screen-
+    Bug). Nur removeControls + gezielt layer.pm.disable() verwenden.
+  - DrawerPanel remountet pro Navigation → jeder Layer-/Draft-State muss das
+    überleben.
+  - Eine geteilte Karte für beide Tabs: Layer-Sichtbarkeit/Opacity konsistent
+    halten.
 
 ZUSTÄNDIGKEITEN (unverändert)
-Drawer = eine Boundary + ihr Wegnetz bauen. Workspace = Komposition von
-Representations. Inspector = fertige R als Referenz zeigen. Nicht vermischen.`,
+Drawer = eine Boundary + ihr Wegnetz bauen. Workspace = Komposition + atomarer
+Verbund-Commit. Inspector = fertige R als Referenz zeigen. Nicht vermischen.`,
     date: '2026-05-29',
   },
 ];
