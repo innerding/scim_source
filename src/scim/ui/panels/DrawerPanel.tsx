@@ -27,8 +27,8 @@ import {
   loadPathConfig, savePathConfig, type PathConfig, type BridlewayMode,
 } from '../../regio-content/pathConfig';
 import {
-  deriveWanderwegnetz, anchorPois, isNetEdge,
-  type PathFetchResult, type AnchorSummary, type PoiInput,
+  deriveWanderwegnetz, anchorPois, isNetEdge, cropNetToMask,
+  type PathFetchResult, type AnchorSummary, type PoiInput, type CropResult,
 } from '../../regio-content/pathEngine';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -117,6 +117,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   const inspectorRefRef = useRef<L.Polygon | null>(null);
   const pathLayerRef = useRef<L.LayerGroup | null>(null);
   const anchorLayerRef = useRef<L.LayerGroup | null>(null);
+  const gateLayerRef = useRef<L.LayerGroup | null>(null);
   const pathAbortRef = useRef<AbortController | null>(null);
 
   const [tab, setTab] = useState<DrawerTab>('umriss');
@@ -127,6 +128,8 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   const [pathError, setPathError] = useState<string>('');
   const [pathResult, setPathResult] = useState<PathFetchResult | null>(null);
   const [anchorSummary, setAnchorSummary] = useState<AnchorSummary | null>(null);
+  // Maskierung/Crop (Umbauplan D): Ergebnis des Zuschnitts mit der Slot-2-Maske.
+  const [cropResult, setCropResult] = useState<CropResult | null>(null);
 
   // Inspector-Compare: das Polygon der vom Inspector gezeigten R kann
   // als read-only Referenz in Violett unter den Editor gelegt werden
@@ -276,6 +279,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     poiLayerRef.current = L.layerGroup().addTo(map);
     pathLayerRef.current = L.layerGroup().addTo(map);
     anchorLayerRef.current = L.layerGroup().addTo(map);
+    gateLayerRef.current = L.layerGroup().addTo(map);
     mapRef.current = map;
 
     // Initial Slot 1 (Boundary)
@@ -301,6 +305,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       poiLayerRef.current = null;
       pathLayerRef.current = null;
       anchorLayerRef.current = null;
+      gateLayerRef.current = null;
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -537,6 +542,42 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     }
   };
 
+  // Gate-Knoten zeichnen (Umbauplan D): inner-gate als gruener Ring (im Netz,
+  // user-facing Eintritt), outer-gate als grauer Punkt (Nachbar-Anschluss),
+  // dazwischen ein kurzer gestrichelter Stich.
+  const renderGates = (gates: import('../../regio-content/pathEngine').GateNode[] | null) => {
+    const layer = gateLayerRef.current;
+    if (!layer) return;
+    layer.clearLayers();
+    if (!gates) return;
+    for (const g of gates) {
+      if (g.outer) {
+        L.polyline([g.inner, g.outer], {
+          color: '#718096', weight: 1.5, opacity: 0.7, dashArray: '2 3',
+        }).addTo(layer);
+        L.circleMarker(g.outer, {
+          radius: 3, color: '#718096', weight: 1.5, fillColor: '#fff', fillOpacity: 0.9,
+        }).bindTooltip('outer-gate (Nachbar-Anschluss)', { direction: 'top', offset: [0, -6], opacity: 0.9 })
+          .addTo(layer);
+      }
+      L.circleMarker(g.inner, {
+        radius: 5, color: '#2f855a', weight: 2.5, fillColor: '#c6f6d5', fillOpacity: 0.95,
+      }).bindTooltip('inner-gate (Eintritt/Austritt)', { direction: 'top', offset: [0, -8], opacity: 0.9 })
+        .addTo(layer);
+    }
+  };
+
+  // [Mit Maske zuschneiden] (Umbauplan D): das aktuelle Netz mit der Slot-2-
+  // Masken-Boundary kappen. Schnitt an realen OSM-Knoten (Vertices), gate-Knoten
+  // markieren. Rendert das gekappte Netz (ueber pathLayer) + Gates neu.
+  const onCropWithMask = () => {
+    if (!pathResult || !maskPolygon || maskPolygon.length < 3) return;
+    const res = cropNetToMask(pathResult.edges, maskPolygon);
+    setCropResult(res);
+    renderPath({ ...pathResult, edges: res.edges });
+    renderGates(res.gates);
+  };
+
   // [Anwenden] im Wegnetz-Tab: Boundary-bbox -> Overpass -> Filter -> Render,
   // anschliessend POI-Anker (ann_074) berechnen + zeichnen.
   const onApplyPath = async (cfg: PathConfig) => {
@@ -558,6 +599,9 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       if (ctrl.signal.aborted) return;
       setPathResult(res);
       renderPath(res);
+      // Frisches Netz → alter Crop ist hinfaellig.
+      setCropResult(null);
+      renderGates(null);
 
       const summary = anchorPois(regionPois(geo.id), res, cfg.anker.snap_schwelle_meter, geo.polygon);
       setAnchorSummary(summary);
@@ -578,11 +622,22 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     setPathError('');
     setPathResult(null);
     setAnchorSummary(null);
+    setCropResult(null);
     renderPath(null);
     renderAnchors(null);
+    renderGates(null);
     // Bei R-Anwahl im Wegnetz-Tab auf die neue Region zoomen.
     if (tab === 'wegnetz') setTimeout(fitToInspector, 80);
   }, [inspectorView?.geometry.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Maske geaendert/entfernt → bestehender Crop ist hinfaellig: Gate-Marker
+  // loeschen und das ungekappte Netz wieder zeichnen.
+  useEffect(() => {
+    if (!cropResult) return;
+    setCropResult(null);
+    renderGates(null);
+    if (pathResult) renderPath(pathResult);
+  }, [maskPolygon]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Export-JSON erzeugen
   const exportJson = useMemo(() => {
@@ -822,6 +877,10 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
             error={pathError}
             result={pathResult}
             anchor={anchorSummary}
+            hasMask={!!maskPolygon && maskPolygon.length >= 3}
+            hasNet={!!pathResult}
+            onCrop={onCropWithMask}
+            crop={cropResult}
           />
         )}
         <div ref={mapContainerRef} style={{ flex: 1, minHeight: 0, minWidth: 0 }} />
@@ -876,6 +935,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
 
 function PathFilterMenu({
   gebiet, gebietLabel, onResized, onApply, status, error, result, anchor,
+  hasMask, hasNet, onCrop, crop,
 }: {
   gebiet: string;
   gebietLabel: string;
@@ -885,6 +945,10 @@ function PathFilterMenu({
   error: string;
   result: import('../../regio-content/pathEngine').PathFetchResult | null;
   anchor: AnchorSummary | null;
+  hasMask: boolean;
+  hasNet: boolean;
+  onCrop: () => void;
+  crop: CropResult | null;
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const [cfg, setCfg] = useState<PathConfig>(() => loadPathConfig(gebiet));
@@ -1092,6 +1156,38 @@ function PathFilterMenu({
         >
           {status === 'loading' ? '… lade OSM' : 'Anwenden'}
         </button>
+
+        {/* Maskierung/Crop (Umbauplan D) */}
+        <button
+          onClick={onCrop}
+          disabled={!hasNet || !hasMask}
+          title={
+            !hasNet ? 'Erst „Anwenden" — es gibt noch kein Netz zum Zuschneiden'
+              : !hasMask ? 'Keine Masken-Boundary (Slot 2). Im Umriss-Tab ein zweites Polygon über das Netz zeichnen.'
+              : 'Netz mit der Slot-2-Maske an realen OSM-Knoten kappen (inner-/outer-gate)'
+          }
+          style={{
+            fontSize: 12, padding: '7px 12px', fontWeight: 600,
+            border: '1px solid #c05621', borderRadius: 5,
+            background: (!hasNet || !hasMask) ? '#edf2f7' : '#fffaf0',
+            color: (!hasNet || !hasMask) ? '#a0aec0' : '#c05621',
+            cursor: (!hasNet || !hasMask) ? 'not-allowed' : 'pointer',
+          }}
+        >
+          ⧂ Mit Maske zuschneiden
+        </button>
+        {crop && (
+          <div style={{
+            fontSize: 11, lineHeight: 1.6, padding: '7px 9px', borderRadius: 5,
+            background: '#fffaf0', border: '1px solid #fbd38d', color: '#7c2d12',
+          }}>
+            <div style={{ fontWeight: 700, marginBottom: 2 }}>Maskierung</div>
+            <div>{crop.keptCount} ganz innen · {crop.clippedCount} gekappt · {crop.droppedCount} verworfen</div>
+            <div style={{ marginTop: 2 }}>
+              <span style={{ color: '#2f855a' }}>●</span> {crop.gates.length} Gate-Knoten (inner/outer)
+            </div>
+          </div>
+        )}
         <button
           disabled
           title="Commit nach data/regio_paths/<region>.json kommt in Phase 9 (Bridge-Whitelist)"

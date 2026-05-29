@@ -291,6 +291,86 @@ export async function deriveWanderwegnetz(
   };
 }
 
+// ─── Maskierung / Crop (ann_074, Umbauplan D) ───────────────────────────────────
+// Das fertige Wegnetz wird mit einer ueber das Netz gelegten Masken-Boundary
+// (Slot 2) zugeschnitten. Kernregel aus ann_074: NICHT am geometrischen
+// Polygon-Schnittpunkt kappen, sondern am naechsten ECHTEN OSM-Knoten. Mit
+// Overpass `out geom` ist jeder Way-Vertex ein realer OSM-Knoten — der Schnitt
+// faellt also auf Vertices, nicht auf interpolierte Punkte.
+//
+//   inner-gate = letzter Vertex INNEN vor dem Uebertritt (user-facing Eintritt,
+//                bleibt im Netz; frueherer "Boundary-Port").
+//   outer-gate = erster Vertex AUSSEN (deterministischer Anschluss an die
+//                Nachbar-Representation; selbst nicht Teil des Netzes).
+
+export interface GateNode {
+  edgeId: number;                       // OSM way id der gekappten Kante
+  inner: [number, number];              // [lat, lng] inner-gate (im Netz)
+  outer: [number, number] | null;       // [lat, lng] outer-gate (ausserhalb), falls vorhanden
+}
+
+export interface CropResult {
+  edges: PathEdge[];        // Netz-Kanten auf das Maskeninnere zugeschnitten (inNet=true)
+  gates: GateNode[];        // gefundene Gate-Knoten (inner/outer)
+  keptCount: number;        // Kanten ganz innen (unveraendert uebernommen)
+  clippedCount: number;     // Kanten, die die Maske kreuzten und gekappt wurden
+  droppedCount: number;     // Netz-Kanten ganz ausserhalb (verworfen)
+}
+
+// Schneidet die Netz-Kanten (inNet) auf das Innere der Masken-Boundary zu.
+// Nicht-Netz-Kandidaten (inNet=false) werden unveraendert durchgereicht.
+// mask ist Position[] = [lng, lat][].
+export function cropNetToMask(edges: PathEdge[], mask: Position[]): CropResult {
+  if (!mask || mask.length < 3) {
+    return { edges, gates: [], keptCount: 0, clippedCount: 0, droppedCount: 0 };
+  }
+  const out: PathEdge[] = [];
+  const gates: GateNode[] = [];
+  let keptCount = 0, clippedCount = 0, droppedCount = 0;
+
+  for (const e of edges) {
+    if (!e.inNet) { out.push(e); continue; }          // Nicht-Netz unangetastet
+    const pts = e.points;
+    if (pts.length < 2) { out.push(e); continue; }
+
+    const inside = pts.map(([lat, lng]) => pointInRing(lng, lat, mask));
+    const allIn = inside.every(Boolean);
+    const allOut = inside.every((v) => !v);
+
+    if (allIn) { out.push(e); keptCount++; continue; } // ganz innen → 1:1
+    if (allOut) { droppedCount++; continue; }          // ganz aussen → weg
+
+    // Kreuzt die Maske: in zusammenhaengende Innen-Laeufe zerlegen, an den
+    // Vertices kappen und Gate-Knoten an jedem Uebertritt notieren.
+    clippedCount++;
+    let run: [number, number][] = [];
+    const flush = () => {
+      if (run.length >= 2) {
+        out.push({ ...e, points: run, inNet: true });
+      }
+      run = [];
+    };
+    for (let i = 0; i < pts.length; i++) {
+      if (inside[i]) {
+        run.push(pts[i]);
+        // Innen→Aussen-Uebertritt am Ende dieses Laufs?
+        if (i + 1 < pts.length && !inside[i + 1]) {
+          gates.push({ edgeId: e.id, inner: pts[i], outer: pts[i + 1] });
+          flush();
+        }
+      } else {
+        // Aussen→Innen-Uebertritt: Gate mit dem folgenden Innen-Vertex.
+        if (i + 1 < pts.length && inside[i + 1]) {
+          gates.push({ edgeId: e.id, inner: pts[i + 1], outer: pts[i] });
+        }
+      }
+    }
+    flush();
+  }
+
+  return { edges: out, gates, keptCount, clippedCount, droppedCount };
+}
+
 // ─── Anker: POI ↔ Netz (ann_074) ──────────────────────────────────────────────
 // Jeder POI liegt nie exakt auf einem Pfad → das System legt einen Stich an.
 // Hier nur die MESSUNG (nearest point on net + Distanz) + Klassifikation:
