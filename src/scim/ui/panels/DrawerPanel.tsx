@@ -131,6 +131,15 @@ export default function DrawerPanel({ onJumpTo }: Props) {
     saveDraft({ geometryId, name, region, polygon });
   }, [geometryId, name, region, polygon]);
 
+  // Auf die aktuell im Inspector gewaehlte Region zoomen.
+  const fitToInspector = () => {
+    const map = mapRef.current;
+    const poly = inspectorView?.geometry.polygon;
+    if (!map || !poly || poly.length < 3) return;
+    const latlngs = poly.map(([lng, lat]) => [lat, lng] as [number, number]);
+    map.fitBounds(L.latLngBounds(latlngs), { padding: [30, 30] });
+  };
+
   // Map init (one-shot) — bleibt ueber Tab-Wechsel erhalten
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
@@ -223,8 +232,11 @@ export default function DrawerPanel({ onJumpTo }: Props) {
     } else {
       pm.removeControls?.();
     }
-    setTimeout(() => map.invalidateSize(), 60);
-  }, [tab]);
+    setTimeout(() => {
+      map.invalidateSize();
+      if (tab === 'wegnetz') fitToInspector();
+    }, 60);
+  }, [tab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Geometry-Wechsel laedt neue Daten in die Map
   const onChangeGeometry = (id: string | 'new') => {
@@ -411,6 +423,8 @@ export default function DrawerPanel({ onJumpTo }: Props) {
     setAnchorSummary(null);
     renderPath(null);
     renderAnchors(null);
+    // Bei R-Anwahl im Wegnetz-Tab auf die neue Region zoomen.
+    if (tab === 'wegnetz') setTimeout(fitToInspector, 80);
   }, [inspectorView?.geometry.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Export-JSON erzeugen
