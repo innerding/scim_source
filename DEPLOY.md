@@ -1,40 +1,41 @@
 # Deploy-Anleitung
 
-**Standardweg: lokaler wrangler-Deploy nach jedem Push.**
+**Push auf `main` deployt automatisch.** Cloudflare Pages baut bei jedem
+Push, zieht die `VITE_*`-Variablen aus seiner Environment-Config und schiebt
+das Ergebnis auf `scim3.diesenpark.com`. Nach Push ~60 Sekunden auf
+Edge-Propagation warten, dann reloaden.
 
-Cloudflare Pages baut zwar automatisch bei jedem Push auf `main`, aber der
-Auto-Build erzeugt aktuell ein Bundle, das im Browser einen white screen
-verursacht (Ursache unklar — vermutlich Build-Env-Differenz wie Node-Version
-oder transitive Dependency-Resolutions zwischen CF-Runner und lokal). Bis
-das geklaert ist, ist der lokale Deploy der zuverlaessige Weg.
+## Bedingung
 
-## Standard-Flow
+In Cloudflare → Workers & Pages → `scim3-operator` → Settings → Variables
+muessen folgende Vars fuer **Production** gesetzt sein:
 
-Aus `/Users/dietmarbroda/SCIM3ClaudeMax/scim_source`:
+  - `VITE_CODE_OPERATOR`
+  - `VITE_CODE_ANALYST`
+  - `VITE_WORKER_URL`
+  - `VITE_UPLOAD_API_KEY`
+
+Werte stehen in `.env.local` (lokal, nicht im Repo). Sind aktuell gesetzt.
+
+## Lokaler Build (Fallback)
+
+Nur bei CI-Ausfall oder wenn etwas getestet werden soll, ohne committen
+zu muessen:
 
 ```bash
 set -a; source .env.local; set +a
 npm run build && npx wrangler pages deploy dist --project-name=scim3-operator --branch=main
 ```
 
-Beides nacheinander: erst `git push` (treibt Git-Historie nach), dann der
-wrangler-Deploy (haengt den Production-Build live). Reihenfolge wichtig
-gegen Race-Conditions mit dem Auto-Build — der wird nach dem Push trotzdem
-laufen, aber unser wrangler-Deploy wird danach ausgefuehrt und ueberholt
-ihn.
-
-## Cloudflare Pages Auto-Build (Hintergrund)
-
-Laeuft bei jedem Push, ist aber nicht der live-Pfad. `VITE_*`-Vars sind in
-CF Pages → `scim3-operator` → Settings → Variables (Production) hinterlegt
-und korrekt — daran liegt es nicht. Build endet auf `success`, alle vier
-Files (index.html, JS, CSS, _redirects) landen im Deployment, aber das
-ausgelieferte Bundle crasht im Browser. Tiefer-Diagnose vertagt.
+Achtung: nicht im Normalbetrieb mit dem Auto-Build mischen — sonst gewinnt
+der juengste Deploy das Race, und die Build-Outputs koennen leicht
+divergieren (Node-Version, transitive Deps), was Cache-Inkonsistenzen
+beguenstigt.
 
 ## GitHub Actions
 
-Auf `workflow_dispatch` (manuell). Wird heute nicht benutzt. Bleibt als
-Notnagel im Repo.
+Auf `workflow_dispatch` (manuell). Wird heute nicht benutzt — CF Pages
+Git-Integration uebernimmt.
 
 ## Login-Zugangsdaten
 
@@ -43,9 +44,9 @@ Notnagel im Repo.
 | dietmar       | siehe `.env.local` (`VITE_CODE_OPERATOR`) | operator |
 | michael moser | siehe `.env.local` (`VITE_CODE_ANALYST`)  | analyst  |
 
-Operator-Login zusaetzlich per Touch ID (Passkey), wenn auf dem Geraet
-registriert. Passkey ist origin-gebunden — auf `*.pages.dev`-Preview-URLs
-greift er nicht, nur auf `scim3.diesenpark.com`.
+Operator-Login zusaetzlich per Touch ID (Passkey). Passkey ist
+origin-gebunden — auf `*.pages.dev`-Preview-URLs greift er nicht, nur auf
+`scim3.diesenpark.com`.
 
 ## URLs
 
