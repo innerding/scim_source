@@ -25,6 +25,92 @@ export interface Env {
   PACKAGES: R2Bucket;
   DB: D1Database;
   UPLOAD_API_KEY: string;
+  GITHUB_TOKEN: string;
+  GITHUB_REPO?: string;   // default: innerding/scim_source
+}
+
+// ── Commit-Bridge ───────────────────────────────────────────────────────────
+//
+// Operator schreibt Wahrheiten direkt aus dem Browser ins Repo:
+//   - data/geometries/<id>.json
+//   - data/representations/<id>.json
+//   - data/<region>_pois_plan.md
+//
+// Worker ist der Vermittler: authentifiziert via X-Scim-Key, autorisiert die
+// Pfad-Whitelist, ruft GitHub Contents API mit PAT (GITHUB_TOKEN). Commit
+// landet direkt auf main; CF Pages Auto-Build greift danach.
+
+const DEFAULT_REPO = 'innerding/scim_source';
+const COMMIT_PATH_WHITELIST: RegExp[] = [
+  /^data\/geometries\/[a-z0-9][a-z0-9_-]*\.json$/,
+  /^data\/representations\/[a-z0-9][a-z0-9_-]*\.json$/,
+  /^data\/[a-z0-9][a-z0-9_-]*_pois_plan\.md$/,
+];
+
+function isAllowedCommitPath(p: string): boolean {
+  return COMMIT_PATH_WHITELIST.some((re) => re.test(p));
+}
+
+interface CommitBody {
+  path: string;
+  content: string;
+  message: string;
+}
+
+async function githubGetSha(repo: string, path: string, token: string): Promise<string | null> {
+  const r = await fetch(`https://api.github.com/repos/${repo}/contents/${path}?ref=main`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Accept': 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
+      'User-Agent': 'scim3-bundle-worker',
+    },
+  });
+  if (r.status === 404) return null;
+  if (!r.ok) throw new Error(`GitHub GET failed: ${r.status} ${await r.text()}`);
+  const data = await r.json() as { sha?: string };
+  return data.sha ?? null;
+}
+
+interface GithubPutResult {
+  commit?: { sha?: string; html_url?: string };
+  content?: { html_url?: string; sha?: string };
+}
+
+async function githubPutFile(
+  repo: string, path: string, contentBase64: string, message: string,
+  sha: string | null, token: string,
+): Promise<GithubPutResult> {
+  const body: Record<string, unknown> = {
+    message,
+    content: contentBase64,
+    branch: 'main',
+  };
+  if (sha) body['sha'] = sha;
+
+  const r = await fetch(`https://api.github.com/repos/${repo}/contents/${path}`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Accept': 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
+      'User-Agent': 'scim3-bundle-worker',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+  if (!r.ok) {
+    throw new Error(`GitHub PUT failed: ${r.status} ${await r.text()}`);
+  }
+  return await r.json() as GithubPutResult;
+}
+
+function utf8ToBase64(s: string): string {
+  // Workers-Runtime: TextEncoder ist standard. btoa() vertraegt nur ASCII.
+  const bytes = new TextEncoder().encode(s);
+  let bin = '';
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin);
 }
 
 interface PackageRow {
@@ -214,6 +300,53 @@ export default {
       ).bind('archived', id).run();
 
       return json({ id, status: 'archived' });
+    }
+
+    // ── POST /api/commit ─────────────────────────────────────────────────────
+    //
+    // Commit-Bridge: schreibt eine Wahrheit aus dem Browser direkt nach
+    // data/ im Repo. Pfad-Whitelist verhindert Schreibrechte ausserhalb.
+    if (request.method === 'POST' && pathname === '/api/commit') {
+      if (!checkAuth(request, env)) return err('Unauthorized', 401);
+      if (!env.GITHUB_TOKEN) return err('Server missing GITHUB_TOKEN secret', 500);
+
+      let body: CommitBody;
+      try {
+        body = await request.json() as CommitBody;
+      } catch {
+        return err('Invalid JSON body', 400);
+      }
+
+      const { path, content, message } = body;
+      if (typeof path !== 'string' || !path) return err('Missing "path"', 422);
+      if (typeof content !== 'string')        return err('Missing "content"', 422);
+      if (typeof message !== 'string' || !message) return err('Missing "message"', 422);
+      if (!isAllowedCommitPath(path)) {
+        return err(
+          `Path "${path}" is not in the commit whitelist (data/geometries/*.json, data/representations/*.json, data/*_pois_plan.md)`,
+          403,
+        );
+      }
+
+      const repo = env.GITHUB_REPO || DEFAULT_REPO;
+
+      try {
+        const existingSha = await githubGetSha(repo, path, env.GITHUB_TOKEN);
+        const result = await githubPutFile(
+          repo, path, utf8ToBase64(content), message, existingSha, env.GITHUB_TOKEN,
+        );
+        return json({
+          ok: true,
+          path,
+          commit_sha: result.commit?.sha,
+          commit_url: result.commit?.html_url,
+          file_url: result.content?.html_url,
+          file_sha: result.content?.sha,
+          was_update: existingSha !== null,
+        });
+      } catch (e) {
+        return err((e as Error).message, 502);
+      }
     }
 
     return err('Not found', 404);
