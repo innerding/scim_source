@@ -14,6 +14,7 @@ import {
   mergeEdits, patchPoi, resetPoi, saveEditState, undeletePoi,
 } from '../../poi-catalog/poiCatalog.editor';
 import { compactDiff, diffLines, serializeCatalogToMd } from '../../poi-catalog/poiCatalog.serializer';
+import { commitToRepo, type CommitResult } from '../../../runtime/commitBridge';
 import type {
   Bucket, CatalogPoi, CoordStatus, MergedPoi, PoiCatalogEditState, Subcategory,
 } from '../../poi-catalog/poiCatalog.types';
@@ -1204,11 +1205,14 @@ function FlowInfoModal({ onClose }: { onClose: () => void }) {
 
 // ─── Diff-/Export-Modal ──────────────────────────────────────────────────────
 
-function ExportModal({ originalMd, newMd, fileName, onClose }: {
-  originalMd: string; newMd: string; fileName: string; onClose: () => void;
+function ExportModal({ originalMd, newMd, fileName, onClose, onCommitted }: {
+  originalMd: string; newMd: string; fileName: string;
+  onClose: () => void; onCommitted?: () => void;
 }) {
   const diff = useMemo(() => compactDiff(diffLines(originalMd, newMd), 3), [originalMd, newMd]);
   const isUnchanged = diff.length === 0;
+  const [committing, setCommitting] = useState(false);
+  const [commitResult, setCommitResult] = useState<CommitResult | null>(null);
 
   const download = () => {
     const blob = new Blob([newMd], { type: 'text/markdown;charset=utf-8' });
@@ -1217,6 +1221,19 @@ function ExportModal({ originalMd, newMd, fileName, onClose }: {
     a.href = url; a.download = fileName;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  };
+
+  const onCommit = async () => {
+    setCommitting(true);
+    setCommitResult(null);
+    const result = await commitToRepo({
+      path: `data/${fileName}`,
+      content: newMd,
+      message: `catalog: ${fileName.replace(/_pois_plan\.md$/, '')} via Catalog-Bridge`,
+    });
+    setCommitResult(result);
+    setCommitting(false);
+    if (result.ok && onCommitted) onCommitted();
   };
 
   return (
@@ -1256,27 +1273,67 @@ function ExportModal({ originalMd, newMd, fileName, onClose }: {
             })
           )}
         </div>
+        {commitResult?.ok && (
+          <div style={{
+            padding: '8px 16px', fontSize: 11, color: '#22543d',
+            background: '#f0fff4', borderTop: '1px solid #9ae6b4',
+            display: 'flex', alignItems: 'center', gap: 10, fontFamily: 'system-ui, sans-serif',
+          }}>
+            <span>✓ Commit auf main:</span>
+            <a href={commitResult.commit_url} target="_blank" rel="noreferrer"
+               style={{ color: '#2f855a', fontFamily: 'monospace' }}>
+              {commitResult.commit_sha.slice(0, 7)}
+            </a>
+            <span style={{ color: '#718096' }}>· ~60 s bis live.</span>
+          </div>
+        )}
+        {commitResult && !commitResult.ok && (
+          <div style={{
+            padding: '8px 16px', fontSize: 11, color: '#9b2c2c',
+            background: '#fff5f5', borderTop: '1px solid #feb2b2',
+            fontFamily: 'system-ui, sans-serif',
+          }}>
+            ✗ Commit fehlgeschlagen ({commitResult.status}): {commitResult.error}
+          </div>
+        )}
         <div style={{
           padding: '12px 16px', borderTop: '1px solid #e2e8f0',
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8,
         }}>
           <div style={{ fontSize: 11, color: '#718096', fontFamily: 'system-ui, sans-serif' }}>
-            Lege die Datei nach Download in <code style={{ fontFamily: 'monospace' }}>data/</code> und commite.
+            Direkt-Commit schreibt nach <code style={{ fontFamily: 'monospace' }}>data/{fileName}</code> auf main.
           </div>
-          <button
-            onClick={download}
-            disabled={isUnchanged}
-            style={{
-              ...btnStyle,
-              background: isUnchanged ? '#edf2f7' : '#2b6cb0',
-              color: isUnchanged ? '#a0aec0' : 'white',
-              borderColor: isUnchanged ? '#cbd5e0' : '#2b6cb0',
-              cursor: isUnchanged ? 'not-allowed' : 'pointer',
-              fontWeight: 600,
-            }}
-          >
-            ⬇ Plan-md herunterladen
-          </button>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button
+              onClick={onCommit}
+              disabled={isUnchanged || committing || (commitResult?.ok === true)}
+              style={{
+                ...btnStyle,
+                background: isUnchanged ? '#edf2f7' : (commitResult?.ok ? '#9ae6b4' : '#2f855a'),
+                color: isUnchanged ? '#a0aec0' : (commitResult?.ok ? '#22543d' : 'white'),
+                borderColor: isUnchanged ? '#cbd5e0' : '#2f855a',
+                cursor: committing ? 'wait' : (isUnchanged ? 'not-allowed' : 'pointer'),
+                fontWeight: 600,
+                opacity: committing ? 0.7 : 1,
+              }}
+            >
+              {committing ? '… committe' : (commitResult?.ok ? '✓ committed' : 'Commit zu main')}
+            </button>
+            <button
+              onClick={download}
+              disabled={isUnchanged}
+              style={{
+                ...btnStyle,
+                background: isUnchanged ? '#edf2f7' : '#2b6cb0',
+                color: isUnchanged ? '#a0aec0' : 'white',
+                borderColor: isUnchanged ? '#cbd5e0' : '#2b6cb0',
+                cursor: isUnchanged ? 'not-allowed' : 'pointer',
+                fontWeight: 600,
+              }}
+            >
+              ⬇ Plan-md herunterladen
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -1603,6 +1660,13 @@ export default function CatalogTab({ onJumpTo }: { onJumpTo?: (panelId: string) 
           newMd={newMd}
           fileName={fileName}
           onClose={() => setShowExport(false)}
+          onCommitted={() => {
+            // Nach erfolgreichem Commit Editor-Patches raeumen, damit
+            // beim naechsten Load + Vite-Glob die committete md die
+            // Wahrheit ist und der DRAFT-Marker verschwindet.
+            clearEditState(region.id);
+            setEditState(loadEditState(region.id));
+          }}
         />
       )}
 
