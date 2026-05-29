@@ -4,7 +4,7 @@ import {
   KOSMOLOGIE_IDS,
   PANEL_REGISTRY, SYSTEM_DESCRIPTOR, AI_INTERFACE_DESCRIPTOR,
   RUNTIME_BUILDER_REGISTRY, VERSIONEN_REGISTRY, WORKSPACE_DESCRIPTOR,
-  GEOMETRY_EDITOR_DESCRIPTOR, CATALOG_DESCRIPTOR,
+  DRAWER_DESCRIPTOR, CATALOG_DESCRIPTOR,
 } from './panelRegistry';
 import logoBaseNaked from '../../assets/logo-base-naked.svg';
 import logoHexNaked from '../../assets/logo-hex-naked.svg';
@@ -789,12 +789,12 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
                 onClick={() => onSelect(WORKSPACE_DESCRIPTOR.id)}
               />
               <NavItem
-                id={GEOMETRY_EDITOR_DESCRIPTOR.id}
-                icon={GEOMETRY_EDITOR_DESCRIPTOR.icon}
-                label={GEOMETRY_EDITOR_DESCRIPTOR.label}
+                id={DRAWER_DESCRIPTOR.id}
+                icon={DRAWER_DESCRIPTOR.icon}
+                label={DRAWER_DESCRIPTOR.label}
                 status="blue"
-                isActive={activeId === GEOMETRY_EDITOR_DESCRIPTOR.id}
-                onClick={() => onSelect(GEOMETRY_EDITOR_DESCRIPTOR.id)}
+                isActive={activeId === DRAWER_DESCRIPTOR.id}
+                onClick={() => onSelect(DRAWER_DESCRIPTOR.id)}
               />
               {role === 'operator' && (
                 <NavItem

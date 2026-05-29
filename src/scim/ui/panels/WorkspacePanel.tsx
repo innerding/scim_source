@@ -18,7 +18,7 @@ import type { RepresentBuildFace } from '../RepresentBuildTetrahedron';
 import { parsePoiCatalog } from '../../poi-catalog/poiCatalog.parser';
 import { GEOMETRIES, REPRESENTATIONS } from '../../workspace/workspace.registry';
 import type { CatalogRef } from '../../workspace/workspace.types';
-import { DRAFT_KEY } from './GeometryEditorPanel';
+import { DRAFT_KEY } from './DrawerPanel';
 
 // Im Browser gezeichnete Geometry — sitzt in localStorage, noch nicht im Repo.
 interface GeometryDraft {

@@ -3,7 +3,7 @@ import {
   KOSMOLOGIE_IDS,
   PANEL_REGISTRY, SYSTEM_DESCRIPTOR, AI_INTERFACE_DESCRIPTOR,
   RUNTIME_BUILDER_REGISTRY, VERSIONEN_REGISTRY, WORKSPACE_DESCRIPTOR,
-  GEOMETRY_EDITOR_DESCRIPTOR, CATALOG_DESCRIPTOR,
+  DRAWER_DESCRIPTOR, CATALOG_DESCRIPTOR,
 } from './panelRegistry';
 import type { ScimPipelineResult } from '../pipeline/scimPipeline.types';
 
@@ -22,7 +22,7 @@ import V01PackagesPanel from './panels/V01PackagesPanel';
 import V02RegionDetailPanel from './panels/V02RegionDetailPanel';
 import V03ActiveMonitorPanel from './panels/V03ActiveMonitorPanel';
 import WorkspacePanel from './panels/WorkspacePanel';
-import GeometryEditorPanel from './panels/GeometryEditorPanel';
+import DrawerPanel from './panels/DrawerPanel';
 
 interface Props {
   activeId: string;
@@ -156,8 +156,8 @@ function PanelContent({ activeId, activeTab, result, onJumpTo }: {
   if (activeId === WORKSPACE_DESCRIPTOR.id) {
     return <WorkspacePanel onJumpTo={onJumpTo ?? (() => {})} />;
   }
-  if (activeId === GEOMETRY_EDITOR_DESCRIPTOR.id) {
-    return <GeometryEditorPanel onJumpTo={onJumpTo ?? (() => {})} />;
+  if (activeId === DRAWER_DESCRIPTOR.id) {
+    return <DrawerPanel onJumpTo={onJumpTo ?? (() => {})} />;
   }
   if (activeId === CATALOG_DESCRIPTOR.id) {
     if (role !== 'operator') return null;
@@ -209,7 +209,7 @@ export default function PanelWorkspace({ activeId, activeTab, onTabChange, resul
   // Resolve tabs for the current entry
   const entry =
     activeId === WORKSPACE_DESCRIPTOR.id        ? WORKSPACE_DESCRIPTOR :
-    activeId === GEOMETRY_EDITOR_DESCRIPTOR.id  ? GEOMETRY_EDITOR_DESCRIPTOR :
+    activeId === DRAWER_DESCRIPTOR.id  ? DRAWER_DESCRIPTOR :
     activeId === CATALOG_DESCRIPTOR.id          ? CATALOG_DESCRIPTOR :
     activeId === SYSTEM_DESCRIPTOR.id           ? SYSTEM_DESCRIPTOR :
     activeId === AI_INTERFACE_DESCRIPTOR.id ? AI_INTERFACE_DESCRIPTOR :
@@ -245,7 +245,7 @@ export default function PanelWorkspace({ activeId, activeTab, onTabChange, resul
       <PanelHeader id={entry.id} title={entry.label} subtitle={subtitle} dimmed={KOSMOLOGIE_IDS.has(activeId)} />
       <TabBar tabs={tabs} active={activeTab} onSelect={onTabChange} />
       {/* Geometry-Editor braucht volle Hoehe ohne Padding */}
-      {activeId === GEOMETRY_EDITOR_DESCRIPTOR.id ? (
+      {activeId === DRAWER_DESCRIPTOR.id ? (
         <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
           <PanelContent activeId={activeId} activeTab={activeTab} result={result} onJumpTo={onJumpTo} />
         </div>

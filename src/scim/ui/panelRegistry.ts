@@ -385,12 +385,15 @@ export const WORKSPACE_DESCRIPTOR: WorkspaceDescriptor = {
   ],
 };
 
-// ─── Geometry-Editor (Wave 2b) ─────────────────────────────────────────────
+// ─── Drawer (ann_072, frueher Geometry-Editor) ─────────────────────────────
+// Interne Tabs Umriss/Wegnetz leben im Panel selbst (shared Leaflet-Canvas),
+// daher hier nur ein Descriptor-Tab. ID bleibt 'geometry_editor' (Routing,
+// Tetraeder-Faces, Kosmologie haengen daran).
 
-export const GEOMETRY_EDITOR_DESCRIPTOR: WorkspaceDescriptor = {
+export const DRAWER_DESCRIPTOR: WorkspaceDescriptor = {
   kind: 'workspace',
   id: 'geometry_editor',
-  label: 'Geometry-Editor',
+  label: 'Drawer',
   icon: '◇',
   tabs: [
     { id: 'input', label: 'Karte', icon: '◇' },
