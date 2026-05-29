@@ -161,3 +161,98 @@ export async function deriveWanderwegnetz(
     fetchedAt: Date.now(),
   };
 }
+
+// ─── Anker: POI ↔ Netz (ann_074) ──────────────────────────────────────────────
+// Jeder POI liegt nie exakt auf einem Pfad → das System legt einen Stich an.
+// Hier nur die MESSUNG (nearest point on net + Distanz) + Klassifikation:
+//   - außerhalb der Boundary           → 'outside' (Normalfall bei frei
+//                                          gezeichneter finaler Boundary)
+//   - Distanz < Snap-Schwelle          → 'on_path' (gilt als auf dem Pfad)
+//   - Distanz ≥ Snap-Schwelle          → 'connected' (echter connected-POI-Stich)
+// Materialisierung des Stichs (Phase 5) und Gate-Logik kommen später.
+
+export interface PoiInput {
+  text: string;
+  lat: number;
+  lng: number;
+}
+
+export type AnchorStatus = 'on_path' | 'connected' | 'outside';
+
+export interface AnchorResult {
+  text: string;
+  poi: [number, number];          // [lat, lng]
+  status: AnchorStatus;
+  distanceMeters: number;          // NaN bei 'outside', Infinity wenn kein Netz
+  snap: [number, number] | null;   // [lat, lng] naechster Punkt im Netz
+}
+
+export interface AnchorSummary {
+  results: AnchorResult[];
+  onPath: number;
+  connected: number;
+  outside: number;
+}
+
+// Ray-Casting Punkt-in-Polygon. ring ist Position[] = [lng, lat][].
+function pointInRing(lng: number, lat: number, ring: Position[]): boolean {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const xi = ring[i][0], yi = ring[i][1];
+    const xj = ring[j][0], yj = ring[j][1];
+    const intersect = ((yi > lat) !== (yj > lat))
+      && (lng < ((xj - xi) * (lat - yi)) / (yj - yi) + xi);
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+
+// Naechster Punkt auf den primaeren Kanten, lokal-planar projiziert (in Metern).
+// Fuer Regions-Distanzen (< wenige km) ausreichend genau.
+function nearestOnNet(lat: number, lng: number, edges: PathEdge[]): { dist: number; snap: [number, number] | null } {
+  const mLat = 110540;
+  const mLng = 111320 * Math.cos((lat * Math.PI) / 180);
+  const px = lng * mLng, py = lat * mLat;
+  let best = Infinity;
+  let bestSnap: [number, number] | null = null;
+  for (const e of edges) {
+    if (e.source !== 'primary') continue;
+    for (let i = 0; i + 1 < e.points.length; i++) {
+      const ax = e.points[i][1] * mLng, ay = e.points[i][0] * mLat;
+      const bx = e.points[i + 1][1] * mLng, by = e.points[i + 1][0] * mLat;
+      const dx = bx - ax, dy = by - ay;
+      const len2 = dx * dx + dy * dy;
+      let t = len2 === 0 ? 0 : ((px - ax) * dx + (py - ay) * dy) / len2;
+      t = Math.max(0, Math.min(1, t));
+      const sx = ax + t * dx, sy = ay + t * dy;
+      const d = Math.hypot(px - sx, py - sy);
+      if (d < best) {
+        best = d;
+        bestSnap = [sy / mLat, sx / mLng];
+      }
+    }
+  }
+  return { dist: best, snap: bestSnap };
+}
+
+export function anchorPois(
+  pois: PoiInput[],
+  result: PathFetchResult,
+  snapThresholdMeters: number,
+  boundary: Position[],
+): AnchorSummary {
+  const results: AnchorResult[] = pois.map((p) => {
+    if (boundary.length >= 3 && !pointInRing(p.lng, p.lat, boundary)) {
+      return { text: p.text, poi: [p.lat, p.lng] as [number, number], status: 'outside' as const, distanceMeters: NaN, snap: null };
+    }
+    const { dist, snap } = nearestOnNet(p.lat, p.lng, result.edges);
+    const status: AnchorStatus = dist < snapThresholdMeters ? 'on_path' : 'connected';
+    return { text: p.text, poi: [p.lat, p.lng] as [number, number], status, distanceMeters: dist, snap };
+  });
+  return {
+    results,
+    onPath: results.filter((r) => r.status === 'on_path').length,
+    connected: results.filter((r) => r.status === 'connected').length,
+    outside: results.filter((r) => r.status === 'outside').length,
+  };
+}

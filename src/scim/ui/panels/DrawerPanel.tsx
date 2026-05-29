@@ -26,7 +26,10 @@ import { commitToRepo, type CommitResult } from '../../../runtime/commitBridge';
 import {
   loadPathConfig, savePathConfig, type PathConfig, type BridlewayMode,
 } from '../../regio-content/pathConfig';
-import { deriveWanderwegnetz, type PathFetchResult } from '../../regio-content/pathEngine';
+import {
+  deriveWanderwegnetz, anchorPois,
+  type PathFetchResult, type AnchorSummary, type PoiInput,
+} from '../../regio-content/pathEngine';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import gruenbergMd from '../../../../data/grunberg_pois_plan.md?raw';
@@ -97,6 +100,7 @@ export default function DrawerPanel({ onJumpTo }: Props) {
   const poiLayerRef = useRef<L.LayerGroup | null>(null);
   const inspectorRefRef = useRef<L.Polygon | null>(null);
   const pathLayerRef = useRef<L.LayerGroup | null>(null);
+  const anchorLayerRef = useRef<L.LayerGroup | null>(null);
   const pathAbortRef = useRef<AbortController | null>(null);
 
   const [tab, setTab] = useState<DrawerTab>('umriss');
@@ -106,6 +110,7 @@ export default function DrawerPanel({ onJumpTo }: Props) {
   const [pathStatus, setPathStatus] = useState<PathStatus>('idle');
   const [pathError, setPathError] = useState<string>('');
   const [pathResult, setPathResult] = useState<PathFetchResult | null>(null);
+  const [anchorSummary, setAnchorSummary] = useState<AnchorSummary | null>(null);
 
   // Inspector-Compare: das Polygon der vom Inspector gezeigten R kann
   // als read-only Referenz in Violett unter den Editor gelegt werden
@@ -180,6 +185,7 @@ export default function DrawerPanel({ onJumpTo }: Props) {
 
     poiLayerRef.current = L.layerGroup().addTo(map);
     pathLayerRef.current = L.layerGroup().addTo(map);
+    anchorLayerRef.current = L.layerGroup().addTo(map);
     mapRef.current = map;
 
     // Initial polygon
@@ -196,6 +202,7 @@ export default function DrawerPanel({ onJumpTo }: Props) {
       polygonLayerRef.current = null;
       poiLayerRef.current = null;
       pathLayerRef.current = null;
+      anchorLayerRef.current = null;
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -322,7 +329,47 @@ export default function DrawerPanel({ onJumpTo }: Props) {
     }
   };
 
-  // [Anwenden] im Wegnetz-Tab: Boundary-bbox -> Overpass -> Filter -> Render.
+  // POIs der Region per Konvention (Katalog-id === Geometry-id). Phase-MVP-
+  // Bindung; spaeter evtl. explizites Feld an der Geometry/Config.
+  const regionPois = (regionId: string): PoiInput[] => {
+    const cat = CATALOGS.find((c) => c.id === regionId);
+    if (!cat) return [];
+    const parsed = parsePoiCatalog(cat.md, {
+      region_id: cat.id,
+      region_name: cat.name,
+      source_path: `data/${cat.id}_pois_plan.md`,
+    });
+    return parsed.pois
+      .filter((p) => p.coord && !(p.coord[0] === 0 && p.coord[1] === 0))
+      .map((p) => ({ text: p.text, lat: p.coord![1], lng: p.coord![0] }));
+  };
+
+  // Anker zeichnen: connected-POI als gestrichelte Linie POI->Snap (orange),
+  // Marker farbcodiert nach Status (ann_074).
+  const renderAnchors = (summary: AnchorSummary | null) => {
+    const layer = anchorLayerRef.current;
+    if (!layer) return;
+    layer.clearLayers();
+    if (!summary) return;
+    for (const a of summary.results) {
+      if (a.status === 'connected' && a.snap) {
+        L.polyline([a.poi, a.snap], {
+          color: '#dd6b20', weight: 1.5, opacity: 0.8, dashArray: '3 3',
+        }).addTo(layer);
+      }
+      const color = a.status === 'connected' ? '#dd6b20'
+        : a.status === 'on_path' ? '#2f855a' : '#a0aec0';
+      const distTxt = isFinite(a.distanceMeters) ? ` · ${a.distanceMeters.toFixed(1)} m` : '';
+      L.circleMarker(a.poi, {
+        radius: 4, color, weight: 2, fillColor: '#fff', fillOpacity: 0.9,
+      })
+        .bindTooltip(`${a.text} [${a.status}]${distTxt}`, { direction: 'top', offset: [0, -8], opacity: 0.9 })
+        .addTo(layer);
+    }
+  };
+
+  // [Anwenden] im Wegnetz-Tab: Boundary-bbox -> Overpass -> Filter -> Render,
+  // anschliessend POI-Anker (ann_074) berechnen + zeichnen.
   const onApplyPath = async (cfg: PathConfig) => {
     const geo = inspectorView?.geometry;
     if (!geo || !geo.polygon || geo.polygon.length < 3) {
@@ -342,6 +389,11 @@ export default function DrawerPanel({ onJumpTo }: Props) {
       if (ctrl.signal.aborted) return;
       setPathResult(res);
       renderPath(res);
+
+      const summary = anchorPois(regionPois(geo.id), res, cfg.anker.snap_schwelle_meter, geo.polygon);
+      setAnchorSummary(summary);
+      renderAnchors(summary);
+
       setPathStatus('done');
     } catch (err) {
       if (ctrl.signal.aborted) return;
@@ -356,7 +408,9 @@ export default function DrawerPanel({ onJumpTo }: Props) {
     setPathStatus('idle');
     setPathError('');
     setPathResult(null);
+    setAnchorSummary(null);
     renderPath(null);
+    renderAnchors(null);
   }, [inspectorView?.geometry.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Export-JSON erzeugen
@@ -555,6 +609,7 @@ export default function DrawerPanel({ onJumpTo }: Props) {
             status={pathStatus}
             error={pathError}
             result={pathResult}
+            anchor={anchorSummary}
           />
         )}
         <div ref={mapContainerRef} style={{ flex: 1, minHeight: 0, minWidth: 0 }} />
@@ -597,7 +652,7 @@ export default function DrawerPanel({ onJumpTo }: Props) {
 // ─── Wegnetz-Filter-Menue (Phase 2: UI + localStorage, keine Wirkung) ─────────
 
 function PathFilterMenu({
-  gebiet, gebietLabel, onResized, onApply, status, error, result,
+  gebiet, gebietLabel, onResized, onApply, status, error, result, anchor,
 }: {
   gebiet: string;
   gebietLabel: string;
@@ -606,6 +661,7 @@ function PathFilterMenu({
   status: 'idle' | 'loading' | 'done' | 'error';
   error: string;
   result: import('../../regio-content/pathEngine').PathFetchResult | null;
+  anchor: AnchorSummary | null;
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const [cfg, setCfg] = useState<PathConfig>(() => loadPathConfig(gebiet));
@@ -771,6 +827,19 @@ function PathFilterMenu({
         />
       </Section>
 
+      <Section title="Anker (POI-Verbindung)">
+        <Slider
+          label="Snap-Schwelle"
+          value={cfg.anker.snap_schwelle_meter}
+          min={0.5} max={6} step={0.5}
+          onChange={(v) => update((c) => ({ ...c, anker: { ...c.anker, snap_schwelle_meter: v } }))}
+        />
+        <div style={{ padding: '0 10px', fontSize: 10, color: '#a0aec0', lineHeight: 1.5 }}>
+          Unter der Schwelle gilt der POI als auf dem Pfad; darüber bekommt er
+          einen connected-POI-Stich (ann_074). Gelände-abhängig.
+        </div>
+      </Section>
+
       {/* Aktionen */}
       <div style={{ padding: '10px', display: 'flex', flexDirection: 'column', gap: 8 }}>
         <button
@@ -826,6 +895,17 @@ function PathFilterMenu({
             <div style={{ color: '#718096', marginTop: 2 }}>
               {result.rawWayCount} OSM-Ways geladen · Konnektoren ab Phase 4
             </div>
+          </div>
+        )}
+        {status === 'done' && anchor && (
+          <div style={{
+            fontSize: 11, lineHeight: 1.7, padding: '7px 9px', borderRadius: 5,
+            background: '#fffaf0', border: '1px solid #fbd38d', color: '#7c2d12',
+          }}>
+            <div style={{ fontWeight: 700, marginBottom: 2 }}>POI-Anker</div>
+            <div><span style={{ color: '#dd6b20' }}>●</span> {anchor.connected} connected (Stich)</div>
+            <div><span style={{ color: '#2f855a' }}>●</span> {anchor.onPath} auf dem Pfad</div>
+            <div><span style={{ color: '#a0aec0' }}>●</span> {anchor.outside} außerhalb der Boundary</div>
           </div>
         )}
         <div style={{ fontSize: 10, color: '#a0aec0', lineHeight: 1.5 }}>

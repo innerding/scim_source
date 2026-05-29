@@ -36,6 +36,11 @@ export interface PathConfig {
     sackgasse_poi_ausnahme_meter: number;
     sackgasse_keep_list: string[];
   };
+  // Anker (ann_074): Schwelle, ab der ein POI einen connected-POI-Stich bekommt.
+  // Darunter gilt er als auf dem Pfad liegend. Gelaende-abhaengig.
+  anker: {
+    snap_schwelle_meter: number;
+  };
 }
 
 export function defaultPathConfig(gebiet: string): PathConfig {
@@ -64,6 +69,9 @@ export function defaultPathConfig(gebiet: string): PathConfig {
       sackgasse_poi_ausnahme_meter: 30,
       sackgasse_keep_list: [],
     },
+    anker: {
+      snap_schwelle_meter: 2,
+    },
   };
 }
 
@@ -86,6 +94,7 @@ export function loadPathConfig(gebiet: string): PathConfig {
       },
       ausschluesse: { ...fallback.ausschluesse, ...parsed.ausschluesse },
       diagnose: { ...fallback.diagnose, ...parsed.diagnose },
+      anker: { ...fallback.anker, ...parsed.anker },
     };
   } catch {
     return fallback;
