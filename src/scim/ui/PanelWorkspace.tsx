@@ -78,11 +78,17 @@ function TabBar({
   );
 }
 
-function PanelHeader({ title, subtitle, dimmed }: { title: string; subtitle: string; dimmed?: boolean }) {
+function PanelHeader({ id, title, subtitle, dimmed }: { id: string; title: string; subtitle: string; dimmed?: boolean }) {
   // Header passt zum dunklen Navigator-Strip: dunkler Hintergrund,
   // Titel in Weiss mit 90 % Opacity, Untertitel in halber Helligkeit.
   // dimmed=true (Panel ist in der Kosmologie schon visuell vertreten):
   // gesamter Header auf 60 % opacity — kein Doppel-Schrei. Siehe ann_051.
+  //
+  // Vor dem Titel sitzt die Panel-ID als kleines Monospace-Chip, damit
+  // der Operator zwischen P01..P14 / R01..R09 / V01..V03 nie raten muss,
+  // wo er gerade ist. Bei nicht-nummerierten Panels (Workspace, Catalog,
+  // Editor, System, AI) wird das Chip einfach uebersprungen.
+  const showChip = /^(P\d{2}|R\d{2}|V\d{2})$/.test(id);
   return (
     <div style={{
       padding: '14px 20px 12px',
@@ -91,8 +97,25 @@ function PanelHeader({ title, subtitle, dimmed }: { title: string; subtitle: str
       flexShrink: 0,
       opacity: dimmed ? 0.6 : 1,
     }}>
-      <div style={{ fontSize: 15, fontWeight: 600, color: 'rgba(255, 255, 255, 0.9)', fontFamily: 'system-ui, sans-serif' }}>
-        {title}
+      <div style={{
+        display: 'flex', alignItems: 'baseline', gap: 8,
+        fontFamily: 'system-ui, sans-serif',
+      }}>
+        {showChip && (
+          <span style={{
+            fontSize: 10, fontFamily: 'monospace', fontWeight: 700,
+            letterSpacing: '0.05em',
+            padding: '2px 7px', borderRadius: 3,
+            background: 'rgba(255, 255, 255, 0.08)',
+            color: 'rgba(255, 255, 255, 0.55)',
+            border: '1px solid rgba(255, 255, 255, 0.12)',
+          }}>
+            {id}
+          </span>
+        )}
+        <div style={{ fontSize: 15, fontWeight: 600, color: 'rgba(255, 255, 255, 0.9)' }}>
+          {title}
+        </div>
       </div>
       <div style={{ fontSize: 12, color: 'rgba(255, 255, 255, 0.5)', marginTop: 3, fontFamily: 'system-ui, sans-serif' }}>
         {subtitle}
@@ -219,7 +242,7 @@ export default function PanelWorkspace({ activeId, activeTab, onTabChange, resul
       overflow: 'hidden',
       minWidth: 0,
     }}>
-      <PanelHeader title={entry.label} subtitle={subtitle} dimmed={KOSMOLOGIE_IDS.has(activeId)} />
+      <PanelHeader id={entry.id} title={entry.label} subtitle={subtitle} dimmed={KOSMOLOGIE_IDS.has(activeId)} />
       <TabBar tabs={tabs} active={activeTab} onSelect={onTabChange} />
       {/* Geometry-Editor braucht volle Hoehe ohne Padding */}
       {activeId === GEOMETRY_EDITOR_DESCRIPTOR.id ? (
