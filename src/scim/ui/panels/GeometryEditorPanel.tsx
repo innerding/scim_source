@@ -23,6 +23,7 @@ import { parsePoiCatalog } from '../../poi-catalog/poiCatalog.parser';
 import RepresentBuildTetrahedron from '../RepresentBuildTetrahedron';
 import type { RepresentBuildFace } from '../RepresentBuildTetrahedron';
 import { useInspectorView } from '../../../runtime/repContext';
+import { commitToRepo, type CommitResult } from '../../../runtime/commitBridge';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import gruenbergMd from '../../../../data/grunberg_pois_plan.md?raw';
@@ -452,6 +453,11 @@ export default function GeometryEditorPanel({ onJumpTo }: Props) {
           fileName={proposedFileName}
           json={exportJson}
           onClose={() => setShowExport(false)}
+          onCommitted={() => {
+            // Nach erfolgreichem Commit DRAFT wegraeumen, damit der orange
+            // DRAFT-Marker im Workspace verschwindet.
+            try { localStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ }
+          }}
         />
       )}
     </div>
@@ -460,14 +466,39 @@ export default function GeometryEditorPanel({ onJumpTo }: Props) {
 
 // ─── Export-Modal ───────────────────────────────────────────────────────────
 
-function ExportModal({ fileName, json, onClose }: { fileName: string; json: string; onClose: () => void }) {
+function ExportModal({
+  fileName, json, onClose, onCommitted,
+}: {
+  fileName: string;
+  json: string;
+  onClose: () => void;
+  onCommitted?: () => void;
+}) {
   const [copied, setCopied] = useState(false);
+  const [committing, setCommitting] = useState(false);
+  const [commitResult, setCommitResult] = useState<CommitResult | null>(null);
+
   const onCopy = () => {
     navigator.clipboard.writeText(json).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     });
   };
+
+  const onCommit = async () => {
+    setCommitting(true);
+    setCommitResult(null);
+    const path = `data/geometries/${fileName}`;
+    const result = await commitToRepo({
+      path,
+      content: json,
+      message: `geometry: ${fileName.replace(/\.json$/, '')} via Editor-Bridge`,
+    });
+    setCommitResult(result);
+    setCommitting(false);
+    if (result.ok && onCommitted) onCommitted();
+  };
+
   return (
     <div style={{
       position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
@@ -489,6 +520,21 @@ function ExportModal({ fileName, json, onClose }: { fileName: string; json: stri
             </div>
           </div>
           <div style={{ display: 'flex', gap: 6 }}>
+            <button
+              onClick={onCommit}
+              disabled={committing || (commitResult?.ok === true)}
+              style={{
+                fontSize: 11, padding: '4px 12px',
+                cursor: committing ? 'wait' : (commitResult?.ok ? 'not-allowed' : 'pointer'),
+                border: '1px solid #2f855a',
+                background: commitResult?.ok ? '#9ae6b4' : '#2f855a',
+                color: commitResult?.ok ? '#22543d' : 'white',
+                borderRadius: 4, fontWeight: 600,
+                opacity: committing ? 0.7 : 1,
+              }}
+            >
+              {committing ? '… committe' : (commitResult?.ok ? '✓ committed' : 'Commit zu main')}
+            </button>
             <button
               onClick={onCopy}
               style={{
@@ -515,13 +561,39 @@ function ExportModal({ fileName, json, onClose }: { fileName: string; json: stri
           fontSize: 11, fontFamily: 'monospace', color: '#2d3748',
           background: '#f7fafc',
         }}>{json}</pre>
-        <div style={{
-          padding: '8px 16px', fontSize: 11, color: '#7c2d12',
-          background: '#fff5f0', borderTop: '1px solid #fed7aa',
-        }}>
-          Kopiere den Inhalt in eine neue Datei <code>data/geometries/{fileName}</code> im Repo und committe sie.
-          Nach dem nächsten Deploy ist die Geometry im Workspace sichtbar.
-        </div>
+        {commitResult?.ok && (
+          <div style={{
+            padding: '8px 16px', fontSize: 11, color: '#22543d',
+            background: '#f0fff4', borderTop: '1px solid #9ae6b4',
+            display: 'flex', alignItems: 'center', gap: 10,
+          }}>
+            <span>✓ Commit auf main:</span>
+            <a href={commitResult.commit_url} target="_blank" rel="noreferrer"
+               style={{ color: '#2f855a', fontFamily: 'monospace' }}>
+              {commitResult.commit_sha.slice(0, 7)}
+            </a>
+            <span style={{ color: '#718096' }}>
+              · CF Pages Auto-Build laeuft, ~60 s bis live.
+            </span>
+          </div>
+        )}
+        {commitResult && !commitResult.ok && (
+          <div style={{
+            padding: '8px 16px', fontSize: 11, color: '#9b2c2c',
+            background: '#fff5f5', borderTop: '1px solid #feb2b2',
+          }}>
+            ✗ Commit fehlgeschlagen ({commitResult.status}): {commitResult.error}
+          </div>
+        )}
+        {!commitResult && (
+          <div style={{
+            padding: '8px 16px', fontSize: 11, color: '#7c2d12',
+            background: '#fff5f0', borderTop: '1px solid #fed7aa',
+          }}>
+            <strong>Direkt-Commit</strong> schreibt nach <code>data/geometries/{fileName}</code> auf main.
+            Falls Bridge nicht erreichbar: „In Zwischenablage" → paste in lokale Datei → manuell committen.
+          </div>
+        )}
       </div>
     </div>
   );
