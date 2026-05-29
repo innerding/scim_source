@@ -1,8 +1,10 @@
 # Lichtenberg POI-Plan v1
-**Stand:** 2026-05-26  ·  **10 POIs**  ·  ✓ 10 · ≈ 0 · ❓ 0
+**Stand:** 2026-05-29  ·  **12 POIs**  ·  ✓ 11 · ≈ 0 · ❓ 0
 
 Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 **✓** aus OSM/bestätigt · **≈** abgeleitet/geschätzt · **❓** fehlt
+
+---
 
 ---
 
@@ -12,46 +14,58 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 
 | Icon | Tagline | Description | Coord | Cluster | Status |
 |---|---|---|---|---|---|
-| bildstock | Schönangerer |  | 14.24776, 48.40144 | — | ✓ |
-| bildstock | Rotes Kreuz |  | 14.25170, 48.39183 | — | ✓ |
+| bildstock | Schönangerer | Marterl am Wegrand beim Schönangerer-Hof | 14.24776, 48.40144 | — | ✓ |
+| bildstock+ | Rotes Kreuz seit 1973 | Hölzernes Wegkreuz im Wald-Sattel | 14.24486, 48.38024 | — | ✓ |
 
 ### Points_others
 
 | Icon | Tagline | Description | Coord | Cluster | Status |
 |---|---|---|---|---|---|
-| sender | Sender | UKW/DAB/TV-Sender 155 m hoch (seit 1960) | 14.25456, 48.38468 | Lichtenberg | ✓ |
+| sender | Sender | UKW/DAB/TV-Sender 155 m hoch (seit 1960) | 14.25457, 48.38470 | Lichtenberg | ✓ |
 
 ### Square_Rest
 
 | Icon | Tagline | Description | Coord | Cluster | Status |
 |---|---|---|---|---|---|
-| aussichtswarte+ | Giselawarte 927 m | Steinblock-Aussichtswarte von 1857, 17,5 m hoch | 14.25444, 48.38528 | Lichtenberg *(Cluster-Icon)* | ✓ |
-| aussichtspunkt | Kogl |  | 14.23873, 48.38005 | — | ✓ |
+| aussichtswarte+ | Giselawarte 927 m | Steinblock-Aussichtswarte von 1857, 17,5 m hoch | 14.25445, 48.38515 | Lichtenberg *(Cluster-Icon)* | ✓ |
+| aussichtspunkt | Kogl | Blick über die Koglerau ins Donautal und auf das Alpenpanorama | 14.23873, 48.38005 | — | ✓ |
 
 ### Regenerate_Substanze
 
 | Icon | Tagline | Description | Coord | Cluster | Status |
 |---|---|---|---|---|---|
-| gasthaus | zur Gis | Jausenstation seit 1702 am Gipfel | 14.25618, 48.38306 | Lichtenberg | ✓ |
+| gasthaus+ | zur Gis a° 1702 | Jausenstation seit 1702 am Gipfel | 14.25622, 48.38309 | Lichtenberg | ✓ |
 | gasthaus | Eidenberger | Ausflugsgasthaus mit Tiroler Almhütte | 14.23322, 48.39395 | — | ✓ |
 
 ### Regenerate_Water
 
 | Icon | Tagline | Description | Coord | Cluster | Status |
 |---|---|---|---|---|---|
-| gewaesser | Pollack-Quelle | Trinkwasserquelle am Berg | 14.25894, 48.38246 | Lichtenberg | ✓ |
+| gewaesser | Pollack-Quelle | Trinkwasserquelle am Berg | 14.25879, 48.38264 | Lichtenberg | ✓ |
+
+### Transport_Parking/(Charging)
+
+| Icon | Tagline | Description | Coord | Cluster | Status |
+|---|---|---|---|---|---|
+| parkplatz | Gisela Parkplatz |  | 14.25724, 48.38040 | Lichtenberg | ✓ |
 
 ### Service_Sleep
 
 | Icon | Tagline | Description | Coord | Cluster | Status |
 |---|---|---|---|---|---|
-| hotel | Lamahof | Bauernhof-Unterkunft mit Lamas | 14.23562, 48.40182 | — | ✓ |
+| hotel | Lamahof | Bauernhof-Unterkunft mit Lamas | 14.23566, 48.40170 | — | ✓ |
 
 ### Service_Others
 
 | Icon | Tagline | Description | Coord | Cluster | Status |
 |---|---|---|---|---|---|
 | werkstatt | Kranzler ab Hof | Ab-Hof-Verkauf | 14.25954, 48.37282 | — | ✓ |
+
+### Cluster
+
+| Icon | Tagline | Description | Coord | Cluster | Status |
+|---|---|---|---|---|---|
+| aussichtspunkt | Gis 927 m | Sender, Giselawarte und Gasthaus am Lichtenberg-Gipfel | ↑ | Lichtenberg | cluster_ghost |
 
 ---
 
@@ -103,12 +117,13 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 
 ---
 
+---
+
 ## Cluster
 
-### Lichtenberg *(4 POIs)*
-**Hover:** „Lichtenberg-Gipfel mit Sender, Giselawarte und Gasthaus"
+### Lichtenberg *(6 POIs)*
 
-aussichtswarte+ Giselawarte 927 m *(Cluster-Icon)* · sender Sender · gasthaus zur Gis · gewaesser Pollack-Quelle
+aussichtswarte+ Giselawarte 927 m *(Cluster-Icon)* · sender Sender · gasthaus+ zur Gis a° 1702 · gewaesser Pollack-Quelle · aussichtspunkt Gis 927 m · parkplatz Gisela Parkplatz
 
 ---
 
@@ -139,3 +154,4 @@ Diese Plan-md folgt der MVP-Variante aus `docs/howto_region_catalog.md`:
 - Bestehende Subkategorien wiederverwendet
 
 Quellen: OSM Overpass-API, Wikipedia (Lichtenberg/Eidenberg), Outdooractive, Alpenvereinaktiv.
+
