@@ -22,6 +22,7 @@ import { GEOMETRIES } from '../../workspace/workspace.registry';
 import { parsePoiCatalog } from '../../poi-catalog/poiCatalog.parser';
 import RepresentBuildTetrahedron from '../RepresentBuildTetrahedron';
 import type { RepresentBuildFace } from '../RepresentBuildTetrahedron';
+import { useInspectorView } from '../../../runtime/repContext';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import gruenbergMd from '../../../../data/grunberg_pois_plan.md?raw';
@@ -66,6 +67,13 @@ export default function GeometryEditorPanel({ onJumpTo }: Props) {
   const mapRef = useRef<L.Map | null>(null);
   const polygonLayerRef = useRef<L.Layer | null>(null);
   const poiLayerRef = useRef<L.LayerGroup | null>(null);
+  const inspectorRefRef = useRef<L.Polygon | null>(null);
+
+  // Inspector-Compare: das Polygon der vom Inspector gezeigten R kann
+  // als read-only Referenz in Violett unter den Editor gelegt werden
+  // (Tracing-Vorlage). Toggle separat, default aus.
+  const inspectorView = useInspectorView();
+  const [showInspectorRef, setShowInspectorRef] = useState(false);
 
   const initial = useMemo(loadDraft, []);
   const [geometryId, setGeometryId] = useState<string | 'new'>(initial.geometryId);
@@ -197,6 +205,43 @@ export default function GeometryEditorPanel({ onJumpTo }: Props) {
       map.fitBounds(poly.getBounds(), { padding: [30, 30] });
     }
   };
+
+  // Inspector-Referenz-Polygon (violett, read-only) ein-/ausblenden.
+  // Quelle ist die Operator-Auswahl im Inspector-Header — nicht die
+  // im Editor selbst gerade bearbeitete Geometrie. So kann der
+  // Operator "ueber" einer bestehenden R neu zeichnen, ohne sie zu
+  // kopieren.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return undefined;
+    // Alten Layer immer wegraeumen
+    if (inspectorRefRef.current) {
+      map.removeLayer(inspectorRefRef.current);
+      inspectorRefRef.current = null;
+    }
+    if (!showInspectorRef || !inspectorView) return undefined;
+    const ring = inspectorView.geometry.polygon;
+    if (!ring || ring.length < 3) return undefined;
+    const latlngs = ring.map(([lng, lat]) => [lat, lng] as [number, number]);
+    const layer = L.polygon(latlngs, {
+      color: '#8b3fbf',
+      weight: 1.5,
+      opacity: 0.85,
+      fillOpacity: 0.04,
+      dashArray: '4 3',
+      interactive: false,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      pmIgnore: true as any,
+    });
+    layer.addTo(map);
+    inspectorRefRef.current = layer;
+    return () => {
+      if (inspectorRefRef.current) {
+        map.removeLayer(inspectorRefRef.current);
+        inspectorRefRef.current = null;
+      }
+    };
+  }, [showInspectorRef, inspectorView]);
 
   // POI-Overlay anhand des Katalogs aktualisieren
   useEffect(() => {
@@ -331,6 +376,26 @@ export default function GeometryEditorPanel({ onJumpTo }: Props) {
         />
 
         <span style={{ flex: 1 }} />
+
+        <label
+          style={{
+            fontSize: 11, color: showInspectorRef ? '#8b3fbf' : '#4a5568',
+            display: 'flex', alignItems: 'center', gap: 4, cursor: inspectorView ? 'pointer' : 'not-allowed',
+            opacity: inspectorView ? 1 : 0.5,
+          }}
+          title={inspectorView
+            ? `Polygon der Inspector-R "${inspectorView.representation.name}" als violetter Referenz-Outline (read-only)`
+            : 'Inspector zeigt aktuell keine R — im rechten Header eine auswaehlen'}
+        >
+          <input
+            type="checkbox"
+            checked={showInspectorRef}
+            disabled={!inspectorView}
+            onChange={(e) => setShowInspectorRef(e.target.checked)}
+            style={{ cursor: inspectorView ? 'pointer' : 'not-allowed' }}
+          />
+          Inspector-R einblenden
+        </label>
 
         <label style={{ fontSize: 11, color: '#4a5568' }}>POI-Overlay:</label>
         <select
