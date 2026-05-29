@@ -12,7 +12,7 @@ import {
   addRoadHeatMesh, addPoiRoutes, fetchOsmEdges,
   TILE_OSM_URL, TILE_OSM_ATTR, TILE_MESH_URL, TILE_MESH_ATTR,
 } from './colourMeshOverlay';
-import { useInspectorView } from '../../runtime/repContext';
+import { useInspectorView, useRepresentationContext } from '../../runtime/repContext';
 
 interface OsmEdge {
   edge_id: string;
@@ -74,6 +74,7 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
   // (Compare-Modus), faellt auf die URL-aktive R zurueck. Siehe
   // runtime/repContext.ts → useInspectorView.
   const activeRep = useInspectorView();
+  const repCtx = useRepresentationContext();
   const repBbox = useMemo(
     () => (activeRep ? polygonBbox(activeRep.geometry.polygon) : null),
     [activeRep],
@@ -316,7 +317,7 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
         width: '100%', height: '100%', display: 'flex', flexDirection: 'column',
         background: '#1a1a1a', color: '#ff4136', fontFamily: 'monospace', fontSize: 13,
       }}>
-        <Header label="Pipeline-Kontrolle" detail="Fehler" vis={vis} setVis={setVis} onNavigate={onNavigate} onCollapseToggle={onCollapseToggle} disabled />
+        <Header label="Pipeline-Kontrolle" detail="Fehler" vis={vis} setVis={setVis} onNavigate={onNavigate} onCollapseToggle={onCollapseToggle} disabled repCtx={repCtx} />
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           Pipeline failed at: {result.failed_at_step ?? 'unknown'}
         </div>
@@ -343,14 +344,14 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
 
   return (
     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Header label="Pipeline-Kontrolle" detail={detail} vis={vis} setVis={setVis} onNavigate={onNavigate} onCollapseToggle={onCollapseToggle} />
+      <Header label="Pipeline-Kontrolle" detail={detail} vis={vis} setVis={setVis} onNavigate={onNavigate} onCollapseToggle={onCollapseToggle} repCtx={repCtx} />
       <div ref={containerRef} style={{ flex: 1, minHeight: 0 }} />
     </div>
   );
 }
 
 function Header({
-  label, detail, vis, setVis, onNavigate, onCollapseToggle, disabled,
+  label, detail, vis, setVis, onNavigate, onCollapseToggle, disabled, repCtx,
 }: {
   label: string;
   detail: string;
@@ -359,8 +360,14 @@ function Header({
   onNavigate?: (face: RepresentBuildFace) => void;
   onCollapseToggle?: () => void;
   disabled?: boolean;
+  repCtx: ReturnType<typeof useRepresentationContext>;
 }) {
   const [open, setOpen] = useState(false);
+
+  // Compare-Picker: Operator waehlt, welche R der Inspector zeigt.
+  // null = folgt der URL (Standardfall). Aenderung kippt die URL nicht.
+  const geometryById = new Map(repCtx.registry.geometries.map((g) => [g.id, g]));
+  const inspectorSelectValue = repCtx.inspectorView?.representation.id ?? '__follow_url__';
   return (
     <div style={{
       position: 'relative',
@@ -382,6 +389,33 @@ function Header({
           {detail}
         </div>
       </div>
+      <select
+        value={inspectorSelectValue}
+        onChange={(e) => {
+          const v = e.target.value;
+          repCtx.setInspectorView(v === '__follow_url__' ? null : v);
+        }}
+        title="Inspector — welche Representation anzeigen (URL bleibt unangetastet)"
+        style={{
+          fontSize: 10, padding: '3px 6px',
+          background: '#0d1520', color: '#e0eeff',
+          border: '1px solid #2d4a6a', borderRadius: 3,
+          maxWidth: 130,
+        }}
+      >
+        <option value="__follow_url__">
+          folgt URL{repCtx.active ? ` · ${repCtx.active.representation.name}` : ''}
+        </option>
+        {repCtx.registry.representations.map((rep) => {
+          const geo = geometryById.get(rep.geometry_id);
+          const regionLabel = geo?.region ? ` (${geo.region})` : '';
+          return (
+            <option key={rep.id} value={rep.id}>
+              {rep.name}{regionLabel}
+            </option>
+          );
+        })}
+      </select>
       <button
         disabled={disabled}
         onClick={() => setOpen((o) => !o)}
