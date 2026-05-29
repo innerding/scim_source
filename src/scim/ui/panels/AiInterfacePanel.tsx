@@ -2314,6 +2314,45 @@ Vor Phase 1 lohnt sich eine Aufraeum-Runde:
     historisch markieren`,
     date: '2026-05-29',
   },
+  {
+    id: 'ann_073',
+    category: 'adr',
+    label: 'Deploy: Direct-Upload via GH Actions — kein CF-Git-Build, kein Race',
+    content: `Verifiziert im Cloudflare-Dashboard (2026-05-29).
+
+scim3-operator ist ein DIRECT-UPLOAD-Pages-Projekt — KEINE Git-Integration.
+In Settings/General fehlt deshalb der "Builds & deployments"-Abschnitt;
+unter Deployments steht pro Commit GENAU EIN Production-Deploy.
+
+→ Es gibt genau EINEN Build-Pfad: GitHub Actions
+  (.github/workflows/deploy.yml, Node 24, VITE_* aus GH-Secrets/Variables)
+  baut bei Push nach main und schiebt dist/ per
+  "wrangler pages deploy --project-name=scim3-operator". ~60 s bis live.
+
+Die alte HANDOVER-Behauptung eines "zweiten, leise kaputten CF-Git-Builds
+mit Deploy-Race" war FALSCH und wurde im Dashboard widerlegt. Nichts
+abzuschalten.
+
+White Screen direkt nach Deploy = Stale-Asset/Edge-Propagation (neue
+gehashte Chunks + alte gecachte index.html/Service-Worker), KEIN Code-Bug.
+Fix: 60–90 s warten + Cmd-Shift-R.
+
+Worker (R2 diesenpark-packages / D1 / Pakete) ist getrennt:
+"cd worker && npx wrangler deploy". git push deployt den Worker NICHT.
+
+Ehrliche Quelle ist seit 2026-05-29 DEPLOY.md im Repo.
+
+— Verbesserungsvorschläge (offen) —
+1. White Screen dauerhaft entschärfen: index.html mit
+   Cache-Control: no-cache ausliefern (gehashte Assets bleiben langlebig
+   cachebar), damit der Browser nie eine alte index.html mit toten
+   Chunk-Referenzen hält. Dann entfällt das manuelle Cmd-Shift-R.
+2. Falls ein Service-Worker aktiv ist: skipWaiting/clientsClaim +
+   Network-First für die Navigation, sonst serviert der SW alte Shells.
+3. VITE_UPLOAD_API_KEY rotieren — lag in einem Screenshot im Klartext
+   sichtbar vor. Neuen Key in GH-Secret + Worker-Secret nachziehen.`,
+    date: '2026-05-29',
+  },
 ];
 
 function AnnotationsTab() {
