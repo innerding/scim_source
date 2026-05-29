@@ -38,6 +38,7 @@ interface LayerVisibility {
   routes: boolean;
   pois: boolean;
   colourmesh: boolean;
+  darkBase: boolean;
 }
 
 const DEFAULT_VISIBILITY: LayerVisibility = {
@@ -45,6 +46,7 @@ const DEFAULT_VISIBILITY: LayerVisibility = {
   routes: false,
   pois: true,
   colourmesh: true,
+  darkBase: true,
 };
 
 // Polygon (outer ring) -> [minLon, minLat, maxLon, maxLat].
@@ -109,9 +111,9 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
       wheelDebounceTime: 0,
       preferCanvas: true,
     });
-    // Initiale Base-Tile entspricht der Default-Visibility (Mesh an -> reduzierte Karte).
-    const initialUrl = DEFAULT_VISIBILITY.colourmesh ? TILE_MESH_URL : TILE_OSM_URL;
-    const initialAttr = DEFAULT_VISIBILITY.colourmesh ? TILE_MESH_ATTR : TILE_OSM_ATTR;
+    // Initiale Base-Tile: darkBase entscheidet, unabhaengig vom Mesh.
+    const initialUrl = DEFAULT_VISIBILITY.darkBase ? TILE_MESH_URL : TILE_OSM_URL;
+    const initialAttr = DEFAULT_VISIBILITY.darkBase ? TILE_MESH_ATTR : TILE_OSM_ATTR;
     baseTileRef.current = L.tileLayer(initialUrl, {
       attribution: initialAttr,
       maxZoom: 19,
@@ -129,13 +131,14 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
     };
   }, []);
 
-  // Base-Tile-Layer austauschen, wenn der Colour-Mesh-Modus toggelt.
+  // Base-Tile-Layer austauschen, wenn der Dark-Map-Toggle umgelegt wird.
+  // Entkoppelt vom Colour-Mesh-Overlay — beide Achsen frei kombinierbar.
   useEffect(() => {
     const map = mapRef.current;
     const oldBase = baseTileRef.current;
     if (!map || !oldBase) return;
-    const wantUrl = vis.colourmesh ? TILE_MESH_URL : TILE_OSM_URL;
-    const wantAttr = vis.colourmesh ? TILE_MESH_ATTR : TILE_OSM_ATTR;
+    const wantUrl = vis.darkBase ? TILE_MESH_URL : TILE_OSM_URL;
+    const wantAttr = vis.darkBase ? TILE_MESH_ATTR : TILE_OSM_ATTR;
     // Vermeide Tausch wenn schon korrekt (Leaflet-internes _url-Feld).
     const currentUrl = (oldBase as unknown as { _url: string })._url;
     if (currentUrl === wantUrl) return;
@@ -143,7 +146,7 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
     baseTileRef.current = L.tileLayer(wantUrl, {
       attribution: wantAttr, maxZoom: 19,
     }).addTo(map);
-  }, [vis.colourmesh]);
+  }, [vis.darkBase]);
 
   // OSM-Wege via Overpass holen, sobald colourmesh an und bbox bekannt.
   // Hat einen Cache (24h) — beim zweiten Aufruf sofort da.
@@ -447,6 +450,7 @@ function Header({
           <LayerToggle label="Boundary" checked={vis.boundary} onChange={(v) => setVis({ ...vis, boundary: v })} />
           <LayerToggle label="POIs" checked={vis.pois} onChange={(v) => setVis({ ...vis, pois: v })} />
           <LayerToggle label="Colour-Mesh" checked={vis.colourmesh} onChange={(v) => setVis({ ...vis, colourmesh: v })} />
+          <LayerToggle label="Dark Map" checked={vis.darkBase} onChange={(v) => setVis({ ...vis, darkBase: v })} />
           <LayerToggle label="Routen / Edges" checked={vis.routes} onChange={(v) => setVis({ ...vis, routes: v })} />
         </div>
       )}
