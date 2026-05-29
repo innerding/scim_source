@@ -13,6 +13,8 @@ import {
   TILE_OSM_URL, TILE_OSM_ATTR, TILE_MESH_URL, TILE_MESH_ATTR,
 } from './colourMeshOverlay';
 import { useInspectorView, useRepresentationContext } from '../../runtime/repContext';
+import { slugify } from '../../runtime/router';
+import { loadIncludedTypes } from '../regio-content/edgeTypeConfig';
 
 interface OsmEdge {
   edge_id: string;
@@ -77,6 +79,31 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
   // runtime/repContext.ts → useInspectorView.
   const activeRep = useInspectorView();
   const repCtx = useRepresentationContext();
+
+  // Aktueller Region-Slug fuer Edge-Type-Filter. Default-Slug, wenn
+  // keine R aktiv ist (P02 schreibt dann auch unter dem Default-Key).
+  const regionSlug = useMemo(
+    () => slugify(activeRep?.geometry.region ?? '') || 'default',
+    [activeRep],
+  );
+
+  // Edge-Type-Whitelist aus P02 (localStorage). Bei Region- oder
+  // Filter-Wechsel neu eingelesen — P02 dispatcht 'scim:edge-types:changed'.
+  const [edgeTypes, setEdgeTypes] = useState<string[]>(() => loadIncludedTypes(regionSlug));
+  useEffect(() => {
+    setEdgeTypes(loadIncludedTypes(regionSlug));
+  }, [regionSlug]);
+  useEffect(() => {
+    const onChange = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { regionSlug?: string; types?: string[] } | undefined;
+      if (!detail || detail.regionSlug !== regionSlug) return;
+      if (Array.isArray(detail.types)) setEdgeTypes(detail.types);
+    };
+    window.addEventListener('scim:edge-types:changed', onChange);
+    return () => window.removeEventListener('scim:edge-types:changed', onChange);
+  }, [regionSlug]);
+  // Stabile Identitaet fuer Effect-Deps (sortiert).
+  const edgeTypesKey = useMemo(() => [...edgeTypes].sort().join('|'), [edgeTypes]);
   const repBbox = useMemo(
     () => (activeRep ? polygonBbox(activeRep.geometry.polygon) : null),
     [activeRep],
@@ -161,7 +188,7 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
     if (!bbox) return;
     let cancelled = false;
     setOsmStatus('loading');
-    fetchOsmEdges(bbox)
+    fetchOsmEdges(bbox, edgeTypes)
       .then((edges) => {
         if (cancelled) return;
         setOsmEdges(edges);
@@ -173,7 +200,7 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
         setOsmStatus('failed');
       });
     return () => { cancelled = true; };
-  }, [vis.colourmesh, result, repBbox]);
+  }, [vis.colourmesh, result, repBbox, edgeTypes, edgeTypesKey]);
 
   // Container kann resized werden (Collapsible-Container) — Map neu einladen
   useEffect(() => {

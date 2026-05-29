@@ -353,8 +353,17 @@ export function addPoiRoutes(group: L.LayerGroup, pois: POI[]): void {
 // Holt highway-Wege innerhalb der bbox aus OSM. Antwort wird in localStorage
 // gecached (24h pro bbox-Key). Cancelable beim Component-Unmount via Wrapper.
 
-const OSM_CACHE_KEY_PREFIX = 'scim3_osm_edges_v1';
+// Cache-Bump v2: enthaelt jetzt den Typen-Filter im Schluessel, damit ein
+// Filterwechsel nicht alten Cache zieht. Alte v1-Eintraege liegen weiter
+// im localStorage rum, schaden aber nicht.
+const OSM_CACHE_KEY_PREFIX = 'scim3_osm_edges_v2';
 const OSM_CACHE_TTL_MS = 24 * 3600 * 1000;
+
+// Default-Whitelist (Wander-Profil), wenn der Aufrufer keine uebergibt.
+const DEFAULT_HIGHWAY_TYPES: readonly string[] = [
+  'primary', 'secondary', 'tertiary', 'unclassified', 'residential',
+  'service', 'track', 'path', 'footway', 'cycleway',
+];
 
 interface OverpassWay {
   type: 'way';
@@ -365,10 +374,29 @@ interface OverpassResponse {
   elements?: Array<{ type: string; id: number; geometry?: Array<{ lat: number; lon: number }> }>;
 }
 
+// Sanitize Whitelist gegen einfache Overpass-Regex-Injektion — wir lassen
+// nur Lower-Case-Buchstaben + Underscore zu (OSM-highway-Werte sehen so aus).
+function sanitizeTypes(types: readonly string[] | undefined): string[] {
+  const candidates = types && types.length > 0 ? types : DEFAULT_HIGHWAY_TYPES;
+  const cleaned = candidates
+    .map((t) => t.trim().toLowerCase())
+    .filter((t) => /^[a-z_]+$/.test(t));
+  // Dedup, stabil sortieren — gleiche Auswahl ergibt gleichen Cache-Key.
+  return [...new Set(cleaned)].sort();
+}
+
 export async function fetchOsmEdges(
   bbox: [number, number, number, number],
+  highwayTypes?: readonly string[],
 ): Promise<Edge[]> {
-  const cacheKey = `${OSM_CACHE_KEY_PREFIX}:${bbox.map((n) => n.toFixed(4)).join(',')}`;
+  const types = sanitizeTypes(highwayTypes);
+  if (types.length === 0) return [];
+
+  // Cache-Key enthaelt bbox + sortierte Typenliste (kurzes SHA-haftiges
+  // join). Damit fuehrt jede Filteraenderung zu eigenem Cache-Slot — kein
+  // stale-Result aus alter Auswahl.
+  const typesKey = types.join('|');
+  const cacheKey = `${OSM_CACHE_KEY_PREFIX}:${bbox.map((n) => n.toFixed(4)).join(',')}:${typesKey}`;
   try {
     const raw = localStorage.getItem(cacheKey);
     if (raw) {
@@ -380,10 +408,11 @@ export async function fetchOsmEdges(
   } catch { /* ignore cache fehler */ }
 
   const [minLon, minLat, maxLon, maxLat] = bbox;
+  const regexBody = types.join('|');
   const query = `
     [out:json][timeout:25];
     (
-      way["highway"~"^(primary|secondary|tertiary|unclassified|residential|service|track|path|footway|cycleway)$"]
+      way["highway"~"^(${regexBody})$"]
         (${minLat},${minLon},${maxLat},${maxLon});
     );
     out geom;
