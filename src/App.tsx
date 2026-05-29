@@ -17,6 +17,8 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<TabId>('input');
   const [mapCollapsed, setMapCollapsed] = useState(false);
   const [showManual, setShowManual] = useState(false);
+  // Beim Sprung in den Geometry-Editor optional die zu oeffnende Boundary mitgeben.
+  const [pendingGeometryId, setPendingGeometryId] = useState<string | null>(null);
 
   // Wrapper: wenn Panel wechselt, default-Tab 'input' setzen
   const goTo = (id: string, tab: TabId = 'input') => {
@@ -48,7 +50,12 @@ export default function App() {
           activeTab={activeTab}
           onTabChange={setActiveTab}
           result={result}
-          onJumpTo={(id) => goTo(id)}
+          onJumpTo={(id, geometryId) => {
+            if (geometryId) setPendingGeometryId(geometryId);
+            goTo(id);
+          }}
+          openGeometryId={pendingGeometryId}
+          onGeometryConsumed={() => setPendingGeometryId(null)}
         />
         <div style={{
           flexShrink: 0,

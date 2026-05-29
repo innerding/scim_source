@@ -91,9 +91,12 @@ function addBoundaryControls(map: L.Map): void {
 
 interface Props {
   onJumpTo: (panelId: string) => void;
+  // Beim Oeffnen aus dem Workspace: diese Boundary-Geometry laden statt des Drafts.
+  openGeometryId?: string | null;
+  onGeometryConsumed?: () => void;
 }
 
-export default function DrawerPanel({ onJumpTo }: Props) {
+export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsumed }: Props) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const polygonLayerRef = useRef<L.Layer | null>(null);
@@ -118,7 +121,18 @@ export default function DrawerPanel({ onJumpTo }: Props) {
   const inspectorView = useInspectorView();
   const [showInspectorRef, setShowInspectorRef] = useState(false);
 
-  const initial = useMemo(loadDraft, []);
+  // Beim Oeffnen aus dem Workspace die angeklickte Geometry laden; sonst Draft.
+  const initial = useMemo<Draft>(() => {
+    if (openGeometryId) {
+      const g = GEOMETRIES.find((x) => x.id === openGeometryId);
+      if (g) return { geometryId: g.id, name: g.name, region: g.region ?? '', polygon: g.polygon };
+    }
+    return loadDraft();
+  }, [openGeometryId]);
+  // Sprung verbraucht — App-State leeren, damit spaetere Navigation den Draft nimmt.
+  useEffect(() => {
+    if (openGeometryId) onGeometryConsumed?.();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const [geometryId, setGeometryId] = useState<string | 'new'>(initial.geometryId);
   const [name, setName] = useState(initial.name);
   const [region, setRegion] = useState(initial.region);
@@ -230,6 +244,9 @@ export default function DrawerPanel({ onJumpTo }: Props) {
     if (tab === 'umriss') {
       if (!pm.controlsVisible?.()) addBoundaryControls(map);
     } else {
+      // Wegnetz: Boundary nur sichtbar, nicht bearbeitbar.
+      pm.disableGlobalEditMode?.();
+      pm.disableGlobalDragMode?.();
       pm.removeControls?.();
     }
     setTimeout(() => {

@@ -29,7 +29,9 @@ interface Props {
   activeTab: TabId;
   onTabChange: (tab: TabId) => void;
   result: ScimPipelineResult;
-  onJumpTo?: (panelId: string) => void;
+  onJumpTo?: (panelId: string, geometryId?: string) => void;
+  openGeometryId?: string | null;
+  onGeometryConsumed?: () => void;
 }
 
 const TAB_ORDER: TabId[] = ['catalog', 'input', 'simulation', 'result', 'validation', 'leistungsblatt', 'raw'];
@@ -146,18 +148,20 @@ function StubPanel({ id, description }: { id: string; description: string }) {
   );
 }
 
-function PanelContent({ activeId, activeTab, result, onJumpTo }: {
+function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, onGeometryConsumed }: {
   activeId: string;
   activeTab: TabId;
   result: ScimPipelineResult;
-  onJumpTo?: (panelId: string) => void;
+  onJumpTo?: (panelId: string, geometryId?: string) => void;
+  openGeometryId?: string | null;
+  onGeometryConsumed?: () => void;
 }) {
   const role = useRole();
   if (activeId === WORKSPACE_DESCRIPTOR.id) {
     return <WorkspacePanel onJumpTo={onJumpTo ?? (() => {})} />;
   }
   if (activeId === DRAWER_DESCRIPTOR.id) {
-    return <DrawerPanel onJumpTo={onJumpTo ?? (() => {})} />;
+    return <DrawerPanel onJumpTo={onJumpTo ?? (() => {})} openGeometryId={openGeometryId} onGeometryConsumed={onGeometryConsumed} />;
   }
   if (activeId === CATALOG_DESCRIPTOR.id) {
     if (role !== 'operator') return null;
@@ -203,7 +207,7 @@ function PanelContent({ activeId, activeTab, result, onJumpTo }: {
   }
 }
 
-export default function PanelWorkspace({ activeId, activeTab, onTabChange, result, onJumpTo }: Props) {
+export default function PanelWorkspace({ activeId, activeTab, onTabChange, result, onJumpTo, openGeometryId, onGeometryConsumed }: Props) {
   const role = useRole();
 
   // Resolve tabs for the current entry
@@ -247,11 +251,11 @@ export default function PanelWorkspace({ activeId, activeTab, onTabChange, resul
       {/* Geometry-Editor braucht volle Hoehe ohne Padding */}
       {activeId === DRAWER_DESCRIPTOR.id ? (
         <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
-          <PanelContent activeId={activeId} activeTab={activeTab} result={result} onJumpTo={onJumpTo} />
+          <PanelContent activeId={activeId} activeTab={activeTab} result={result} onJumpTo={onJumpTo} openGeometryId={openGeometryId} onGeometryConsumed={onGeometryConsumed} />
         </div>
       ) : (
         <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
-          <PanelContent activeId={activeId} activeTab={activeTab} result={result} onJumpTo={onJumpTo} />
+          <PanelContent activeId={activeId} activeTab={activeTab} result={result} onJumpTo={onJumpTo} openGeometryId={openGeometryId} onGeometryConsumed={onGeometryConsumed} />
         </div>
       )}
     </div>

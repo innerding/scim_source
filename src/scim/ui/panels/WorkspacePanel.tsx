@@ -45,7 +45,7 @@ import gruenbergMd from '../../../../data/grunberg_pois_plan.md?raw';
 import lichtenbergMd from '../../../../data/lichtenberg_pois_plan.md?raw';
 
 interface Props {
-  onJumpTo: (panelId: string) => void;
+  onJumpTo: (panelId: string, geometryId?: string) => void;
 }
 
 // ─── Sub-Sections ───────────────────────────────────────────────────────────
@@ -283,7 +283,7 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
               primary={g.name}
               badge={g.id}
               secondary={`Polygon mit ${g.polygon.length} Punkten${g.region ? ` · ${g.region}` : ''}${g.drawn_at ? ` · gezeichnet ${g.drawn_at}` : ''}`}
-              action={{ label: 'Im Editor öffnen', onClick: () => onJumpTo('geometry_editor') }}
+              action={{ label: 'Im Editor öffnen', onClick: () => onJumpTo('geometry_editor', g.id) }}
             />
           ))
         )}
