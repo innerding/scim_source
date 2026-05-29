@@ -44,6 +44,12 @@ const CATALOGS = [
 
 export const DRAFT_KEY = 'scim3_geometry_draft';
 
+// Slot-Stile (Umbauplan B): Slot 1 = editierbare Boundary (blau, durchgezogen),
+// Slot 2 = Masken-Boundary (orange, gestrichelt) zum Drueberzeichnen ueber das Netz.
+const SLOT1_COLOR = '#0074d9';
+const SLOT2_COLOR = '#dd6b20';
+const SLOT2_DASH = '6 4';
+
 type DrawerTab = 'umriss' | 'wegnetz';
 
 interface Draft {
@@ -51,14 +57,19 @@ interface Draft {
   name: string;
   region: string;
   polygon: Position[] | null;
+  // Slot 2 (Umbauplan B): die ueber das Netz gelegte Masken-Boundary.
+  maskPolygon?: Position[] | null;
 }
 
 function loadDraft(): Draft {
   try {
     const raw = localStorage.getItem(DRAFT_KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const d = JSON.parse(raw);
+      return { maskPolygon: null, ...d };
+    }
   } catch { /* ignore */ }
-  return { geometryId: 'new', name: '', region: '', polygon: null };
+  return { geometryId: 'new', name: '', region: '', polygon: null, maskPolygon: null };
 }
 
 function saveDraft(d: Draft): void {
@@ -101,6 +112,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   const mapRef = useRef<L.Map | null>(null);
   const tileLayerRef = useRef<L.TileLayer | null>(null);
   const polygonLayerRef = useRef<L.Layer | null>(null);
+  const maskLayerRef = useRef<L.Layer | null>(null);
   const poiLayerRef = useRef<L.LayerGroup | null>(null);
   const inspectorRefRef = useRef<L.Polygon | null>(null);
   const pathLayerRef = useRef<L.LayerGroup | null>(null);
@@ -130,6 +142,10 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   const [boundaryOpacity, setBoundaryOpacity] = useState(1);
   const [inspectorOpacity, setInspectorOpacity] = useState(0.85);
 
+  // Slot 2 (Umbauplan B): Masken-Boundary. Eigene Sichtbarkeit/Opacity.
+  const [maskVisible, setMaskVisible] = useState(true);
+  const [maskOpacity, setMaskOpacity] = useState(1);
+
   // Beim Oeffnen aus dem Workspace die angeklickte Geometry laden; sonst Draft.
   const initial = useMemo<Draft>(() => {
     if (openGeometryId) {
@@ -146,13 +162,14 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   const [name, setName] = useState(initial.name);
   const [region, setRegion] = useState(initial.region);
   const [polygon, setPolygon] = useState<Position[] | null>(initial.polygon);
+  const [maskPolygon, setMaskPolygon] = useState<Position[] | null>(initial.maskPolygon ?? null);
   const [overlayCatalogId, setOverlayCatalogId] = useState<string>('');
   const [showExport, setShowExport] = useState(false);
 
   // Draft auto-save
   useEffect(() => {
-    saveDraft({ geometryId, name, region, polygon });
-  }, [geometryId, name, region, polygon]);
+    saveDraft({ geometryId, name, region, polygon, maskPolygon });
+  }, [geometryId, name, region, polygon, maskPolygon]);
 
   // Auf die aktuell im Inspector gewaehlte Region zoomen.
   const fitToInspector = () => {
@@ -193,28 +210,56 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     // Zeichen-Controls nur im Umriss-Tab (Init startet dort).
     addBoundaryControls(map);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const ringOf = (layer: any): Position[] =>
+      (layer.toGeoJSON().geometry as any).coordinates[0] as Position[];
+
+    // Zwei-Slot-Modell (Umbauplan B): das erste gezeichnete Polygon fuellt Slot 1
+    // (editierbare Boundary, blau). Ist Slot 1 belegt, wird das naechste Polygon
+    // zur Masken-Boundary (Slot 2, orange-gestrichelt) — die ueber das Netz
+    // gelegte Boundary aus Workflow-Schritt 5. Ein weiteres Polygon ersetzt Slot 2.
     map.on('pm:create', (e: L.LeafletEvent) => {
-      if (polygonLayerRef.current) map.removeLayer(polygonLayerRef.current);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const layer = (e as any).layer as L.Polygon;
-      polygonLayerRef.current = layer;
-      const geo = layer.toGeoJSON();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const ring = (geo.geometry as any).coordinates[0] as Position[];
-      setPolygon(ring);
+      if (!polygonLayerRef.current) {
+        polygonLayerRef.current = layer;
+        layer.setStyle?.({ color: SLOT1_COLOR });
+        setPolygon(ringOf(layer));
+      } else {
+        if (maskLayerRef.current) map.removeLayer(maskLayerRef.current);
+        maskLayerRef.current = layer;
+        layer.setStyle?.({ color: SLOT2_COLOR, dashArray: SLOT2_DASH });
+        setMaskPolygon(ringOf(layer));
+      }
     });
 
-    map.on('pm:remove', () => {
+    map.on('pm:remove', (e: L.LeafletEvent) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const layer = (e as any).layer;
+      if (layer === maskLayerRef.current) {
+        maskLayerRef.current = null;
+        setMaskPolygon(null);
+        return;
+      }
+      // Slot 1 geloescht: Slot 2 rueckt nach (wird zur editierbaren Boundary).
       polygonLayerRef.current = null;
       setPolygon(null);
+      if (maskLayerRef.current) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const m = maskLayerRef.current as any;
+        m.setStyle?.({ color: SLOT1_COLOR, dashArray: '' });
+        polygonLayerRef.current = m;
+        setPolygon(ringOf(m));
+        maskLayerRef.current = null;
+        setMaskPolygon(null);
+      }
     });
 
-    map.on('pm:edit', () => {
-      if (!polygonLayerRef.current) return;
-      const geo = (polygonLayerRef.current as L.Polygon).toGeoJSON();
+    map.on('pm:edit', (e: L.LeafletEvent) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const ring = (geo.geometry as any).coordinates[0] as Position[];
-      setPolygon(ring);
+      const layer = (e as any).layer;
+      if (layer === polygonLayerRef.current) setPolygon(ringOf(layer));
+      else if (layer === maskLayerRef.current) setMaskPolygon(ringOf(layer));
     });
 
     poiLayerRef.current = L.layerGroup().addTo(map);
@@ -222,12 +267,18 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     anchorLayerRef.current = L.layerGroup().addTo(map);
     mapRef.current = map;
 
-    // Initial polygon
+    // Initial Slot 1 (Boundary)
     if (polygon && polygon.length >= 3) {
       const latlngs = polygon.map(([lng, lat]) => [lat, lng] as [number, number]);
-      const poly = L.polygon(latlngs, { color: '#0074d9' }).addTo(map);
+      const poly = L.polygon(latlngs, { color: SLOT1_COLOR }).addTo(map);
       polygonLayerRef.current = poly;
       map.fitBounds(poly.getBounds(), { padding: [30, 30] });
+    }
+    // Initial Slot 2 (Masken-Boundary), falls im Draft vorhanden
+    if (maskPolygon && maskPolygon.length >= 3) {
+      const latlngs = maskPolygon.map(([lng, lat]) => [lat, lng] as [number, number]);
+      const mask = L.polygon(latlngs, { color: SLOT2_COLOR, dashArray: SLOT2_DASH }).addTo(map);
+      maskLayerRef.current = mask;
     }
 
     return () => {
@@ -235,6 +286,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       mapRef.current = null;
       tileLayerRef.current = null;
       polygonLayerRef.current = null;
+      maskLayerRef.current = null;
       poiLayerRef.current = null;
       pathLayerRef.current = null;
       anchorLayerRef.current = null;
@@ -265,6 +317,8 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       pm.removeControls?.();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (polygonLayerRef.current as any)?.pm?.disable?.();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (maskLayerRef.current as any)?.pm?.disable?.();
     }
     setTimeout(() => {
       map.invalidateSize();
@@ -292,6 +346,16 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     inspectorRefRef.current?.setStyle({ opacity: inspectorOpacity, fillOpacity: inspectorOpacity * 0.05 });
   }, [inspectorOpacity, showInspectorRef, inspectorView]);
 
+  // Slot 2 (B): Masken-Boundary dimmen/abschalten. Farbe (orange/gestrichelt)
+  // bleibt erhalten, nur Opacity wird gesteuert.
+  useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const layer = maskLayerRef.current as any;
+    if (!layer?.setStyle) return;
+    const o = maskVisible ? maskOpacity : 0;
+    layer.setStyle({ opacity: o, fillOpacity: o * 0.08 });
+  }, [maskVisible, maskOpacity, maskPolygon, geometryId, tab]);
+
   // Geometry-Wechsel laedt neue Daten in die Map
   const onChangeGeometry = (id: string | 'new') => {
     setGeometryId(id);
@@ -301,6 +365,12 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       map.removeLayer(polygonLayerRef.current);
       polygonLayerRef.current = null;
     }
+    // Geometriewechsel verwirft auch eine offene Masken-Boundary (Slot 2).
+    if (maskLayerRef.current) {
+      map.removeLayer(maskLayerRef.current);
+      maskLayerRef.current = null;
+    }
+    setMaskPolygon(null);
     if (id === 'new') {
       setName('');
       setRegion('');
@@ -312,7 +382,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       setRegion(g.region ?? '');
       setPolygon(g.polygon);
       const latlngs = g.polygon.map(([lng, lat]) => [lat, lng] as [number, number]);
-      const poly = L.polygon(latlngs, { color: '#0074d9' }).addTo(map);
+      const poly = L.polygon(latlngs, { color: SLOT1_COLOR }).addTo(map);
       polygonLayerRef.current = poly;
       map.fitBounds(poly.getBounds(), { padding: [30, 30] });
     }
@@ -599,6 +669,13 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
           disabledHint="Kein Umriss gezeichnet"
         />
         <LayerDimmer
+          label="Maske" color={SLOT2_COLOR}
+          on={maskVisible} opacity={maskOpacity}
+          onToggle={setMaskVisible} onOpacity={setMaskOpacity}
+          disabled={!maskPolygon || maskPolygon.length < 3}
+          disabledHint="Keine Masken-Boundary — als zweites Polygon über das Netz zeichnen"
+        />
+        <LayerDimmer
           label="Vorlage (Inspector-R)" color="#8b3fbf"
           on={showInspectorRef} opacity={inspectorOpacity}
           onToggle={setShowInspectorRef} onOpacity={setInspectorOpacity}
@@ -707,9 +784,20 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
           background: '#f7fafc', borderTop: '1px solid #e2e8f0',
         }}>
           {polygon ? (
-            <span style={{ color: '#38a169' }}>✓ Polygon mit {polygon.length} Punkten</span>
+            <span style={{ color: '#38a169' }}>✓ Boundary (Slot 1) mit {polygon.length} Punkten</span>
           ) : (
             <span style={{ color: '#a0aec0' }}>Polygon-Werkzeug oben links wählen und zeichnen</span>
+          )}
+          {polygon && (
+            maskPolygon ? (
+              <span style={{ marginLeft: 16, color: SLOT2_COLOR }}>
+                ✓ Masken-Boundary (Slot 2) mit {maskPolygon.length} Punkten
+              </span>
+            ) : (
+              <span style={{ marginLeft: 16, color: '#a0aec0' }}>
+                Zweites Polygon zeichnen → wird Masken-Boundary (Slot 2)
+              </span>
+            )
           )}
           {overlayCatalogId && (
             <span style={{ marginLeft: 16, color: '#c8389b' }}>
