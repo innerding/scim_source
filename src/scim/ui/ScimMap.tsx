@@ -15,6 +15,7 @@ import {
 import { useInspectorView, useRepresentationContext } from '../../runtime/repContext';
 import { slugify } from '../../runtime/router';
 import { loadIncludedTypes } from '../regio-content/edgeTypeConfig';
+import { parseCatalogById } from '../poi-catalog/catalogRegistry';
 
 interface OsmEdge {
   edge_id: string;
@@ -108,6 +109,21 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
     () => (activeRep ? polygonBbox(activeRep.geometry.polygon) : null),
     [activeRep],
   );
+
+  // Catalog-POIs der aktiven R, sobald sie ein catalog_id-Feld hat.
+  // Parsen ist nicht billig — daher memoisiert auf den Katalog-Identifikator.
+  const repCatalogPois = useMemo(() => {
+    const catId = activeRep?.representation.catalog_id;
+    if (!catId) return [];
+    const parsed = parseCatalogById(catId);
+    if (!parsed) return [];
+    // Nur POIs mit echter Koordinate zeichnen — Cluster-Ghosts und Missing
+    // werden uebersprungen.
+    return parsed.pois.filter((p) => (
+      p.coord_status !== 'missing'
+      && !(p.coord[0] === 0 && p.coord[1] === 0)
+    ));
+  }, [activeRep]);
   // Polygon-Ringe als [lat, lon][] fuer Leaflet vorbereiten.
   const repPolygonLatLng = useMemo(() => {
     if (!activeRep) return null;
@@ -305,9 +321,30 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
       }
     }
 
+    // POIs aus dem Catalog der aktiven R (rep.catalog_id). Eigene
+    // Render-Schleife mit leichterem Stil — kein Load-Class-Mapping,
+    // weil der Catalog selbst keine Live-Last fuehrt.
+    if (vis.pois && activeRep && repCatalogPois.length > 0) {
+      for (const poi of repCatalogPois) {
+        const [lon, lat] = poi.coord;
+        L.circleMarker([lat, lon], {
+          radius: 7,
+          color: '#1a365d',
+          weight: 1.5,
+          fillColor: '#e0eeff',
+          fillOpacity: 0.95,
+        })
+          .bindTooltip(
+            `<strong>${poi.text}</strong><br/>` +
+            `<span style="color:#718096">${poi.subcategory}</span>` +
+            (poi.cluster ? `<br/><em>Cluster: ${poi.cluster}</em>` : ''),
+          )
+          .addTo(layerGroup);
+      }
+    }
+
     // POIs aus dem Pipeline-Extraction. Wenn eine R aktiv ist, gehoeren
-    // diese POIs nicht zur Sicht — sie kaemen aus rep.catalog_id und werden
-    // in einer eigenen Iteration verkabelt.
+    // diese POIs nicht zur Sicht — die R hat ihren eigenen Catalog (oben).
     if (vis.pois && !activeRep && extraction?.extracted_pois) {
       for (const poi of extraction.extracted_pois) {
         const [lon, lat] = poi.center.coordinates;
@@ -339,7 +376,7 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
         [Math.max(...lats), Math.max(...lons)],
       ]);
     }
-  }, [result, vis, osmEdges, repBbox, repPolygonLatLng, activeRep]);
+  }, [result, vis, osmEdges, repBbox, repPolygonLatLng, activeRep, repCatalogPois]);
 
   if (!result.success) {
     return (
