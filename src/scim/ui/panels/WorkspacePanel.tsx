@@ -19,6 +19,7 @@ import { parsePoiCatalog } from '../../poi-catalog/poiCatalog.parser';
 import { GEOMETRIES, REPRESENTATIONS } from '../../workspace/workspace.registry';
 import type { CatalogRef } from '../../workspace/workspace.types';
 import { DRAFT_KEY } from './DrawerPanel';
+import { loadHandoff, clearHandoff, type RepresentHandoff } from '../../workspace/draftHandoff';
 
 // Im Browser gezeichnete Geometry — sitzt in localStorage, noch nicht im Repo.
 interface GeometryDraft {
@@ -163,6 +164,9 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
   // Draft aus dem Editor (localStorage) — wird hier sichtbar, bevor er ins Repo geht.
   const draft = useMemo(() => loadGeometryDraft(), []);
   const [showWizard, setShowWizard] = useState(false);
+  // Uebergabe-Snapshot aus dem Drawer (Umbauplan E) — separater localStorage-Key.
+  const [handoff, setHandoff] = useState<RepresentHandoff | null>(() => loadHandoff());
+  const onDiscardHandoff = () => { clearHandoff(); setHandoff(null); };
 
   const catalogs: CatalogRef[] = useMemo(() => {
     const grunberg = parsePoiCatalog(gruenbergMd as string, {
@@ -225,6 +229,84 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
           </div>
         </div>
       </div>
+
+      {/* Uebergabe aus dem Drawer (Umbauplan E) — der atomare Verbund-Commit
+          (Boundary + Katalog-Bindung + Wegnetz) folgt in Umbauplan F. */}
+      {handoff && (
+        <div style={{
+          background: '#ebf8ff', border: '1px solid #2b6cb0', borderRadius: 6,
+          padding: '14px 18px', marginBottom: 22,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+            <span style={{ fontSize: 18 }}>↩</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#1a365d' }}>
+                Übergabe aus dem Drawer
+                <span style={{
+                  marginLeft: 8, fontSize: 10, fontFamily: 'monospace',
+                  background: '#2b6cb0', color: '#fff', padding: '1px 6px', borderRadius: 3,
+                }}>
+                  VERBUND
+                </span>
+              </div>
+              <div style={{ fontSize: 11, color: '#2c5282', marginTop: 1 }}>
+                {handoff.name || 'Unbenannt'}{handoff.region ? ` · ${handoff.region}` : ''}
+              </div>
+            </div>
+          </div>
+
+          <ul style={{ margin: '0 0 10px 0', padding: '0 0 0 18px', fontSize: 11, color: '#2c5282', lineHeight: 1.7 }}>
+            <li><strong>Boundary</strong> · Polygon mit {handoff.boundaryPolygon.length} Punkten</li>
+            <li>
+              <strong>Maske</strong> ·{' '}
+              {handoff.maskPolygon
+                ? `Slot-2-Polygon mit ${handoff.maskPolygon.length} Punkten`
+                : 'keine'}
+            </li>
+            <li>
+              <strong>Wegnetz</strong> ·{' '}
+              {handoff.net
+                ? `${handoff.net.edges.length} Kanten (${handoff.net.primaryCount} primär / ${handoff.net.connectorCount} Connector)`
+                  + (handoff.net.cropped ? `, maskiert · ${handoff.net.gates.length} Gates` : ', roh (nicht maskiert)')
+                : 'kein Netz übergeben'}
+            </li>
+          </ul>
+
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <button
+              disabled
+              title="Der atomare Verbund-Commit (Boundary + Katalog-Bindung + Wegnetz) folgt in Umbauplan F."
+              style={{
+                fontSize: 12, padding: '7px 12px', fontWeight: 600,
+                border: '1px solid #cbd5e0', borderRadius: 5,
+                background: '#edf2f7', color: '#a0aec0', cursor: 'not-allowed',
+              }}
+            >
+              Verbund committen — folgt (F)
+            </button>
+            <button
+              onClick={() => onJumpTo('geometry_editor')}
+              style={{
+                fontSize: 12, padding: '7px 12px', cursor: 'pointer',
+                border: '1px solid #2b6cb0', borderRadius: 5,
+                background: 'white', color: '#2b6cb0', fontWeight: 500,
+              }}
+            >
+              Im Editor öffnen
+            </button>
+            <button
+              onClick={onDiscardHandoff}
+              style={{
+                fontSize: 12, padding: '7px 12px', cursor: 'pointer',
+                border: '1px solid #e2e8f0', borderRadius: 5,
+                background: 'white', color: '#718096', fontWeight: 500,
+              }}
+            >
+              Verwerfen
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Geometrien */}
       <Section

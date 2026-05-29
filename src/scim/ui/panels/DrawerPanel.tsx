@@ -18,6 +18,7 @@ import '@geoman-io/leaflet-geoman-free';
 import '@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css';
 import type { Position } from 'geojson';
 import { GEOMETRIES } from '../../workspace/workspace.registry';
+import { saveHandoff, type HandoffNet } from '../../workspace/draftHandoff';
 import { parsePoiCatalog } from '../../poi-catalog/poiCatalog.parser';
 import RepresentBuildTetrahedron from '../RepresentBuildTetrahedron';
 import type { RepresentBuildFace } from '../RepresentBuildTetrahedron';
@@ -578,6 +579,35 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     renderGates(res.gates);
   };
 
+  // [↩ An Workspace übergeben] (Umbauplan E): statt selbst ins Repo zu committen,
+  // reicht der Drawer einen Snapshot (Boundary + Maske + Wegnetz + Gates) an den
+  // Workspace zurück. Der Workspace ist das atomare Verbund-Commit-Gate (F).
+  const onHandoffToWorkspace = () => {
+    if (!polygon || polygon.length < 3) return;
+    let net: HandoffNet | null = null;
+    if (pathResult) {
+      const src = cropResult ? cropResult.edges : pathResult.edges;
+      const edges = src.filter((e) => e.inNet);
+      net = {
+        gebiet: inspectorView?.geometry.id ?? '',
+        gebietName: inspectorView?.geometry.name ?? '',
+        edges,
+        gates: cropResult ? cropResult.gates : [],
+        cropped: !!cropResult,
+        primaryCount: edges.filter((e) => e.source === 'primary').length,
+        connectorCount: edges.filter((e) => e.source !== 'primary').length,
+      };
+    }
+    saveHandoff({
+      name, region,
+      boundaryPolygon: polygon,
+      maskPolygon: maskPolygon ?? null,
+      net,
+      handedOffAt: Date.now(),
+    });
+    onJumpTo('workspace');
+  };
+
   // [Anwenden] im Wegnetz-Tab: Boundary-bbox -> Overpass -> Filter -> Render,
   // anschliessend POI-Anker (ann_074) berechnen + zeichnen.
   const onApplyPath = async (cfg: PathConfig) => {
@@ -881,6 +911,8 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
             hasNet={!!pathResult}
             onCrop={onCropWithMask}
             crop={cropResult}
+            canHandoff={!!polygon && polygon.length >= 3}
+            onHandoff={onHandoffToWorkspace}
           />
         )}
         <div ref={mapContainerRef} style={{ flex: 1, minHeight: 0, minWidth: 0 }} />
@@ -935,7 +967,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
 
 function PathFilterMenu({
   gebiet, gebietLabel, onResized, onApply, status, error, result, anchor,
-  hasMask, hasNet, onCrop, crop,
+  hasMask, hasNet, onCrop, crop, canHandoff, onHandoff,
 }: {
   gebiet: string;
   gebietLabel: string;
@@ -949,6 +981,8 @@ function PathFilterMenu({
   hasNet: boolean;
   onCrop: () => void;
   crop: CropResult | null;
+  canHandoff: boolean;
+  onHandoff: () => void;
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const [cfg, setCfg] = useState<PathConfig>(() => loadPathConfig(gebiet));
@@ -1188,17 +1222,29 @@ function PathFilterMenu({
             </div>
           </div>
         )}
+        {/* Draft-Lifecycle (Umbauplan E): zurueck an den Workspace statt
+            eigenem Repo-Commit. Der Workspace buendelt + committet (F). */}
         <button
-          disabled
-          title="Commit nach data/regio_paths/<region>.json kommt in Phase 9 (Bridge-Whitelist)"
+          onClick={onHandoff}
+          disabled={!canHandoff}
+          title={
+            !canHandoff ? 'Erst im Umriss-Tab eine Boundary zeichnen'
+              : 'Boundary + Maske + Wegnetz als Übergabe an den Workspace (dort der atomare Verbund-Commit)'
+          }
           style={{
             fontSize: 12, padding: '7px 12px', fontWeight: 600,
-            border: '1px dashed #cbd5e0', borderRadius: 5,
-            background: '#edf2f7', color: '#a0aec0', cursor: 'not-allowed',
+            border: '1px solid #2b6cb0', borderRadius: 5,
+            background: canHandoff ? '#2b6cb0' : '#edf2f7',
+            color: canHandoff ? '#fff' : '#a0aec0',
+            cursor: canHandoff ? 'pointer' : 'not-allowed',
           }}
         >
-          Commit zu Repo (Phase 9)
+          ↩ An Workspace übergeben
         </button>
+        <div style={{ fontSize: 10, color: '#a0aec0', lineHeight: 1.5 }}>
+          Übergibt Boundary {hasMask ? '+ Maske ' : ''}{hasNet ? '+ Wegnetz ' : ''}an den
+          Workspace. Der eigentliche Repo-Commit des Verbunds passiert dort (Umbauplan F).
+        </div>
 
         {/* Status / Legende */}
         {status === 'error' && (
