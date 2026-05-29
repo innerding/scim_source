@@ -815,7 +815,7 @@ function PathFilterMenu({
         <Slider
           label="Anschluss-Toleranz"
           value={cfg.konnektoren.anschluss_toleranz_meter}
-          min={0} max={30} step={1}
+          min={0} max={100} step={1}
           onChange={(v) => update((c) => ({ ...c, konnektoren: { ...c.konnektoren, anschluss_toleranz_meter: v } }))}
         />
         <div style={{ padding: '0 10px', fontSize: 10, color: '#a0aec0', lineHeight: 1.5 }}>
