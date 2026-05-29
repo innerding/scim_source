@@ -99,6 +99,7 @@ interface Props {
 export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsumed }: Props) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
+  const tileLayerRef = useRef<L.TileLayer | null>(null);
   const polygonLayerRef = useRef<L.Layer | null>(null);
   const poiLayerRef = useRef<L.LayerGroup | null>(null);
   const inspectorRefRef = useRef<L.Polygon | null>(null);
@@ -120,6 +121,14 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   // (Tracing-Vorlage). Toggle separat, default aus.
   const inspectorView = useInspectorView();
   const [showInspectorRef, setShowInspectorRef] = useState(false);
+
+  // Ebenen-Steuerleiste (Umbauplan A): Dimmer + On/Off je Layer, auf beide Tabs
+  // wirksam. (1) OSM-Tiles, (2) editierbare Boundary, (3) Inspector-R-Vorlage.
+  const [tileVisible, setTileVisible] = useState(true);
+  const [tileOpacity, setTileOpacity] = useState(0.75);
+  const [boundaryVisible, setBoundaryVisible] = useState(true);
+  const [boundaryOpacity, setBoundaryOpacity] = useState(1);
+  const [inspectorOpacity, setInspectorOpacity] = useState(0.85);
 
   // Beim Oeffnen aus dem Workspace die angeklickte Geometry laden; sonst Draft.
   const initial = useMemo<Draft>(() => {
@@ -174,10 +183,12 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       inertiaDeceleration: 2500,
     });
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    const tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap',
       opacity: 0.75,
-    }).addTo(map);
+    });
+    tiles.addTo(map);
+    tileLayerRef.current = tiles;
 
     // Zeichen-Controls nur im Umriss-Tab (Init startet dort).
     addBoundaryControls(map);
@@ -222,6 +233,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     return () => {
       map.remove();
       mapRef.current = null;
+      tileLayerRef.current = null;
       polygonLayerRef.current = null;
       poiLayerRef.current = null;
       pathLayerRef.current = null;
@@ -259,6 +271,26 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       if (tab === 'wegnetz') fitToInspector();
     }, 60);
   }, [tab]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Ebenen-Steuerleiste (A): Tiles dimmen/abschalten.
+  useEffect(() => {
+    tileLayerRef.current?.setOpacity(tileVisible ? tileOpacity : 0);
+  }, [tileVisible, tileOpacity]);
+
+  // Ebenen-Steuerleiste (A): editierbare Boundary dimmen/abschalten. Layer
+  // bleibt fuer Geoman auf der Karte; "aus" = transparent, nicht entfernt.
+  useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const layer = polygonLayerRef.current as any;
+    if (!layer?.setStyle) return;
+    const o = boundaryVisible ? boundaryOpacity : 0;
+    layer.setStyle({ opacity: o, fillOpacity: o * 0.1 });
+  }, [boundaryVisible, boundaryOpacity, polygon, geometryId, tab]);
+
+  // Ebenen-Steuerleiste (A): Inspector-R-Vorlage dimmen.
+  useEffect(() => {
+    inspectorRefRef.current?.setStyle({ opacity: inspectorOpacity, fillOpacity: inspectorOpacity * 0.05 });
+  }, [inspectorOpacity, showInspectorRef, inspectorView]);
 
   // Geometry-Wechsel laedt neue Daten in die Map
   const onChangeGeometry = (id: string | 'new') => {
@@ -548,6 +580,33 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
         )}
       </div>
 
+      {/* Ebenen-Steuerleiste (A) — Dimmer + On/Off, auf beide Tabs wirksam */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 18, padding: '5px 12px',
+        background: '#f0f4f8', borderBottom: '1px solid #e2e8f0', flexWrap: 'wrap',
+      }}>
+        <span style={{ fontSize: 10, fontWeight: 700, color: '#718096', letterSpacing: 0.5 }}>EBENEN</span>
+        <LayerDimmer
+          label="Karte" color="#4a5568"
+          on={tileVisible} opacity={tileOpacity}
+          onToggle={setTileVisible} onOpacity={setTileOpacity}
+        />
+        <LayerDimmer
+          label="Umriss" color="#0074d9"
+          on={boundaryVisible} opacity={boundaryOpacity}
+          onToggle={setBoundaryVisible} onOpacity={setBoundaryOpacity}
+          disabled={!polygon || polygon.length < 3}
+          disabledHint="Kein Umriss gezeichnet"
+        />
+        <LayerDimmer
+          label="Vorlage (Inspector-R)" color="#8b3fbf"
+          on={showInspectorRef} opacity={inspectorOpacity}
+          onToggle={setShowInspectorRef} onOpacity={setInspectorOpacity}
+          disabled={!inspectorView}
+          disabledHint="Inspector zeigt keine R — im rechten Header eine wählen"
+        />
+      </div>
+
       {/* Umriss-Toolbar (nur im Umriss-Tab) */}
       {tab === 'umriss' && (
         <div style={{
@@ -595,26 +654,6 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
           />
 
           <span style={{ flex: 1 }} />
-
-          <label
-            style={{
-              fontSize: 11, color: showInspectorRef ? '#8b3fbf' : '#4a5568',
-              display: 'flex', alignItems: 'center', gap: 4, cursor: inspectorView ? 'pointer' : 'not-allowed',
-              opacity: inspectorView ? 1 : 0.5,
-            }}
-            title={inspectorView
-              ? `Polygon der Inspector-R "${inspectorView.representation.name}" als violetter Referenz-Outline (read-only)`
-              : 'Inspector zeigt aktuell keine R — im rechten Header eine auswaehlen'}
-          >
-            <input
-              type="checkbox"
-              checked={showInspectorRef}
-              disabled={!inspectorView}
-              onChange={(e) => setShowInspectorRef(e.target.checked)}
-              style={{ cursor: inspectorView ? 'pointer' : 'not-allowed' }}
-            />
-            Inspector-R einblenden
-          </label>
 
           <label style={{ fontSize: 11, color: '#4a5568' }}>POI-Overlay:</label>
           <select
@@ -977,6 +1016,39 @@ function PathFilterMenu({
           und das Verschweißen folgen in späteren Phasen.
         </div>
       </div>
+    </div>
+  );
+}
+
+// Ebenen-Steuerleiste (A): ein Layer = On/Off-Checkbox + Opacity-Slider.
+function LayerDimmer({
+  label, color, on, opacity, onToggle, onOpacity, disabled, disabledHint,
+}: {
+  label: string; color: string; on: boolean; opacity: number;
+  onToggle: (v: boolean) => void; onOpacity: (v: number) => void;
+  disabled?: boolean; disabledHint?: string;
+}) {
+  return (
+    <div
+      title={disabled ? disabledHint : `${label} — ein-/ausblenden + dimmen`}
+      style={{ display: 'flex', alignItems: 'center', gap: 6, opacity: disabled ? 0.45 : 1 }}
+    >
+      <label style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: disabled ? 'not-allowed' : 'pointer' }}>
+        <input
+          type="checkbox"
+          checked={on}
+          disabled={disabled}
+          onChange={(e) => onToggle(e.target.checked)}
+          style={{ cursor: disabled ? 'not-allowed' : 'pointer' }}
+        />
+        <span style={{ fontSize: 11, color: on && !disabled ? color : '#718096', fontWeight: 600 }}>{label}</span>
+      </label>
+      <input
+        type="range" min={0} max={1} step={0.05} value={opacity}
+        disabled={disabled || !on}
+        onChange={(e) => onOpacity(Number(e.target.value))}
+        style={{ width: 64, cursor: (disabled || !on) ? 'not-allowed' : 'pointer' }}
+      />
     </div>
   );
 }
