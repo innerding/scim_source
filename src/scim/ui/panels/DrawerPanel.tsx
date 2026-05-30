@@ -148,9 +148,11 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   const initial = useMemo(() => {
     if (openGeometryId?.startsWith('draft-')) {
       const d = getDraft(openGeometryId);
+      // F7.2: Slot 1 (polygon) = B1/Referenz = draft.reference; Slot 2 (maskPolygon)
+      // = B2/finale Boundary = draft.boundary.
       if (d) return {
         draftId: d.id, geometryId: 'new' as const, name: d.name, region: '',
-        polygon: d.boundary, maskPolygon: d.mask, catalogId: d.catalog_id ?? '',
+        polygon: d.reference ?? null, maskPolygon: d.boundary ?? null, catalogId: d.catalog_id ?? '',
       };
     }
     if (openGeometryId) {
@@ -183,10 +185,11 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   // Bei einer offenen committeten Geometry (geometryId !== 'new') wird NICHT
   // persistiert — die ist Referenz, kein Draft (Checkout-Kopie folgt in F8).
   useEffect(() => {
+    // Slot 1 (polygon) → reference/B1; Slot 2 (maskPolygon) → boundary/B2.
     if (activeDraftId) {
-      updateDraft(activeDraftId, { name, boundary: polygon, mask: maskPolygon });
+      updateDraft(activeDraftId, { name, reference: polygon, boundary: maskPolygon });
     } else if (geometryId === 'new' && polygon && polygon.length >= 3) {
-      const d = createDraft(name || 'Unbenannter Draft', { boundary: polygon, mask: maskPolygon });
+      const d = createDraft(name || 'Unbenannter Draft', { reference: polygon });
       setActiveDraftId(d.id);
     }
   }, [activeDraftId, geometryId, name, polygon, maskPolygon]);
@@ -814,18 +817,18 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
           onToggle={setTileVisible} onOpacity={setTileOpacity}
         />
         <LayerDimmer
-          label="Umriss" color="#0074d9"
+          label="B1 · Referenz" color={overlayCatalogId ? DRAFT_STROKE_ORANGE : DRAFT_STROKE_GELB}
           on={boundaryVisible} opacity={boundaryOpacity}
           onToggle={setBoundaryVisible} onOpacity={setBoundaryOpacity}
           disabled={!polygon || polygon.length < 3}
-          disabledHint="Kein Umriss gezeichnet"
+          disabledHint="Keine Referenz-Boundary (B1) gezeichnet"
         />
         <LayerDimmer
-          label="Maske" color={SLOT2_COLOR}
+          label="B2 · finale Boundary" color={SLOT2_COLOR}
           on={maskVisible} opacity={maskOpacity}
           onToggle={setMaskVisible} onOpacity={setMaskOpacity}
           disabled={!maskPolygon || maskPolygon.length < 3}
-          disabledHint="Keine Masken-Boundary — als zweites Polygon über das Netz zeichnen"
+          disabledHint="Finale Boundary (B2) als zweites Polygon über B1 zeichnen"
         />
         <LayerDimmer
           label="Vorlage (Inspector-R)" color="#8b3fbf"
