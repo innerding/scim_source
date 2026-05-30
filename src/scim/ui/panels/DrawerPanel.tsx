@@ -145,6 +145,9 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   // Komponenten verschmelzen. bridgeCount fürs Legenden-Feedback.
   const [gapTol, setGapTol] = useState(8);
   const [bridgeCount, setBridgeCount] = useState(0);
+  // Verschmelzen an/aus: aus = roher genodeter Graph (kein bridgeGaps) → direkter
+  // A/B-Vergleich „vorher/nachher" (nachvollziehbar statt am Schieberwert erahnt).
+  const [mergeOn, setMergeOn] = useState(true);
   // E4a — „abgeschnitten" (blau): Sackgassen, hinter denen real ein Weg weitergeht,
   // aber keine OSM-Daten mehr liegen (Datenrand). Per Klick auf das Stummel-Segment
   // markiert; blau läuft VOR der Sackgassen(rot)-Bewertung und nimmt sie davon aus.
@@ -649,9 +652,11 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     layer.clearLayers();
     if (!res) { setBridgeCount(0); return; }
 
-    // E3: erst NODEN (graphCompose splittet an Kreuzungen), dann Lücken < gapTol
-    // überbrücken → Komponenten verschmelzen, bevor nach Länge klassifiziert wird.
-    const { graph, bridges } = bridgeGaps(graphCompose(res.edges), gapTol);
+    // E3: erst NODEN (graphCompose splittet an Kreuzungen). Bei mergeOn dann
+    // Lücken < gapTol überbrücken → Komponenten verschmelzen; bei aus bleibt der
+    // rohe genodete Graph (A/B-Vergleich). Danach nach Länge klassifizieren.
+    const composed = graphCompose(res.edges);
+    const { graph, bridges } = mergeOn ? bridgeGaps(composed, gapTol) : { graph: composed, bridges: [] };
     setBridgeCount(bridges.length);
     const netzSet = netzComponents(graph, netLenThresh);
 
@@ -796,7 +801,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     if (!pathResult) return;
     if (masked && cropResult) renderPath({ ...pathResult, edges: cropResult.edges });
     else renderPath(pathResult);
-  }, [netLenThresh, sackgassenRot, gapTol, cutEdges]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [netLenThresh, sackgassenRot, gapTol, cutEdges, mergeOn]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // F7-Neufassung: Die Handoff-Brücke entfällt. Der Drawer schreibt direkt in den
   // Workspace-Draft (onSave); der Commit lebt im Workspace.
@@ -1122,6 +1127,8 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
             gapTol={gapTol}
             onGapTol={setGapTol}
             bridgeCount={bridgeCount}
+            mergeOn={mergeOn}
+            onMergeOn={setMergeOn}
             cutCount={cutEdges.size}
             onClearCut={() => setCutEdges(new Set())}
           />
@@ -1168,7 +1175,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
 function PathFilterMenu({
   gebiet, gebietLabel, canApply, onResized, onApply, status, error, result, anchor,
   crop, netLenThresh, onNetLenThresh, sackgassenRot, onSackgassenRot,
-  gapTol, onGapTol, bridgeCount, cutCount, onClearCut,
+  gapTol, onGapTol, bridgeCount, mergeOn, onMergeOn, cutCount, onClearCut,
 }: {
   gebiet: string;
   gebietLabel: string;
@@ -1187,6 +1194,8 @@ function PathFilterMenu({
   gapTol: number;
   onGapTol: (v: number) => void;
   bridgeCount: number;
+  mergeOn: boolean;
+  onMergeOn: (v: boolean) => void;
   cutCount: number;
   onClearCut: () => void;
 }) {
@@ -1328,16 +1337,27 @@ function PathFilterMenu({
       </Section>
 
       <Section title="Konnektivität (E2/E3)">
-        <Slider
-          label="Lücken-Toleranz (Verschmelzen)"
-          value={gapTol}
-          min={0} max={50} step={1}
-          onChange={onGapTol}
+        <Check
+          label="Verschmelzen (Lücken überbrücken)"
+          checked={mergeOn}
+          onChange={onMergeOn}
         />
         <div style={{ padding: '0 10px 4px', fontSize: 10, color: '#a0aec0', lineHeight: 1.5 }}>
-          Lose Enden näher als dieser Abstand werden mit einer
-          <b style={{ color: '#dd6b20' }}> orange Brücke</b> verbunden → Komponenten
-          verschmelzen.{bridgeCount > 0 && <> Aktuell <b>{bridgeCount}</b> Brücken.</>}
+          Aus = roher genodeter Graph (kein Brücken) — zum direkten A/B-Vergleich
+          „vorher/nachher".
+        </div>
+        <div style={{ opacity: mergeOn ? 1 : 0.4, pointerEvents: mergeOn ? 'auto' : 'none' }}>
+          <Slider
+            label="Lücken-Toleranz (Verschmelzen)"
+            value={gapTol}
+            min={0} max={50} step={1}
+            onChange={onGapTol}
+          />
+          <div style={{ padding: '0 10px 4px', fontSize: 10, color: '#a0aec0', lineHeight: 1.5 }}>
+            Lose Enden näher als dieser Abstand werden mit einer
+            <b style={{ color: '#dd6b20' }}> orange Brücke</b> verbunden → Komponenten
+            verschmelzen.{mergeOn && bridgeCount > 0 && <> Aktuell <b>{bridgeCount}</b> Brücken.</>}
+          </div>
         </div>
         <Slider
           label="Netz-Schwelle (Länge)"
