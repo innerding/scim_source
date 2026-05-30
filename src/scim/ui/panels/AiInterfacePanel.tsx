@@ -2622,6 +2622,28 @@ META (fast wichtigste): Undo-Snapshot pro Operation (Stack); Preview/Save wird N
 EINORDNUNG: Prototyp hat KEINEN Netz/Graph-Editor (boundary-zentriert). Netz-Editor ist so oder so neu. Substrat-Wechsel (Canvas statt Leaflet) erwogen, verworfen (zu riskant gegenüber funktionierendem Leaflet-Drawer + Draft/Commit/Budget). Konzepte portieren, nicht Substrat.`,
     date: '2026-05-30',
   },
+  {
+    id: 'ann_079',
+    category: 'next_intent',
+    label: 'Drawer-Werkzeugleiste — Spec (Umriss + Wegnetz)',
+    related_panel: 'geometry_editor',
+    content: `DRAWER-WERKZEUGLEISTE SPEC (2026-05-30). Volltext: docs/drawer_werkzeugleiste_spec.md. Ergänzt ann_078.
+
+KONZEPT: eine Leiste unter der EBENEN-Leiste, tab-gefiltert (Umriss blendet Wegnetz-Tools aus, umgekehrt). Anordnung = Workflow: Maschine → Mensch → Maschine (links auto herstellen · Mitte manuell · rechts auto festziehen).
+
+INTERAKTION (Direktmanipulation, wenige Buttons): Vertex-Drag = direkt ziehen (kein Knopf). Löschen = sehr Long-Press, Feedback grün→rot (kein Knopf). Snap-an-Startpunkt = immer an (Schließen = Snap letzter→erster). Snap-an-Vorlage/Nachbarn = TOGGLE in beiden Tabs. Undo: Umriss NEIN, Wegnetz JA.
+
+UMRISS-TAB: Leiste nur Snap-Toggle. Setzen=Klick, Drag=direkt, Löschen=Long-Press, Schließen=Auto-Snap. Kein Rechteck. B1/B2-Sperre in der EBENEN-Leiste: "nicht bearbeitbar, aber Punkte als Snap-Quelle". Farben wie F7 (B1 gelb/orange, B2 rot/maskiert, committet blau).
+
+WEGNETZ-TAB (3 Zonen): LINKS Maschine: Anwenden (OSM holen) · Lückenschließ-Automat (EINE Toleranz) · Verschweißen-Anfang (auto/unsichtbar = graphCompose). MITTE Mensch: Snap-Toggle · Linien-setzen-Modus (sperrt Overpass, gibt OSM-Netz frei) · Sackgassen-Tools · Coord→Katalog-POI (Komfort, später) · Koord-Reduktion 0,3m · Undo · Linienlöschen (Long-Press/Doppelklick, kein Knopf). RECHTS Maschine: Verschweiß-Automat (final).
+
+PRINZIPIEN: (1) Verschweißen am Anfang (graphCompose: nahe Koords → gemeinsamer Knoten, Grad, Komponenten via Union-Find) UND am Schluss (Re-Verschweißen nach Hand-Korrektur). (2) Lückenschließen braucht den verschweißten Graphen → eine Toleranz bridged Komponenten; per-Klasse-Schieber = Überbau. (3) Manuelles Editieren friert die Maschinen-Quelle ein (Linien-setzen sperrt Overpass) → daher Undo im Wegnetz. (4) Engine-Regel Sackgassen: jeder degree-1-Knoten ist POI ODER vom Routing ausgeschlossen; Sackgassen-Tools = ausschließen (Auto) oder zu Start/End-POI befördern. (5) Koord-Reduktion distanzbasiert 0,3m, KEINE %-Dezimierung. (6) Coord→Katalog: Round-Trip, heikel (Draft/Katalog-Konsistenz), später.
+
+REIHENFOLGE: Anwenden → auto Verschweißen → auto Lückenschließen → Mensch korrigiert → auto Re-Verschweißen → zusammengeschweißt + sackgassenfrei + nur POIs als Endknoten. ERSTER SCHRITT: graphCompose (reine Funktion, kein UI, auf src/scim/graph/).
+
+OFFEN/GEPARKT: Linienlöschen-Detail (Long-Press verlängert / Doppelklick bis Gabelung, unsicher); "Hochstellen" (Operator-Option, geparkt); Coord→Katalog-Round-Trip; %-Dezimierung verworfen.`,
+    date: '2026-05-30',
+  },
 ];
 
 function AnnotationsTab() {
