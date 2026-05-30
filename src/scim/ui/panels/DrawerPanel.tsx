@@ -257,6 +257,22 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     map.fitBounds(L.latLngBounds(latlngs), { padding: [30, 30] });
   };
 
+  // Fokus-Treppe (Stufe 2): auf die POI-Koordinaten des gebundenen Katalogs zoomen.
+  // Ein katalog-gebundener Draft weiß so selbst, wo er hingehört — ohne Inspector.
+  const fitToCatalog = (catId: string) => {
+    const map = mapRef.current;
+    const cat = CATALOGS.find((c) => c.id === catId);
+    if (!map || !cat) return;
+    const parsed = parsePoiCatalog(cat.md, {
+      region_id: cat.id, region_name: cat.name, source_path: `data/${cat.id}_pois_plan.md`,
+    });
+    const pts = parsed.pois
+      .filter((p) => p.coord && !(p.coord[0] === 0 && p.coord[1] === 0))
+      .map((p) => [p.coord[1], p.coord[0]] as [number, number]);
+    if (pts.length === 0) return;
+    map.fitBounds(L.latLngBounds(pts), { padding: [40, 40] });
+  };
+
   // Map init (one-shot) — bleibt ueber Tab-Wechsel erhalten
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
@@ -767,7 +783,9 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   // ABER: hat der Drawer eine eigene Boundary (B1), gewinnt diese — der Inspector
   // darf den Drawer dann nicht kapern (kein Wipe/Zoom).
   useEffect(() => {
-    if (polygonLayerRef.current) return;
+    // Fokus-Treppe: eigene Boundary ODER gebundener Katalog gewinnen über den
+    // Inspector — dann darf der Inspector den Drawer nicht kapern.
+    if (polygonLayerRef.current || overlayCatalogId) return;
     pathAbortRef.current?.abort();
     setPathStatus('idle');
     setPathError('');
@@ -777,10 +795,16 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     renderPath(null);
     renderAnchors(null);
     renderGates(null);
-    // Regel B: ohne eigene Boundary leiht der Inspector den Fokus — in BEIDEN Tabs
-    // auf die gewählte Region zoomen (nicht nur im Wegnetz-Tab).
+    // Regel B: ohne eigene Boundary/Katalog leiht der Inspector den Fokus.
     setTimeout(fitToInspector, 80);
   }, [inspectorView?.geometry.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fokus-Treppe Stufe 2: gebundener Katalog → auf seine POI-bbox zoomen
+  // (solange keine eigene Boundary da ist). Vorrang vor dem Inspector.
+  useEffect(() => {
+    if (polygonLayerRef.current || !overlayCatalogId) return;
+    setTimeout(() => fitToCatalog(overlayCatalogId), 120);
+  }, [overlayCatalogId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Maske geaendert/entfernt → bestehender Crop ist hinfaellig: Gate-Marker
   // loeschen und das ungekappte Netz wieder zeichnen.
