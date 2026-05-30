@@ -19,7 +19,7 @@ import '@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css';
 import type { Position } from 'geojson';
 import { GEOMETRIES } from '../../workspace/workspace.registry';
 import { type HandoffNet } from '../../workspace/draftHandoff';
-import { getDraft, createDraft, updateDraft, localStorageBytes } from '../../workspace/draftStore';
+import { getDraft, createDraft, updateDraft, localStorageBytes, localStorageBreakdown } from '../../workspace/draftStore';
 import { parsePoiCatalog } from '../../poi-catalog/poiCatalog.parser';
 import RepresentBuildTetrahedron from '../RepresentBuildTetrahedron';
 import type { RepresentBuildFace } from '../RepresentBuildTetrahedron';
@@ -913,6 +913,16 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
           ✗ {saveError}
         </div>
       )}
+
+      {/* F7-Diagnose: was füllt den localStorage wirklich? Top-Schlüssel. */}
+      <div style={{
+        margin: '2px 12px', padding: '4px 8px', borderRadius: 4,
+        background: '#f7fafc', border: '1px solid #e2e8f0',
+        fontSize: 9, fontFamily: 'monospace', color: '#718096', lineHeight: 1.5,
+      }}>
+        LS {formatBytes(localStorageBytes())} ·{' '}
+        {localStorageBreakdown().slice(0, 6).map((e) => `${e.key}=${formatBytes(e.bytes)}`).join(' · ')}
+      </div>
 
       {/* Ebenen-Steuerleiste (A) — Dimmer + On/Off, auf beide Tabs wirksam */}
       <div style={{

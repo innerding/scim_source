@@ -134,6 +134,17 @@ export function localStorageBytes(): number {
   return total * 2; // UTF-16: 2 Bytes/Zeichen
 }
 
+// Aufschlüsselung: welcher Schlüssel belegt wie viel (Bytes), absteigend.
+export function localStorageBreakdown(): { key: string; bytes: number }[] {
+  const out: { key: string; bytes: number }[] = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k == null) continue;
+    out.push({ key: k, bytes: (k.length + (localStorage.getItem(k)?.length ?? 0)) * 2 });
+  }
+  return out.sort((a, b) => b.bytes - a.bytes);
+}
+
 export function getDraft(id: string): Draft | null {
   return listDrafts().find((d) => d.id === id) ?? null;
 }
