@@ -28,9 +28,14 @@ export interface Draft {
   name: string;
   source: 'fresh' | 'intake';
   source_geometry_id?: string;     // bei source==='intake': die ausgecheckte Boundary
-  boundary: Position[] | null;     // im Drawer gezeichnet
-  mask: Position[] | null;
-  net: HandoffNet | null;          // abgeleitetes Wegnetz (fertig oder nicht)
+  // F7: zwei Boundaries (siehe ann_077 / docs/f7_bauplan_drawer_lifecycle.md).
+  //   reference (B1): grobe Arbeits-/Referenz-Boundary, aus dem OSM-Netz, gelb/orange,
+  //                   läuft bis zum Commit mit, wird beim Commit gelöscht.
+  //   boundary  (B2): finale, netz-informierte Boundary = die Crop-Maske, wird committet.
+  reference: Position[] | null;    // B1 — Referenz (F7.2 füllt sie)
+  boundary: Position[] | null;     // B2 — finale Boundary = Maske
+  mask: Position[] | null;         // (vestigial; ab F7 ist die Maske = boundary/B2)
+  net: HandoffNet | null;          // abgeleitetes Wegnetz (voll, roh; Crop am Commit)
   catalog_id: string | null;       // gebundener Katalog → steuert die Farbe
   created_at: string;
   updated_at: string;
@@ -84,6 +89,7 @@ function migrateLegacy(): Draft[] {
       id: newId(),
       name: l.name?.trim() || 'Übernommener Draft',
       source: 'fresh',
+      reference: null,
       boundary: l.polygon,
       mask: l.maskPolygon ?? null,
       net: null,
@@ -122,6 +128,7 @@ export function createDraft(name: string, opts: Partial<Draft> = {}): Draft {
     name: name.trim() || 'Neuer Draft',
     source: opts.source ?? 'fresh',
     source_geometry_id: opts.source_geometry_id,
+    reference: opts.reference ?? null,
     boundary: opts.boundary ?? null,
     mask: opts.mask ?? null,
     net: opts.net ?? null,
