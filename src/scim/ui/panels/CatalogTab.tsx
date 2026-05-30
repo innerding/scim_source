@@ -1406,6 +1406,10 @@ export default function CatalogTab({ onJumpTo }: { onJumpTo?: (panelId: string) 
   const tokenVerbund = verbundDraft ?? baseCatalog.token_verbund;
   const tokenSlug = slugDraft ?? baseCatalog.token_slug;
   const tokenPrefix = buildPrefix(tokenVerbund, tokenSlug);
+  // Präfix gegenüber der geparsten Basis geändert? Dann ist Export fällig,
+  // auch wenn sonst keine POI-Änderung vorliegt.
+  const prefixDirty =
+    tokenVerbund !== baseCatalog.token_verbund || tokenSlug !== baseCatalog.token_slug;
 
   // Region-Wechsel: passenden Edit-State laden, Präfix-Drafts zurücksetzen
   useEffect(() => {
@@ -1667,13 +1671,20 @@ export default function CatalogTab({ onJumpTo }: { onJumpTo?: (panelId: string) 
               {merged.dirty_count > 0 && <span style={{ color: '#b7791f' }}>~{merged.dirty_count} </span>}
               {merged.deleted_count > 0 && <span style={{ color: '#c53030' }}>−{merged.deleted_count}</span>}
             </span>
-            <button
-              onClick={() => setShowExport(true)}
-              style={{ ...btnStyle, background: '#2f855a', color: 'white', borderColor: '#2f855a', fontWeight: 600 }}
-            >
-              ⬇ Plan exportieren
-            </button>
           </>
+        )}
+        {prefixDirty && (
+          <span style={{ fontSize: 11, color: '#3182ce', fontFamily: 'monospace' }} title="Token-Präfix geändert">
+            ⬗ Präfix
+          </span>
+        )}
+        {(merged.dirty_count + merged.new_count + merged.deleted_count > 0 || prefixDirty) && (
+          <button
+            onClick={() => setShowExport(true)}
+            style={{ ...btnStyle, background: '#2f855a', color: 'white', borderColor: '#2f855a', fontWeight: 600 }}
+          >
+            ⬇ Plan exportieren
+          </button>
         )}
 
         <span
