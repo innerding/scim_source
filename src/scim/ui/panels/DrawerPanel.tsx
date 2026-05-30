@@ -60,6 +60,9 @@ const SLOT2_DASH = '6 4';
 
 type DrawerTab = 'umriss' | 'wegnetz';
 
+// Koordinaten-Schlüssel (wie in netGraph): zum Abgleich Gate-POI ↔ Graph-Knoten.
+const poiCoordKey = (lat: number, lng: number): string => `${lat.toFixed(7)},${lng.toFixed(7)}`;
+
 // Geoman-Werkzeugleiste fuer den Umriss-Tab. Wird beim Tab-Wechsel
 // hinzugefuegt/entfernt, damit die Zeichen-Controls im Wegnetz-Tab nicht
 // stoeren.
@@ -652,6 +655,15 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     setBridgeCount(bridges.length);
     const netzSet = netzComponents(graph, netLenThresh);
 
+    // Maskiert: Gate-Knoten (innerer Gate am Maskenrand) sind POIs, KEINE
+    // Sackgassen — „aus Sacken werden durch Beschneidung POIs". Von Rot ausgenommen.
+    const poiKeys = new Set<string>();
+    if (masked && cropResult) {
+      for (const g of cropResult.gates) poiKeys.add(poiCoordKey(g.inner[0], g.inner[1]));
+    }
+    const isPoiEnd = (nodeId: number): boolean =>
+      poiKeys.has(poiCoordKey(graph.nodes[nodeId].lat, graph.nodes[nodeId].lng));
+
     // Pro Graph-Teilstück (genodet) Farbe + Gewicht ableiten. Reihenfolge der
     // Klassen: blau (abgeschnitten, manuell) → rot (Sackgasse, Toggle) → Grundfarbe.
     type Kind = 'base' | 'red' | 'blue';
@@ -662,7 +674,10 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       const isNetz = netzSet.has(graph.nodes[ge.from].component);
       let color = isNetz ? NETZ_COLOR : REST_COLOR;
       const weight = isNetz ? 3 : 2;
-      const isSack = graph.nodes[ge.from].degree === 1 || graph.nodes[ge.to].degree === 1;
+      // echte Sackgasse = degree-1-Ende, das KEIN POI (Gate) ist.
+      const isSack =
+        (graph.nodes[ge.from].degree === 1 && !isPoiEnd(ge.from))
+        || (graph.nodes[ge.to].degree === 1 && !isPoiEnd(ge.to));
       let kind: Kind = 'base';
       if (cutEdges.has(key)) { color = CUT_COLOR; kind = 'blue'; }        // blau VOR rot
       else if (sackgassenRot && isSack) { color = SACK_COLOR; kind = 'red'; }
