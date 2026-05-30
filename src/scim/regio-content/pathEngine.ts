@@ -157,6 +157,47 @@ export function isNetEdge(edge: PathEdge): boolean {
   return edge.inNet;
 }
 
+// Asphalt-Erkennung (project_asphalt_tracking): das Netz geht von Wanderwegen aus;
+// hereingenommene Connector-Straßen sind i. d. R. Asphalt. Der Runtime soll später
+// vor Asphalt-Strecken warnen — darum als Eigenschaft ableiten.
+//   1) expliziter surface-Tag entscheidet (paved → Asphalt, unpaved → nicht),
+//   2) sonst per Klasse: primäre Wanderweg-Klassen = nicht-Asphalt, Straßen = Asphalt.
+const PAVED_SURFACES = ['asphalt', 'paved', 'concrete', 'paving_stones', 'sett', 'cobblestone', 'concrete:plates'];
+const UNPAVED_SURFACES = ['unpaved', 'gravel', 'fine_gravel', 'compacted', 'ground', 'dirt', 'earth', 'grass', 'sand', 'mud', 'wood', 'pebblestone'];
+export function isAsphalt(edge: PathEdge): boolean {
+  const s = (edge.tags?.surface ?? '').toLowerCase();
+  if (s) {
+    if (PAVED_SURFACES.includes(s)) return true;
+    if (UNPAVED_SURFACES.includes(s)) return false;
+  }
+  // Fallback per Klasse: Connector (Straße) = Asphalt, primärer Wanderweg = nicht.
+  return edge.source !== 'primary';
+}
+
+// Haversine-Distanz in Metern.
+function distMeters(aLat: number, aLng: number, bLat: number, bLng: number): number {
+  const R = 6371000;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(bLat - aLat);
+  const dLng = toRad(bLng - aLng);
+  const s = Math.sin(dLat / 2) ** 2
+    + Math.cos(toRad(aLat)) * Math.cos(toRad(bLat)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.min(1, Math.sqrt(s)));
+}
+
+// Asphalt-Länge eines Netzes in Metern (nur inNet-Kanten) — Basis fürs spätere
+// „Route führt über X m Asphalt" + Mindestlänge-Schwelle.
+export function asphaltMeters(edges: PathEdge[]): number {
+  let m = 0;
+  for (const e of edges) {
+    if (!e.inNet || !isAsphalt(e)) continue;
+    for (let i = 1; i < e.points.length; i++) {
+      m += distMeters(e.points[i - 1][0], e.points[i - 1][1], e.points[i][0], e.points[i][1]);
+    }
+  }
+  return m;
+}
+
 function classify(ways: OverpassWay[], cfg: PathConfig): PathEdge[] {
   const edges: PathEdge[] = [];
   for (const way of ways) {

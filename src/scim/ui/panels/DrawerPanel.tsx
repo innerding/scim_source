@@ -28,7 +28,7 @@ import {
   loadPathConfig, savePathConfig, type PathConfig, type BridlewayMode,
 } from '../../regio-content/pathConfig';
 import {
-  deriveWanderwegnetz, anchorPois, cropNetToMask, netStats, formatBytes,
+  deriveWanderwegnetz, anchorPois, cropNetToMask, netStats, formatBytes, isAsphalt, asphaltMeters,
   type PathFetchResult, type AnchorSummary, type PoiInput, type CropResult,
   type PathEdge, type GateNode,
 } from '../../regio-content/pathEngine';
@@ -669,10 +669,14 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     const isPoiEnd = (nodeId: number): boolean =>
       poiKeys.has(poiCoordKey(graph.nodes[nodeId].lat, graph.nodes[nodeId].lng));
 
+    // Asphalt-Eigenschaft pro Quell-Way (project_asphalt_tracking).
+    const asphaltByEdgeId = new Map<number, boolean>();
+    for (const e of res.edges) asphaltByEdgeId.set(e.id, isAsphalt(e));
+
     // Pro Graph-Teilstück (genodet) Farbe + Gewicht ableiten. Reihenfolge der
     // Klassen: blau (abgeschnitten, manuell) → rot (Sackgasse, Toggle) → Grundfarbe.
     type Kind = 'base' | 'red' | 'blue';
-    const styled: { ge: NetGraphEdge; key: string; color: string; weight: number; kind: Kind; clickable: boolean }[] = [];
+    const styled: { ge: NetGraphEdge; key: string; color: string; weight: number; kind: Kind; clickable: boolean; asphalt: boolean }[] = [];
     for (const ge of graph.edges) {
       if (ge.edgeId < 0) continue; // Brücken separat (orange gestrichelt)
       const key = `${ge.edgeId}:${ge.seg}`;
@@ -686,20 +690,30 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       let kind: Kind = 'base';
       if (cutEdges.has(key)) { color = CUT_COLOR; kind = 'blue'; }        // blau VOR rot
       else if (sackgassenRot && isSack) { color = SACK_COLOR; kind = 'red'; }
-      styled.push({ ge, key, color, weight, kind, clickable: isSack });
+      styled.push({ ge, key, color, weight, kind, clickable: isSack, asphalt: asphaltByEdgeId.get(ge.edgeId) ?? false });
     }
 
     // Sackgassen-Teilstücke sind anklickbar: Klick → blau (abgeschnitten) ↔ zurück.
+    const attach = (pl: L.Polyline, s: typeof styled[number]) => {
+      if (!s.clickable) return;
+      pl.bindTooltip(s.kind === 'blue' ? 'abgeschnitten (blau) — Klick: zurück' : 'Klick: abgeschnitten (blau)',
+        { sticky: true, opacity: 0.9 });
+      pl.on('click', (ev) => { L.DomEvent.stop(ev); toggleCut(s.key); });
+    };
     const draw = (s: typeof styled[number]) => {
+      // Asphalt (nur Grundfarbe): weiß mit schwarzer Einfassung beidseitig (Casing).
+      if (s.kind === 'base' && s.asphalt) {
+        L.polyline(s.ge.points, { color: '#1a202c', weight: s.weight + 2.5, opacity: 0.95 }).addTo(layer);
+        const top = L.polyline(s.ge.points, { color: '#ffffff', weight: s.weight, opacity: 1 });
+        attach(top, s);
+        top.addTo(layer);
+        return;
+      }
       const pl = L.polyline(s.ge.points, {
         color: s.color, weight: s.kind === 'base' ? s.weight : 3,
         opacity: s.kind === 'base' ? 0.85 : 0.95,
       });
-      if (s.clickable) {
-        pl.bindTooltip(s.kind === 'blue' ? 'abgeschnitten (blau) — Klick: zurück' : 'Klick: abgeschnitten (blau)',
-          { sticky: true, opacity: 0.9 });
-        pl.on('click', (ev) => { L.DomEvent.stop(ev); toggleCut(s.key); });
-      }
+      attach(pl, s);
       pl.addTo(layer);
     };
     // Zeichenreihenfolge: Grundfarben unten, dann Brücken, dann rot, dann blau oben.
@@ -1499,6 +1513,10 @@ function PathFilterMenu({
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
               <span style={{ display: 'inline-block', width: 14, height: 0, borderTop: '2px solid #1f9d8f' }} />
               <span><b>Rest</b> (kürzere Komponenten)</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+              <span style={{ display: 'inline-block', width: 14, height: 5, background: '#fff', border: '1.5px solid #1a202c' }} />
+              <span><b>Asphalt</b> · {Math.round(asphaltMeters(result.edges))} m im Netz</span>
             </div>
             {sackgassenRot && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
