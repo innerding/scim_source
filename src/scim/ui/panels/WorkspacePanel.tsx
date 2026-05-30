@@ -32,6 +32,7 @@ const DRAFT_COLORS: Record<DraftColor, { stroke: string; bg: string; text: strin
   neutral: { stroke: '#cbd5e0', bg: '#f7fafc', text: '#718096', label: 'Slot' },
   gelb:    { stroke: '#ecc94b', bg: '#fffff0', text: '#975a16', label: 'ohne Katalog' },
   orange:  { stroke: '#ed8936', bg: '#fffaf0', text: '#9c4221', label: 'mit Katalog' },
+  rot:     { stroke: '#e53e3e', bg: '#fff5f5', text: '#9b2c2c', label: 'maskiert · committbar' },
 };
 
 // Stabiler slug aus einem freien Namen — passt zur Worker-Whitelist

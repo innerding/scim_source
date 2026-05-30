@@ -153,17 +153,17 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       if (d) return {
         draftId: d.id, geometryId: 'new' as const, name: d.name, region: '',
         polygon: d.reference ?? null, maskPolygon: d.boundary ?? null,
-        catalogId: d.catalog_id ?? '', finalized: d.finalized ?? false,
+        catalogId: d.catalog_id ?? '',
       };
     }
     if (openGeometryId) {
       const g = GEOMETRIES.find((x) => x.id === openGeometryId);
       if (g) return {
         draftId: null, geometryId: g.id, name: g.name, region: g.region ?? '',
-        polygon: g.polygon, maskPolygon: null, catalogId: '', finalized: false,
+        polygon: g.polygon, maskPolygon: null, catalogId: '',
       };
     }
-    return { draftId: null, geometryId: 'new' as const, name: '', region: '', polygon: null, maskPolygon: null, catalogId: '', finalized: false };
+    return { draftId: null, geometryId: 'new' as const, name: '', region: '', polygon: null, maskPolygon: null, catalogId: '' };
   }, [openGeometryId]);
   // Sprung verbraucht — App-State leeren, damit spaetere Navigation leer startet.
   useEffect(() => {

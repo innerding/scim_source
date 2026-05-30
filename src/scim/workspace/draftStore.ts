@@ -20,8 +20,8 @@ import type { HandoffNet } from './draftHandoff';
 export const DRAFTS_KEY = 'scim3:drafts';
 const LEGACY_DRAFT_KEY = 'scim3_geometry_draft';
 
-export type DraftStage = 'slot' | 'boundary' | 'catalog_bound';
-export type DraftColor = 'neutral' | 'gelb' | 'orange';
+export type DraftStage = 'slot' | 'boundary' | 'catalog_bound' | 'committable';
+export type DraftColor = 'neutral' | 'gelb' | 'orange' | 'rot';
 
 export interface Draft {
   id: string;
@@ -32,12 +32,13 @@ export interface Draft {
   //   reference (B1): grobe Arbeits-/Referenz-Boundary, aus dem OSM-Netz, gelb/orange,
   //                   läuft bis zum Commit mit, wird beim Commit gelöscht.
   //   boundary  (B2): finale, netz-informierte Boundary = die Crop-Maske, wird committet.
-  reference: Position[] | null;    // B1 — Referenz (F7.2 füllt sie)
-  boundary: Position[] | null;     // B2 — finale Boundary = Maske
-  mask: Position[] | null;         // (vestigial; ab F7 ist die Maske = boundary/B2)
-  net: HandoffNet | null;          // abgeleitetes Wegnetz (voll, roh; Crop am Commit)
-  catalog_id: string | null;       // gebundener Katalog → steuert die Farbe
-  finalized?: boolean;             // F7.3: maskiert/„Ready for Commit" — B1 gesperrt
+  reference: Position[] | null;    // B1 — Referenz (OSM-grob); stirbt am Commit
+  boundary: Position[] | null;     // B2 — finale Boundary = Maske; wird committet
+  // F7-Neufassung: zwei Wegnetze. net_unmasked (OSM-roh, Arbeits-Schicht) stirbt
+  // am Commit; net_masked (zugeschnitten) wird committet. net_masked vorhanden = rot.
+  net_unmasked: HandoffNet | null;
+  net_masked: HandoffNet | null;
+  catalog_id: string | null;       // gebundener Katalog → orange
   created_at: string;
   updated_at: string;
 }
@@ -45,13 +46,16 @@ export interface Draft {
 // ─── Reife/Farbe ──────────────────────────────────────────────────────────────
 
 export function draftStage(d: Draft): DraftStage {
-  if (!d.boundary || d.boundary.length < 3) return 'slot';
-  if (d.catalog_id) return 'catalog_bound';
-  return 'boundary';
+  if (d.net_masked) return 'committable';                 // rot — maskiertes Netz da
+  const hasGeom = (d.reference?.length ?? 0) >= 3 || (d.boundary?.length ?? 0) >= 3;
+  if (!hasGeom) return 'slot';
+  if (d.catalog_id) return 'catalog_bound';               // orange
+  return 'boundary';                                       // gelb
 }
 
 export function draftColor(d: Draft): DraftColor {
   switch (draftStage(d)) {
+    case 'committable':   return 'rot';
     case 'catalog_bound': return 'orange';
     case 'boundary':      return 'gelb';
     default:              return 'neutral';
@@ -90,10 +94,10 @@ function migrateLegacy(): Draft[] {
       id: newId(),
       name: l.name?.trim() || 'Übernommener Draft',
       source: 'fresh',
-      reference: null,
-      boundary: l.polygon,
-      mask: l.maskPolygon ?? null,
-      net: null,
+      reference: l.polygon,
+      boundary: null,
+      net_unmasked: null,
+      net_masked: null,
       catalog_id: null,
       created_at: ts,
       updated_at: ts,
@@ -131,10 +135,9 @@ export function createDraft(name: string, opts: Partial<Draft> = {}): Draft {
     source_geometry_id: opts.source_geometry_id,
     reference: opts.reference ?? null,
     boundary: opts.boundary ?? null,
-    mask: opts.mask ?? null,
-    net: opts.net ?? null,
+    net_unmasked: opts.net_unmasked ?? null,
+    net_masked: opts.net_masked ?? null,
     catalog_id: opts.catalog_id ?? null,
-    finalized: opts.finalized ?? false,
     created_at: ts,
     updated_at: ts,
   };

@@ -2575,25 +2575,29 @@ VERORTUNG MVP-LICHTENBERG: klärt Workspace-Ausrichtung + Vorform der Boundary-E
     category: 'next_intent',
     label: 'F7-Bauplan — Drawer-Lifecycle & Verbund-Commit',
     related_panel: 'geometry_editor',
-    content: `F7-BAUPLAN (2026-05-30) — Drawer-Lifecycle & gemeinsamer Verbund-Commit. Volltext: docs/f7_bauplan_drawer_lifecycle.md.
+    content: `F7-BAUPLAN NEUFASSUNG (2026-05-30) — Drawer-Zwei-Schichten, Speichern & Workspace-Commit. Volltext: docs/f7_bauplan_drawer_lifecycle.md. Ersetzt die Erstfassung.
 
-PRINZIP: Die finale Boundary entsteht aus dem Netz, nicht umgekehrt. Der Draft hält den Rohzustand (editierbar bis zuletzt); der Commit leitet das Endprodukt ab (Crop, Gates) und friert ein — einziger Punkt ohne Rückweg. SYMMETRIE DER NETZ-HERKÜNFTE: B1 entsteht aus dem OSM-Netz (roh, Einzugsgebiet); B2 entsteht aus unserem Netz (dem künftigen Colour-Mesh) — SCIM-getrieben statt OSM-getrieben. Heute reicht die Kette bis zum gefilterten/gecroppten Wegnetz (Vorstufe); im Zielbild entsteht B2 aus dem Colour-Mesh. Dieselbe Stelle im Lebenszyklus, nur das Netz darunter wird reicher.
+PRINZIP: Die finale Boundary entsteht aus dem Netz, nicht umgekehrt. B1/unmaskiertes Netz = OSM-Stufe (roh); B2/maskiertes Netz = unsere Stufe (künftiges Colour-Mesh). Der Commit behält die verfeinerte Stufe und wirft die rohe weg. Der Draft hält den Rohzustand; der Commit friert ein (Backend).
 
-ZWEI BOUNDARIES:
-  B1 (Referenz): grobe Arbeitsfläche + Namensträger, auf ihr wird das Netz geholt, Orientierung für den exakten Bau. Farbe gelb (Draft) → orange (mit Katalog). Läuft bis zum Commit mit, wird beim Commit GELÖSCHT.
-  B2 (finale Boundary = Maske): präzise, netz-informierte Linie, identisch mit der Crop-Maske. Über B1 gezeichnet (der "2. Slot"). Wird die committete Boundary, erbt B1s Namen, benennt das Wegnetz. Farbe rot → maskiert blau-gestrichelt (Umriss) / rot+Schraffur (Wegnetz).
+MODELL — ZWEI SCHICHTEN je Draft:
+  Arbeit:  B1 (Referenz) + net_unmasked (OSM-roh) → gelb/orange → STIRBT am Commit.
+  Final:   B2 (=Maske)   + net_masked (zugeschnitten) → ROT → wird committet.
+Farben: gelb = net_unmasked da, kein Katalog; orange = + Katalog; ROT = net_masked existiert → committbar (NUR rot ist im Workspace committbar).
 
-LEBENSZYKLUS: B1 zeichnen (gelb) → Katalog binden (orange, POIs) → Wegnetz holen → B2 über B1 zeichnen (rot, netz-informiert) → Maskierungs-Button: B1 ausgeblendet, Boundary gesperrt, B2 blau-gestrichelt (Umriss) bzw. rot+Schraffur außen (Wegnetz), "Speichern" → "Ready for Commit" → Commit im Workspace aus der Draft-Zeile: B2 + Wegnetz gemeinsam, Crop läuft mit B2, Gates abgeleitet, B1 gelöscht, alles benannt nach B1.
+DREI GETRENNTE AKTIONEN:
+  Beschneiden-Toggle (Drawer/Wegnetz): an → net_masked erzeugen (Crop von net_unmasked mit B2) + anzeigen; zurück → net_masked löschen, net_unmasked anzeigen. Reversibel, lokal, persistiert nichts.
+  Speichern (Drawer): friert den AKTUELLEN Zustand → maskiert gespeichert = rot (beide Netze), sonst gelb/orange. Draft bleibt editierbar.
+  Commit (Workspace): nur bei ROT → behält B2 + net_masked + Representation; tötet B1 + net_unmasked. Backend-Crop ist im net_masked bereits enthalten. Überschreibbar.
 
-SPEICHERN/UNDO: ungespeichert = Zustand gehalten, über Rückgängig-Dropdown reversibel; Speichern leert Undo-Cache; ohne Speichern bleibt die Datei im Drawer (bei jedem Öffnen da); mit Speichern nur solange Drawer offen, danach lebt sie als Draft im Workspace.
+FARB-ZUSTÄNDE B2 (Start-Styling, am Bildschirm feingetunt, nicht in Worten festgenagelt): aktiv maskiert (am Arbeiten) = dashed-blau (Umriss) / rot-schraffiert (Wegnetz); gespeichert (roter Draft in Ruhe) = solid blau; committet = solid blau (Workspace-Frame). Öffnen eines roten Drafts → aktiv; Speichern → solid blau.
 
-INVARIANTEN: Boundary + Wegnetz = untrennbare Einheit (gemeinsam committet/eingefroren, Representation klammert beide per id). Crop am Commit, nicht im Drawer. Committete Representation im Drawer = nur Ansicht. committet = blau-solid, committbar = blau-gestrichelt.
+DATEN-MODELL draftStore: Draft { reference(B1), boundary(B2), net_unmasked, net_masked, catalog_id }. Reife-Farbe leitet sich daraus ab.
 
-ZUKUNFTS-BEREIT (nicht jetzt): Löcher/Inseln = Ausschlusszone fürs Netz, heute schon als innere Ringe im GeoJSON-Polygon darstellbar; mehrere getrennte Boundaries = MultiPolygon (kleine Typ-Erweiterung später); Crop mit Löchern = spätere Verfeinerung von cropNetToMask.
+BAU-SCHRITTE: 1) Fundament draftStore (Daten, null Optik): net → net_unmasked + net_masked; 3-Farben-Logik. 2) Drawer: Beschneiden-Toggle (erzeugt/löscht net_masked), echter Speichern-Button (persistiert Zustand inkl. Netze), redundante Buttons raus. 3) Workspace: Pipeline 3 Farben; Commit nur bei rot → B2 + net_masked + Representation, B1 + net_unmasked fallen weg, Kartenframe rot→blau; alte Übergabe-Karte + F1/F2/F3 + Handoff raus.
 
-BAU-SCHRITTE: F7.1 Draft hält Rohzustand (reference/boundary/net, explizites Speichern + später Undo). F7.2 Zwei-Boundary-Zeichnen (B1 + B2 als 2. Slot). F7.3 Maskierungs-Button (Sperre, Farben je Tab, Ready-for-Commit, finalized-Flag). F7.4 Verbund-Commit aus der Draft-Zeile (B2 + gecropptes Wegnetz + Representation gemeinsam; B1 löschen; alte Übergabekarte + Handoff entfernen; alte F1/F2/F3 ablösen). F7.5 committet = nur Ansicht.
+WEGFALL: Auto-Speichern → explizites Speichern; alte Übergabe-Karte + Handoff (scim3:represent_handoff); Einzel-F1/F2/F3 → ein Commit; "Ready for Commit"-Morph (Irrweg); destruktiver Crop-Button (Crop ist Backend am Commit).
 
-KORREKTUR: Frühere Annahme "Maske = Boundary, nur ein Polygon, Slot 2 fällt weg" war FALSCH. Richtig: Maske = B2 (zweite, finale Boundary), verschieden von B1 (Referenz). Der 2. Slot bleibt — er trägt B2.`,
+ZUKUNFTS-BEREIT (nicht jetzt): Löcher/Inseln = Ausschlusszone fürs Netz (GeoJSON innere Ringe, schon darstellbar); mehrere getrennte Boundaries = MultiPolygon (später); Crop mit Löchern = spätere Verfeinerung.`,
     date: '2026-05-30',
   },
 ];
