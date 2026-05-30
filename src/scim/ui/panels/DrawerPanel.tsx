@@ -151,10 +151,12 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   // T2 — Wege manuell aus OSM anwählen: im Anwähl-Modus werden die nicht
   // aufgenommenen Connector-Straßen (inNet=false) grau gestrichelt + klickbar
   // gezeigt; Klick nimmt sie ins Netz auf (Gegenstück zur blauen Abwahl).
-  // manualPieces = pro Straßen-edgeId das aufgenommene TEILSTÜCK (zwischen den
-  // nächsten Wanderweg-Anschlusspunkten um den Klick), nicht die ganze Straße.
+  // manualPieces: beliebig viele aufgenommene TEILSTÜCKE, je mit eigener
+  // synthetischer id (nid) → mehrere Stücke pro Straße möglich. Jedes Stück kennt
+  // seine Quell-Straße (roadId) + einen Geometrie-Schlüssel (key) zur Dedup.
   const [pickMode, setPickMode] = useState(false);
-  const [manualPieces, setManualPieces] = useState<Map<number, [number, number][]>>(new Map());
+  const [manualPieces, setManualPieces] = useState<Map<number, { roadId: number; points: [number, number][]; key: string }>>(new Map());
+  const pieceNidRef = useRef(1_000_000_000_000); // über OSM-Way-ids, kollidiert nicht
   // zuletzt angewandte Config (für Anschluss-Toleranz beim manuellen Anwählen).
   const lastCfgRef = useRef<PathConfig | null>(null);
   // E4a — „abgeschnitten" (blau): Sackgassen, hinter denen real ein Weg weitergeht,
@@ -655,9 +657,17 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     if (n.has(key)) n.delete(key); else n.add(key);
     return n;
   });
-  const setPiece = (id: number, pts: [number, number][] | null) => setManualPieces((prev) => {
+  const addPiece = (roadId: number, pts: [number, number][]) => setManualPieces((prev) => {
+    if (pts.length < 2) return prev;
+    const key = `${roadId}:${pts[0]}:${pts[pts.length - 1]}`;
+    for (const p of prev.values()) if (p.key === key) return prev; // schon vorhanden
     const n = new Map(prev);
-    if (pts) n.set(id, pts); else n.delete(id);
+    n.set((pieceNidRef.current += 1), { roadId, points: pts, key });
+    return n;
+  });
+  const removePiece = (nid: number) => setManualPieces((prev) => {
+    const n = new Map(prev);
+    n.delete(nid);
     return n;
   });
   const CAND_COLOR = '#a0aec0';   // grau = nicht aufgenommener OSM-Kandidat
@@ -672,10 +682,10 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     // (gleiche edgeId, gecroppte Geometrie) anhängen; das Original bleibt inNet=false.
     const byId = new Map(res.edges.map((e) => [e.id, e]));
     const pieceEdges: PathEdge[] = [];
-    for (const [id, pts] of manualPieces) {
-      const src = byId.get(id);
-      if (src && pts.length >= 2) {
-        pieceEdges.push({ id, highway: src.highway, source: 'connector_candidate', points: pts, tags: src.tags, inNet: true });
+    for (const [nid, p] of manualPieces) {
+      const src = byId.get(p.roadId);
+      if (src && p.points.length >= 2) {
+        pieceEdges.push({ id: nid, highway: src.highway, source: 'connector_candidate', points: p.points, tags: src.tags, inNet: true });
       }
     }
     const effEdges = pieceEdges.length ? [...res.edges, ...pieceEdges] : res.edges;
@@ -765,24 +775,24 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
         }
       }
       const tol = lastCfgRef.current?.konnektoren.anschluss_toleranz_meter ?? 30;
+      // Graue Straßen: immer klickbar → fügt ein weiteres Teilstück hinzu.
       for (const e of res.edges) {
         if (e.source === 'primary' || e.inNet) continue; // nur Straßen-Kandidaten
-        const piece = manualPieces.get(e.id);
-        if (piece) {
-          const pl = L.polyline(piece, { color: PICK_COLOR, weight: 3, opacity: 0.95, dashArray: '1 4' });
-          pl.bindTooltip('aufgenommenes Teilstück — Klick: wieder raus', { sticky: true, opacity: 0.9 });
-          pl.on('click', (ev) => { L.DomEvent.stop(ev); setPiece(e.id, null); });
-          pl.addTo(layer);
-        } else {
-          const pl = L.polyline(e.points, { color: CAND_COLOR, weight: 2, opacity: 0.9, dashArray: '5 5' });
-          pl.bindTooltip('OSM-Straße — Klick: Teilstück bis zum nächsten Wanderweg-Anschluss aufnehmen', { sticky: true, opacity: 0.9 });
-          pl.on('click', (ev) => {
-            L.DomEvent.stop(ev);
-            const ll = (ev as L.LeafletMouseEvent).latlng;
-            setPiece(e.id, connectorPieceAt(e, ll.lat, ll.lng, primaryEndpoints, tol));
-          });
-          pl.addTo(layer);
-        }
+        const pl = L.polyline(e.points, { color: CAND_COLOR, weight: 2, opacity: 0.9, dashArray: '5 5' });
+        pl.bindTooltip('OSM-Straße — Klick: Teilstück bis zum nächsten Wanderweg-Anschluss aufnehmen (mehrfach möglich)', { sticky: true, opacity: 0.9 });
+        pl.on('click', (ev) => {
+          L.DomEvent.stop(ev);
+          const ll = (ev as L.LeafletMouseEvent).latlng;
+          addPiece(e.id, connectorPieceAt(e, ll.lat, ll.lng, primaryEndpoints, tol));
+        });
+        pl.addTo(layer);
+      }
+      // Orange Teilstücke obenauf: jedes einzeln per Klick wieder entfernbar.
+      for (const [nid, p] of manualPieces) {
+        const pl = L.polyline(p.points, { color: PICK_COLOR, weight: 3, opacity: 0.95, dashArray: '1 4' });
+        pl.bindTooltip('aufgenommenes Teilstück — Klick: wieder raus', { sticky: true, opacity: 0.9 });
+        pl.on('click', (ev) => { L.DomEvent.stop(ev); removePiece(nid); });
+        pl.addTo(layer);
       }
     }
   };
@@ -1489,7 +1499,8 @@ function PathFilterMenu({
           Zeigt die nicht aufgenommenen <b style={{ color: '#a0aec0' }}>OSM-Straßen</b> grau
           gestrichelt. Klick nimmt nur das <b style={{ color: '#dd6b20' }}>Teilstück</b> zwischen
           den nächsten Wanderweg-Anschlüssen auf (fehlt einer, endet es am Klick = Gate-POI);
-          Klick aufs orange Stück → wieder raus. Aufgenommenes wird als Asphalt geführt.
+          mehrere Stücke je Straße möglich. Klick aufs orange Stück → wieder raus.
+          Aufgenommenes wird als Asphalt geführt.
           {includeCount > 0 && (
             <button
               onClick={onClearInclude}
