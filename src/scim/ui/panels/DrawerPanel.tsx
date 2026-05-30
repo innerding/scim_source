@@ -29,7 +29,7 @@ import {
   loadPathConfig, savePathConfig, type PathConfig, type BridlewayMode,
 } from '../../regio-content/pathConfig';
 import {
-  deriveWanderwegnetz, anchorPois, isNetEdge, cropNetToMask,
+  deriveWanderwegnetz, anchorPois, isNetEdge, cropNetToMask, netStats, formatBytes,
   type PathFetchResult, type AnchorSummary, type PoiInput, type CropResult,
   type PathEdge, type GateNode,
 } from '../../regio-content/pathEngine';
@@ -1358,6 +1358,21 @@ function PathFilterMenu({
             <div style={{ color: '#718096', marginTop: 2 }}>
               {result.rawWayCount} OSM-Ways geladen
             </div>
+            {/* F7: Netz-Datengröße (stabil, später fürs Auslieferungs-Budget). */}
+            {(() => {
+              const u = netStats(result.edges.filter((e) => e.inNet));
+              const m = crop ? netStats(crop.edges.filter((e) => e.inNet)) : null;
+              return (
+                <div style={{ marginTop: 4, paddingTop: 4, borderTop: '1px dashed #9ae6b4', fontFamily: 'monospace', fontSize: 10, color: '#2c5282' }}>
+                  Netz unmaskiert: {u.edgeCount} Kanten · {u.pointCount} Punkte · <strong>{formatBytes(u.bytes)}</strong>
+                  {m && (
+                    <div style={{ marginTop: 1 }}>
+                      Netz maskiert: {m.edgeCount} Kanten · {m.pointCount} Punkte · <strong>{formatBytes(m.bytes)}</strong>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         )}
         {status === 'done' && anchor && (

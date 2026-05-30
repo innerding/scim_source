@@ -47,6 +47,30 @@ export interface PathFetchResult {
   fetchedAt: number;
 }
 
+// ─── Netz-Datengröße ──────────────────────────────────────────────────────────
+// Stabile, wiederverwendbare Kennzahl eines Netzes: Kanten, Stützpunkte und die
+// serialisierte Byte-Größe (UTF-8). Dient dem Speicher-Budget (localStorage-Draft)
+// UND später dem Auslieferungs-Budget (Sensus-Core-Paket / Colour-Mesh).
+export interface NetStats {
+  edgeCount: number;
+  pointCount: number;   // Summe aller Stützpunkte über alle Kanten
+  bytes: number;        // JSON-Größe in Bytes (UTF-8)
+}
+
+export function netStats(edges: PathEdge[]): NetStats {
+  let pointCount = 0;
+  for (const e of edges) pointCount += e.points.length;
+  const bytes = new TextEncoder().encode(JSON.stringify(edges)).length;
+  return { edgeCount: edges.length, pointCount, bytes };
+}
+
+// Bytes hübsch (B / KB / MB).
+export function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+}
+
 // ─── bbox aus Boundary-Polygon ────────────────────────────────────────────────
 // polygon ist Position[] = [lng, lat][]. Rueckgabe im Overpass-Format
 // [south, west, north, east].
