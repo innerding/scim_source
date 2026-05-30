@@ -148,6 +148,12 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   // Verschmelzen an/aus: aus = roher genodeter Graph (kein bridgeGaps) → direkter
   // A/B-Vergleich „vorher/nachher" (nachvollziehbar statt am Schieberwert erahnt).
   const [mergeOn, setMergeOn] = useState(true);
+  // T2 — Wege manuell aus OSM anwählen: im Anwähl-Modus werden die nicht
+  // aufgenommenen Connector-Straßen (inNet=false) grau gestrichelt + klickbar
+  // gezeigt; Klick nimmt sie ins Netz auf (Gegenstück zur blauen Abwahl).
+  // manualInclude = edgeIds der von Hand aufgenommenen Kandidaten.
+  const [pickMode, setPickMode] = useState(false);
+  const [manualInclude, setManualInclude] = useState<Set<number>>(new Set());
   // E4a — „abgeschnitten" (blau): Sackgassen, hinter denen real ein Weg weitergeht,
   // aber keine OSM-Daten mehr liegen (Datenrand). Per Klick auf das Stummel-Segment
   // markiert; blau läuft VOR der Sackgassen(rot)-Bewertung und nimmt sie davon aus.
@@ -646,16 +652,29 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     if (n.has(key)) n.delete(key); else n.add(key);
     return n;
   });
+  const toggleInclude = (id: number) => setManualInclude((prev) => {
+    const n = new Set(prev);
+    if (n.has(id)) n.delete(id); else n.add(id);
+    return n;
+  });
+  const CAND_COLOR = '#a0aec0';   // grau = nicht aufgenommener OSM-Kandidat
+  const PICK_COLOR = '#dd6b20';   // orange = manuell aufgenommen (Markierung)
   const renderPath = (res: PathFetchResult | null) => {
     const layer = pathLayerRef.current;
     if (!layer) return;
     layer.clearLayers();
     if (!res) { setBridgeCount(0); return; }
 
+    // T2: von Hand aufgenommene Kandidaten als inNet=true behandeln (ohne das
+    // Original zu mutieren), damit sie genodet + klassifiziert werden.
+    const effEdges = manualInclude.size
+      ? res.edges.map((e) => (manualInclude.has(e.id) ? { ...e, inNet: true } : e))
+      : res.edges;
+
     // E3: erst NODEN (graphCompose splittet an Kreuzungen). Bei mergeOn dann
     // Lücken < gapTol überbrücken → Komponenten verschmelzen; bei aus bleibt der
     // rohe genodete Graph (A/B-Vergleich). Danach nach Länge klassifizieren.
-    const composed = graphCompose(res.edges);
+    const composed = graphCompose(effEdges);
     const { graph, bridges } = mergeOn ? bridgeGaps(composed, gapTol) : { graph: composed, bridges: [] };
     setBridgeCount(bridges.length);
     const netzSet = netzComponents(graph, netLenThresh);
@@ -671,7 +690,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
 
     // Asphalt-Eigenschaft pro Quell-Way (project_asphalt_tracking).
     const asphaltByEdgeId = new Map<number, boolean>();
-    for (const e of res.edges) asphaltByEdgeId.set(e.id, isAsphalt(e));
+    for (const e of effEdges) asphaltByEdgeId.set(e.id, isAsphalt(e));
 
     // Pro Graph-Teilstück (genodet) Farbe + Gewicht ableiten. Reihenfolge der
     // Klassen: blau (abgeschnitten, manuell) → rot (Sackgasse, Toggle) → Grundfarbe.
@@ -704,7 +723,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       // Asphalt (nur Grundfarbe): weiß mit schwarzer Einfassung beidseitig (Casing).
       if (s.kind === 'base' && s.asphalt) {
         L.polyline(s.ge.points, { color: '#1a202c', weight: s.weight + 2.5, opacity: 0.95 }).addTo(layer);
-        const top = L.polyline(s.ge.points, { color: '#ffffff', weight: s.weight, opacity: 1 });
+        const top = L.polyline(s.ge.points, { color: '#ffffff', weight: s.weight / 2, opacity: 1 });
         attach(top, s);
         top.addTo(layer);
         return;
@@ -725,6 +744,25 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     }
     for (const s of styled) if (s.kind === 'red') draw(s);
     for (const s of styled) if (s.kind === 'blue') draw(s);
+
+    // T2: Anwähl-Modus — Connector-Kandidaten (OSM-Straßen, noch nicht im Netz)
+    // als klickbares Overlay. Grau gestrichelt = nicht aufgenommen (Klick → rein);
+    // orange gestrichelt = von Hand aufgenommen (Klick → wieder raus).
+    if (pickMode) {
+      for (const e of res.edges) {
+        if (e.source === 'primary') continue;       // nur Straßen-Kandidaten
+        if (e.inNet) continue;                       // bereits im Netz (z. B. Bridge-Stücke)
+        const picked = manualInclude.has(e.id);
+        const pl = L.polyline(e.points, {
+          color: picked ? PICK_COLOR : CAND_COLOR,
+          weight: picked ? 2.5 : 2, opacity: 0.9, dashArray: picked ? '1 4' : '5 5',
+        });
+        pl.bindTooltip(picked ? 'aufgenommen — Klick: wieder raus' : 'OSM-Straße — Klick: ins Netz aufnehmen',
+          { sticky: true, opacity: 0.9 });
+        pl.on('click', (ev) => { L.DomEvent.stop(ev); toggleInclude(e.id); });
+        pl.addTo(layer);
+      }
+    }
   };
 
   // POIs der Region per Konvention (Katalog-id === Geometry-id). Phase-MVP-
@@ -815,7 +853,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     if (!pathResult) return;
     if (masked && cropResult) renderPath({ ...pathResult, edges: cropResult.edges });
     else renderPath(pathResult);
-  }, [netLenThresh, sackgassenRot, gapTol, cutEdges, mergeOn]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [netLenThresh, sackgassenRot, gapTol, cutEdges, mergeOn, pickMode, manualInclude]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // F7-Neufassung: Die Handoff-Brücke entfällt. Der Drawer schreibt direkt in den
   // Workspace-Draft (onSave); der Commit lebt im Workspace.
@@ -1143,6 +1181,10 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
             bridgeCount={bridgeCount}
             mergeOn={mergeOn}
             onMergeOn={setMergeOn}
+            pickMode={pickMode}
+            onPickMode={setPickMode}
+            includeCount={manualInclude.size}
+            onClearInclude={() => setManualInclude(new Set())}
             cutCount={cutEdges.size}
             onClearCut={() => setCutEdges(new Set())}
           />
@@ -1189,7 +1231,8 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
 function PathFilterMenu({
   gebiet, gebietLabel, canApply, onResized, onApply, status, error, result, anchor,
   crop, netLenThresh, onNetLenThresh, sackgassenRot, onSackgassenRot,
-  gapTol, onGapTol, bridgeCount, mergeOn, onMergeOn, cutCount, onClearCut,
+  gapTol, onGapTol, bridgeCount, mergeOn, onMergeOn,
+  pickMode, onPickMode, includeCount, onClearInclude, cutCount, onClearCut,
 }: {
   gebiet: string;
   gebietLabel: string;
@@ -1210,6 +1253,10 @@ function PathFilterMenu({
   bridgeCount: number;
   mergeOn: boolean;
   onMergeOn: (v: boolean) => void;
+  pickMode: boolean;
+  onPickMode: (v: boolean) => void;
+  includeCount: number;
+  onClearInclude: () => void;
   cutCount: number;
   onClearCut: () => void;
 }) {
@@ -1404,6 +1451,30 @@ function PathFilterMenu({
               }}
             >
               {cutCount} blau · zurücksetzen
+            </button>
+          )}
+        </div>
+      </Section>
+
+      <Section title="OSM-Wege anwählen (T2)">
+        <Check
+          label="Anwähl-Modus"
+          checked={pickMode}
+          onChange={onPickMode}
+        />
+        <div style={{ padding: '0 10px', fontSize: 10, color: '#a0aec0', lineHeight: 1.5 }}>
+          Zeigt die nicht aufgenommenen <b style={{ color: '#a0aec0' }}>OSM-Straßen</b> grau
+          gestrichelt. Klick nimmt eine ins Netz auf (<b style={{ color: '#dd6b20' }}>orange</b>),
+          nochmal Klick → wieder raus. Aufgenommene Straßen werden als Asphalt geführt.
+          {includeCount > 0 && (
+            <button
+              onClick={onClearInclude}
+              style={{
+                marginLeft: 4, fontSize: 10, padding: '1px 6px', borderRadius: 4,
+                border: '1px solid #fbd38d', background: '#fffaf0', color: '#dd6b20', cursor: 'pointer',
+              }}
+            >
+              {includeCount} aufgenommen · zurücksetzen
             </button>
           )}
         </div>
