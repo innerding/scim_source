@@ -152,17 +152,18 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       // = B2/finale Boundary = draft.boundary.
       if (d) return {
         draftId: d.id, geometryId: 'new' as const, name: d.name, region: '',
-        polygon: d.reference ?? null, maskPolygon: d.boundary ?? null, catalogId: d.catalog_id ?? '',
+        polygon: d.reference ?? null, maskPolygon: d.boundary ?? null,
+        catalogId: d.catalog_id ?? '', finalized: d.finalized ?? false,
       };
     }
     if (openGeometryId) {
       const g = GEOMETRIES.find((x) => x.id === openGeometryId);
       if (g) return {
         draftId: null, geometryId: g.id, name: g.name, region: g.region ?? '',
-        polygon: g.polygon, maskPolygon: null, catalogId: '',
+        polygon: g.polygon, maskPolygon: null, catalogId: '', finalized: false,
       };
     }
-    return { draftId: null, geometryId: 'new' as const, name: '', region: '', polygon: null, maskPolygon: null, catalogId: '' };
+    return { draftId: null, geometryId: 'new' as const, name: '', region: '', polygon: null, maskPolygon: null, catalogId: '', finalized: false };
   }, [openGeometryId]);
   // Sprung verbraucht — App-State leeren, damit spaetere Navigation leer startet.
   useEffect(() => {
@@ -180,6 +181,16 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   // F6: ein katalog-gebundener Draft schaltet seine POI-Platzhalter direkt scharf.
   const [overlayCatalogId, setOverlayCatalogId] = useState<string>(initial.catalogId);
   const [showExport, setShowExport] = useState(false);
+  // F7.3: maskiert/„Ready for Commit". B1 wird ausgeblendet + gesperrt, B2 wird
+  // blau-gestrichelt (Umriss). Toggle nur, wenn B2 (maskPolygon) existiert.
+  const [masked, setMasked] = useState<boolean>(initial.finalized);
+  const onToggleMask = () => {
+    setMasked((m) => {
+      const next = !m;
+      if (activeDraftId) updateDraft(activeDraftId, { finalized: next });
+      return next;
+    });
+  };
 
   // Persistenz in den aktiven Workspace-Draft (ersetzt den stillen Autospeicher).
   // Bei einer offenen committeten Geometry (geometryId !== 'new') wird NICHT
@@ -337,10 +348,12 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     if (!map) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const pm = (map as any).pm;
-    if (tab === 'umriss') {
+    // F7.3: maskiert → B1 ist gesperrt, auch im Umriss-Tab keine Zeichen-Controls.
+    if (tab === 'umriss' && !masked) {
       if (!pm.controlsVisible?.()) addBoundaryControls(map);
     } else {
-      // Wegnetz: Boundary nur sichtbar, nicht bearbeitbar. Toolbar entfernen
+      // Wegnetz oder maskiert: Boundary nur sichtbar, nicht bearbeitbar. Toolbar
+      // entfernen genuegt (ohne Werkzeuge kein Editieren). Die globalen disable*-Methoden
       // genuegt (ohne Werkzeuge kein Editieren). Die globalen disable*-Methoden
       // von Geoman NICHT aufrufen — sie iterieren ueber alle Map-Layer und
       // greifen auf layer.pm zu; das programmatisch gezeichnete Boundary-Polygon
@@ -356,7 +369,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       map.invalidateSize();
       if (tab === 'wegnetz') fitToInspector();
     }, 60);
-  }, [tab]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [tab, masked]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Ebenen-Steuerleiste (A): Tiles dimmen/abschalten.
   useEffect(() => {
@@ -369,7 +382,8 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const layer = polygonLayerRef.current as any;
     if (!layer?.setStyle) return;
-    const o = boundaryVisible ? boundaryOpacity : 0;
+    // F7.3: maskiert → B1/Referenz wird ausgeblendet (die finale B2 trägt die Bühne).
+    const o = (masked || !boundaryVisible) ? 0 : boundaryOpacity;
     // Committete Geometry bleibt blau; ein Draft trägt Reifefarbe (gelb→orange).
     const color = geometryId !== 'new'
       ? SLOT1_COLOR
@@ -377,7 +391,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     // Innen klar (kein Fill an der editierbaren Boundary) — das Fill trägt der
     // invertierte Overlay-Layer (F6b).
     layer.setStyle({ color, opacity: o, fillOpacity: 0 });
-  }, [boundaryVisible, boundaryOpacity, polygon, geometryId, tab, overlayCatalogId]);
+  }, [boundaryVisible, boundaryOpacity, polygon, geometryId, tab, overlayCatalogId, masked]);
 
   // F6b: invertiertes Fill als eigener Overlay-Layer neu aufbauen. Nur für Drafts
   // (geometryId === 'new'); außen in Reifefarbe getönt, innen klar.
@@ -389,7 +403,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       invFillLayerRef.current = null;
     }
     const isDraft = geometryId === 'new';
-    if (!isDraft || !polygon || polygon.length < 3 || !boundaryVisible) return;
+    if (!isDraft || !polygon || polygon.length < 3 || !boundaryVisible || masked) return;
     const worldRing: [number, number][] = [[-90, -180], [-90, 180], [90, 180], [90, -180]];
     const hole = polygon.map(([lng, lat]) => [lat, lng] as [number, number]);
     const color = overlayCatalogId ? DRAFT_STROKE_ORANGE : DRAFT_STROKE_GELB;
@@ -424,9 +438,12 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const layer = maskLayerRef.current as any;
     if (!layer?.setStyle) return;
-    const o = maskVisible ? maskOpacity : 0;
-    layer.setStyle({ opacity: o, fillOpacity: o * 0.08 });
-  }, [maskVisible, maskOpacity, maskPolygon, geometryId, tab]);
+    // F7.3: maskiert → B2 ist die Bühne (immer sichtbar). Im Umriss-Tab blau-
+    // gestrichelt (committbar), im Wegnetz-Tab rot (die Crop-Maske).
+    const o = (masked || maskVisible) ? maskOpacity : 0;
+    const color = (masked && tab === 'umriss') ? SLOT1_COLOR : SLOT2_COLOR;
+    layer.setStyle({ color, dashArray: SLOT2_DASH, opacity: o, fillOpacity: o * 0.08 });
+  }, [maskVisible, maskOpacity, maskPolygon, geometryId, tab, masked]);
 
   // Geometry-Wechsel laedt neue Daten in die Map
   const onChangeGeometry = (id: string | 'new') => {
@@ -960,6 +977,9 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
             crop={cropResult}
             canHandoff={!!polygon && polygon.length >= 3}
             onHandoff={onHandoffToWorkspace}
+            masked={masked}
+            onToggleMask={onToggleMask}
+            canMask={!!maskPolygon && maskPolygon.length >= 3}
           />
         )}
         <div ref={mapContainerRef} style={{ flex: 1, minHeight: 0, minWidth: 0 }} />
@@ -1015,6 +1035,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
 function PathFilterMenu({
   gebiet, gebietLabel, onResized, onApply, status, error, result, anchor,
   hasMask, hasNet, onCrop, crop, canHandoff, onHandoff,
+  masked, onToggleMask, canMask,
 }: {
   gebiet: string;
   gebietLabel: string;
@@ -1030,6 +1051,9 @@ function PathFilterMenu({
   crop: CropResult | null;
   canHandoff: boolean;
   onHandoff: () => void;
+  masked: boolean;
+  onToggleMask: () => void;
+  canMask: boolean;
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const [cfg, setCfg] = useState<PathConfig>(() => loadPathConfig(gebiet));
@@ -1269,6 +1293,26 @@ function PathFilterMenu({
             </div>
           </div>
         )}
+        {/* F7.3: Maskierungs-Toggle. Sperrt B1, macht B2 committbar (blau-
+            gestrichelt im Umriss). Crop am Commit, hier nur Markierung. */}
+        <button
+          onClick={onToggleMask}
+          disabled={!canMask}
+          title={
+            !canMask ? 'Erst B2 (finale Boundary) im Umriss-Tab über B1 zeichnen'
+              : masked ? 'Maskierung lösen — B1 wieder bearbeitbar'
+              : 'Maskieren: B1 sperren, B2 wird committbar'
+          }
+          style={{
+            fontSize: 12, padding: '7px 12px', fontWeight: 700,
+            border: `1px solid ${masked ? '#2b6cb0' : '#c05621'}`, borderRadius: 5,
+            background: !canMask ? '#edf2f7' : masked ? '#2b6cb0' : '#fff5f5',
+            color: !canMask ? '#a0aec0' : masked ? '#fff' : '#c05621',
+            cursor: canMask ? 'pointer' : 'not-allowed',
+          }}
+        >
+          {masked ? '✓ Maskiert · Ready for Commit' : '▦ Maskierung'}
+        </button>
         {/* Draft-Lifecycle (Umbauplan E): zurueck an den Workspace statt
             eigenem Repo-Commit. Der Workspace buendelt + committet (F). */}
         <button

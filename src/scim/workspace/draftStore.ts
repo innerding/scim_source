@@ -37,6 +37,7 @@ export interface Draft {
   mask: Position[] | null;         // (vestigial; ab F7 ist die Maske = boundary/B2)
   net: HandoffNet | null;          // abgeleitetes Wegnetz (voll, roh; Crop am Commit)
   catalog_id: string | null;       // gebundener Katalog → steuert die Farbe
+  finalized?: boolean;             // F7.3: maskiert/„Ready for Commit" — B1 gesperrt
   created_at: string;
   updated_at: string;
 }
@@ -133,6 +134,7 @@ export function createDraft(name: string, opts: Partial<Draft> = {}): Draft {
     mask: opts.mask ?? null,
     net: opts.net ?? null,
     catalog_id: opts.catalog_id ?? null,
+    finalized: opts.finalized ?? false,
     created_at: ts,
     updated_at: ts,
   };
