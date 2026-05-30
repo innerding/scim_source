@@ -96,6 +96,11 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   const tileLayerRef = useRef<L.TileLayer | null>(null);
   const polygonLayerRef = useRef<L.Layer | null>(null);
   const maskLayerRef = useRef<L.Layer | null>(null);
+  // F6b: invertiertes Fill (außen getönt, innen klar) — zeigt die Innen/Außen-
+  // Gatekeeper-Rolle der Draft-Boundary. Eigener, nicht-interaktiver Overlay-Layer
+  // (Welt-Rechteck mit der Boundary als Loch), damit das Geoman-Editieren der
+  // eigentlichen Boundary unberührt bleibt.
+  const invFillLayerRef = useRef<L.Polygon | null>(null);
   const poiLayerRef = useRef<L.LayerGroup | null>(null);
   const inspectorRefRef = useRef<L.Polygon | null>(null);
   const pathLayerRef = useRef<L.LayerGroup | null>(null);
@@ -366,8 +371,36 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     const color = geometryId !== 'new'
       ? SLOT1_COLOR
       : (overlayCatalogId ? DRAFT_STROKE_ORANGE : DRAFT_STROKE_GELB);
-    layer.setStyle({ color, opacity: o, fillOpacity: o * 0.1 });
+    // Innen klar (kein Fill an der editierbaren Boundary) — das Fill trägt der
+    // invertierte Overlay-Layer (F6b).
+    layer.setStyle({ color, opacity: o, fillOpacity: 0 });
   }, [boundaryVisible, boundaryOpacity, polygon, geometryId, tab, overlayCatalogId]);
+
+  // F6b: invertiertes Fill als eigener Overlay-Layer neu aufbauen. Nur für Drafts
+  // (geometryId === 'new'); außen in Reifefarbe getönt, innen klar.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (invFillLayerRef.current) {
+      map.removeLayer(invFillLayerRef.current);
+      invFillLayerRef.current = null;
+    }
+    const isDraft = geometryId === 'new';
+    if (!isDraft || !polygon || polygon.length < 3 || !boundaryVisible) return;
+    const worldRing: [number, number][] = [[-90, -180], [-90, 180], [90, 180], [90, -180]];
+    const hole = polygon.map(([lng, lat]) => [lat, lng] as [number, number]);
+    const color = overlayCatalogId ? DRAFT_STROKE_ORANGE : DRAFT_STROKE_GELB;
+    const inv = L.polygon([worldRing, hole], {
+      stroke: false,
+      fillColor: color,
+      fillOpacity: boundaryOpacity * 0.18,
+      interactive: false,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any).addTo(map);
+    inv.bringToBack();
+    tileLayerRef.current?.bringToBack();
+    invFillLayerRef.current = inv;
+  }, [polygon, geometryId, overlayCatalogId, boundaryVisible, boundaryOpacity, tab]);
 
   // Ebenen-Steuerleiste (A): Inspector-R-Vorlage dimmen.
   useEffect(() => {
