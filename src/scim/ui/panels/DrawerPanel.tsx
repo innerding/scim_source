@@ -140,17 +140,17 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       const d = getDraft(openGeometryId);
       if (d) return {
         draftId: d.id, geometryId: 'new' as const, name: d.name, region: '',
-        polygon: d.boundary, maskPolygon: d.mask,
+        polygon: d.boundary, maskPolygon: d.mask, catalogId: d.catalog_id ?? '',
       };
     }
     if (openGeometryId) {
       const g = GEOMETRIES.find((x) => x.id === openGeometryId);
       if (g) return {
         draftId: null, geometryId: g.id, name: g.name, region: g.region ?? '',
-        polygon: g.polygon, maskPolygon: null,
+        polygon: g.polygon, maskPolygon: null, catalogId: '',
       };
     }
-    return { draftId: null, geometryId: 'new' as const, name: '', region: '', polygon: null, maskPolygon: null };
+    return { draftId: null, geometryId: 'new' as const, name: '', region: '', polygon: null, maskPolygon: null, catalogId: '' };
   }, [openGeometryId]);
   // Sprung verbraucht — App-State leeren, damit spaetere Navigation leer startet.
   useEffect(() => {
@@ -165,7 +165,8 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   const [region, setRegion] = useState(initial.region);
   const [polygon, setPolygon] = useState<Position[] | null>(initial.polygon);
   const [maskPolygon, setMaskPolygon] = useState<Position[] | null>(initial.maskPolygon ?? null);
-  const [overlayCatalogId, setOverlayCatalogId] = useState<string>('');
+  // F6: ein katalog-gebundener Draft schaltet seine POI-Platzhalter direkt scharf.
+  const [overlayCatalogId, setOverlayCatalogId] = useState<string>(initial.catalogId);
   const [showExport, setShowExport] = useState(false);
 
   // Persistenz in den aktiven Workspace-Draft (ersetzt den stillen Autospeicher).
