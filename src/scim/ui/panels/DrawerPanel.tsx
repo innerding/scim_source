@@ -671,7 +671,8 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     return n;
   });
   const CAND_COLOR = '#a0aec0';   // grau = nicht aufgenommener OSM-Kandidat
-  const PICK_COLOR = '#dd6b20';   // orange = manuell aufgenommenes Teilstück
+  const LILA = '#9333ea';         // Straßen: Asphalt (weißer Kern, lila Einfassung) / andere Sorten (lila)
+  const PICK_COLOR = LILA;        // manuell aufgenommenes Teilstück (Markierung)
   const renderPath = (res: PathFetchResult | null) => {
     const layer = pathLayerRef.current;
     if (!layer) return;
@@ -719,6 +720,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       if (ge.edgeId < 0) continue; // Brücken separat (orange gestrichelt)
       const key = `${ge.edgeId}:${ge.seg}`;
       const isNetz = netzSet.has(graph.nodes[ge.from].component);
+      const asphalt = asphaltByEdgeId.get(ge.edgeId) ?? false;
       let color = isNetz ? NETZ_COLOR : REST_COLOR;
       const weight = isNetz ? 3 : 2;
       // echte Sackgasse = degree-1-Ende, das KEIN POI (Gate) ist.
@@ -728,7 +730,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       let kind: Kind = 'base';
       if (cutEdges.has(key)) { color = CUT_COLOR; kind = 'blue'; }        // blau VOR rot
       else if (sackgassenRot && isSack) { color = SACK_COLOR; kind = 'red'; }
-      styled.push({ ge, key, color, weight, kind, clickable: isSack, asphalt: asphaltByEdgeId.get(ge.edgeId) ?? false });
+      styled.push({ ge, key, color, weight, kind, clickable: isSack, asphalt });
     }
 
     // Sackgassen-Teilstücke sind anklickbar: Klick → blau (abgeschnitten) ↔ zurück.
@@ -787,12 +789,24 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
         });
         pl.addTo(layer);
       }
-      // Orange Teilstücke obenauf: jedes einzeln per Klick wieder entfernbar.
+      // Aufgenommene Teilstücke obenauf (nur im Anwählmodus): Asphalt = weiß mit
+      // lila Einfassung, andere Sorten = lila. Jedes per Klick wieder entfernbar.
       for (const [nid, p] of manualPieces) {
-        const pl = L.polyline(p.points, { color: PICK_COLOR, weight: 3, opacity: 0.95, dashArray: '1 4' });
-        pl.bindTooltip('aufgenommenes Teilstück — Klick: wieder raus', { sticky: true, opacity: 0.9 });
-        pl.on('click', (ev) => { L.DomEvent.stop(ev); removePiece(nid); });
-        pl.addTo(layer);
+        const src = byId.get(p.roadId);
+        const asph = src ? isAsphalt(src) : true;
+        const tip = 'aufgenommenes Teilstück — Klick: wieder raus';
+        if (asph) {
+          L.polyline(p.points, { color: PICK_COLOR, weight: 5, opacity: 0.95 }).addTo(layer);
+          const top = L.polyline(p.points, { color: '#ffffff', weight: 2, opacity: 1 });
+          top.bindTooltip(tip, { sticky: true, opacity: 0.9 });
+          top.on('click', (ev) => { L.DomEvent.stop(ev); removePiece(nid); });
+          top.addTo(layer);
+        } else {
+          const pl = L.polyline(p.points, { color: PICK_COLOR, weight: 3, opacity: 0.95 });
+          pl.bindTooltip(tip, { sticky: true, opacity: 0.9 });
+          pl.on('click', (ev) => { L.DomEvent.stop(ev); removePiece(nid); });
+          pl.addTo(layer);
+        }
       }
     }
   };
@@ -1497,16 +1511,16 @@ function PathFilterMenu({
         />
         <div style={{ padding: '0 10px', fontSize: 10, color: '#a0aec0', lineHeight: 1.5 }}>
           Zeigt die nicht aufgenommenen <b style={{ color: '#a0aec0' }}>OSM-Straßen</b> grau
-          gestrichelt. Klick nimmt nur das <b style={{ color: '#dd6b20' }}>Teilstück</b> zwischen
+          gestrichelt. Klick nimmt nur das <b style={{ color: '#9333ea' }}>Teilstück</b> zwischen
           den nächsten Wanderweg-Anschlüssen auf (fehlt einer, endet es am Klick = Gate-POI);
-          mehrere Stücke je Straße möglich. Klick aufs orange Stück → wieder raus.
+          mehrere Stücke je Straße möglich. Klick aufs lila Stück → wieder raus.
           Aufgenommenes wird als Asphalt geführt.
           {includeCount > 0 && (
             <button
               onClick={onClearInclude}
               style={{
                 marginLeft: 4, fontSize: 10, padding: '1px 6px', borderRadius: 4,
-                border: '1px solid #fbd38d', background: '#fffaf0', color: '#dd6b20', cursor: 'pointer',
+                border: '1px solid #d6bcfa', background: '#faf5ff', color: '#9333ea', cursor: 'pointer',
               }}
             >
               {includeCount} aufgenommen · zurücksetzen
