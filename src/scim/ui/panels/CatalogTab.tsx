@@ -11,7 +11,7 @@ import type { DecorationMatch } from '../../poi-catalog/decorations';
 import type { Geometry } from '../../poi-catalog/poiCatalog.types';
 import {
   addNewPoi, clearEditState, deletePoi, hasEdits, loadEditState,
-  mergeEdits, patchPoi, resetPoi, saveEditState, undeletePoi,
+  mergeEdits, patchPoi, reconcileEdits, resetPoi, saveEditState, undeletePoi,
 } from '../../poi-catalog/poiCatalog.editor';
 import { compactDiff, diffLines, serializeCatalogToMd } from '../../poi-catalog/poiCatalog.serializer';
 import { fetchLatestCatalogMd, type CatalogSource } from '../../poi-catalog/catalogRuntime';
@@ -1508,8 +1508,8 @@ export default function CatalogTab({ onJumpTo }: { onJumpTo?: (panelId: string) 
 
   const fileName = `${region.id}_pois_plan.md`;
   const newMd = useMemo(
-    () => (showExport ? serializeCatalogToMd(region.md, merged) : ''),
-    [showExport, region.md, merged],
+    () => (showExport ? serializeCatalogToMd(effectiveMd, merged) : ''),
+    [showExport, effectiveMd, merged],
   );
 
   return (
@@ -1624,7 +1624,10 @@ export default function CatalogTab({ onJumpTo }: { onJumpTo?: (panelId: string) 
             color: catalogSource === 'live' ? '#22543d' : catalogSource === 'loading' ? '#4a5568' : '#7b341e',
           }}
         >
-          {catalogSource === 'live' ? '● live' : catalogSource === 'loading' ? '○ lädt …' : '◐ gebündelt'}
+          <span style={{ position: 'relative', top: -1 }}>
+            {catalogSource === 'live' ? '●' : catalogSource === 'loading' ? '○' : '◐'}
+          </span>
+          {catalogSource === 'live' ? ' live' : catalogSource === 'loading' ? ' lädt …' : ' gebündelt'}
         </span>
         <span style={{ fontSize: 11, color: '#718096', fontFamily: 'monospace', marginLeft: 8 }}>
           {merged.pois.filter((p) => !p._isDeleted).length} POIs · ✓ {statusCounts.exact} · ≈ {statusCounts.estimated} · ❓ {statusCounts.missing}{statusCounts.cluster_ghost > 0 && <> · ↑ {statusCounts.cluster_ghost}</>}
@@ -1702,16 +1705,27 @@ export default function CatalogTab({ onJumpTo }: { onJumpTo?: (panelId: string) 
 
       {showExport && (
         <ExportModal
-          originalMd={region.md}
+          originalMd={effectiveMd}
           newMd={newMd}
           fileName={fileName}
           onClose={() => setShowExport(false)}
           onCommitted={() => {
-            // Nach erfolgreichem Commit Editor-Patches raeumen, damit
-            // beim naechsten Load + Vite-Glob die committete md die
-            // Wahrheit ist und der DRAFT-Marker verschwindet.
-            clearEditState(region.id);
-            setEditState(loadEditState(region.id));
+            // Schritt C — Reconciliation statt blindem clearEditState.
+            // newMd IST die frisch committete Wahrheit: sofort als runtimeMd
+            // installieren (Basis spiegelt den Commit, ohne auf den naechsten
+            // GitHub-Fetch zu warten), dann Patches konservativ abgleichen —
+            // ein Patch faellt NUR weg, wenn sein Inhalt nachweislich in der
+            // neuen Basis steht. So geht keine Aenderung zwischen Commit und
+            // Reload verloren ("Aenderung kommt nicht durch").
+            const committedBase = parsePoiCatalog(newMd, {
+              region_id: region.id,
+              region_name: region.name,
+              source_path: `data/${region.id}_pois_plan.md`,
+            });
+            setRuntimeMd(newMd);
+            setCatalogSource('live');
+            // Auto-save-Effect (auf editState) persistiert bzw. raeumt localStorage.
+            setEditState((s) => reconcileEdits(s, committedBase));
           }}
         />
       )}

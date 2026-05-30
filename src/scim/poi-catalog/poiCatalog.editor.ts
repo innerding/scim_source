@@ -4,7 +4,7 @@
 
 import type {
   CatalogPoi, MergedCatalog, MergedPoi,
-  PoiCatalogEditState, PoiCatalogState,
+  PoiCatalogEditState, PoiCatalogState, PoiPatch,
 } from './poiCatalog.types';
 import { mintToken } from './poiCatalog.token';
 
@@ -207,4 +207,95 @@ export function mergeEdits(base: PoiCatalogState, edits: PoiCatalogEditState): M
 
 export function hasEdits(state: PoiCatalogEditState): boolean {
   return Object.keys(state.patches).length > 0;
+}
+
+// ─── Reconciliation: nach Commit Patches nur fallenlassen, was nachweislich
+// in der frischen Basis-.md angekommen ist ──────────────────────────────────
+//
+// Ersetzt das blinde clearEditState() beim Commit (Schritt C). Der Commit-dann-
+// Clear-Lauf hatte ein Loch: zwischen Commit und neuer Basis konnte ein Patch
+// verworfen werden, dessen Inhalt noch nicht in der Basis stand → „Änderung weg".
+// Hier wird konservativ abgeglichen: ein Patch (-Feld) fällt NUR weg, wenn sein
+// Inhalt beweisbar in der Basis steht. Im Zweifel BEHALTEN — übrig gebliebener
+// Patch ist harmlos (Operator kann „Zurücksetzen"), verlorener Patch ist Datenverlust.
+
+// Normalisiert leere/undefinierte Strings zu '' und trimmt — '' und undefined
+// gelten als gleich.
+function normStr(v: unknown): string {
+  if (v === undefined || v === null) return '';
+  return String(v).trim();
+}
+
+function coordEq(a: [number, number] | undefined, b: [number, number] | undefined): boolean {
+  if (!a || !b) return a === b;
+  return a[0].toFixed(5) === b[0].toFixed(5) && a[1].toFixed(5) === b[1].toFixed(5);
+}
+
+// Ist der Wert von `field` im Patch identisch mit dem in der Basis-POI?
+function fieldMatchesBase(
+  field: keyof Omit<CatalogPoi, 'id'>,
+  patchVal: unknown,
+  basePoi: CatalogPoi,
+): boolean {
+  if (field === 'coord') {
+    return coordEq(patchVal as [number, number], basePoi.coord);
+  }
+  if (field === 'is_cluster_identity') {
+    return !!patchVal === !!basePoi.is_cluster_identity;
+  }
+  return normStr(patchVal) === normStr((basePoi as unknown as Record<string, unknown>)[field]);
+}
+
+export function reconcileEdits(
+  state: PoiCatalogEditState,
+  base: PoiCatalogState,
+): PoiCatalogEditState {
+  const baseById = new Map<string, CatalogPoi>();
+  for (const p of base.pois) baseById.set(p.id, p);
+
+  const nextPatches: Record<string, PoiPatch> = {};
+
+  for (const [id, patch] of Object.entries(state.patches)) {
+    const basePoi = baseById.get(id);
+
+    // Neu-Anlage: in der Basis vorhanden (Token committet) → Patch erledigt.
+    if (patch.is_new && patch.new_poi) {
+      if (basePoi) continue;          // committet → fallenlassen
+      nextPatches[id] = patch;        // noch nicht in Basis → behalten
+      continue;
+    }
+
+    // Löschung: aus der Basis verschwunden → Löschung erledigt.
+    if (patch.deleted) {
+      if (!basePoi) continue;         // committet (nicht mehr in Basis) → fallenlassen
+      // Noch in Basis: Löschung behalten (evtl. mit Restfeldern aus changes).
+      nextPatches[id] = patch;
+      continue;
+    }
+
+    // Feld-Änderungen: nur die Felder behalten, die noch NICHT in der Basis stehen.
+    if (patch.changes) {
+      if (!basePoi) {
+        // POI nicht (mehr) in Basis, aber kein deleted-Patch → konservativ behalten.
+        nextPatches[id] = patch;
+        continue;
+      }
+      const remaining: Partial<Omit<CatalogPoi, 'id'>> = {};
+      for (const [field, val] of Object.entries(patch.changes)) {
+        const f = field as keyof Omit<CatalogPoi, 'id'>;
+        if (!fieldMatchesBase(f, val, basePoi)) {
+          (remaining as Record<string, unknown>)[field] = val;
+        }
+      }
+      if (Object.keys(remaining).length > 0) {
+        nextPatches[id] = { ...patch, changes: remaining };
+      }
+      // sonst: alle Änderungen in Basis angekommen → Patch fällt weg.
+      continue;
+    }
+
+    // Sonstiger (leerer) Patch: nichts zu tun → fallenlassen.
+  }
+
+  return { ...state, patches: nextPatches };
 }
