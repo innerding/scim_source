@@ -19,6 +19,7 @@ import '@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css';
 import type { Position } from 'geojson';
 import { GEOMETRIES } from '../../workspace/workspace.registry';
 import { saveHandoff, type HandoffNet } from '../../workspace/draftHandoff';
+import { getDraft, createDraft, updateDraft } from '../../workspace/draftStore';
 import { parsePoiCatalog } from '../../poi-catalog/poiCatalog.parser';
 import RepresentBuildTetrahedron from '../RepresentBuildTetrahedron';
 import type { RepresentBuildFace } from '../RepresentBuildTetrahedron';
@@ -52,30 +53,6 @@ const SLOT2_COLOR = '#dd6b20';
 const SLOT2_DASH = '6 4';
 
 type DrawerTab = 'umriss' | 'wegnetz';
-
-interface Draft {
-  geometryId: string | 'new';
-  name: string;
-  region: string;
-  polygon: Position[] | null;
-  // Slot 2 (Umbauplan B): die ueber das Netz gelegte Masken-Boundary.
-  maskPolygon?: Position[] | null;
-}
-
-function loadDraft(): Draft {
-  try {
-    const raw = localStorage.getItem(DRAFT_KEY);
-    if (raw) {
-      const d = JSON.parse(raw);
-      return { maskPolygon: null, ...d };
-    }
-  } catch { /* ignore */ }
-  return { geometryId: 'new', name: '', region: '', polygon: null, maskPolygon: null };
-}
-
-function saveDraft(d: Draft): void {
-  try { localStorage.setItem(DRAFT_KEY, JSON.stringify(d)); } catch { /* ignore */ }
-}
 
 // Geoman-Werkzeugleiste fuer den Umriss-Tab. Wird beim Tab-Wechsel
 // hinzugefuegt/entfernt, damit die Zeichen-Controls im Wegnetz-Tab nicht
@@ -154,18 +131,35 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   const [maskVisible, setMaskVisible] = useState(true);
   const [maskOpacity, setMaskOpacity] = useState(1);
 
-  // Beim Oeffnen aus dem Workspace die angeklickte Geometry laden; sonst Draft.
-  const initial = useMemo<Draft>(() => {
+  // Was wird beim Öffnen geladen (F5)?
+  //   - openGeometryId 'draft-…'  → genau diesen Workspace-Draft laden + binden.
+  //   - openGeometryId committed  → die Geometry als Referenz laden (kein Draft).
+  //   - nichts                    → LEER. Kein stiller Autospeicher mehr.
+  const initial = useMemo(() => {
+    if (openGeometryId?.startsWith('draft-')) {
+      const d = getDraft(openGeometryId);
+      if (d) return {
+        draftId: d.id, geometryId: 'new' as const, name: d.name, region: '',
+        polygon: d.boundary, maskPolygon: d.mask,
+      };
+    }
     if (openGeometryId) {
       const g = GEOMETRIES.find((x) => x.id === openGeometryId);
-      if (g) return { geometryId: g.id, name: g.name, region: g.region ?? '', polygon: g.polygon };
+      if (g) return {
+        draftId: null, geometryId: g.id, name: g.name, region: g.region ?? '',
+        polygon: g.polygon, maskPolygon: null,
+      };
     }
-    return loadDraft();
+    return { draftId: null, geometryId: 'new' as const, name: '', region: '', polygon: null, maskPolygon: null };
   }, [openGeometryId]);
-  // Sprung verbraucht — App-State leeren, damit spaetere Navigation den Draft nimmt.
+  // Sprung verbraucht — App-State leeren, damit spaetere Navigation leer startet.
   useEffect(() => {
     if (openGeometryId) onGeometryConsumed?.();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Aktiver Workspace-Draft. Alles, was gezeichnet wird, gehört zu diesem Draft;
+  // ohne Draft entsteht beim ersten Zeichnen automatisch einer (lazy).
+  const [activeDraftId, setActiveDraftId] = useState<string | null>(initial.draftId);
   const [geometryId, setGeometryId] = useState<string | 'new'>(initial.geometryId);
   const [name, setName] = useState(initial.name);
   const [region, setRegion] = useState(initial.region);
@@ -174,10 +168,17 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   const [overlayCatalogId, setOverlayCatalogId] = useState<string>('');
   const [showExport, setShowExport] = useState(false);
 
-  // Draft auto-save
+  // Persistenz in den aktiven Workspace-Draft (ersetzt den stillen Autospeicher).
+  // Bei einer offenen committeten Geometry (geometryId !== 'new') wird NICHT
+  // persistiert — die ist Referenz, kein Draft (Checkout-Kopie folgt in F8).
   useEffect(() => {
-    saveDraft({ geometryId, name, region, polygon, maskPolygon });
-  }, [geometryId, name, region, polygon, maskPolygon]);
+    if (activeDraftId) {
+      updateDraft(activeDraftId, { name, boundary: polygon, mask: maskPolygon });
+    } else if (geometryId === 'new' && polygon && polygon.length >= 3) {
+      const d = createDraft(name || 'Unbenannter Draft', { boundary: polygon, mask: maskPolygon });
+      setActiveDraftId(d.id);
+    }
+  }, [activeDraftId, geometryId, name, polygon, maskPolygon]);
 
   // Auf die aktuell im Inspector gewaehlte Region zoomen.
   const fitToInspector = () => {
