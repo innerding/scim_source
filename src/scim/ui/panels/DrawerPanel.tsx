@@ -142,6 +142,11 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   // Komponenten verschmelzen. bridgeCount fürs Legenden-Feedback.
   const [gapTol, setGapTol] = useState(8);
   const [bridgeCount, setBridgeCount] = useState(0);
+  // E4a — „abgeschnitten" (blau): Sackgassen, hinter denen real ein Weg weitergeht,
+  // aber keine OSM-Daten mehr liegen (Datenrand). Per Klick auf das Stummel-Segment
+  // markiert; blau läuft VOR der Sackgassen(rot)-Bewertung und nimmt sie davon aus.
+  // Lokaler Render-Zustand (noch nicht im Draft persistiert), Schlüssel = edgeId.
+  const [cutEdges, setCutEdges] = useState<Set<number>>(new Set());
 
   // Inspector-Compare: das Polygon der vom Inspector gezeigten R kann
   // als read-only Referenz in Violett unter den Editor gelegt werden
@@ -627,7 +632,13 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   const NETZ_COLOR = '#222a35';
   const REST_COLOR = '#1f9d8f';
   const SACK_COLOR = '#e53e3e';
+  const CUT_COLOR = '#3182ce';   // blau = abgeschnitten (Datenrand)
   const BRIDGE_COLOR = '#dd6b20';
+  const toggleCut = (id: number) => setCutEdges((prev) => {
+    const n = new Set(prev);
+    if (n.has(id)) n.delete(id); else n.add(id);
+    return n;
+  });
   const renderPath = (res: PathFetchResult | null) => {
     const layer = pathLayerRef.current;
     if (!layer) return;
@@ -642,40 +653,52 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     const geByEdgeId = new Map<number, NetGraphEdge>();
     for (const ge of graph.edges) geByEdgeId.set(ge.edgeId, ge);
 
-    // Pro Netz-Kante Farbe + Gewicht aus der Konnektivität ableiten.
-    const styled: { edge: PathEdge; color: string; weight: number; red: boolean }[] = [];
+    // Pro Netz-Kante Farbe + Gewicht ableiten. Reihenfolge der Klassen:
+    // blau (abgeschnitten, manuell) → rot (Sackgasse, falls Toggle) → Grundfarbe.
+    type Kind = 'base' | 'red' | 'blue';
+    const styled: { edge: PathEdge; color: string; weight: number; kind: Kind; clickable: boolean }[] = [];
     for (const edge of res.edges) {
       if (!isNetEdge(edge)) continue;
       const ge = geByEdgeId.get(edge.id);
       let color = REST_COLOR;
       let weight = 2;
-      let red = false;
+      let isSack = false;
       if (ge) {
         const comp = graph.nodes[ge.from].component;
         const isNetz = netzSet.has(comp);
         color = isNetz ? NETZ_COLOR : REST_COLOR;
         weight = isNetz ? 3 : 2;
-        const isSack = graph.nodes[ge.from].degree === 1 || graph.nodes[ge.to].degree === 1;
-        if (sackgassenRot && isSack) { color = SACK_COLOR; red = true; }
+        isSack = graph.nodes[ge.from].degree === 1 || graph.nodes[ge.to].degree === 1;
       }
-      styled.push({ edge, color, weight, red });
+      let kind: Kind = 'base';
+      if (cutEdges.has(edge.id)) { color = CUT_COLOR; kind = 'blue'; }      // blau VOR rot
+      else if (sackgassenRot && isSack) { color = SACK_COLOR; kind = 'red'; }
+      styled.push({ edge, color, weight, kind, clickable: isSack });
     }
-    // Erst Grundfarben, dann rote Sackgassen darüber (gut sichtbar).
-    for (const s of styled) {
-      if (s.red) continue;
-      L.polyline(s.edge.points, { color: s.color, weight: s.weight, opacity: 0.85 }).addTo(layer);
-    }
-    for (const s of styled) {
-      if (!s.red) continue;
-      L.polyline(s.edge.points, { color: s.color, weight: 3, opacity: 0.95 }).addTo(layer);
-    }
-    // E3: geschlossene Lücken als orange gestrichelte Brücken zeigen (nachvollziehbar).
+
+    // Sackgassen-Segmente sind anklickbar: Klick → blau (abgeschnitten) ↔ zurück.
+    const draw = (s: typeof styled[number]) => {
+      const pl = L.polyline(s.edge.points, {
+        color: s.color, weight: s.kind === 'base' ? s.weight : 3,
+        opacity: s.kind === 'base' ? 0.85 : 0.95,
+      });
+      if (s.clickable) {
+        pl.bindTooltip(s.kind === 'blue' ? 'abgeschnitten (blau) — Klick: zurück' : 'Klick: abgeschnitten (blau)',
+          { sticky: true, opacity: 0.9 });
+        pl.on('click', (ev) => { L.DomEvent.stop(ev); toggleCut(s.edge.id); });
+      }
+      pl.addTo(layer);
+    };
+    // Zeichenreihenfolge: Grundfarben unten, dann Brücken, dann rot, dann blau oben.
+    for (const s of styled) if (s.kind === 'base') draw(s);
     for (const b of bridges) {
       const a = graph.nodes[b.from]; const c = graph.nodes[b.to];
       L.polyline([[a.lat, a.lng], [c.lat, c.lng]], {
         color: BRIDGE_COLOR, weight: 2, opacity: 0.9, dashArray: '4 4',
       }).addTo(layer);
     }
+    for (const s of styled) if (s.kind === 'red') draw(s);
+    for (const s of styled) if (s.kind === 'blue') draw(s);
   };
 
   // POIs der Region per Konvention (Katalog-id === Geometry-id). Phase-MVP-
@@ -766,7 +789,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     if (!pathResult) return;
     if (masked && cropResult) renderPath({ ...pathResult, edges: cropResult.edges });
     else renderPath(pathResult);
-  }, [netLenThresh, sackgassenRot, gapTol]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [netLenThresh, sackgassenRot, gapTol, cutEdges]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // F7-Neufassung: Die Handoff-Brücke entfällt. Der Drawer schreibt direkt in den
   // Workspace-Draft (onSave); der Commit lebt im Workspace.
@@ -1092,6 +1115,8 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
             gapTol={gapTol}
             onGapTol={setGapTol}
             bridgeCount={bridgeCount}
+            cutCount={cutEdges.size}
+            onClearCut={() => setCutEdges(new Set())}
           />
         )}
         <div ref={mapContainerRef} style={{ flex: 1, minHeight: 0, minWidth: 0 }} />
@@ -1136,7 +1161,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
 function PathFilterMenu({
   gebiet, gebietLabel, canApply, onResized, onApply, status, error, result, anchor,
   crop, netLenThresh, onNetLenThresh, sackgassenRot, onSackgassenRot,
-  gapTol, onGapTol, bridgeCount,
+  gapTol, onGapTol, bridgeCount, cutCount, onClearCut,
 }: {
   gebiet: string;
   gebietLabel: string;
@@ -1155,6 +1180,8 @@ function PathFilterMenu({
   gapTol: number;
   onGapTol: (v: number) => void;
   bridgeCount: number;
+  cutCount: number;
+  onClearCut: () => void;
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const [cfg, setCfg] = useState<PathConfig>(() => loadPathConfig(gebiet));
@@ -1324,6 +1351,21 @@ function PathFilterMenu({
           Legt <b style={{ color: '#e53e3e' }}>rot</b> über alle degree-1-Enden (Sackgassen),
           egal welche Grundfarbe.
         </div>
+        <div style={{ padding: '4px 10px 0', fontSize: 10, color: '#a0aec0', lineHeight: 1.5 }}>
+          Sackgassen-Segment auf der Karte anklicken → <b style={{ color: '#3182ce' }}>blau</b> =
+          abgeschnitten (Datenrand, geht real weiter). Blau wird von der Rot-Bewertung
+          ausgenommen. {cutCount > 0 && (
+            <button
+              onClick={onClearCut}
+              style={{
+                marginLeft: 4, fontSize: 10, padding: '1px 6px', borderRadius: 4,
+                border: '1px solid #90cdf4', background: '#ebf8ff', color: '#3182ce', cursor: 'pointer',
+              }}
+            >
+              {cutCount} blau · zurücksetzen
+            </button>
+          )}
+        </div>
       </Section>
 
       <Section title="Ausschlüsse">
@@ -1435,6 +1477,12 @@ function PathFilterMenu({
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
                 <span style={{ display: 'inline-block', width: 14, height: 0, borderTop: '3px solid #e53e3e' }} />
                 <span><b>Sackgassen</b> (degree-1)</span>
+              </div>
+            )}
+            {cutCount > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                <span style={{ display: 'inline-block', width: 14, height: 0, borderTop: '3px solid #3182ce' }} />
+                <span><b>{cutCount} abgeschnitten</b> (blau, Datenrand)</span>
               </div>
             )}
             <div style={{ color: '#718096', marginTop: 2 }}>
