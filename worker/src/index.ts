@@ -33,6 +33,7 @@ export interface Env {
 //
 // Operator schreibt Wahrheiten direkt aus dem Browser ins Repo:
 //   - data/geometries/<id>.json
+//   - data/wegnetze/<id>.json
 //   - data/representations/<id>.json
 //   - data/<region>_pois_plan.md
 //
@@ -43,6 +44,7 @@ export interface Env {
 const DEFAULT_REPO = 'innerding/scim_source';
 const COMMIT_PATH_WHITELIST: RegExp[] = [
   /^data\/geometries\/[a-z0-9][a-z0-9_-]*\.json$/,
+  /^data\/wegnetze\/[a-z0-9][a-z0-9_-]*\.json$/,
   /^data\/representations\/[a-z0-9][a-z0-9_-]*\.json$/,
   /^data\/[a-z0-9][a-z0-9_-]*_pois_plan\.md$/,
 ];
@@ -323,7 +325,7 @@ export default {
       if (typeof message !== 'string' || !message) return err('Missing "message"', 422);
       if (!isAllowedCommitPath(path)) {
         return err(
-          `Path "${path}" is not in the commit whitelist (data/geometries/*.json, data/representations/*.json, data/*_pois_plan.md)`,
+          `Path "${path}" is not in the commit whitelist (data/geometries/*.json, data/wegnetze/*.json, data/representations/*.json, data/*_pois_plan.md)`,
           403,
         );
       }

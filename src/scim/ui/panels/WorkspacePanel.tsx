@@ -21,7 +21,7 @@ import type { CatalogRef } from '../../workspace/workspace.types';
 import { DRAFT_KEY } from './DrawerPanel';
 import { loadHandoff, clearHandoff, type RepresentHandoff } from '../../workspace/draftHandoff';
 import { commitToRepo, type CommitResult } from '../../../runtime/commitBridge';
-import type { BoundaryGeometryFile } from '../../workspace/workspace.types';
+import type { BoundaryGeometryFile, WegnetzFile } from '../../workspace/workspace.types';
 import type { Position } from 'geojson';
 
 // Stabiler slug aus einem freien Namen — passt zur Worker-Whitelist
@@ -223,6 +223,35 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
     setBoundaryBusy(false);
   };
 
+  // F2 — Wegnetz aus der Übergabe als Rep-Load-Artefakt nach data/wegnetze/ committen.
+  const [wegnetzBusy, setWegnetzBusy] = useState(false);
+  const [wegnetzResult, setWegnetzResult] = useState<CommitResult | null>(null);
+
+  const onCommitWegnetz = async () => {
+    if (!handoff || !handoff.net) return;
+    setWegnetzBusy(true);
+    setWegnetzResult(null);
+    const slug = slugify(handoff.name || handoff.region || 'boundary');
+    const file: WegnetzFile = {
+      schema: 'scim3_wegnetz_v1',
+      id: slug,
+      geometry_id: slug,
+      edges: handoff.net.edges,
+      gates: handoff.net.gates,
+      cropped: handoff.net.cropped,
+      primary_count: handoff.net.primaryCount,
+      connector_count: handoff.net.connectorCount,
+      created_at: new Date().toISOString().slice(0, 10),
+    };
+    const result = await commitToRepo({
+      path: `data/wegnetze/${slug}.json`,
+      content: JSON.stringify(file, null, 2) + '\n',
+      message: `wegnetz: ${slug} via Workspace-Übergabe (F2)`,
+    });
+    setWegnetzResult(result);
+    setWegnetzBusy(false);
+  };
+
   const catalogs: CatalogRef[] = useMemo(() => {
     const grunberg = parsePoiCatalog(gruenbergMd as string, {
       region_id: 'gruenberg',
@@ -343,6 +372,23 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
               {boundaryBusy ? 'Committe Boundary …' : 'Boundary committen (F1)'}
             </button>
             <button
+              onClick={onCommitWegnetz}
+              disabled={wegnetzBusy || !handoff.net}
+              title={handoff.net
+                ? 'Schreibt das Wegnetz als Rep-Load-Artefakt nach data/wegnetze/ — referenziert die Boundary per geometry_id (F2).'
+                : 'Kein Wegnetz übergeben.'}
+              style={{
+                fontSize: 12, padding: '7px 12px', fontWeight: 600,
+                border: `1px solid ${handoff.net ? '#2b6cb0' : '#cbd5e0'}`,
+                borderRadius: 5,
+                background: wegnetzBusy ? '#bee3f8' : handoff.net ? '#2b6cb0' : '#edf2f7',
+                color: wegnetzBusy ? '#2c5282' : handoff.net ? '#fff' : '#a0aec0',
+                cursor: wegnetzBusy ? 'wait' : handoff.net ? 'pointer' : 'not-allowed',
+              }}
+            >
+              {wegnetzBusy ? 'Committe Wegnetz …' : 'Wegnetz committen (F2)'}
+            </button>
+            <button
               onClick={() => onJumpTo('geometry_editor')}
               style={{
                 fontSize: 12, padding: '7px 12px', cursor: 'pointer',
@@ -386,6 +432,32 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
                 </>
               ) : (
                 <>✗ Commit fehlgeschlagen: {boundaryResult.error}</>
+              )}
+            </div>
+          )}
+
+          {wegnetzResult && (
+            <div style={{
+              marginTop: 8, fontSize: 11, lineHeight: 1.5,
+              padding: '8px 10px', borderRadius: 4,
+              background: wegnetzResult.ok ? '#f0fff4' : '#fff5f5',
+              border: `1px solid ${wegnetzResult.ok ? '#9ae6b4' : '#feb2b2'}`,
+              color: wegnetzResult.ok ? '#22543d' : '#742a2a',
+            }}>
+              {wegnetzResult.ok ? (
+                <>
+                  ✓ Wegnetz {wegnetzResult.was_update ? 'aktualisiert' : 'committet'} ·{' '}
+                  <code>{wegnetzResult.path}</code>
+                  {wegnetzResult.commit_url && (
+                    <>
+                      {' · '}
+                      <a href={wegnetzResult.commit_url} target="_blank" rel="noreferrer"
+                        style={{ color: '#2b6cb0' }}>Commit ansehen</a>
+                    </>
+                  )}
+                </>
+              ) : (
+                <>✗ Commit fehlgeschlagen: {wegnetzResult.error}</>
               )}
             </div>
           )}

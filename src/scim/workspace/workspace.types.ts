@@ -45,6 +45,27 @@ export interface BoundaryGeometry {
   raw: BoundaryGeometryFile;  // fuer Map-Rendering durchgereicht
 }
 
+// ─── Wegnetz ────────────────────────────────────────────────────────────────
+//
+// File-Format: data/wegnetze/<id>.json. Trägt das im Drawer abgeleitete (und
+// ggf. maskierte) Wanderwegnetz: Kanten + Gate-Knoten + Zählungen. Bildet mit
+// der Boundary das "Rep-Load-Paket" — referenziert die Boundary per geometry_id,
+// dupliziert ihre Koordinaten nicht.
+
+import type { PathEdge, GateNode } from '../regio-content/pathEngine';
+
+export interface WegnetzFile {
+  schema: 'scim3_wegnetz_v1';
+  id: string;                 // = slug, identisch zur Boundary-id (gemeinsamer Anker)
+  geometry_id: string;        // Referenz auf BoundaryGeometry.id (der Anker)
+  edges: PathEdge[];          // Netz-Kanten (inNet); gekappt falls maskiert
+  gates: GateNode[];          // inner-/outer-gate-Knoten (leer wenn nicht maskiert)
+  cropped: boolean;           // mit Slot-2-Maske zugeschnitten?
+  primary_count: number;
+  connector_count: number;
+  created_at: string;         // ISO date
+}
+
 // ─── Representation ─────────────────────────────────────────────────────────
 
 export interface RepresentationFile {
