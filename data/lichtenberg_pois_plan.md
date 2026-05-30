@@ -11,64 +11,66 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 
 ---
 
+---
+
 ## Tabelle 1 · POI-Liste
 
 ### Points_historical
 
 | Code | Icon | Tagline | Description | Coord | Cluster | Status |
 |---|---|---|---|---|---|---|
-| poi_001 | bildstock | Schönangerer | Marterl am Wegrand beim Schönangerer-Hof | 14.24776, 48.40144 | — | ✓ |
-| poi_002 | bildstock+ | Rotes Kreuz seit 1973 | Hölzernes Wegkreuz im Wald-Sattel | 14.24486, 48.38024 | — | ✓ |
+| boeh-lichtenberg-tewu | bildstock | Schönangerer | Marterl am Wegrand beim Schönangerer-Hof | 14.24776, 48.40144 | — | ✓ |
+| boeh-lichtenberg-shu4 | bildstock+ | Rotes Kreuz seit 1973 | Hölzernes Wegkreuz im Wald-Sattel | 14.24486, 48.38024 | — | ✓ |
 
 ### Points_others
 
 | Code | Icon | Tagline | Description | Coord | Cluster | Status |
 |---|---|---|---|---|---|---|
-| poi_003 | sender | Sender | UKW/DAB/TV-Sender 155 m hoch (seit 1960) | 14.25457, 48.38470 | Lichtenberg | ✓ |
+| boeh-lichtenberg-9qr3 | sender | Sender | UKW/DAB/TV-Sender 155 m hoch (seit 1960) | 14.25457, 48.38470 | Lichtenberg | ✓ |
 
 ### Square_Rest
 
 | Code | Icon | Tagline | Description | Coord | Cluster | Status |
 |---|---|---|---|---|---|---|
-| poi_004 | aussichtswarte+ | Giselawarte 927 m | Steinblock-Aussichtswarte von 1857, 17,5 m hoch | 14.25445, 48.38515 | Lichtenberg *(Cluster-Icon)* | ✓ |
-| poi_005 | aussichtspunkt | Kogl | Blick über die Koglerau ins Donautal und auf das Alpenpanorama | 14.23873, 48.38005 | — | ✓ |
+| boeh-lichtenberg-pcck | aussichtswarte+ | Giselawarte 927 m | Steinblock-Aussichtswarte von 1857, 17,5 m hoch | 14.25445, 48.38515 | Lichtenberg *(Cluster-Icon)* | ✓ |
+| boeh-lichtenberg-e6e8 | aussichtspunkt | Kogl | Blick über die Koglerau ins Donautal und auf das Alpenpanorama | 14.23873, 48.38005 | — | ✓ |
 
 ### Regenerate_Substanze
 
 | Code | Icon | Tagline | Description | Coord | Cluster | Status |
 |---|---|---|---|---|---|---|
-| poi_006 | gasthaus+ | zur Gis a° 1702 | Jausenstation seit 1702 am Gipfel | 14.25622, 48.38309 | Lichtenberg | ✓ |
-| poi_007 | gasthaus | Eidenberger | Ausflugsgasthaus mit Tiroler Almhütte | 14.23322, 48.39395 | — | ✓ |
+| boeh-lichtenberg-92dz | gasthaus+ | zur Gis a° 1702 | Jausenstation seit 1702 am Gipfel | 14.25622, 48.38309 | Lichtenberg | ✓ |
+| boeh-lichtenberg-fpav | gasthaus | Eidenberger | Ausflugsgasthaus mit Tiroler Almhütte | 14.23322, 48.39395 | — | ✓ |
 
 ### Regenerate_Water
 
 | Code | Icon | Tagline | Description | Coord | Cluster | Status |
 |---|---|---|---|---|---|---|
-| poi_008 | gewaesser | Pollack-Quelle | Trinkwasserquelle am Berg | 14.25879, 48.38264 | Lichtenberg | ✓ |
+| boeh-lichtenberg-2cvm | gewaesser | Pollack-Quelle | Trinkwasserquelle am Berg | 14.25879, 48.38264 | Lichtenberg | ✓ |
 
 ### Transport_Parking/(Charging)
 
 | Code | Icon | Tagline | Description | Coord | Cluster | Status |
 |---|---|---|---|---|---|---|
-| poi_009 | parkplatz | Gisela Parkplatz |  | 14.25724, 48.38040 | Lichtenberg | ✓ |
+| boeh-lichtenberg-uap8 | parkplatz | Gisela Parkplatz |  | 14.25724, 48.38040 | Lichtenberg | ✓ |
 
 ### Service_Sleep
 
 | Code | Icon | Tagline | Description | Coord | Cluster | Status |
 |---|---|---|---|---|---|---|
-| poi_010 | hotel | Lamahof | Bauernhof-Unterkunft mit Lamas | 14.23566, 48.40170 | — | ✓ |
+| boeh-lichtenberg-mg6x | hotel | Lamahof | Bauernhof-Unterkunft mit Lamas | 14.23566, 48.40170 | — | ✓ |
 
 ### Service_Others
 
 | Code | Icon | Tagline | Description | Coord | Cluster | Status |
 |---|---|---|---|---|---|---|
-| poi_011 | werkstatt | Kranzler ab Hof | Ab-Hof-Verkauf | 14.25954, 48.37282 | — | ✓ |
+| boeh-lichtenberg-5ba3 | werkstatt | Kranzler ab Hof | Ab-Hof-Verkauf | 14.25954, 48.37282 | — | ✓ |
 
 ### Cluster
 
 | Code | Icon | Tagline | Description | Coord | Cluster | Status |
 |---|---|---|---|---|---|---|
-| poi_012 | aussichtspunkt | Gis 927 m | Sender, Giselawarte und Gasthaus am Lichtenberg-Gipfel | ↑ | Lichtenberg | cluster_ghost |
+| boeh-lichtenberg-9mqd | aussichtspunkt | Gis 927 m | Sender, Giselawarte und Gasthaus am Lichtenberg-Gipfel | ↑ | Lichtenberg | cluster_ghost |
 
 ---
 
@@ -117,6 +119,8 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 - Service: Sub-Differenzierung allein durch das Innensymbol
 - Cluster: keine Sub (magenta einheitlich)
 - Hexagon-Ring: transparent als unsichtbarer Cluster-Ring · opaque als vereinigtes Cluster-POI beim Herauszoomen
+
+---
 
 ---
 
