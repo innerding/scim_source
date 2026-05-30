@@ -14,6 +14,7 @@ import {
   mergeEdits, patchPoi, resetPoi, saveEditState, undeletePoi,
 } from '../../poi-catalog/poiCatalog.editor';
 import { compactDiff, diffLines, serializeCatalogToMd } from '../../poi-catalog/poiCatalog.serializer';
+import { fetchLatestCatalogMd, type CatalogSource } from '../../poi-catalog/catalogRuntime';
 import { commitToRepo, type CommitResult } from '../../../runtime/commitBridge';
 import type {
   Bucket, CatalogPoi, CoordStatus, MergedPoi, PoiCatalogEditState, Subcategory,
@@ -1358,13 +1359,33 @@ export default function CatalogTab({ onJumpTo }: { onJumpTo?: (panelId: string) 
   const [regionId, setRegionId] = useState<string>(REGIONS[0].id);
   const region = REGIONS.find((r) => r.id === regionId)!;
 
+  // Schritt B: Live-Katalog zur Laufzeit von GitHub laden. Der gebündelte
+  // region.md ist nur die SAAT (sofort sichtbar, nie leer); sobald die
+  // committete Wahrheit eintrifft, wird sie eingewechselt. Patches hängen seit
+  // Schritt A am stabilen Token → reconcilen sauber trotz Grundtext-Wechsel.
+  const [runtimeMd, setRuntimeMd] = useState<string | null>(null);
+  const [catalogSource, setCatalogSource] = useState<CatalogSource>('loading');
+
+  useEffect(() => {
+    let cancelled = false;
+    setRuntimeMd(null);          // Saat des neuen Region-Bündels zeigen
+    setCatalogSource('loading');
+    fetchLatestCatalogMd(region.id).then((md) => {
+      if (cancelled) return;
+      if (md) { setRuntimeMd(md); setCatalogSource('live'); }
+      else { setCatalogSource('bundled'); }
+    });
+    return () => { cancelled = true; };
+  }, [region.id]);
+
+  const effectiveMd = runtimeMd ?? region.md;
   const baseCatalog = useMemo(
-    () => parsePoiCatalog(region.md, {
+    () => parsePoiCatalog(effectiveMd, {
       region_id: region.id,
       region_name: region.name,
       source_path: `data/${region.id}_pois_plan.md`,
     }),
-    [region],
+    [effectiveMd, region.id, region.name],
   );
 
   const [editState, setEditState] = useState<PoiCatalogEditState>(() => loadEditState(region.id));
@@ -1590,7 +1611,22 @@ export default function CatalogTab({ onJumpTo }: { onJumpTo?: (panelId: string) 
           </>
         )}
 
-        <span style={{ fontSize: 11, color: '#718096', fontFamily: 'monospace', marginLeft: 'auto' }}>
+        <span
+          title={
+            catalogSource === 'live' ? 'Grundtext live von GitHub (neueste Veröffentlichung)'
+            : catalogSource === 'loading' ? 'Lade neueste Veröffentlichung …'
+            : 'Konnte GitHub nicht erreichen — gebündelter Stand vom letzten Build'
+          }
+          style={{
+            fontSize: 10, fontFamily: 'monospace', marginLeft: 'auto',
+            padding: '1px 7px', borderRadius: 10,
+            background: catalogSource === 'live' ? '#c6f6d5' : catalogSource === 'loading' ? '#e2e8f0' : '#feebc8',
+            color: catalogSource === 'live' ? '#22543d' : catalogSource === 'loading' ? '#4a5568' : '#7b341e',
+          }}
+        >
+          {catalogSource === 'live' ? '● live' : catalogSource === 'loading' ? '○ lädt …' : '◐ gebündelt'}
+        </span>
+        <span style={{ fontSize: 11, color: '#718096', fontFamily: 'monospace', marginLeft: 8 }}>
           {merged.pois.filter((p) => !p._isDeleted).length} POIs · ✓ {statusCounts.exact} · ≈ {statusCounts.estimated} · ❓ {statusCounts.missing}{statusCounts.cluster_ghost > 0 && <> · ↑ {statusCounts.cluster_ghost}</>}
         </span>
       </div>
