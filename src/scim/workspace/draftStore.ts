@@ -114,12 +114,24 @@ export function listDrafts(): Draft[] {
   } catch { /* fällt auf Migration zurück */ }
   // Erstzugriff: Legacy übernehmen und Schlüssel schreiben (idempotent).
   const migrated = migrateLegacy();
-  saveDrafts(migrated);
+  try { saveDrafts(migrated); } catch { /* Erstmigration darf still scheitern */ }
   return migrated;
 }
 
+// WIRFT bei Fehler (z. B. Quota) — Aufrufer (onSave) macht das sichtbar.
 export function saveDrafts(drafts: Draft[]): void {
-  try { localStorage.setItem(DRAFTS_KEY, JSON.stringify(drafts)); } catch { /* ignore */ }
+  localStorage.setItem(DRAFTS_KEY, JSON.stringify(drafts));
+}
+
+// Gesamtgröße des localStorage (Bytes, UTF-16-nah) — fürs Speicher-Budget.
+export function localStorageBytes(): number {
+  let total = 0;
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k == null) continue;
+    total += k.length + (localStorage.getItem(k)?.length ?? 0);
+  }
+  return total * 2; // UTF-16: 2 Bytes/Zeichen
 }
 
 export function getDraft(id: string): Draft | null {

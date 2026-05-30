@@ -19,7 +19,7 @@ import '@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css';
 import type { Position } from 'geojson';
 import { GEOMETRIES } from '../../workspace/workspace.registry';
 import { type HandoffNet } from '../../workspace/draftHandoff';
-import { getDraft, createDraft, updateDraft } from '../../workspace/draftStore';
+import { getDraft, createDraft, updateDraft, localStorageBytes } from '../../workspace/draftStore';
 import { parsePoiCatalog } from '../../poi-catalog/poiCatalog.parser';
 import RepresentBuildTetrahedron from '../RepresentBuildTetrahedron';
 import type { RepresentBuildFace } from '../RepresentBuildTetrahedron';
@@ -205,6 +205,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   // saved=true direkt nach dem Speichern (B2 solid blau, 2b); jede Änderung
   // setzt es auf dirty zurück.
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
   const onSave = () => {
     if (geometryId !== 'new') return;                 // committete Geometry = nur Ansicht
@@ -219,9 +220,16 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       name, reference: polygon, boundary: maskPolygon,
       net_unmasked: netUn, net_masked: netMa, catalog_id: overlayCatalogId || null,
     };
-    if (activeDraftId) updateDraft(activeDraftId, patch);
-    else { const d = createDraft(name || 'Unbenannter Draft', patch); setActiveDraftId(d.id); }
-    setSaved(true);
+    try {
+      if (activeDraftId) updateDraft(activeDraftId, patch);
+      else { const d = createDraft(name || 'Unbenannter Draft', patch); setActiveDraftId(d.id); }
+      setSaved(true);
+      setSaveError('');
+    } catch (e) {
+      // Schreiben fehlgeschlagen (z. B. localStorage-Quota) — sichtbar machen.
+      setSaveError(`Speichern fehlgeschlagen: ${(e as Error).message} · localStorage ${formatBytes(localStorageBytes())}`);
+      setSaved(false);
+    }
   };
 
   // Jede Änderung am Zustand → dirty (B2 nicht mehr solid; muss neu gespeichert werden).
@@ -868,7 +876,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
         {/* F7-Diagnose: an welchen Draft bindet der Drawer + was liegt im Speicher? */}
         {geometryId === 'new' && (
           <span style={{ fontSize: 9, fontFamily: 'monospace', color: '#718096', marginBottom: 6, marginRight: 8, whiteSpace: 'nowrap' }}>
-            {activeDraftId ? `→ ${activeDraftId}` : '→ NEU'} · B1 {polygon?.length ?? 0} · B2 {maskPolygon?.length ?? 0} · Netz {pathResult ? 'ja' : '–'}
+            {activeDraftId ? `→ ${activeDraftId}` : '→ NEU'} · B1 {polygon?.length ?? 0} · B2 {maskPolygon?.length ?? 0} · Netz {pathResult ? 'ja' : '–'} · LS {formatBytes(localStorageBytes())}
           </span>
         )}
         {/* F7-Neufassung: expliziter Speichern-Button (tab-unabhängig). Speichert
@@ -895,6 +903,16 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
           </span>
         )}
       </div>
+
+      {saveError && (
+        <div style={{
+          margin: '4px 12px', padding: '6px 10px', borderRadius: 5,
+          background: '#fff5f5', border: '1px solid #feb2b2', color: '#9b2c2c',
+          fontSize: 11, lineHeight: 1.4,
+        }}>
+          ✗ {saveError}
+        </div>
+      )}
 
       {/* Ebenen-Steuerleiste (A) — Dimmer + On/Off, auf beide Tabs wirksam */}
       <div style={{
