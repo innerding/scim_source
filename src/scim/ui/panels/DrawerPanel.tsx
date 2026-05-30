@@ -32,6 +32,7 @@ import {
   type PathFetchResult, type AnchorSummary, type PoiInput, type CropResult,
   type PathEdge, type GateNode,
 } from '../../regio-content/pathEngine';
+import { graphCompose, netzComponents, type NetGraphEdge } from '../../regio-content/netGraph';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import gruenbergMd from '../../../../data/gruenberg_pois_plan.md?raw';
@@ -131,6 +132,12 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   const [anchorSummary, setAnchorSummary] = useState<AnchorSummary | null>(null);
   // Maskierung/Crop (Umbauplan D): Ergebnis des Zuschnitts mit der Slot-2-Maske.
   const [cropResult, setCropResult] = useState<CropResult | null>(null);
+
+  // E2b — Konnektivitätsfärbung: Komponenten ≥ netLenThresh (m) gelten als „Netz"
+  // (schwarz), kürzere als „Rest" (grün). sackgassenRot legt rot über alle
+  // degree-1-Enden (Default: Grundfarbe der Komponente). Reiner Render-Zustand.
+  const [netLenThresh, setNetLenThresh] = useState(300);
+  const [sackgassenRot, setSackgassenRot] = useState(false);
 
   // Inspector-Compare: das Polygon der vom Inspector gezeigten R kann
   // als read-only Referenz in Violett unter den Editor gelegt werden
@@ -606,30 +613,53 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     }
   }, [overlayCatalogId]);
 
-  // Wegnetz auf den Map-Layer zeichnen. Primaere Wege gruen-blau; aktive
-  // Konnektoren (Asphalt) grau darunter, damit sichtbar wird, wie sie Luecken
-  // zwischen den Wegen schliessen. Inaktive Konnektoren bleiben unsichtbar.
+  // Wegnetz auf den Map-Layer zeichnen — E2b: Färbung nach KONNEKTIVITÄT
+  // (nicht mehr nach Herkunft). Der Graph wird verschweißt (graphCompose),
+  // Komponenten nach Länge klassifiziert:
+  //   schwarz = Netz (Komponente ≥ netLenThresh)
+  //   grün    = Rest (kürzere Komponenten / abgetrennte Äste)
+  //   rot     = Sackgassen (degree-1-Enden) — nur wenn sackgassenRot an
+  // Default tragen Sackgassen die Grundfarbe ihrer Komponente.
+  const NETZ_COLOR = '#222a35';
+  const REST_COLOR = '#1f9d8f';
+  const SACK_COLOR = '#e53e3e';
   const renderPath = (res: PathFetchResult | null) => {
     const layer = pathLayerRef.current;
     if (!layer) return;
     layer.clearLayers();
     if (!res) return;
-    // Konnektoren zuerst (liegen unter den primaeren Wegen).
+
+    const graph = graphCompose(res.edges);
+    const netzSet = netzComponents(graph, netLenThresh);
+    const geByEdgeId = new Map<number, NetGraphEdge>();
+    for (const ge of graph.edges) geByEdgeId.set(ge.edgeId, ge);
+
+    // Pro Netz-Kante Farbe + Gewicht aus der Konnektivität ableiten.
+    const styled: { edge: PathEdge; color: string; weight: number; red: boolean }[] = [];
     for (const edge of res.edges) {
-      if (edge.source === 'primary' || !isNetEdge(edge)) continue;
-      L.polyline(edge.points, {
-        color: '#8a94a6',
-        weight: 3,
-        opacity: 0.7,
-      }).addTo(layer);
+      if (!isNetEdge(edge)) continue;
+      const ge = geByEdgeId.get(edge.id);
+      let color = REST_COLOR;
+      let weight = 2;
+      let red = false;
+      if (ge) {
+        const comp = graph.nodes[ge.from].component;
+        const isNetz = netzSet.has(comp);
+        color = isNetz ? NETZ_COLOR : REST_COLOR;
+        weight = isNetz ? 3 : 2;
+        const isSack = graph.nodes[ge.from].degree === 1 || graph.nodes[ge.to].degree === 1;
+        if (sackgassenRot && isSack) { color = SACK_COLOR; red = true; }
+      }
+      styled.push({ edge, color, weight, red });
     }
-    for (const edge of res.edges) {
-      if (edge.source !== 'primary') continue;
-      L.polyline(edge.points, {
-        color: '#1f9d8f',
-        weight: 2,
-        opacity: 0.85,
-      }).addTo(layer);
+    // Erst Grundfarben, dann rote Sackgassen darüber (gut sichtbar).
+    for (const s of styled) {
+      if (s.red) continue;
+      L.polyline(s.edge.points, { color: s.color, weight: s.weight, opacity: 0.85 }).addTo(layer);
+    }
+    for (const s of styled) {
+      if (!s.red) continue;
+      L.polyline(s.edge.points, { color: s.color, weight: 3, opacity: 0.95 }).addTo(layer);
     }
   };
 
@@ -714,6 +744,14 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       renderGates(null);
     }
   }, [masked]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // E2b: Schwelle/Sackgassen-Toggle ändern nur die Färbung → ohne neuen Fetch
+  // den aktuellen Zustand (maskiert oder voll) neu zeichnen.
+  useEffect(() => {
+    if (!pathResult) return;
+    if (masked && cropResult) renderPath({ ...pathResult, edges: cropResult.edges });
+    else renderPath(pathResult);
+  }, [netLenThresh, sackgassenRot]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // F7-Neufassung: Die Handoff-Brücke entfällt. Der Drawer schreibt direkt in den
   // Workspace-Draft (onSave); der Commit lebt im Workspace.
@@ -1032,6 +1070,10 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
             result={pathResult}
             anchor={anchorSummary}
             crop={cropResult}
+            netLenThresh={netLenThresh}
+            onNetLenThresh={setNetLenThresh}
+            sackgassenRot={sackgassenRot}
+            onSackgassenRot={setSackgassenRot}
           />
         )}
         <div ref={mapContainerRef} style={{ flex: 1, minHeight: 0, minWidth: 0 }} />
@@ -1075,7 +1117,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
 
 function PathFilterMenu({
   gebiet, gebietLabel, canApply, onResized, onApply, status, error, result, anchor,
-  crop,
+  crop, netLenThresh, onNetLenThresh, sackgassenRot, onSackgassenRot,
 }: {
   gebiet: string;
   gebietLabel: string;
@@ -1087,6 +1129,10 @@ function PathFilterMenu({
   result: import('../../regio-content/pathEngine').PathFetchResult | null;
   anchor: AnchorSummary | null;
   crop: CropResult | null;
+  netLenThresh: number;
+  onNetLenThresh: (v: number) => void;
+  sackgassenRot: boolean;
+  onSackgassenRot: (v: boolean) => void;
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const [cfg, setCfg] = useState<PathConfig>(() => loadPathConfig(gebiet));
@@ -1225,6 +1271,28 @@ function PathFilterMenu({
         </div>
       </Section>
 
+      <Section title="Konnektivität (E2)">
+        <Slider
+          label="Netz-Schwelle (Länge)"
+          value={netLenThresh}
+          min={0} max={3000} step={25}
+          onChange={onNetLenThresh}
+        />
+        <div style={{ padding: '0 10px 4px', fontSize: 10, color: '#a0aec0', lineHeight: 1.5 }}>
+          Komponenten ab dieser Gesamtlänge gelten als <b style={{ color: '#222a35' }}>Netz</b> (schwarz),
+          kürzere als <b style={{ color: '#1f9d8f' }}>Rest</b> (grün). Live, ohne neu zu laden.
+        </div>
+        <Check
+          label="Sackgassen rot"
+          checked={sackgassenRot}
+          onChange={onSackgassenRot}
+        />
+        <div style={{ padding: '0 10px', fontSize: 10, color: '#a0aec0', lineHeight: 1.5 }}>
+          Legt <b style={{ color: '#e53e3e' }}>rot</b> über alle degree-1-Enden (Sackgassen),
+          egal welche Grundfarbe.
+        </div>
+      </Section>
+
       <Section title="Ausschlüsse">
         <Check
           label="foot=no"
@@ -1248,11 +1316,6 @@ function PathFilterMenu({
           label="Lücken markieren"
           checked={cfg.diagnose.luecken_markieren}
           onChange={(v) => update((c) => ({ ...c, diagnose: { ...c.diagnose, luecken_markieren: v } }))}
-        />
-        <Check
-          label="Sackgassen ausblenden"
-          checked={cfg.diagnose.sackgassen_ausblenden}
-          onChange={(v) => update((c) => ({ ...c, diagnose: { ...c.diagnose, sackgassen_ausblenden: v } }))}
         />
         <Slider
           label="POI-Ausnahme-Distanz"
@@ -1326,22 +1389,23 @@ function PathFilterMenu({
             fontSize: 11, lineHeight: 1.6, padding: '7px 9px', borderRadius: 5,
             background: '#f0fff4', border: '1px solid #9ae6b4', color: '#22543d',
           }}>
+            {/* E2b: Färbung nach Konnektivität (nicht mehr nach Herkunft). */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{
-                display: 'inline-block', width: 14, height: 0,
-                borderTop: '2px solid #1f9d8f',
-              }} />
-              <strong>{result.primaryCount}</strong> primäre Wege
+              <span style={{ display: 'inline-block', width: 14, height: 0, borderTop: '3px solid #222a35' }} />
+              <span><b>Netz</b> (Länge ≥ {netLenThresh} m)</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
-              <span style={{
-                display: 'inline-block', width: 14, height: 0,
-                borderTop: '3px solid #8a94a6',
-              }} />
-              <strong>{result.connectorCount}</strong> Bridge-Konnektoren (Asphalt)
+              <span style={{ display: 'inline-block', width: 14, height: 0, borderTop: '2px solid #1f9d8f' }} />
+              <span><b>Rest</b> (kürzere Komponenten)</span>
             </div>
+            {sackgassenRot && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                <span style={{ display: 'inline-block', width: 14, height: 0, borderTop: '3px solid #e53e3e' }} />
+                <span><b>Sackgassen</b> (degree-1)</span>
+              </div>
+            )}
             <div style={{ color: '#718096', marginTop: 2 }}>
-              {result.rawWayCount} OSM-Ways geladen
+              {result.primaryCount} primär · {result.connectorCount} Konnektoren · {result.rawWayCount} OSM-Ways
             </div>
             {/* F7: Netz-Datengröße (stabil, später fürs Auslieferungs-Budget). */}
             {(() => {
@@ -1372,9 +1436,9 @@ function PathFilterMenu({
           </div>
         )}
         <div style={{ fontSize: 10, color: '#a0aec0', lineHeight: 1.5 }}>
-          „Anwenden" lädt OSM (Overpass) für die Region-Boundary und zeichnet
-          primäre Wege (grün) plus aktive Konnektoren (grau). Lücken, Sackgassen
-          und das Verschweißen folgen in späteren Phasen.
+          „Anwenden" lädt OSM (Overpass) für die Region-Boundary, verschweißt das
+          Netz und färbt nach Konnektivität: schwarz = Netz, grün = Rest. Die
+          Netz-Schwelle trennt beide; Sackgassen lassen sich rot einblenden.
         </div>
       </div>
     </div>
