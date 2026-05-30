@@ -365,11 +365,18 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (maskLayerRef.current as any)?.pm?.disable?.();
     }
+  }, [tab, masked]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Karte neu vermessen + auf die Inspector-R zoomen — NUR bei echtem Tab-Wechsel,
+  // nicht beim Maskieren (sonst springt/zoomt die Karte unerwartet, F7.3a-Fix).
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
     setTimeout(() => {
       map.invalidateSize();
       if (tab === 'wegnetz') fitToInspector();
     }, 60);
-  }, [tab, masked]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [tab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Ebenen-Steuerleiste (A): Tiles dimmen/abschalten.
   useEffect(() => {
@@ -821,6 +828,31 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
           </span>
         )}
       </div>
+
+      {/* F7.3a-Fix: tab-unabhängiger Maskiert-Status + Lösen — sonst sitzt man im
+          Umriss-Tab fest, wo der Wegnetz-Maskierungs-Button fehlt. */}
+      {masked && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          padding: '6px 10px', margin: '4px 0', borderRadius: 5,
+          background: '#ebf8ff', border: '1px solid #2b6cb0',
+        }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: '#2b6cb0' }}>
+            ✓ Maskiert · Ready for Commit
+          </span>
+          <span style={{ flex: 1 }} />
+          <button
+            onClick={onToggleMask}
+            style={{
+              fontSize: 11, padding: '3px 10px', cursor: 'pointer',
+              border: '1px solid #2b6cb0', borderRadius: 4,
+              background: 'white', color: '#2b6cb0', fontWeight: 600,
+            }}
+          >
+            Maskierung lösen
+          </button>
+        </div>
+      )}
 
       {/* Ebenen-Steuerleiste (A) — Dimmer + On/Off, auf beide Tabs wirksam */}
       <div style={{
