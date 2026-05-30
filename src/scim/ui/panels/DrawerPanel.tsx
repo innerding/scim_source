@@ -181,16 +181,11 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   // F6: ein katalog-gebundener Draft schaltet seine POI-Platzhalter direkt scharf.
   const [overlayCatalogId, setOverlayCatalogId] = useState<string>(initial.catalogId);
   const [showExport, setShowExport] = useState(false);
-  // F7.3: maskiert/„Ready for Commit". B1 wird ausgeblendet + gesperrt, B2 wird
-  // blau-gestrichelt (Umriss). Toggle nur, wenn B2 (maskPolygon) existiert.
-  const [masked, setMasked] = useState<boolean>(initial.finalized);
-  const onToggleMask = () => {
-    setMasked((m) => {
-      const next = !m;
-      if (activeDraftId) updateDraft(activeDraftId, { finalized: next });
-      return next;
-    });
-  };
+  // F7.3: Maskierung ist eine REVERSIBLE Vorschau (Zwischenspeicher/Test), KEIN
+  // Commit. Rein lokaler Zustand — wird nicht in den Draft geschrieben. B1 wird
+  // ausgeblendet + gesperrt, B2 blau-gestrichelt (Umriss). Toggle nur im Wegnetz.
+  const [masked, setMasked] = useState<boolean>(false);
+  const onToggleMask = () => setMasked((m) => !m);
 
   // Persistenz in den aktiven Workspace-Draft (ersetzt den stillen Autospeicher).
   // Bei einer offenen committeten Geometry (geometryId !== 'new') wird NICHT
@@ -410,10 +405,15 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       invFillLayerRef.current = null;
     }
     const isDraft = geometryId === 'new';
-    if (!isDraft || !polygon || polygon.length < 3 || !boundaryVisible || masked) return;
+    // Fill IMMER außen (invert). Aktive Boundary: unmaskiert B1 (polygon),
+    // maskiert B2 (maskPolygon). Farbe folgt dem Zustand.
+    const active = masked ? maskPolygon : polygon;
+    if (!isDraft || !active || active.length < 3 || !boundaryVisible) return;
     const worldRing: [number, number][] = [[-90, -180], [-90, 180], [90, 180], [90, -180]];
-    const hole = polygon.map(([lng, lat]) => [lat, lng] as [number, number]);
-    const color = overlayCatalogId ? DRAFT_STROKE_ORANGE : DRAFT_STROKE_GELB;
+    const hole = active.map(([lng, lat]) => [lat, lng] as [number, number]);
+    const color = masked
+      ? (tab === 'umriss' ? SLOT1_COLOR : SLOT2_COLOR)
+      : (overlayCatalogId ? DRAFT_STROKE_ORANGE : DRAFT_STROKE_GELB);
     const inv = L.polygon([worldRing, hole], {
       stroke: false,
       fillColor: color,
@@ -424,7 +424,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     inv.bringToBack();
     tileLayerRef.current?.bringToBack();
     invFillLayerRef.current = inv;
-  }, [polygon, geometryId, overlayCatalogId, boundaryVisible, boundaryOpacity, tab]);
+  }, [polygon, maskPolygon, geometryId, overlayCatalogId, boundaryVisible, boundaryOpacity, tab, masked]);
 
   // Ebenen-Steuerleiste (A): Inspector-R-Vorlage dimmen.
   useEffect(() => {
@@ -449,7 +449,8 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     // gestrichelt (committbar), im Wegnetz-Tab rot (die Crop-Maske).
     const o = (masked || maskVisible) ? maskOpacity : 0;
     const color = (masked && tab === 'umriss') ? SLOT1_COLOR : SLOT2_COLOR;
-    layer.setStyle({ color, dashArray: SLOT2_DASH, opacity: o, fillOpacity: o * 0.08 });
+    // Kein Innen-Fill — alle Fills sind außen (Invert-Overlay).
+    layer.setStyle({ color, dashArray: SLOT2_DASH, opacity: o, fillOpacity: 0 });
   }, [maskVisible, maskOpacity, maskPolygon, geometryId, tab, masked]);
 
   // Geometry-Wechsel laedt neue Daten in die Map
@@ -639,16 +640,23 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     }
   };
 
-  // [Mit Maske zuschneiden] (Umbauplan D): das aktuelle Netz mit der Slot-2-
-  // Masken-Boundary kappen. Schnitt an realen OSM-Knoten (Vertices), gate-Knoten
-  // markieren. Rendert das gekappte Netz (ueber pathLayer) + Gates neu.
-  const onCropWithMask = () => {
-    if (!pathResult || !maskPolygon || maskPolygon.length < 3) return;
-    const res = cropNetToMask(pathResult.edges, maskPolygon);
-    setCropResult(res);
-    renderPath({ ...pathResult, edges: res.edges });
-    renderGates(res.gates);
-  };
+  // F7.3: Maskierung = REVERSIBLE Vorschau (Zwischenspeicher). masked an → Netz-
+  // Crop-Vorschau inkl. Gate-POIs; aus → voller Netz-Zustand zurück. Der echte,
+  // destruktive Crop passiert UNSICHTBAR erst am Commit im Workspace — der User
+  // bekommt ihn im Drawer nicht als Aktion zu sehen. Nichts wird persistiert.
+  useEffect(() => {
+    if (!pathResult) return;
+    if (masked && maskPolygon && maskPolygon.length >= 3) {
+      const res = cropNetToMask(pathResult.edges, maskPolygon);
+      setCropResult(res);
+      renderPath({ ...pathResult, edges: res.edges });
+      renderGates(res.gates);
+    } else {
+      setCropResult(null);
+      renderPath(pathResult);
+      renderGates(null);
+    }
+  }, [masked]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // [↩ An Workspace übergeben] (Umbauplan E): statt selbst ins Repo zu committen,
   // reicht der Drawer einen Snapshot (Boundary + Maske + Wegnetz + Gates) an den
@@ -829,31 +837,6 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
         )}
       </div>
 
-      {/* F7.3a-Fix: tab-unabhängiger Maskiert-Status + Lösen — sonst sitzt man im
-          Umriss-Tab fest, wo der Wegnetz-Maskierungs-Button fehlt. */}
-      {masked && (
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 8,
-          padding: '6px 10px', margin: '4px 0', borderRadius: 5,
-          background: '#ebf8ff', border: '1px solid #2b6cb0',
-        }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color: '#2b6cb0' }}>
-            ✓ Maskiert · Ready for Commit
-          </span>
-          <span style={{ flex: 1 }} />
-          <button
-            onClick={onToggleMask}
-            style={{
-              fontSize: 11, padding: '3px 10px', cursor: 'pointer',
-              border: '1px solid #2b6cb0', borderRadius: 4,
-              background: 'white', color: '#2b6cb0', fontWeight: 600,
-            }}
-          >
-            Maskierung lösen
-          </button>
-        </div>
-      )}
-
       {/* Ebenen-Steuerleiste (A) — Dimmer + On/Off, auf beide Tabs wirksam */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 18, padding: '5px 12px',
@@ -1005,7 +988,6 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
             anchor={anchorSummary}
             hasMask={!!maskPolygon && maskPolygon.length >= 3}
             hasNet={!!pathResult}
-            onCrop={onCropWithMask}
             crop={cropResult}
             canHandoff={!!polygon && polygon.length >= 3}
             onHandoff={onHandoffToWorkspace}
@@ -1066,7 +1048,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
 
 function PathFilterMenu({
   gebiet, gebietLabel, onResized, onApply, status, error, result, anchor,
-  hasMask, hasNet, onCrop, crop, canHandoff, onHandoff,
+  hasMask, hasNet, crop, canHandoff, onHandoff,
   masked, onToggleMask, canMask,
 }: {
   gebiet: string;
@@ -1079,7 +1061,6 @@ function PathFilterMenu({
   anchor: AnchorSummary | null;
   hasMask: boolean;
   hasNet: boolean;
-  onCrop: () => void;
   crop: CropResult | null;
   canHandoff: boolean;
   onHandoff: () => void;
@@ -1294,25 +1275,9 @@ function PathFilterMenu({
           {status === 'loading' ? '… lade OSM' : 'Anwenden'}
         </button>
 
-        {/* Maskierung/Crop (Umbauplan D) */}
-        <button
-          onClick={onCrop}
-          disabled={!hasNet || !hasMask}
-          title={
-            !hasNet ? 'Erst „Anwenden" — es gibt noch kein Netz zum Zuschneiden'
-              : !hasMask ? 'Keine Masken-Boundary (Slot 2). Im Umriss-Tab ein zweites Polygon über das Netz zeichnen.'
-              : 'Netz mit der Slot-2-Maske an realen OSM-Knoten kappen (inner-/outer-gate)'
-          }
-          style={{
-            fontSize: 12, padding: '7px 12px', fontWeight: 600,
-            border: '1px solid #c05621', borderRadius: 5,
-            background: (!hasNet || !hasMask) ? '#edf2f7' : '#fffaf0',
-            color: (!hasNet || !hasMask) ? '#a0aec0' : '#c05621',
-            cursor: (!hasNet || !hasMask) ? 'not-allowed' : 'pointer',
-          }}
-        >
-          ⧂ Mit Maske zuschneiden
-        </button>
+        {/* F7.3: KEIN destruktiver Crop-Button mehr. Der Schnitt passiert unsichtbar
+            erst am Commit im Workspace. Die Maskierung unten ist eine reversible
+            Vorschau; das crop-Info-Feld zeigt nur die Vorschau-Wirkung. */}
         {crop && (
           <div style={{
             fontSize: 11, lineHeight: 1.6, padding: '7px 9px', borderRadius: 5,
