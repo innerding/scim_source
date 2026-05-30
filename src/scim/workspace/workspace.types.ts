@@ -72,8 +72,10 @@ export interface RepresentationFile {
   schema: 'scim3_representation_v1';
   id: string;                 // 'rep_001' oder kebab-case
   name: string;               // Display-Name (default = Geometry-Name)
-  geometry_id: string;        // Referenz auf BoundaryGeometry.id
+  geometry_id: string;        // Referenz auf BoundaryGeometry.id (der Anker)
   catalog_id?: string;        // Referenz auf Catalog.id (z.B. 'gruenberg', 'lichtenberg')
+  wegnetz_id?: string;        // Referenz auf WegnetzFile.id (Rep-Load-Paket)
+  mask_polygon?: Position[];  // Crop-Boundary dieser Representation (optional)
   created_at: string;
   note?: string;
 }

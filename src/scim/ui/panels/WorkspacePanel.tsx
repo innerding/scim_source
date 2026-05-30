@@ -21,7 +21,7 @@ import type { CatalogRef } from '../../workspace/workspace.types';
 import { DRAFT_KEY } from './DrawerPanel';
 import { loadHandoff, clearHandoff, type RepresentHandoff } from '../../workspace/draftHandoff';
 import { commitToRepo, type CommitResult } from '../../../runtime/commitBridge';
-import type { BoundaryGeometryFile, WegnetzFile } from '../../workspace/workspace.types';
+import type { BoundaryGeometryFile, WegnetzFile, RepresentationFile } from '../../workspace/workspace.types';
 import type { Position } from 'geojson';
 
 // Stabiler slug aus einem freien Namen — passt zur Worker-Whitelist
@@ -252,6 +252,38 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
     setWegnetzBusy(false);
   };
 
+  // F3 — Representation-Manifest: bindet Boundary + Wegnetz + Katalog zu EINER
+  // Representation. Die Klammer über beide Pakete (Sichtbarkeit/Version bleibt
+  // bewusst draußen — das ist der Sensus-Core-Layer, siehe ann_076).
+  const [catalogBinding, setCatalogBinding] = useState<string>('');
+  const [repBusy, setRepBusy] = useState(false);
+  const [repResult, setRepResult] = useState<CommitResult | null>(null);
+
+  const onCommitRepresentation = async () => {
+    if (!handoff || handoff.boundaryPolygon.length < 3) return;
+    setRepBusy(true);
+    setRepResult(null);
+    const slug = slugify(handoff.name || handoff.region || 'boundary');
+    const file: RepresentationFile = {
+      schema: 'scim3_representation_v1',
+      id: `rep-${slug}`,
+      name: handoff.name || slug,
+      geometry_id: slug,
+      catalog_id: catalogBinding || undefined,
+      wegnetz_id: handoff.net ? slug : undefined,
+      mask_polygon: handoff.maskPolygon ?? undefined,
+      created_at: new Date().toISOString().slice(0, 10),
+      note: 'via Workspace-Übergabe (F3)',
+    };
+    const result = await commitToRepo({
+      path: `data/representations/rep-${slug}.json`,
+      content: JSON.stringify(file, null, 2) + '\n',
+      message: `representation: rep-${slug} via Workspace-Übergabe (F3)`,
+    });
+    setRepResult(result);
+    setRepBusy(false);
+  };
+
   const catalogs: CatalogRef[] = useMemo(() => {
     const grunberg = parsePoiCatalog(gruenbergMd as string, {
       region_id: 'gruenberg',
@@ -388,6 +420,34 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
             >
               {wegnetzBusy ? 'Committe Wegnetz …' : 'Wegnetz committen (F2)'}
             </button>
+            <select
+              value={catalogBinding}
+              onChange={(e) => setCatalogBinding(e.target.value)}
+              title="Katalog, den diese Representation bindet (catalog_id). Optional."
+              style={{
+                fontSize: 12, padding: '7px 8px', borderRadius: 5,
+                border: '1px solid #cbd5e0', background: 'white', color: '#2d3748',
+              }}
+            >
+              <option value="">Katalog: keiner</option>
+              {catalogs.map((c) => (
+                <option key={c.id} value={c.id}>Katalog: {c.name}</option>
+              ))}
+            </select>
+            <button
+              onClick={onCommitRepresentation}
+              disabled={repBusy}
+              title="Bindet Boundary + Wegnetz + Katalog zu einer Representation (data/representations/) — die Klammer über beide Pakete (F3)."
+              style={{
+                fontSize: 12, padding: '7px 12px', fontWeight: 600,
+                border: '1px solid #553c9a', borderRadius: 5,
+                background: repBusy ? '#e9d8fd' : '#553c9a',
+                color: repBusy ? '#44337a' : '#fff',
+                cursor: repBusy ? 'wait' : 'pointer',
+              }}
+            >
+              {repBusy ? 'Committe Representation …' : 'Representation committen (F3)'}
+            </button>
             <button
               onClick={() => onJumpTo('geometry_editor')}
               style={{
@@ -458,6 +518,32 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
                 </>
               ) : (
                 <>✗ Commit fehlgeschlagen: {wegnetzResult.error}</>
+              )}
+            </div>
+          )}
+
+          {repResult && (
+            <div style={{
+              marginTop: 8, fontSize: 11, lineHeight: 1.5,
+              padding: '8px 10px', borderRadius: 4,
+              background: repResult.ok ? '#faf5ff' : '#fff5f5',
+              border: `1px solid ${repResult.ok ? '#d6bcfa' : '#feb2b2'}`,
+              color: repResult.ok ? '#44337a' : '#742a2a',
+            }}>
+              {repResult.ok ? (
+                <>
+                  ✓ Representation {repResult.was_update ? 'aktualisiert' : 'committet'} ·{' '}
+                  <code>{repResult.path}</code>
+                  {repResult.commit_url && (
+                    <>
+                      {' · '}
+                      <a href={repResult.commit_url} target="_blank" rel="noreferrer"
+                        style={{ color: '#553c9a' }}>Commit ansehen</a>
+                    </>
+                  )}
+                </>
+              ) : (
+                <>✗ Commit fehlgeschlagen: {repResult.error}</>
               )}
             </div>
           )}
