@@ -526,39 +526,13 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
           <EmptyHint text="Noch keine Representations. Wave 2b baut den Wizard: Geometry + Katalog + Name → Representation. Erst dann werden SystemAdjust-Settings, Regio-Content und QR-Code für diese Representation aktiv." />
         ) : (
           REPRESENTATIONS.map((r) => {
-            const geo = GEOMETRIES.find((g) => g.id === r.geometry_id);
-            const cat = r.catalog_id ? catalogs.find((c) => c.id === r.catalog_id) : null;
             return (
               <ListItem
                 key={r.id}
                 icon="◇"
                 primary={r.name}
                 badge={r.id}
-                secondary={`Geometry: ${r.geometry_id}${r.catalog_id ? ` · Katalog: ${r.catalog_id}` : ' · kein Katalog'}`}
-                trailing={(
-                  <StatusRow
-                    geometry={{
-                      label: 'G',
-                      title: geo ? `Geometry "${r.geometry_id}" vorhanden` : `Geometry "${r.geometry_id}" fehlt — Editor öffnen`,
-                      state: geo ? 'ok' : 'missing',
-                      onClick: () => onJumpTo('geometry_editor'),
-                    }}
-                    catalog={{
-                      label: 'C',
-                      title: r.catalog_id
-                        ? (cat ? `Catalog "${r.catalog_id}" vorhanden` : `Catalog "${r.catalog_id}" fehlt — Katalog öffnen`)
-                        : 'Kein Catalog referenziert',
-                      state: !r.catalog_id ? 'none' : (cat ? 'ok' : 'missing'),
-                      onClick: () => onJumpTo('catalog'),
-                    }}
-                    rep={{
-                      label: 'R',
-                      title: 'Representation committed',
-                      state: 'ok',
-                      onClick: () => onJumpTo('workspace'),
-                    }}
-                  />
-                )}
+                secondary={`Geometry: ${r.geometry_id}${r.catalog_id ? ` · Katalog: ${r.catalog_id}` : ' · kein Katalog'}${r.wegnetz_id ? ` · Wegnetz: ${r.wegnetz_id}` : ''}`}
               />
             );
           })
@@ -581,55 +555,3 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
   );
 }
 
-// ─── Status-Pills ───────────────────────────────────────────────────────────
-//
-// Drei kleine Indikatoren pro Representation: Geometry / Catalog / Rep selbst.
-// State-Farben:
-//   ok        gruen — Wahrheit ist im Repo
-//   missing   orange — referenziert aber nicht gefunden (Lotse hin zum Panel)
-//   none      grau — nichts referenziert (z. B. Rep ohne Catalog)
-//
-// Klick lotst ins jeweilige Panel. Spaeter (Task #11/#12) zeigen die Pills
-// auch DRAFT-Stati aus Wizard-/Katalog-localStorage an.
-
-type PillState = 'ok' | 'missing' | 'none';
-
-interface PillProps {
-  label: string;
-  title: string;
-  state: PillState;
-  onClick: () => void;
-}
-
-function StatusPill({ label, title, state, onClick }: PillProps) {
-  const palette = {
-    ok:      { bg: '#c6f6d5', fg: '#22543d', border: '#9ae6b4' },
-    missing: { bg: '#feebc8', fg: '#7c2d12', border: '#fbd38d' },
-    none:    { bg: '#edf2f7', fg: '#718096', border: '#e2e8f0' },
-  }[state];
-  return (
-    <button
-      onClick={onClick}
-      title={title}
-      style={{
-        fontSize: 10, fontFamily: 'monospace', fontWeight: 700,
-        padding: '2px 7px', cursor: 'pointer',
-        background: palette.bg, color: palette.fg,
-        border: `1px solid ${palette.border}`, borderRadius: 3,
-        minWidth: 22, textAlign: 'center',
-      }}
-    >
-      {label}
-    </button>
-  );
-}
-
-function StatusRow({ geometry, catalog, rep }: { geometry: PillProps; catalog: PillProps; rep: PillProps }) {
-  return (
-    <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
-      <StatusPill {...geometry} />
-      <StatusPill {...catalog} />
-      <StatusPill {...rep} />
-    </div>
-  );
-}
