@@ -23,6 +23,17 @@ import { loadHandoff, clearHandoff, type RepresentHandoff } from '../../workspac
 import { commitToRepo, type CommitResult } from '../../../runtime/commitBridge';
 import type { BoundaryGeometryFile, WegnetzFile, RepresentationFile } from '../../workspace/workspace.types';
 import type { Position } from 'geojson';
+import {
+  listDrafts, createDraft, updateDraft, removeDraft, draftColor,
+  type Draft, type DraftColor,
+} from '../../workspace/draftStore';
+
+// Farb-Token der Draft-Reife (gelb ohne Katalog, orange mit, neutral als Slot).
+const DRAFT_COLORS: Record<DraftColor, { stroke: string; bg: string; text: string; label: string }> = {
+  neutral: { stroke: '#cbd5e0', bg: '#f7fafc', text: '#718096', label: 'Slot' },
+  gelb:    { stroke: '#ecc94b', bg: '#fffff0', text: '#975a16', label: 'ohne Katalog' },
+  orange:  { stroke: '#ed8936', bg: '#fffaf0', text: '#9c4221', label: 'mit Katalog' },
+};
 
 // Stabiler slug aus einem freien Namen — passt zur Worker-Whitelist
 // /^data\/geometries\/[a-z0-9][a-z0-9_-]*\.json$/.
@@ -191,6 +202,25 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
   // Uebergabe-Snapshot aus dem Drawer (Umbauplan E) — separater localStorage-Key.
   const [handoff, setHandoff] = useState<RepresentHandoff | null>(() => loadHandoff());
   const onDiscardHandoff = () => { clearHandoff(); setHandoff(null); };
+
+  // F4 — Draft-Pipeline: benannte Workspace-Objekte (ersetzt den stillen Autospeicher).
+  const [drafts, setDrafts] = useState<Draft[]>(() => listDrafts());
+  const [newDraftName, setNewDraftName] = useState('');
+  const refreshDrafts = () => setDrafts(listDrafts());
+
+  const onCreateDraft = () => {
+    const name = newDraftName.trim();
+    if (!name) return;
+    createDraft(name);
+    setNewDraftName('');
+    refreshDrafts();
+  };
+  const onRenameDraft = (id: string, name: string) => { updateDraft(id, { name }); refreshDrafts(); };
+  const onBindCatalog = (id: string, catalog_id: string) => {
+    updateDraft(id, { catalog_id: catalog_id || null });
+    refreshDrafts();
+  };
+  const onRemoveDraft = (id: string) => { removeDraft(id); refreshDrafts(); };
 
   // F1 — Boundary aus der Übergabe als eigenes Artefakt nach data/geometries/ committen.
   const [boundaryBusy, setBoundaryBusy] = useState(false);
@@ -549,6 +579,120 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
           )}
         </div>
       )}
+
+      {/* Package-Pipeline (F4) — Intake → Draft → gespeicherter Draft (+Katalog) */}
+      <Section title="Package-Pipeline" count={drafts.length}>
+        <div style={{ display: 'flex', gap: 14, alignItems: 'stretch', marginBottom: 12 }}>
+          {/* ① Intake (leer bis Regio-Dashboard existiert) */}
+          <div style={{
+            width: 180, flexShrink: 0, padding: '10px 12px', borderRadius: 6,
+            border: '1px dashed #cbd5e0', background: '#f7fafc',
+            display: 'flex', flexDirection: 'column', gap: 4,
+          }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: '#a0aec0', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              ① Intake
+            </div>
+            <div style={{ fontSize: 11, color: '#a0aec0', fontStyle: 'italic', lineHeight: 1.4 }}>
+              kein Regio-Dashboard verbunden
+            </div>
+          </div>
+
+          {/* ② Anlegen */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: '#718096', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>
+              ② Neuen Draft anlegen
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                value={newDraftName}
+                onChange={(e) => setNewDraftName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') onCreateDraft(); }}
+                placeholder="Name eingeben …"
+                style={{
+                  flex: 1, fontSize: 12, padding: '7px 10px', borderRadius: 5,
+                  border: '1px solid #cbd5e0',
+                }}
+              />
+              <button
+                onClick={onCreateDraft}
+                disabled={!newDraftName.trim()}
+                style={{
+                  fontSize: 12, padding: '7px 12px', fontWeight: 600, borderRadius: 5,
+                  border: '1px solid #ed8936',
+                  background: newDraftName.trim() ? '#ed8936' : '#edf2f7',
+                  color: newDraftName.trim() ? '#fff' : '#a0aec0',
+                  cursor: newDraftName.trim() ? 'pointer' : 'not-allowed',
+                }}
+              >
+                + Draft
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* ③ Draft-Liste */}
+        {drafts.length === 0 ? (
+          <EmptyHint text="Noch kein Draft. Lege oben einen an — er bekommt erst eine Boundary, sobald du ihn im Drawer öffnest." />
+        ) : (
+          drafts.map((d) => {
+            const c = DRAFT_COLORS[draftColor(d)];
+            return (
+              <div key={d.id} style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '8px 12px', borderRadius: 4, marginBottom: 6,
+                background: c.bg, border: `1px solid ${c.stroke}`, borderLeft: `4px solid ${c.stroke}`,
+              }}>
+                <input
+                  value={d.name}
+                  onChange={(e) => onRenameDraft(d.id, e.target.value)}
+                  style={{
+                    flex: 1, minWidth: 0, fontSize: 13, fontWeight: 600, color: '#2d3748',
+                    border: 'none', background: 'transparent', padding: '2px 0',
+                  }}
+                />
+                <span style={{ fontSize: 10, fontFamily: 'monospace', color: c.text, whiteSpace: 'nowrap' }}>
+                  {c.label}
+                </span>
+                <select
+                  value={d.catalog_id ?? ''}
+                  onChange={(e) => onBindCatalog(d.id, e.target.value)}
+                  title="Katalog binden — schaltet später die POI-Platzhalter im Drawer scharf."
+                  style={{
+                    fontSize: 11, padding: '4px 6px', borderRadius: 4,
+                    border: '1px solid #cbd5e0', background: 'white', color: '#2d3748',
+                  }}
+                >
+                  <option value="">Katalog: keiner</option>
+                  {catalogs.map((cat) => (
+                    <option key={cat.id} value={cat.id}>Katalog: {cat.name}</option>
+                  ))}
+                </select>
+                <button
+                  onClick={() => onJumpTo('geometry_editor')}
+                  style={{
+                    fontSize: 11, padding: '4px 10px', cursor: 'pointer',
+                    border: '1px solid #cbd5e0', borderRadius: 4,
+                    background: 'white', color: '#2b6cb0', fontWeight: 500,
+                  }}
+                >
+                  Im Drawer öffnen
+                </button>
+                <button
+                  onClick={() => onRemoveDraft(d.id)}
+                  title="Draft verwerfen"
+                  style={{
+                    fontSize: 11, padding: '4px 8px', cursor: 'pointer',
+                    border: '1px solid #e2e8f0', borderRadius: 4,
+                    background: 'white', color: '#a0aec0',
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+            );
+          })
+        )}
+      </Section>
 
       {/* Geometrien */}
       <Section
