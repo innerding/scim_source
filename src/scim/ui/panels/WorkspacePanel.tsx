@@ -20,6 +20,30 @@ import { GEOMETRIES, REPRESENTATIONS } from '../../workspace/workspace.registry'
 import type { CatalogRef } from '../../workspace/workspace.types';
 import { DRAFT_KEY } from './DrawerPanel';
 import { loadHandoff, clearHandoff, type RepresentHandoff } from '../../workspace/draftHandoff';
+import { commitToRepo, type CommitResult } from '../../../runtime/commitBridge';
+import type { BoundaryGeometryFile } from '../../workspace/workspace.types';
+import type { Position } from 'geojson';
+
+// Stabiler slug aus einem freien Namen — passt zur Worker-Whitelist
+// /^data\/geometries\/[a-z0-9][a-z0-9_-]*\.json$/.
+function slugify(name: string): string {
+  const s = name
+    .toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '') // Diakritika entfernen
+    .replace(/ß/g, 'ss')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return s || 'boundary';
+}
+
+// Boundary-Polygon (Position[] = [lon,lat][]) → geschlossener GeoJSON-Ring.
+function closedRing(polygon: Position[]): Position[] {
+  if (polygon.length < 3) return polygon;
+  const first = polygon[0];
+  const last = polygon[polygon.length - 1];
+  if (first[0] === last[0] && first[1] === last[1]) return polygon;
+  return [...polygon, first];
+}
 
 // Im Browser gezeichnete Geometry — sitzt in localStorage, noch nicht im Repo.
 interface GeometryDraft {
@@ -168,6 +192,37 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
   const [handoff, setHandoff] = useState<RepresentHandoff | null>(() => loadHandoff());
   const onDiscardHandoff = () => { clearHandoff(); setHandoff(null); };
 
+  // F1 — Boundary aus der Übergabe als eigenes Artefakt nach data/geometries/ committen.
+  const [boundaryBusy, setBoundaryBusy] = useState(false);
+  const [boundaryResult, setBoundaryResult] = useState<CommitResult | null>(null);
+
+  const onCommitBoundary = async () => {
+    if (!handoff || handoff.boundaryPolygon.length < 3) return;
+    setBoundaryBusy(true);
+    setBoundaryResult(null);
+    const slug = slugify(handoff.name || handoff.region || 'boundary');
+    const file: BoundaryGeometryFile = {
+      type: 'Feature',
+      properties: {
+        name: handoff.name || slug,
+        region: handoff.region || undefined,
+        source: 'Drawer-Übergabe (Workspace F1)',
+        drawn_at: new Date().toISOString().slice(0, 10),
+      },
+      geometry: {
+        type: 'Polygon',
+        coordinates: [closedRing(handoff.boundaryPolygon)],
+      },
+    };
+    const result = await commitToRepo({
+      path: `data/geometries/${slug}.json`,
+      content: JSON.stringify(file, null, 2) + '\n',
+      message: `boundary: ${slug} via Workspace-Übergabe (F1)`,
+    });
+    setBoundaryResult(result);
+    setBoundaryBusy(false);
+  };
+
   const catalogs: CatalogRef[] = useMemo(() => {
     const grunberg = parsePoiCatalog(gruenbergMd as string, {
       region_id: 'gruenberg',
@@ -274,15 +329,18 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
 
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <button
-              disabled
-              title="Der atomare Verbund-Commit (Boundary + Katalog-Bindung + Wegnetz) folgt in Umbauplan F."
+              onClick={onCommitBoundary}
+              disabled={boundaryBusy || handoff.boundaryPolygon.length < 3}
+              title="Schreibt die Boundary als eigenes Artefakt nach data/geometries/ — der Anker, auf den Katalog und Wegnetz zeigen (F1)."
               style={{
                 fontSize: 12, padding: '7px 12px', fontWeight: 600,
-                border: '1px solid #cbd5e0', borderRadius: 5,
-                background: '#edf2f7', color: '#a0aec0', cursor: 'not-allowed',
+                border: '1px solid #2b6cb0', borderRadius: 5,
+                background: boundaryBusy ? '#bee3f8' : '#2b6cb0',
+                color: boundaryBusy ? '#2c5282' : '#fff',
+                cursor: boundaryBusy ? 'wait' : 'pointer',
               }}
             >
-              Verbund committen — folgt (F)
+              {boundaryBusy ? 'Committe Boundary …' : 'Boundary committen (F1)'}
             </button>
             <button
               onClick={() => onJumpTo('geometry_editor')}
@@ -305,6 +363,32 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
               Verwerfen
             </button>
           </div>
+
+          {boundaryResult && (
+            <div style={{
+              marginTop: 10, fontSize: 11, lineHeight: 1.5,
+              padding: '8px 10px', borderRadius: 4,
+              background: boundaryResult.ok ? '#f0fff4' : '#fff5f5',
+              border: `1px solid ${boundaryResult.ok ? '#9ae6b4' : '#feb2b2'}`,
+              color: boundaryResult.ok ? '#22543d' : '#742a2a',
+            }}>
+              {boundaryResult.ok ? (
+                <>
+                  ✓ Boundary {boundaryResult.was_update ? 'aktualisiert' : 'committet'} ·{' '}
+                  <code>{boundaryResult.path}</code>
+                  {boundaryResult.commit_url && (
+                    <>
+                      {' · '}
+                      <a href={boundaryResult.commit_url} target="_blank" rel="noreferrer"
+                        style={{ color: '#2b6cb0' }}>Commit ansehen</a>
+                    </>
+                  )}
+                </>
+              ) : (
+                <>✗ Commit fehlgeschlagen: {boundaryResult.error}</>
+              )}
+            </div>
+          )}
         </div>
       )}
 
