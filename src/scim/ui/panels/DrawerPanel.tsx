@@ -923,6 +923,28 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
         >
           ▢→▣ B2 aus B1
         </button>
+        {/* Beschneiden-Toggle (aus dem Wegnetz-Tab hierher geholt) — reversible
+            Vorschau: maskiertes Netz erzeugen/verwerfen. Braucht B2. */}
+        <button
+          onClick={onToggleMask}
+          disabled={!maskPolygon || maskPolygon.length < 3}
+          title={
+            (!maskPolygon || maskPolygon.length < 3) ? 'Erst B2 (finale Boundary) zeichnen'
+              : masked ? 'Zurück — maskiertes Netz verwerfen, unmaskiertes zeigen'
+              : 'Beschneiden: maskiertes Netz (Vorschau) erzeugen'
+          }
+          style={{
+            fontSize: 10, padding: '3px 8px', marginBottom: 4, alignSelf: 'flex-start',
+            border: `1px solid ${(!maskPolygon || maskPolygon.length < 3) ? '#cbd5e0' : masked ? '#2b6cb0' : '#c05621'}`,
+            borderRadius: 4,
+            background: (!maskPolygon || maskPolygon.length < 3) ? '#edf2f7' : masked ? '#ebf8ff' : '#fff5f5',
+            color: (!maskPolygon || maskPolygon.length < 3) ? '#a0aec0' : masked ? '#2b6cb0' : '#c05621',
+            cursor: (!maskPolygon || maskPolygon.length < 3) ? 'not-allowed' : 'pointer',
+            fontWeight: 700,
+          }}
+        >
+          {masked ? '↩ zurück' : '▦ Beschneiden'}
+        </button>
         <LayerDimmer
           label="Vorlage (Inspector-R)" color="#8b3fbf"
           on={showInspectorRef} opacity={inspectorOpacity}
@@ -973,9 +995,6 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
             result={pathResult}
             anchor={anchorSummary}
             crop={cropResult}
-            masked={masked}
-            onToggleMask={onToggleMask}
-            canMask={!!maskPolygon && maskPolygon.length >= 3}
           />
         )}
         <div ref={mapContainerRef} style={{ flex: 1, minHeight: 0, minWidth: 0 }} />
@@ -1020,7 +1039,6 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
 function PathFilterMenu({
   gebiet, gebietLabel, onResized, onApply, status, error, result, anchor,
   crop,
-  masked, onToggleMask, canMask,
 }: {
   gebiet: string;
   gebietLabel: string;
@@ -1031,9 +1049,6 @@ function PathFilterMenu({
   result: import('../../regio-content/pathEngine').PathFetchResult | null;
   anchor: AnchorSummary | null;
   crop: CropResult | null;
-  masked: boolean;
-  onToggleMask: () => void;
-  canMask: boolean;
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const [cfg, setCfg] = useState<PathConfig>(() => loadPathConfig(gebiet));
@@ -1257,31 +1272,7 @@ function PathFilterMenu({
             </div>
           </div>
         )}
-        {/* F7-Neufassung: Beschneiden-Toggle = reversible Vorschau. An → maskiertes
-            Netz erzeugen/anzeigen; zurück → löschen, unmaskiertes anzeigen. */}
-        <button
-          onClick={onToggleMask}
-          disabled={!canMask}
-          title={
-            !canMask ? 'Erst B2 (finale Boundary) im Umriss-Tab über B1 zeichnen'
-              : masked ? 'Zurück — maskiertes Netz verwerfen, unmaskiertes zeigen'
-              : 'Beschneiden: maskiertes Netz (Vorschau) erzeugen'
-          }
-          style={{
-            fontSize: 12, padding: '7px 12px', fontWeight: 700,
-            border: `1px solid ${masked ? '#2b6cb0' : '#c05621'}`, borderRadius: 5,
-            background: !canMask ? '#edf2f7' : masked ? '#ebf8ff' : '#fff5f5',
-            color: !canMask ? '#a0aec0' : masked ? '#2b6cb0' : '#c05621',
-            cursor: canMask ? 'pointer' : 'not-allowed',
-          }}
-        >
-          {masked ? '↩ zurück (unmaskiert)' : '▦ Beschneiden'}
-        </button>
-        <div style={{ fontSize: 10, color: '#a0aec0', lineHeight: 1.5 }}>
-          „Beschneiden" ist eine reversible Vorschau. Gespeichert wird oben mit
-          „Speichern" — maskiert gespeichert = roter, committbarer Draft. Der Commit
-          selbst passiert im Workspace.
-        </div>
+        {/* „Beschneiden" liegt jetzt in der EBENEN-Zeile oben (tab-unabhängig). */}
 
         {/* Status / Legende */}
         {status === 'error' && (
