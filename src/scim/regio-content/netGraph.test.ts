@@ -56,6 +56,24 @@ describe('graphCompose', () => {
     expect(netz[0].meters).toBeGreaterThan(rest[0].meters);
   });
 
+  it('nodet T-Kreuzung: Ende trifft Mitte eines durchgehenden Weges', () => {
+    // Durchgehender Weg A–B–C (B ist Mittel-Stützpunkt) + Stichweg D–B, der
+    // genau auf B endet. B muss ein Knoten mit Grad 3 werden; nur D ist Sackgasse.
+    const A: [number, number] = [48.0000, 14.0000];
+    const B: [number, number] = [48.0010, 14.0000];
+    const C: [number, number] = [48.0020, 14.0000];
+    const D: [number, number] = [48.0010, 14.0010];
+    const g = graphCompose([
+      edge(1, [A, B, C]), // durchgehend, B liegt INNEN
+      edge(2, [D, B]),    // Stich endet auf B
+    ]);
+    expect(g.componentCount).toBe(1);                 // alles verbunden
+    const bNode = g.nodes.find((n) => n.degree === 3); // T-Kreuzung
+    expect(bNode).toBeDefined();
+    // echte Enden: A, C, D — genau drei Sackgassen, NICHT B.
+    expect(deadEndNodes(g).length).toBe(3);
+  });
+
   it('bridgeGaps: schließt Lücke innerhalb Toleranz, verschmilzt Komponenten', () => {
     // Zwei getrennte Ketten; ihre nahen Enden liegen ~12 m auseinander.
     const g = graphCompose([

@@ -26,10 +26,12 @@ export interface NetNode {
 }
 
 export interface NetGraphEdge {
-  edgeId: number;     // OSM way id der Quell-Kante
-  from: number;       // Knoten-ID
-  to: number;         // Knoten-ID
-  meters: number;     // Polylinien-Länge der Quell-Kante
+  edgeId: number;            // OSM way id der Quell-Kante (negativ = E3-Brücke)
+  seg: number;               // Teil-Index innerhalb des Ways (0-basiert); Brücke: 0
+  from: number;              // Knoten-ID
+  to: number;                // Knoten-ID
+  meters: number;            // Länge dieses Teilstücks
+  points: [number, number][]; // Teil-Polylinie zwischen from und to (fürs Rendering)
 }
 
 export interface NetGraph {
@@ -59,35 +61,65 @@ function distMeters(aLat: number, aLng: number, bLat: number, bLng: number): num
   return 2 * R * Math.asin(Math.min(1, Math.sqrt(s)));
 }
 
-// Verschweißt Endpunkte naher Kanten zu Knoten und baut den Graphen.
-// weldMeters: Endpunkte näher als dieser Wert gelten als derselbe Knoten.
-export function graphCompose(edges: PathEdge[], weldMeters = 1.5): NetGraph {
-  const net = edges.filter((e) => e.inNet && e.points.length >= 2);
-  const nodes: NetNode[] = [];
+// Koordinaten-Schlüssel: OSM teilt an Kreuzungen denselben Knoten → identische
+// Koordinaten. 7 Nachkommastellen (~1 cm) machen geteilte Stützpunkte exakt
+// gleich, ohne real verschiedene Knoten zu verschmelzen.
+const coordKey = (lat: number, lng: number): string => `${lat.toFixed(7)},${lng.toFixed(7)}`;
 
-  // Endpunkt → bestehender Knoten (innerhalb weldMeters) oder neuer Knoten.
-  const findOrAddNode = (lat: number, lng: number): number => {
-    for (const n of nodes) {
-      if (distMeters(lat, lng, n.lat, n.lng) <= weldMeters) return n.id;
+// Baut aus den Kanten einen ECHTEN, genodeten Graphen: jeder Stützpunkt, der von
+// ≥2 Ways benutzt wird (oder ein Way-Endpunkt ist), wird zu einem Knoten; jeder
+// Way wird an diesen Knoten in Teilstücke GESPLITTET. So werden T-Kreuzungen
+// (Ende eines Weges trifft die Mitte eines anderen) korrekt verbunden — und nur
+// ECHTE degree-1-Enden bleiben Sackgassen. (Ersetzt das frühere reine
+// Endpunkt-Verschweißen; behebt falsche Sackgassen + nicht greifendes Merge.)
+export function graphCompose(edges: PathEdge[]): NetGraph {
+  const net = edges.filter((e) => e.inNet && e.points.length >= 2);
+
+  // 1) Wie viele Ways benutzen jeden Stützpunkt? (pro Way entduppliziert)
+  const usage = new Map<string, number>();
+  for (const e of net) {
+    const seen = new Set<string>();
+    for (const p of e.points) {
+      const k = coordKey(p[0], p[1]);
+      if (seen.has(k)) continue;
+      seen.add(k);
+      usage.set(k, (usage.get(k) ?? 0) + 1);
     }
-    const id = nodes.length;
-    nodes.push({ id, lat, lng, degree: 0, component: -1 });
+  }
+
+  // 2) Knoten-Registry per Koordinaten-Schlüssel.
+  const nodeOf = new Map<string, number>();
+  const nodes: NetNode[] = [];
+  const getNode = (lat: number, lng: number): number => {
+    const k = coordKey(lat, lng);
+    let id = nodeOf.get(k);
+    if (id === undefined) { id = nodes.length; nodes.push({ id, lat, lng, degree: 0, component: -1 }); nodeOf.set(k, id); }
     return id;
   };
 
+  // 3) Jeden Way an Kreuzungs-Stützpunkten (geteilt oder Endpunkt) splitten.
   const graphEdges: NetGraphEdge[] = [];
   for (const e of net) {
-    const a = e.points[0];
-    const b = e.points[e.points.length - 1];
-    const from = findOrAddNode(a[0], a[1]);
-    const to = findOrAddNode(b[0], b[1]);
-    if (from === to) continue; // entartete/Schleifen-Kante überspringen
-    // Polylinien-Länge der Quell-Kante (Summe der Segmente).
-    let meters = 0;
-    for (let i = 1; i < e.points.length; i++) {
-      meters += distMeters(e.points[i - 1][0], e.points[i - 1][1], e.points[i][0], e.points[i][1]);
+    const pts = e.points;
+    let fromNode = getNode(pts[0][0], pts[0][1]);
+    let segPoints: [number, number][] = [[pts[0][0], pts[0][1]]];
+    let segMeters = 0;
+    let seg = 0;
+    for (let i = 1; i < pts.length; i++) {
+      segMeters += distMeters(pts[i - 1][0], pts[i - 1][1], pts[i][0], pts[i][1]);
+      segPoints.push([pts[i][0], pts[i][1]]);
+      const isLast = i === pts.length - 1;
+      const shared = (usage.get(coordKey(pts[i][0], pts[i][1])) ?? 0) >= 2;
+      if (isLast || shared) {
+        const toNode = getNode(pts[i][0], pts[i][1]);
+        if (toNode !== fromNode && segPoints.length >= 2) {
+          graphEdges.push({ edgeId: e.id, seg: seg++, from: fromNode, to: toNode, meters: segMeters, points: segPoints });
+        }
+        fromNode = toNode;
+        segPoints = [[pts[i][0], pts[i][1]]];
+        segMeters = 0;
+      }
     }
-    graphEdges.push({ edgeId: e.id, from, to, meters });
   }
 
   return finalize(nodes, graphEdges);
@@ -201,7 +233,11 @@ export function bridgeGaps(
     const cb = find(graph.nodes[p.b].component);
     if (ca === cb) continue; // schon (über eine kürzere Brücke) verbunden
     parent[ca] = cb;
-    bridges.push({ edgeId: nextId--, from: p.a, to: p.b, meters: p.d });
+    const na = graph.nodes[p.a]; const nb = graph.nodes[p.b];
+    bridges.push({
+      edgeId: nextId--, seg: 0, from: p.a, to: p.b, meters: p.d,
+      points: [[na.lat, na.lng], [nb.lat, nb.lng]],
+    });
   }
 
   if (bridges.length === 0) return { graph, bridges: [] };

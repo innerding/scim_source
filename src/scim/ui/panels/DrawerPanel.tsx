@@ -28,7 +28,7 @@ import {
   loadPathConfig, savePathConfig, type PathConfig, type BridlewayMode,
 } from '../../regio-content/pathConfig';
 import {
-  deriveWanderwegnetz, anchorPois, isNetEdge, cropNetToMask, netStats, formatBytes,
+  deriveWanderwegnetz, anchorPois, cropNetToMask, netStats, formatBytes,
   type PathFetchResult, type AnchorSummary, type PoiInput, type CropResult,
   type PathEdge, type GateNode,
 } from '../../regio-content/pathEngine';
@@ -145,8 +145,9 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   // E4a — „abgeschnitten" (blau): Sackgassen, hinter denen real ein Weg weitergeht,
   // aber keine OSM-Daten mehr liegen (Datenrand). Per Klick auf das Stummel-Segment
   // markiert; blau läuft VOR der Sackgassen(rot)-Bewertung und nimmt sie davon aus.
-  // Lokaler Render-Zustand (noch nicht im Draft persistiert), Schlüssel = edgeId.
-  const [cutEdges, setCutEdges] = useState<Set<number>>(new Set());
+  // Lokaler Render-Zustand (noch nicht im Draft persistiert). Schlüssel pro
+  // Teilstück = `${edgeId}:${seg}` (genodete Graph-Kante).
+  const [cutEdges, setCutEdges] = useState<Set<string>>(new Set());
 
   // Inspector-Compare: das Polygon der vom Inspector gezeigten R kann
   // als read-only Referenz in Violett unter den Editor gelegt werden
@@ -634,9 +635,9 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   const SACK_COLOR = '#e53e3e';
   const CUT_COLOR = '#3182ce';   // blau = abgeschnitten (Datenrand)
   const BRIDGE_COLOR = '#dd6b20';
-  const toggleCut = (id: number) => setCutEdges((prev) => {
+  const toggleCut = (key: string) => setCutEdges((prev) => {
     const n = new Set(prev);
-    if (n.has(id)) n.delete(id); else n.add(id);
+    if (n.has(key)) n.delete(key); else n.add(key);
     return n;
   });
   const renderPath = (res: PathFetchResult | null) => {
@@ -645,55 +646,46 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     layer.clearLayers();
     if (!res) { setBridgeCount(0); return; }
 
-    // E3: erst verschweißen (graphCompose), dann Lücken < gapTol überbrücken →
-    // Komponenten verschmelzen, bevor nach Länge klassifiziert wird.
+    // E3: erst NODEN (graphCompose splittet an Kreuzungen), dann Lücken < gapTol
+    // überbrücken → Komponenten verschmelzen, bevor nach Länge klassifiziert wird.
     const { graph, bridges } = bridgeGaps(graphCompose(res.edges), gapTol);
     setBridgeCount(bridges.length);
     const netzSet = netzComponents(graph, netLenThresh);
-    const geByEdgeId = new Map<number, NetGraphEdge>();
-    for (const ge of graph.edges) geByEdgeId.set(ge.edgeId, ge);
 
-    // Pro Netz-Kante Farbe + Gewicht ableiten. Reihenfolge der Klassen:
-    // blau (abgeschnitten, manuell) → rot (Sackgasse, falls Toggle) → Grundfarbe.
+    // Pro Graph-Teilstück (genodet) Farbe + Gewicht ableiten. Reihenfolge der
+    // Klassen: blau (abgeschnitten, manuell) → rot (Sackgasse, Toggle) → Grundfarbe.
     type Kind = 'base' | 'red' | 'blue';
-    const styled: { edge: PathEdge; color: string; weight: number; kind: Kind; clickable: boolean }[] = [];
-    for (const edge of res.edges) {
-      if (!isNetEdge(edge)) continue;
-      const ge = geByEdgeId.get(edge.id);
-      let color = REST_COLOR;
-      let weight = 2;
-      let isSack = false;
-      if (ge) {
-        const comp = graph.nodes[ge.from].component;
-        const isNetz = netzSet.has(comp);
-        color = isNetz ? NETZ_COLOR : REST_COLOR;
-        weight = isNetz ? 3 : 2;
-        isSack = graph.nodes[ge.from].degree === 1 || graph.nodes[ge.to].degree === 1;
-      }
+    const styled: { ge: NetGraphEdge; key: string; color: string; weight: number; kind: Kind; clickable: boolean }[] = [];
+    for (const ge of graph.edges) {
+      if (ge.edgeId < 0) continue; // Brücken separat (orange gestrichelt)
+      const key = `${ge.edgeId}:${ge.seg}`;
+      const isNetz = netzSet.has(graph.nodes[ge.from].component);
+      let color = isNetz ? NETZ_COLOR : REST_COLOR;
+      const weight = isNetz ? 3 : 2;
+      const isSack = graph.nodes[ge.from].degree === 1 || graph.nodes[ge.to].degree === 1;
       let kind: Kind = 'base';
-      if (cutEdges.has(edge.id)) { color = CUT_COLOR; kind = 'blue'; }      // blau VOR rot
+      if (cutEdges.has(key)) { color = CUT_COLOR; kind = 'blue'; }        // blau VOR rot
       else if (sackgassenRot && isSack) { color = SACK_COLOR; kind = 'red'; }
-      styled.push({ edge, color, weight, kind, clickable: isSack });
+      styled.push({ ge, key, color, weight, kind, clickable: isSack });
     }
 
-    // Sackgassen-Segmente sind anklickbar: Klick → blau (abgeschnitten) ↔ zurück.
+    // Sackgassen-Teilstücke sind anklickbar: Klick → blau (abgeschnitten) ↔ zurück.
     const draw = (s: typeof styled[number]) => {
-      const pl = L.polyline(s.edge.points, {
+      const pl = L.polyline(s.ge.points, {
         color: s.color, weight: s.kind === 'base' ? s.weight : 3,
         opacity: s.kind === 'base' ? 0.85 : 0.95,
       });
       if (s.clickable) {
         pl.bindTooltip(s.kind === 'blue' ? 'abgeschnitten (blau) — Klick: zurück' : 'Klick: abgeschnitten (blau)',
           { sticky: true, opacity: 0.9 });
-        pl.on('click', (ev) => { L.DomEvent.stop(ev); toggleCut(s.edge.id); });
+        pl.on('click', (ev) => { L.DomEvent.stop(ev); toggleCut(s.key); });
       }
       pl.addTo(layer);
     };
     // Zeichenreihenfolge: Grundfarben unten, dann Brücken, dann rot, dann blau oben.
     for (const s of styled) if (s.kind === 'base') draw(s);
     for (const b of bridges) {
-      const a = graph.nodes[b.from]; const c = graph.nodes[b.to];
-      L.polyline([[a.lat, a.lng], [c.lat, c.lng]], {
+      L.polyline(b.points, {
         color: BRIDGE_COLOR, weight: 2, opacity: 0.9, dashArray: '4 4',
       }).addTo(layer);
     }
