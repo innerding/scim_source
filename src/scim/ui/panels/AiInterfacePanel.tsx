@@ -823,7 +823,7 @@ Implementiert ann_048. Datenmodell CatalogPoi um parent_poi_id und coord_status 
 
 Phase 2 - plan.md fuer Lichtenberg (User-Recherche + 1 Session Dev)
 
-User-Task: Recherche der Lichtenberger POIs (Coords, Subkategorisierung, Cluster). Dev liefert ein Skeleton im Format von grunberg_pois_plan.md, User fuellt Details. Anschliessend Eintrag im Region-Switcher der Ziel-App (folgt in Phase 3). Diese Phase blockiert NICHTS - kann parallel zu allen anderen laufen, Resultat fliesst ein sobald bereit.
+User-Task: Recherche der Lichtenberger POIs (Coords, Subkategorisierung, Cluster). Dev liefert ein Skeleton im Format von gruenberg_pois_plan.md, User fuellt Details. Anschliessend Eintrag im Region-Switcher der Ziel-App (folgt in Phase 3). Diese Phase blockiert NICHTS - kann parallel zu allen anderen laufen, Resultat fliesst ein sobald bereit.
 
 Phase 3 - Ziel-App Grundgeruest (~1-2 Sessions)
 
@@ -856,7 +856,7 @@ Handover-Hinweise fuer neuen Chat
 
 Stand der Pipeline: ann_045 (Status nach Phase A-D), ergaenzt um diese ann_050. Ziel-Definition: ann_049. Cluster-Mechanik: ann_043 (statisch) plus ann_048 (Ghost). Composite-Aufbau: ann_044. POI-Sheet-Spec: ann_047. Katalog-Erweiterungen (parallel zur Ziel-App moeglich): ann_046.
 
-Codebasis liegt unter ~/SCIM3ClaudeMax/scim_source. Deploy bei jedem Push auf main automatisch (ann_039). Plan-md fuer Gruenberg in data/grunberg_pois_plan.md (6-spaltig nach MVP-Abschluss). Icon-Bibliothek in data/icons (26 Dateien, Dual-Naming-Konvention). Glyphs (Ziffern + Einheiten + Sterne + Operatoren + Frame) in data/glyphs.`,
+Codebasis liegt unter ~/SCIM3ClaudeMax/scim_source. Deploy bei jedem Push auf main automatisch (ann_039). Plan-md fuer Gruenberg in data/gruenberg_pois_plan.md (6-spaltig nach MVP-Abschluss). Icon-Bibliothek in data/icons (26 Dateien, Dual-Naming-Konvention). Glyphs (Ziffern + Einheiten + Sterne + Operatoren + Frame) in data/glyphs.`,
     date: '2026-05-26',
   },
 

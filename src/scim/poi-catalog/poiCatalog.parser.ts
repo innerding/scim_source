@@ -1,5 +1,5 @@
 // Runtime-Parser für POI-Plan-Markdown nach PoiCatalogState.
-// Erwartet die Struktur von data/grunberg_pois_plan.md:
+// Erwartet die Struktur von data/gruenberg_pois_plan.md:
 //   ### <Subcategory>
 //   | Icon | Text | Coord | Cluster | Status |
 //   |---|---|---|---|---|

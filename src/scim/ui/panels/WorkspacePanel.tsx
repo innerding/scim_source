@@ -40,7 +40,7 @@ function loadGeometryDraft(): GeometryDraft | null {
 }
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore — Vite ?raw-Import liefert string
-import gruenbergMd from '../../../../data/grunberg_pois_plan.md?raw';
+import gruenbergMd from '../../../../data/gruenberg_pois_plan.md?raw';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import lichtenbergMd from '../../../../data/lichtenberg_pois_plan.md?raw';
@@ -172,7 +172,7 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
     const grunberg = parsePoiCatalog(gruenbergMd as string, {
       region_id: 'gruenberg',
       region_name: 'Grünberg',
-      source_path: 'data/grunberg_pois_plan.md',
+      source_path: 'data/gruenberg_pois_plan.md',
     });
     const lichtenberg = parsePoiCatalog(lichtenbergMd as string, {
       region_id: 'lichtenberg',

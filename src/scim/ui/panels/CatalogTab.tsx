@@ -23,7 +23,7 @@ import type {
 // Änderungen in der .md werden mit dem nächsten Build wirksam.
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore — Vite ?raw-Import liefert string
-import gruenbergMd from '../../../../data/grunberg_pois_plan.md?raw';
+import gruenbergMd from '../../../../data/gruenberg_pois_plan.md?raw';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import lichtenbergMd from '../../../../data/lichtenberg_pois_plan.md?raw';
