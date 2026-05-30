@@ -109,7 +109,7 @@ export interface PoiCatalogEditState {
   patches: Record<string, PoiPatch>;  // key = poi id (existing oder synthetic new_XXX)
   next_new_id: number;                // counter für synthetische IDs
   updated_at: string;                  // ISO-String, last write
-  schema_version: 1;
+  schema_version: 2;                   // v2: id = stabiler Fixstern-Token
 }
 
 export interface MergedPoi extends CatalogPoi {

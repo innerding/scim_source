@@ -12,6 +12,7 @@ import type {
   CatalogCluster, CatalogPoi, CoordStatus, PoiCatalogState, Subcategory,
 } from './poiCatalog.types';
 import { bucketOf, containerOf } from './poiCatalog.containerSystem';
+import { isToken } from './poiCatalog.token';
 
 interface ParseOptions {
   region_id: string;
@@ -102,6 +103,7 @@ export function parsePoiCatalog(md: string, opts: ParseOptions): PoiCatalogState
   let i = 0;
   let currentSub: Subcategory | null = null;
   let poiCounter = 0;
+  let warnedMissingCode = false;
   let inClusterSection = false;
   let currentClusterName: string | null = null;
 
@@ -161,28 +163,44 @@ export function parsePoiCatalog(md: string, opts: ParseOptions): PoiCatalogState
       i += 2;
       while (i < lines.length && lines[i].trim().startsWith('|')) {
         const cells = parseRow(lines[i]);
+        // Fixstern-Token-Spalte (optional, immer ZUERST): erkennt man am
+        // Token-Muster verbund-representation-suffix in der ersten Zelle.
+        // Mit Code:   Code | Icon | Tagline | Description | Coord | Cluster | Status
+        // Ohne Code (alt, Migration ausstehend) → Fallback poi_NNN.
+        const hasCode = cells.length >= 1 && isToken(cells[0]);
+        const codeId = hasCode ? cells[0].trim() : null;
+        const body = hasCode ? cells.slice(1) : cells;
         // 5 Spalten (alt):  Icon | Tagline | Coord | Cluster | Status
         // 6 Spalten (neu):  Icon | Tagline | Description | Coord | Cluster | Status
-        const isNew = cells.length >= 6;
+        const isNew = body.length >= 6;
         const minCells = isNew ? 6 : 5;
-        if (cells.length >= minCells) {
-          const icon = stripMdInline(cells[0]);
-          const text = stripMdInline(cells[1].replace(/\s*\*\([^)]*\)\*$/, ''));
-          const rawNotesMatch = cells[1].match(/\*\(([^)]+)\)\*/);
+        if (body.length >= minCells) {
+          const icon = stripMdInline(body[0]);
+          const text = stripMdInline(body[1].replace(/\s*\*\([^)]*\)\*$/, ''));
+          const rawNotesMatch = body[1].match(/\*\(([^)]+)\)\*/);
           const rawNotes = rawNotesMatch ? rawNotesMatch[1] : undefined;
           // Description-Spalte nur im neuen Format vorhanden
           const description_short = isNew
-            ? (stripMdInline(cells[2]) || undefined)
+            ? (stripMdInline(body[2]) || undefined)
             : undefined;
           const coordIdx   = isNew ? 3 : 2;
           const clusterIdx = isNew ? 4 : 3;
           const statusIdx  = isNew ? 5 : 4;
-          const { coord, status: coordStatus } = parseCoord(cells[coordIdx]);
-          const cluster = parseCluster(cells[clusterIdx]);
-          const statusFromCol = parseStatus(cells[statusIdx]);
+          const { coord, status: coordStatus } = parseCoord(body[coordIdx]);
+          const cluster = parseCluster(body[clusterIdx]);
+          const statusFromCol = parseStatus(body[statusIdx]);
 
-          poiCounter++;
-          const id = `poi_${String(poiCounter).padStart(3, '0')}`;
+          let id: string;
+          if (codeId) {
+            id = codeId;
+          } else {
+            poiCounter++;
+            id = `poi_${String(poiCounter).padStart(3, '0')}`;
+            if (!warnedMissingCode) {
+              warnings.push('Mindestens ein POI ohne Fixstern-Code — positioneller Fallback poi_NNN aktiv, Migration ausstehend.');
+              warnedMissingCode = true;
+            }
+          }
 
           const bucket = bucketOf(currentSub);
           if (!bucket) {

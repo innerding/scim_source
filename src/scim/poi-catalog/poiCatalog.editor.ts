@@ -6,9 +6,12 @@ import type {
   CatalogPoi, MergedCatalog, MergedPoi,
   PoiCatalogEditState, PoiCatalogState,
 } from './poiCatalog.types';
+import { mintToken } from './poiCatalog.token';
 
 const STORAGE_PREFIX = 'scim3:catalog-edit:';
-const CURRENT_SCHEMA_VERSION = 1;
+// v2: POI-id ist jetzt der stabile Fixstern-Token (vorher positionelles
+// poi_NNN). Alte v1-Patches (an poi_NNN gebunden) verfallen beim Laden sauber.
+const CURRENT_SCHEMA_VERSION = 2;
 
 export function storageKey(regionId: string): string {
   return `${STORAGE_PREFIX}${regionId}`;
@@ -108,8 +111,13 @@ export function undeletePoi(state: PoiCatalogEditState, id: string): PoiCatalogE
 export function addNewPoi(
   state: PoiCatalogEditState,
   template: Omit<CatalogPoi, 'id'>,
+  takenIds: Iterable<string> = [],
 ): { state: PoiCatalogEditState; id: string } {
-  const id = `new_${String(state.next_new_id).padStart(3, '0')}`;
+  // Neue POIs bekommen sofort einen stabilen Fixstern-Token (keine
+  // positionellen new_NNN mehr). Kollision gegen Basis-IDs + bestehende Patches.
+  const taken = new Set<string>(takenIds);
+  for (const k of Object.keys(state.patches)) taken.add(k);
+  const id = mintToken(state.region_id, taken);
   return {
     state: {
       ...state,

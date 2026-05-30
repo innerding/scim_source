@@ -512,10 +512,16 @@ function PoiRow({ poi, editMode, onPatch, onDelete, onUndelete }: RowProps) {
     opacity: poi._isDeleted ? 0.55 : 1,
   };
   const cellStyle: React.CSSProperties = { padding: '4px 8px', verticalAlign: 'middle' };
+  // Fixstern-Code: erste Spalte, monospace, unauffällig, nicht editierbar.
+  const codeCellStyle: React.CSSProperties = {
+    ...cellStyle, whiteSpace: 'nowrap', fontFamily: 'monospace',
+    fontSize: 10, color: '#718096', userSelect: 'all',
+  };
 
   if (!editMode) {
     return (
       <tr style={rowStyle}>
+        <td style={codeCellStyle} title="Fixstern-Code (stabil, nie geändert)">{poi.id}</td>
         <td style={{ ...cellStyle, whiteSpace: 'nowrap' }}>
           <div style={drawIdLabelStyle}>{drawId ?? '—'}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -552,6 +558,7 @@ function PoiRow({ poi, editMode, onPatch, onDelete, onUndelete }: RowProps) {
 
   return (
     <tr style={rowStyle}>
+      <td style={codeCellStyle} title="Fixstern-Code (stabil, nie geändert — nicht editierbar)">{poi.id}</td>
       <td style={{ ...cellStyle, whiteSpace: 'nowrap' }}>
         <div style={drawIdLabelStyle}>{drawId ?? '—'}</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -680,6 +687,7 @@ function SubcategorySection({
       <table style={{ width: '100%', fontSize: 12, fontFamily: 'system-ui, sans-serif', borderCollapse: 'collapse' }}>
         <thead>
           <tr style={{ background: '#edf2f7', textAlign: 'left' }}>
+            <th style={{ padding: '4px 8px', fontWeight: 500, color: '#4a5568' }}>Code</th>
             <th style={{ padding: '4px 8px', fontWeight: 500, color: '#4a5568' }}>Icon</th>
             <th style={{ padding: '4px 8px', fontWeight: 500, color: '#4a5568' }}>Tagline</th>
             <th style={{ padding: '4px 8px', fontWeight: 500, color: '#4a5568' }}>Description short</th>
@@ -746,6 +754,7 @@ function ClusterGroupSection({
       <table style={{ width: '100%', fontSize: 12, fontFamily: 'system-ui, sans-serif', borderCollapse: 'collapse' }}>
         <thead>
           <tr style={{ background: '#edf2f7', textAlign: 'left' }}>
+            <th style={{ padding: '4px 8px', fontWeight: 500, color: '#4a5568' }}>Code</th>
             <th style={{ padding: '4px 8px', fontWeight: 500, color: '#4a5568' }}>Icon</th>
             <th style={{ padding: '4px 8px', fontWeight: 500, color: '#4a5568' }}>Tagline</th>
             <th style={{ padding: '4px 8px', fontWeight: 500, color: '#4a5568' }}>Description short</th>
@@ -1470,7 +1479,8 @@ export default function CatalogTab({ onJumpTo }: { onJumpTo?: (panelId: string) 
       coord: [0, 0],
       coord_status: isGhost ? 'cluster_ghost' : 'missing',
     };
-    setEditState((s) => addNewPoi(s, template).state);
+    const takenIds = merged.pois.map((p) => p.id);
+    setEditState((s) => addNewPoi(s, template, takenIds).state);
   };
 
   // ─── Render ─────────────────────────────────────────────────────────────────
