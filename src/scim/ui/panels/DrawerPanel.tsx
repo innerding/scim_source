@@ -49,7 +49,12 @@ export const DRAFT_KEY = 'scim3_geometry_draft';
 // Slot-Stile (Umbauplan B): Slot 1 = editierbare Boundary (blau, durchgezogen),
 // Slot 2 = Masken-Boundary (orange, gestrichelt) zum Drueberzeichnen ueber das Netz.
 const SLOT1_COLOR = '#0074d9';
-const SLOT2_COLOR = '#dd6b20';
+// Maske = rot-gestrichelt (F6). Violett ist für die Inspector-Representations-
+// Boundary reserviert, daher rot für die Wegnetz-Crop-Maske.
+const SLOT2_COLOR = '#e53e3e';
+// Reifefarbe der editierbaren Draft-Boundary (F6): gelb ohne Katalog, orange mit.
+const DRAFT_STROKE_GELB = '#ecc94b';
+const DRAFT_STROKE_ORANGE = '#ed8936';
 const SLOT2_DASH = '6 4';
 
 type DrawerTab = 'umriss' | 'wegnetz';
@@ -357,8 +362,12 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     const layer = polygonLayerRef.current as any;
     if (!layer?.setStyle) return;
     const o = boundaryVisible ? boundaryOpacity : 0;
-    layer.setStyle({ opacity: o, fillOpacity: o * 0.1 });
-  }, [boundaryVisible, boundaryOpacity, polygon, geometryId, tab]);
+    // Committete Geometry bleibt blau; ein Draft trägt Reifefarbe (gelb→orange).
+    const color = geometryId !== 'new'
+      ? SLOT1_COLOR
+      : (overlayCatalogId ? DRAFT_STROKE_ORANGE : DRAFT_STROKE_GELB);
+    layer.setStyle({ color, opacity: o, fillOpacity: o * 0.1 });
+  }, [boundaryVisible, boundaryOpacity, polygon, geometryId, tab, overlayCatalogId]);
 
   // Ebenen-Steuerleiste (A): Inspector-R-Vorlage dimmen.
   useEffect(() => {
