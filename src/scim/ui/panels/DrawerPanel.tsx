@@ -28,7 +28,7 @@ import {
   loadPathConfig, savePathConfig, type PathConfig, type BridlewayMode,
 } from '../../regio-content/pathConfig';
 import {
-  deriveWanderwegnetz, anchorPois, cropNetToMask, netStats, formatBytes, isAsphalt, asphaltMeters,
+  deriveWanderwegnetz, anchorPois, cropNetToMask, netStats, formatBytes, isAsphalt, asphaltMeters, connectorPieceAt,
   type PathFetchResult, type AnchorSummary, type PoiInput, type CropResult,
   type PathEdge, type GateNode,
 } from '../../regio-content/pathEngine';
@@ -151,9 +151,12 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   // T2 — Wege manuell aus OSM anwählen: im Anwähl-Modus werden die nicht
   // aufgenommenen Connector-Straßen (inNet=false) grau gestrichelt + klickbar
   // gezeigt; Klick nimmt sie ins Netz auf (Gegenstück zur blauen Abwahl).
-  // manualInclude = edgeIds der von Hand aufgenommenen Kandidaten.
+  // manualPieces = pro Straßen-edgeId das aufgenommene TEILSTÜCK (zwischen den
+  // nächsten Wanderweg-Anschlusspunkten um den Klick), nicht die ganze Straße.
   const [pickMode, setPickMode] = useState(false);
-  const [manualInclude, setManualInclude] = useState<Set<number>>(new Set());
+  const [manualPieces, setManualPieces] = useState<Map<number, [number, number][]>>(new Map());
+  // zuletzt angewandte Config (für Anschluss-Toleranz beim manuellen Anwählen).
+  const lastCfgRef = useRef<PathConfig | null>(null);
   // E4a — „abgeschnitten" (blau): Sackgassen, hinter denen real ein Weg weitergeht,
   // aber keine OSM-Daten mehr liegen (Datenrand). Per Klick auf das Stummel-Segment
   // markiert; blau läuft VOR der Sackgassen(rot)-Bewertung und nimmt sie davon aus.
@@ -652,24 +655,30 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     if (n.has(key)) n.delete(key); else n.add(key);
     return n;
   });
-  const toggleInclude = (id: number) => setManualInclude((prev) => {
-    const n = new Set(prev);
-    if (n.has(id)) n.delete(id); else n.add(id);
+  const setPiece = (id: number, pts: [number, number][] | null) => setManualPieces((prev) => {
+    const n = new Map(prev);
+    if (pts) n.set(id, pts); else n.delete(id);
     return n;
   });
   const CAND_COLOR = '#a0aec0';   // grau = nicht aufgenommener OSM-Kandidat
-  const PICK_COLOR = '#dd6b20';   // orange = manuell aufgenommen (Markierung)
+  const PICK_COLOR = '#dd6b20';   // orange = manuell aufgenommenes Teilstück
   const renderPath = (res: PathFetchResult | null) => {
     const layer = pathLayerRef.current;
     if (!layer) return;
     layer.clearLayers();
     if (!res) { setBridgeCount(0); return; }
 
-    // T2: von Hand aufgenommene Kandidaten als inNet=true behandeln (ohne das
-    // Original zu mutieren), damit sie genodet + klassifiziert werden.
-    const effEdges = manualInclude.size
-      ? res.edges.map((e) => (manualInclude.has(e.id) ? { ...e, inNet: true } : e))
-      : res.edges;
+    // T2: von Hand aufgenommene Teilstücke als zusätzliche inNet=true-Kanten
+    // (gleiche edgeId, gecroppte Geometrie) anhängen; das Original bleibt inNet=false.
+    const byId = new Map(res.edges.map((e) => [e.id, e]));
+    const pieceEdges: PathEdge[] = [];
+    for (const [id, pts] of manualPieces) {
+      const src = byId.get(id);
+      if (src && pts.length >= 2) {
+        pieceEdges.push({ id, highway: src.highway, source: 'connector_candidate', points: pts, tags: src.tags, inNet: true });
+      }
+    }
+    const effEdges = pieceEdges.length ? [...res.edges, ...pieceEdges] : res.edges;
 
     // E3: erst NODEN (graphCompose splittet an Kreuzungen). Bei mergeOn dann
     // Lücken < gapTol überbrücken → Komponenten verschmelzen; bei aus bleibt der
@@ -745,22 +754,35 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     for (const s of styled) if (s.kind === 'red') draw(s);
     for (const s of styled) if (s.kind === 'blue') draw(s);
 
-    // T2: Anwähl-Modus — Connector-Kandidaten (OSM-Straßen, noch nicht im Netz)
-    // als klickbares Overlay. Grau gestrichelt = nicht aufgenommen (Klick → rein);
-    // orange gestrichelt = von Hand aufgenommen (Klick → wieder raus).
+    // T2: Anwähl-Modus — Connector-Straßen als klickbares Overlay. Grau gestrichelt
+    // = nicht aufgenommen (Klick → nur das Teilstück zwischen den nächsten
+    // Anschlusspunkten rein); orange = aufgenommenes Teilstück (Klick → wieder raus).
     if (pickMode) {
+      const primaryEndpoints: [number, number][] = [];
       for (const e of res.edges) {
-        if (e.source === 'primary') continue;       // nur Straßen-Kandidaten
-        if (e.inNet) continue;                       // bereits im Netz (z. B. Bridge-Stücke)
-        const picked = manualInclude.has(e.id);
-        const pl = L.polyline(e.points, {
-          color: picked ? PICK_COLOR : CAND_COLOR,
-          weight: picked ? 2.5 : 2, opacity: 0.9, dashArray: picked ? '1 4' : '5 5',
-        });
-        pl.bindTooltip(picked ? 'aufgenommen — Klick: wieder raus' : 'OSM-Straße — Klick: ins Netz aufnehmen',
-          { sticky: true, opacity: 0.9 });
-        pl.on('click', (ev) => { L.DomEvent.stop(ev); toggleInclude(e.id); });
-        pl.addTo(layer);
+        if (e.source === 'primary' && e.points.length >= 2) {
+          primaryEndpoints.push(e.points[0], e.points[e.points.length - 1]);
+        }
+      }
+      const tol = lastCfgRef.current?.konnektoren.anschluss_toleranz_meter ?? 30;
+      for (const e of res.edges) {
+        if (e.source === 'primary' || e.inNet) continue; // nur Straßen-Kandidaten
+        const piece = manualPieces.get(e.id);
+        if (piece) {
+          const pl = L.polyline(piece, { color: PICK_COLOR, weight: 3, opacity: 0.95, dashArray: '1 4' });
+          pl.bindTooltip('aufgenommenes Teilstück — Klick: wieder raus', { sticky: true, opacity: 0.9 });
+          pl.on('click', (ev) => { L.DomEvent.stop(ev); setPiece(e.id, null); });
+          pl.addTo(layer);
+        } else {
+          const pl = L.polyline(e.points, { color: CAND_COLOR, weight: 2, opacity: 0.9, dashArray: '5 5' });
+          pl.bindTooltip('OSM-Straße — Klick: Teilstück bis zum nächsten Wanderweg-Anschluss aufnehmen', { sticky: true, opacity: 0.9 });
+          pl.on('click', (ev) => {
+            L.DomEvent.stop(ev);
+            const ll = (ev as L.LeafletMouseEvent).latlng;
+            setPiece(e.id, connectorPieceAt(e, ll.lat, ll.lng, primaryEndpoints, tol));
+          });
+          pl.addTo(layer);
+        }
       }
     }
   };
@@ -853,7 +875,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     if (!pathResult) return;
     if (masked && cropResult) renderPath({ ...pathResult, edges: cropResult.edges });
     else renderPath(pathResult);
-  }, [netLenThresh, sackgassenRot, gapTol, cutEdges, mergeOn, pickMode, manualInclude]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [netLenThresh, sackgassenRot, gapTol, cutEdges, mergeOn, pickMode, manualPieces]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // F7-Neufassung: Die Handoff-Brücke entfällt. Der Drawer schreibt direkt in den
   // Workspace-Draft (onSave); der Commit lebt im Workspace.
@@ -861,6 +883,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   // [Anwenden] im Wegnetz-Tab: Boundary-bbox -> Overpass -> Filter -> Render,
   // anschliessend POI-Anker (ann_074) berechnen + zeichnen.
   const onApplyPath = async (cfg: PathConfig) => {
+    lastCfgRef.current = cfg; // für T2-Anschluss-Toleranz beim manuellen Anwählen
     const map = mapRef.current;
     // Vorrang-Regel: das Netz wird aus der EIGENEN Boundary (B1) des Drafts abgeleitet.
     // Nur wenn der Drawer noch keine eigene Boundary hat, leiht der Inspector seine —
@@ -1183,8 +1206,8 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
             onMergeOn={setMergeOn}
             pickMode={pickMode}
             onPickMode={setPickMode}
-            includeCount={manualInclude.size}
-            onClearInclude={() => setManualInclude(new Set())}
+            includeCount={manualPieces.size}
+            onClearInclude={() => setManualPieces(new Map())}
             cutCount={cutEdges.size}
             onClearCut={() => setCutEdges(new Set())}
           />
@@ -1464,8 +1487,9 @@ function PathFilterMenu({
         />
         <div style={{ padding: '0 10px', fontSize: 10, color: '#a0aec0', lineHeight: 1.5 }}>
           Zeigt die nicht aufgenommenen <b style={{ color: '#a0aec0' }}>OSM-Straßen</b> grau
-          gestrichelt. Klick nimmt eine ins Netz auf (<b style={{ color: '#dd6b20' }}>orange</b>),
-          nochmal Klick → wieder raus. Aufgenommene Straßen werden als Asphalt geführt.
+          gestrichelt. Klick nimmt nur das <b style={{ color: '#dd6b20' }}>Teilstück</b> zwischen
+          den nächsten Wanderweg-Anschlüssen auf (fehlt einer, endet es am Klick = Gate-POI);
+          Klick aufs orange Stück → wieder raus. Aufgenommenes wird als Asphalt geführt.
           {includeCount > 0 && (
             <button
               onClick={onClearInclude}
