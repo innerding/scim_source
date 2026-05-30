@@ -2600,6 +2600,28 @@ WEGFALL: Auto-Speichern → explizites Speichern; alte Übergabe-Karte + Handoff
 ZUKUNFTS-BEREIT (nicht jetzt): Löcher/Inseln = Ausschlusszone fürs Netz (GeoJSON innere Ringe, schon darstellbar); mehrere getrennte Boundaries = MultiPolygon (später); Crop mit Löchern = spätere Verfeinerung.`,
     date: '2026-05-30',
   },
+  {
+    id: 'ann_078',
+    category: 'next_intent',
+    label: 'Zeichentools-Theorie aus v0.3-Prototyp',
+    related_panel: 'geometry_editor',
+    content: `ZEICHENTOOLS-THEORIE (2026-05-30) — destilliert aus dem v0.3-Prototyp (/Users/dietmarbroda/open, canvas-basierte Geometry Asset Workbench, NICHT Leaflet/Geoman). Volltext: docs/zeichentools_theorie_aus_v03_prototyp.md. Übernahme der ALGORITHMEN in den bestehenden Leaflet/React-Drawer; Geoman bleibt, dies sind Ergänzungen, kein Ersatz. Stabilität = oberste Regel → kleine Schritte.
+
+1) SNAP — Regel: nächster Kandidat innerhalb Radius gewinnt, sonst Rohpunkt. (a) Snap-zum-Schließen: Punkt näher als MERGE_RADIUS am Start → Ring schließen statt neuer Punkt. (b) Snap-auf-vorhandene-Punkte (Toggle): Kandidaten = Vertices anderer/unlocked Layer + Vorlage (eigene ausgenommen), nächster < SNAP_RADIUS → exakt dessen Koordinate (Borgen/Ausrichten). In Leaflet als Pixel-Distanz (~12px); Prototyp-Werte 0.035/0.045 sind workbench-normiert, nicht übertragbar.
+
+2) PUNKTREDUKTION — Keep-%-Slider (10–100%, 10er). keepEvery=round(100/keep%); behalte Index 0, letzten, jeden keepEvery-ten. Endpunkte immer. KEIN Douglas-Peucker — bewusst simpel/vorhersehbar. Reversibel. = reine Array-Op auf dem Ring.
+
+3) PUNKT/SEGMENT LÖSCHEN — Knoten löschen (Ring öffnet wenn <3) ODER Segment löschen (break_segments, optional stretch = verbundene) = Kante statt Knoten, bricht Ring in offene Pfade. Delete-Modifier + Hover-Ziel zeigt was gelöscht wird. Reversibel. Segment/Break-Konzept = wertvoll fürs spätere Netz (Kanten erstklassig).
+
+4) FADENKREUZ + WORKFLOW — beim Vertex-Ziehen zartes Kreuz (4 Arme, Lücke Mitte, alpha~0.5), Präzisions-Feedback. Klick hängt Punkt an, Ziehen verschiebt + live Snap-zum-Schließen, reiche Hover-Zustände zeigen vorab was passiert, Schließen per Klick-nahe-Start oder explizit.
+
+META (fast wichtigste): Undo-Snapshot pro Operation (Stack); Preview/Save wird NUR bei echter Geometrie-Änderung ungültig (add/move/reduce/delete), NICHT bei Metadaten (Anker). Hält Speichern gültig bei reiner Beiwerk-Änderung — fürs Draft-Modell adoptieren.
+
+ÜBERNAHME-REIHENFOLGE (stabil): 1) Punktreduktion (kleinster/sicherster Gewinn, reine Array-Op). 2) Snap-auf-Vorlage/Nachbarn (Toggle, Pixel-Radius). 3) Fadenkreuz beim Ziehen. 4) Segment/Break → zum Netz-Editor (neu, auf src/scim/graph/).
+
+EINORDNUNG: Prototyp hat KEINEN Netz/Graph-Editor (boundary-zentriert). Netz-Editor ist so oder so neu. Substrat-Wechsel (Canvas statt Leaflet) erwogen, verworfen (zu riskant gegenüber funktionierendem Leaflet-Drawer + Draft/Commit/Budget). Konzepte portieren, nicht Substrat.`,
+    date: '2026-05-30',
+  },
 ];
 
 function AnnotationsTab() {
