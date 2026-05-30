@@ -18,8 +18,7 @@ import type { RepresentBuildFace } from '../RepresentBuildTetrahedron';
 import { parsePoiCatalog } from '../../poi-catalog/poiCatalog.parser';
 import { GEOMETRIES, REPRESENTATIONS } from '../../workspace/workspace.registry';
 import type { CatalogRef } from '../../workspace/workspace.types';
-import { loadHandoff, clearHandoff, type RepresentHandoff } from '../../workspace/draftHandoff';
-import { commitToRepo, type CommitResult } from '../../../runtime/commitBridge';
+import { commitToRepo } from '../../../runtime/commitBridge';
 import type { BoundaryGeometryFile, WegnetzFile, RepresentationFile } from '../../workspace/workspace.types';
 import type { Position } from 'geojson';
 import {
@@ -180,9 +179,6 @@ function ListItem({
 
 export default function WorkspacePanel({ onJumpTo }: Props) {
   const [showWizard, setShowWizard] = useState(false);
-  // Uebergabe-Snapshot aus dem Drawer (Umbauplan E) — separater localStorage-Key.
-  const [handoff, setHandoff] = useState<RepresentHandoff | null>(() => loadHandoff());
-  const onDiscardHandoff = () => { clearHandoff(); setHandoff(null); };
 
   // F4 — Draft-Pipeline: benannte Workspace-Objekte (ersetzt den stillen Autospeicher).
   const [drafts, setDrafts] = useState<Draft[]>(() => listDrafts());
@@ -203,96 +199,59 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
   };
   const onRemoveDraft = (id: string) => { removeDraft(id); refreshDrafts(); };
 
-  // F1 — Boundary aus der Übergabe als eigenes Artefakt nach data/geometries/ committen.
-  const [boundaryBusy, setBoundaryBusy] = useState(false);
-  const [boundaryResult, setBoundaryResult] = useState<CommitResult | null>(null);
+  // F7 Schritt 3 — Commit aus der roten Draft-Zeile: schreibt Boundary (B2) +
+  // maskiertes Netz + Representation in EINEM Akt, versiegelt (Draft raus). Nur
+  // rote Drafts (masked + B2 + maskiertes Netz) sind committbar.
+  const [commitBusyId, setCommitBusyId] = useState<string | null>(null);
+  const [commitMsg, setCommitMsg] = useState<{ ok: boolean; text: string; url?: string } | null>(null);
 
-  const onCommitBoundary = async () => {
-    if (!handoff || handoff.boundaryPolygon.length < 3) return;
-    setBoundaryBusy(true);
-    setBoundaryResult(null);
-    const slug = slugify(handoff.name || handoff.region || 'boundary');
-    const file: BoundaryGeometryFile = {
+  const draftCommittable = (d: Draft): boolean =>
+    !!d.boundary && d.boundary.length >= 3 && !!d.net_masked;
+
+  const onCommitDraft = async (d: Draft) => {
+    if (!draftCommittable(d) || !d.boundary || !d.net_masked) return;
+    setCommitBusyId(d.id);
+    setCommitMsg(null);
+    const slug = slugify(d.name || 'representation');
+    const today = new Date().toISOString().slice(0, 10);
+    const net = d.net_masked;
+    const geom: BoundaryGeometryFile = {
       type: 'Feature',
-      properties: {
-        name: handoff.name || slug,
-        region: handoff.region || undefined,
-        source: 'Drawer-Übergabe (Workspace F1)',
-        drawn_at: new Date().toISOString().slice(0, 10),
-      },
-      geometry: {
-        type: 'Polygon',
-        coordinates: [closedRing(handoff.boundaryPolygon)],
-      },
+      properties: { name: d.name || slug, source: 'Workspace-Commit (F7)', drawn_at: today },
+      geometry: { type: 'Polygon', coordinates: [closedRing(d.boundary)] },
     };
-    const result = await commitToRepo({
-      path: `data/geometries/${slug}.json`,
-      content: JSON.stringify(file, null, 2) + '\n',
-      message: `boundary: ${slug} via Workspace-Übergabe (F1)`,
-    });
-    setBoundaryResult(result);
-    setBoundaryBusy(false);
-  };
-
-  // F2 — Wegnetz aus der Übergabe als Rep-Load-Artefakt nach data/wegnetze/ committen.
-  const [wegnetzBusy, setWegnetzBusy] = useState(false);
-  const [wegnetzResult, setWegnetzResult] = useState<CommitResult | null>(null);
-
-  const onCommitWegnetz = async () => {
-    if (!handoff || !handoff.net) return;
-    setWegnetzBusy(true);
-    setWegnetzResult(null);
-    const slug = slugify(handoff.name || handoff.region || 'boundary');
-    const file: WegnetzFile = {
-      schema: 'scim3_wegnetz_v1',
-      id: slug,
-      geometry_id: slug,
-      edges: handoff.net.edges,
-      gates: handoff.net.gates,
-      cropped: handoff.net.cropped,
-      primary_count: handoff.net.primaryCount,
-      connector_count: handoff.net.connectorCount,
-      created_at: new Date().toISOString().slice(0, 10),
+    const weg: WegnetzFile = {
+      schema: 'scim3_wegnetz_v1', id: slug, geometry_id: slug,
+      edges: net.edges, gates: net.gates, cropped: net.cropped,
+      primary_count: net.primaryCount, connector_count: net.connectorCount,
+      created_at: today,
     };
-    const result = await commitToRepo({
-      path: `data/wegnetze/${slug}.json`,
-      content: JSON.stringify(file, null, 2) + '\n',
-      message: `wegnetz: ${slug} via Workspace-Übergabe (F2)`,
-    });
-    setWegnetzResult(result);
-    setWegnetzBusy(false);
-  };
-
-  // F3 — Representation-Manifest: bindet Boundary + Wegnetz + Katalog zu EINER
-  // Representation. Die Klammer über beide Pakete (Sichtbarkeit/Version bleibt
-  // bewusst draußen — das ist der Sensus-Core-Layer, siehe ann_076).
-  const [catalogBinding, setCatalogBinding] = useState<string>('');
-  const [repBusy, setRepBusy] = useState(false);
-  const [repResult, setRepResult] = useState<CommitResult | null>(null);
-
-  const onCommitRepresentation = async () => {
-    if (!handoff || handoff.boundaryPolygon.length < 3) return;
-    setRepBusy(true);
-    setRepResult(null);
-    const slug = slugify(handoff.name || handoff.region || 'boundary');
-    const file: RepresentationFile = {
-      schema: 'scim3_representation_v1',
-      id: `rep-${slug}`,
-      name: handoff.name || slug,
-      geometry_id: slug,
-      catalog_id: catalogBinding || undefined,
-      wegnetz_id: handoff.net ? slug : undefined,
-      mask_polygon: handoff.maskPolygon ?? undefined,
-      created_at: new Date().toISOString().slice(0, 10),
-      note: 'via Workspace-Übergabe (F3)',
+    const rep: RepresentationFile = {
+      schema: 'scim3_representation_v1', id: `rep-${slug}`, name: d.name || slug,
+      geometry_id: slug, catalog_id: d.catalog_id || undefined, wegnetz_id: slug,
+      created_at: today, note: 'via Workspace-Commit (F7)',
     };
-    const result = await commitToRepo({
-      path: `data/representations/rep-${slug}.json`,
-      content: JSON.stringify(file, null, 2) + '\n',
-      message: `representation: rep-${slug} via Workspace-Übergabe (F3)`,
-    });
-    setRepResult(result);
-    setRepBusy(false);
+    // Reihenfolge: Boundary → Wegnetz → Representation (Keystone zuletzt).
+    const steps: [string, string, string][] = [
+      [`data/geometries/${slug}.json`, JSON.stringify(geom, null, 2) + '\n', 'boundary'],
+      [`data/wegnetze/${slug}.json`, JSON.stringify(weg, null, 2) + '\n', 'wegnetz'],
+      [`data/representations/rep-${slug}.json`, JSON.stringify(rep, null, 2) + '\n', 'representation'],
+    ];
+    let lastUrl: string | undefined;
+    for (const [path, content, label] of steps) {
+      const res = await commitToRepo({ path, content, message: `${label}: ${slug} via Workspace-Commit (F7)` });
+      if (!res.ok) {
+        setCommitMsg({ ok: false, text: `${label} fehlgeschlagen: ${res.error}` });
+        setCommitBusyId(null);
+        return;
+      }
+      lastUrl = res.commit_url;
+    }
+    // Versiegelt: Draft verlässt die Pipeline (ist jetzt committete Representation).
+    removeDraft(d.id);
+    refreshDrafts();
+    setCommitBusyId(null);
+    setCommitMsg({ ok: true, text: `Representation rep-${slug} committet — Draft versiegelt.`, url: lastUrl });
   };
 
   const catalogs: CatalogRef[] = useMemo(() => {
@@ -357,209 +316,6 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
         </div>
       </div>
 
-      {/* Uebergabe aus dem Drawer (Umbauplan E) — der atomare Verbund-Commit
-          (Boundary + Katalog-Bindung + Wegnetz) folgt in Umbauplan F. */}
-      {handoff && (
-        <div style={{
-          background: '#ebf8ff', border: '1px solid #2b6cb0', borderRadius: 6,
-          padding: '14px 18px', marginBottom: 22,
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-            <span style={{ fontSize: 18 }}>↩</span>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#1a365d' }}>
-                Übergabe aus dem Drawer
-                <span style={{
-                  marginLeft: 8, fontSize: 10, fontFamily: 'monospace',
-                  background: '#2b6cb0', color: '#fff', padding: '1px 6px', borderRadius: 3,
-                }}>
-                  VERBUND
-                </span>
-              </div>
-              <div style={{ fontSize: 11, color: '#2c5282', marginTop: 1 }}>
-                {handoff.name || 'Unbenannt'}{handoff.region ? ` · ${handoff.region}` : ''}
-              </div>
-            </div>
-          </div>
-
-          <ul style={{ margin: '0 0 10px 0', padding: '0 0 0 18px', fontSize: 11, color: '#2c5282', lineHeight: 1.7 }}>
-            <li><strong>Boundary</strong> · Polygon mit {handoff.boundaryPolygon.length} Punkten</li>
-            <li>
-              <strong>Maske</strong> ·{' '}
-              {handoff.maskPolygon
-                ? `Slot-2-Polygon mit ${handoff.maskPolygon.length} Punkten`
-                : 'keine'}
-            </li>
-            <li>
-              <strong>Wegnetz</strong> ·{' '}
-              {handoff.net
-                ? `${handoff.net.edges.length} Kanten (${handoff.net.primaryCount} primär / ${handoff.net.connectorCount} Connector)`
-                  + (handoff.net.cropped ? `, maskiert · ${handoff.net.gates.length} Gates` : ', roh (nicht maskiert)')
-                : 'kein Netz übergeben'}
-            </li>
-          </ul>
-
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <button
-              onClick={onCommitBoundary}
-              disabled={boundaryBusy || handoff.boundaryPolygon.length < 3}
-              title="Schreibt die Boundary als eigenes Artefakt nach data/geometries/ — der Anker, auf den Katalog und Wegnetz zeigen (F1)."
-              style={{
-                fontSize: 12, padding: '7px 12px', fontWeight: 600,
-                border: '1px solid #2b6cb0', borderRadius: 5,
-                background: boundaryBusy ? '#bee3f8' : '#2b6cb0',
-                color: boundaryBusy ? '#2c5282' : '#fff',
-                cursor: boundaryBusy ? 'wait' : 'pointer',
-              }}
-            >
-              {boundaryBusy ? 'Committe Boundary …' : 'Boundary committen (F1)'}
-            </button>
-            <button
-              onClick={onCommitWegnetz}
-              disabled={wegnetzBusy || !handoff.net}
-              title={handoff.net
-                ? 'Schreibt das Wegnetz als Rep-Load-Artefakt nach data/wegnetze/ — referenziert die Boundary per geometry_id (F2).'
-                : 'Kein Wegnetz übergeben.'}
-              style={{
-                fontSize: 12, padding: '7px 12px', fontWeight: 600,
-                border: `1px solid ${handoff.net ? '#2b6cb0' : '#cbd5e0'}`,
-                borderRadius: 5,
-                background: wegnetzBusy ? '#bee3f8' : handoff.net ? '#2b6cb0' : '#edf2f7',
-                color: wegnetzBusy ? '#2c5282' : handoff.net ? '#fff' : '#a0aec0',
-                cursor: wegnetzBusy ? 'wait' : handoff.net ? 'pointer' : 'not-allowed',
-              }}
-            >
-              {wegnetzBusy ? 'Committe Wegnetz …' : 'Wegnetz committen (F2)'}
-            </button>
-            <select
-              value={catalogBinding}
-              onChange={(e) => setCatalogBinding(e.target.value)}
-              title="Katalog, den diese Representation bindet (catalog_id). Optional."
-              style={{
-                fontSize: 12, padding: '7px 8px', borderRadius: 5,
-                border: '1px solid #cbd5e0', background: 'white', color: '#2d3748',
-              }}
-            >
-              <option value="">Katalog: keiner</option>
-              {catalogs.map((c) => (
-                <option key={c.id} value={c.id}>Katalog: {c.name}</option>
-              ))}
-            </select>
-            <button
-              onClick={onCommitRepresentation}
-              disabled={repBusy}
-              title="Bindet Boundary + Wegnetz + Katalog zu einer Representation (data/representations/) — die Klammer über beide Pakete (F3)."
-              style={{
-                fontSize: 12, padding: '7px 12px', fontWeight: 600,
-                border: '1px solid #553c9a', borderRadius: 5,
-                background: repBusy ? '#e9d8fd' : '#553c9a',
-                color: repBusy ? '#44337a' : '#fff',
-                cursor: repBusy ? 'wait' : 'pointer',
-              }}
-            >
-              {repBusy ? 'Committe Representation …' : 'Representation committen (F3)'}
-            </button>
-            <button
-              onClick={() => onJumpTo('geometry_editor')}
-              style={{
-                fontSize: 12, padding: '7px 12px', cursor: 'pointer',
-                border: '1px solid #2b6cb0', borderRadius: 5,
-                background: 'white', color: '#2b6cb0', fontWeight: 500,
-              }}
-            >
-              Im Editor öffnen
-            </button>
-            <button
-              onClick={onDiscardHandoff}
-              style={{
-                fontSize: 12, padding: '7px 12px', cursor: 'pointer',
-                border: '1px solid #e2e8f0', borderRadius: 5,
-                background: 'white', color: '#718096', fontWeight: 500,
-              }}
-            >
-              Verwerfen
-            </button>
-          </div>
-
-          {boundaryResult && (
-            <div style={{
-              marginTop: 10, fontSize: 11, lineHeight: 1.5,
-              padding: '8px 10px', borderRadius: 4,
-              background: boundaryResult.ok ? '#f0fff4' : '#fff5f5',
-              border: `1px solid ${boundaryResult.ok ? '#9ae6b4' : '#feb2b2'}`,
-              color: boundaryResult.ok ? '#22543d' : '#742a2a',
-            }}>
-              {boundaryResult.ok ? (
-                <>
-                  ✓ Boundary {boundaryResult.was_update ? 'aktualisiert' : 'committet'} ·{' '}
-                  <code>{boundaryResult.path}</code>
-                  {boundaryResult.commit_url && (
-                    <>
-                      {' · '}
-                      <a href={boundaryResult.commit_url} target="_blank" rel="noreferrer"
-                        style={{ color: '#2b6cb0' }}>Commit ansehen</a>
-                    </>
-                  )}
-                </>
-              ) : (
-                <>✗ Commit fehlgeschlagen: {boundaryResult.error}</>
-              )}
-            </div>
-          )}
-
-          {wegnetzResult && (
-            <div style={{
-              marginTop: 8, fontSize: 11, lineHeight: 1.5,
-              padding: '8px 10px', borderRadius: 4,
-              background: wegnetzResult.ok ? '#f0fff4' : '#fff5f5',
-              border: `1px solid ${wegnetzResult.ok ? '#9ae6b4' : '#feb2b2'}`,
-              color: wegnetzResult.ok ? '#22543d' : '#742a2a',
-            }}>
-              {wegnetzResult.ok ? (
-                <>
-                  ✓ Wegnetz {wegnetzResult.was_update ? 'aktualisiert' : 'committet'} ·{' '}
-                  <code>{wegnetzResult.path}</code>
-                  {wegnetzResult.commit_url && (
-                    <>
-                      {' · '}
-                      <a href={wegnetzResult.commit_url} target="_blank" rel="noreferrer"
-                        style={{ color: '#2b6cb0' }}>Commit ansehen</a>
-                    </>
-                  )}
-                </>
-              ) : (
-                <>✗ Commit fehlgeschlagen: {wegnetzResult.error}</>
-              )}
-            </div>
-          )}
-
-          {repResult && (
-            <div style={{
-              marginTop: 8, fontSize: 11, lineHeight: 1.5,
-              padding: '8px 10px', borderRadius: 4,
-              background: repResult.ok ? '#faf5ff' : '#fff5f5',
-              border: `1px solid ${repResult.ok ? '#d6bcfa' : '#feb2b2'}`,
-              color: repResult.ok ? '#44337a' : '#742a2a',
-            }}>
-              {repResult.ok ? (
-                <>
-                  ✓ Representation {repResult.was_update ? 'aktualisiert' : 'committet'} ·{' '}
-                  <code>{repResult.path}</code>
-                  {repResult.commit_url && (
-                    <>
-                      {' · '}
-                      <a href={repResult.commit_url} target="_blank" rel="noreferrer"
-                        style={{ color: '#553c9a' }}>Commit ansehen</a>
-                    </>
-                  )}
-                </>
-              ) : (
-                <>✗ Commit fehlgeschlagen: {repResult.error}</>
-              )}
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Package-Pipeline (F4) — Intake → Draft → gespeicherter Draft (+Katalog) */}
       <Section title="Package-Pipeline" count={drafts.length}>
@@ -668,6 +424,22 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
                   Im Drawer öffnen
                 </button>
                 <button
+                  onClick={() => onCommitDraft(d)}
+                  disabled={!draftCommittable(d) || commitBusyId === d.id}
+                  title={draftCommittable(d)
+                    ? 'Committen + versiegeln: Boundary + maskiertes Netz + Representation'
+                    : 'Nur rote (maskiert gespeicherte) Drafts sind committbar'}
+                  style={{
+                    fontSize: 11, padding: '4px 10px', fontWeight: 700,
+                    border: `1px solid ${draftCommittable(d) ? '#276749' : '#cbd5e0'}`, borderRadius: 4,
+                    background: !draftCommittable(d) ? '#edf2f7' : commitBusyId === d.id ? '#c6f6d5' : '#276749',
+                    color: !draftCommittable(d) ? '#a0aec0' : commitBusyId === d.id ? '#22543d' : '#fff',
+                    cursor: draftCommittable(d) ? 'pointer' : 'not-allowed',
+                  }}
+                >
+                  {commitBusyId === d.id ? 'Committe …' : '⬛ Commit'}
+                </button>
+                <button
                   onClick={() => onRemoveDraft(d.id)}
                   title="Draft verwerfen"
                   style={{
@@ -681,6 +453,19 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
               </div>
             );
           })
+        )}
+        {commitMsg && (
+          <div style={{
+            marginTop: 8, fontSize: 11, lineHeight: 1.5, padding: '8px 10px', borderRadius: 4,
+            background: commitMsg.ok ? '#f0fff4' : '#fff5f5',
+            border: `1px solid ${commitMsg.ok ? '#9ae6b4' : '#feb2b2'}`,
+            color: commitMsg.ok ? '#22543d' : '#742a2a',
+          }}>
+            {commitMsg.ok ? '✓ ' : '✗ '}{commitMsg.text}
+            {commitMsg.url && (
+              <>{' · '}<a href={commitMsg.url} target="_blank" rel="noreferrer" style={{ color: '#276749' }}>Commit ansehen</a></>
+            )}
+          </div>
         )}
       </Section>
 
