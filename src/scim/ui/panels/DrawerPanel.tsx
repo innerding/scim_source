@@ -227,6 +227,19 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   // Jede Änderung am Zustand → dirty (B2 nicht mehr solid; muss neu gespeichert werden).
   useEffect(() => { setSaved(false); }, [polygon, maskPolygon, masked, pathResult, overlayCatalogId, name]);
 
+  // Allgemeiner Knopf „B2 aus B1": kopiert die Referenz-Boundary (B1) als Startform
+  // in den finalen Slot (B2), die du dann netz-informiert verfeinerst.
+  const onB2fromB1 = () => {
+    const map = mapRef.current;
+    if (!map || !polygon || polygon.length < 3) return;
+    if (maskLayerRef.current) { map.removeLayer(maskLayerRef.current); maskLayerRef.current = null; }
+    const copy = polygon.map((p) => [p[0], p[1]] as Position);
+    const latlngs = copy.map(([lng, lat]) => [lat, lng] as [number, number]);
+    const m = L.polygon(latlngs, { color: SLOT2_COLOR, dashArray: SLOT2_DASH }).addTo(map);
+    maskLayerRef.current = m;
+    setMaskPolygon(copy);
+  };
+
   // Auf die aktuell im Inspector gewaehlte Region zoomen.
   const fitToInspector = () => {
     const map = mapRef.current;
@@ -691,10 +704,25 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   // [Anwenden] im Wegnetz-Tab: Boundary-bbox -> Overpass -> Filter -> Render,
   // anschliessend POI-Anker (ann_074) berechnen + zeichnen.
   const onApplyPath = async (cfg: PathConfig) => {
-    const geo = inspectorView?.geometry;
-    if (!geo || !geo.polygon || geo.polygon.length < 3) {
+    const map = mapRef.current;
+    // Vorrang-Regel: das Netz wird aus der EIGENEN Boundary (B1) des Drafts abgeleitet.
+    // Nur wenn der Drawer noch keine eigene Boundary hat, leiht der Inspector seine —
+    // und sie wird dann als B1 übernommen (Inspector→B1).
+    let src: Position[] | null = (polygon && polygon.length >= 3) ? polygon : null;
+    if (!src) {
+      const ip = inspectorView?.geometry.polygon;
+      if (ip && ip.length >= 3 && map) {
+        if (polygonLayerRef.current) { map.removeLayer(polygonLayerRef.current); polygonLayerRef.current = null; }
+        const latlngs = ip.map(([lng, lat]) => [lat, lng] as [number, number]);
+        const poly = L.polygon(latlngs, { color: SLOT1_COLOR }).addTo(map);
+        polygonLayerRef.current = poly;
+        setPolygon(ip);
+        src = ip;
+      }
+    }
+    if (!src) {
       setPathStatus('error');
-      setPathError('Keine Region-Boundary aktiv. Im Inspector eine Representation mit Polygon wählen.');
+      setPathError('Keine Boundary — im Umriss-Tab eine zeichnen oder eine Inspector-R wählen.');
       return;
     }
     // Laufende Anfrage abbrechen
@@ -705,7 +733,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     setPathStatus('loading');
     setPathError('');
     try {
-      const res = await deriveWanderwegnetz(geo.polygon, cfg, ctrl.signal);
+      const res = await deriveWanderwegnetz(src, cfg, ctrl.signal);
       if (ctrl.signal.aborted) return;
       setPathResult(res);
       renderPath(res);
@@ -713,7 +741,9 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       setCropResult(null);
       renderGates(null);
 
-      const summary = anchorPois(regionPois(geo.id), res, cfg.anker.snap_schwelle_meter, geo.polygon);
+      // POIs aus dem gebundenen Katalog des Drafts (Fallback: Inspector-Region).
+      const catId = overlayCatalogId || inspectorView?.geometry.id || '';
+      const summary = anchorPois(regionPois(catId), res, cfg.anker.snap_schwelle_meter, src);
       setAnchorSummary(summary);
       renderAnchors(summary);
 
@@ -726,7 +756,10 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   };
 
   // Regionswechsel (andere Inspector-R): alte Wegnetz-Ableitung verwerfen.
+  // ABER: hat der Drawer eine eigene Boundary (B1), gewinnt diese — der Inspector
+  // darf den Drawer dann nicht kapern (kein Wipe/Zoom).
   useEffect(() => {
+    if (polygonLayerRef.current) return;
     pathAbortRef.current?.abort();
     setPathStatus('idle');
     setPathError('');
@@ -879,8 +912,23 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
           on={maskVisible} opacity={maskOpacity}
           onToggle={setMaskVisible} onOpacity={setMaskOpacity}
           disabled={!maskPolygon || maskPolygon.length < 3}
-          disabledHint="Finale Boundary (B2) als zweites Polygon über B1 zeichnen"
+          disabledHint="Finale Boundary (B2) als zweites Polygon über B1 zeichnen — oder per Knopf darunter."
         />
+        <button
+          onClick={onB2fromB1}
+          disabled={!polygon || polygon.length < 3}
+          title={(!polygon || polygon.length < 3)
+            ? 'Erst B1 (Referenz) zeichnen'
+            : 'B2 als Kopie von B1 anlegen — dann netz-informiert verfeinern'}
+          style={{
+            fontSize: 10, padding: '3px 8px', marginLeft: 18, marginBottom: 4, alignSelf: 'flex-start',
+            border: `1px solid ${(!polygon || polygon.length < 3) ? '#cbd5e0' : SLOT2_COLOR}`, borderRadius: 4,
+            background: 'white', color: (!polygon || polygon.length < 3) ? '#a0aec0' : SLOT2_COLOR,
+            cursor: (!polygon || polygon.length < 3) ? 'not-allowed' : 'pointer',
+          }}
+        >
+          ▢→▣ B2 aus B1
+        </button>
         <LayerDimmer
           label="Vorlage (Inspector-R)" color="#8b3fbf"
           on={showInspectorRef} opacity={inspectorOpacity}
