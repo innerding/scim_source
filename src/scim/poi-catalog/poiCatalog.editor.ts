@@ -111,13 +111,15 @@ export function undeletePoi(state: PoiCatalogEditState, id: string): PoiCatalogE
 export function addNewPoi(
   state: PoiCatalogEditState,
   template: Omit<CatalogPoi, 'id'>,
+  prefix: string,
   takenIds: Iterable<string> = [],
 ): { state: PoiCatalogEditState; id: string } {
   // Neue POIs bekommen sofort einen stabilen Fixstern-Token (keine
   // positionellen new_NNN mehr). Kollision gegen Basis-IDs + bestehende Patches.
+  // `prefix` = `<verbund>-<slug>-`, aus der .md-Frontmatter abgeleitet.
   const taken = new Set<string>(takenIds);
   for (const k of Object.keys(state.patches)) taken.add(k);
-  const id = mintToken(state.region_id, taken);
+  const id = mintToken(prefix, taken);
   return {
     state: {
       ...state,

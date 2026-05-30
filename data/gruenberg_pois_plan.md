@@ -1,5 +1,6 @@
 # Grünberg POI-Plan v2
 **Stand:** 2026-05-30  ·  **67 POIs**  ·  ✓ 52 · ≈ 15 · ❓ 0
+**Token-Präfix:** skg · gruenberg
 
 Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 **✓** aus OSM/bestätigt · **≈** abgeleitet/geschätzt · **❓** fehlt

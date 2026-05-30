@@ -15,6 +15,9 @@ import {
 } from '../../poi-catalog/poiCatalog.editor';
 import { compactDiff, diffLines, serializeCatalogToMd } from '../../poi-catalog/poiCatalog.serializer';
 import { fetchLatestCatalogMd, type CatalogSource } from '../../poi-catalog/catalogRuntime';
+import {
+  buildPrefix, sanitizeSlug, sanitizeVerbund, SLUG_MAX_LEN, VERBUND_MAX_LEN,
+} from '../../poi-catalog/poiCatalog.token';
 import { commitToRepo, type CommitResult } from '../../../runtime/commitBridge';
 import type {
   Bucket, CatalogPoi, CoordStatus, MergedPoi, PoiCatalogEditState, Subcategory,
@@ -1395,10 +1398,21 @@ export default function CatalogTab({ onJumpTo }: { onJumpTo?: (panelId: string) 
   const [showChanges, setShowChanges] = useState(false);
   const [clusterSort, setClusterSort] = useState(false);
 
-  // Region-Wechsel: passenden Edit-State laden
+  // Token-Präfix-Overrides (Operator-Eingabe im Header). null = der aus der .md
+  // geparste Wert gilt. Sobald getippt wird, sticht der Draft, bis Commit/
+  // Region-Wechsel ihn zurücksetzt. So bleibt die .md-Frontmatter die Wahrheit.
+  const [verbundDraft, setVerbundDraft] = useState<string | null>(null);
+  const [slugDraft, setSlugDraft] = useState<string | null>(null);
+  const tokenVerbund = verbundDraft ?? baseCatalog.token_verbund;
+  const tokenSlug = slugDraft ?? baseCatalog.token_slug;
+  const tokenPrefix = buildPrefix(tokenVerbund, tokenSlug);
+
+  // Region-Wechsel: passenden Edit-State laden, Präfix-Drafts zurücksetzen
   useEffect(() => {
     setEditState(loadEditState(region.id));
     setEditMode(false);
+    setVerbundDraft(null);
+    setSlugDraft(null);
   }, [region.id]);
 
   // Auto-save bei jeder State-Änderung (nur wenn Edits vorhanden, sonst Storage leerräumen)
@@ -1501,15 +1515,17 @@ export default function CatalogTab({ onJumpTo }: { onJumpTo?: (panelId: string) 
       coord_status: isGhost ? 'cluster_ghost' : 'missing',
     };
     const takenIds = merged.pois.map((p) => p.id);
-    setEditState((s) => addNewPoi(s, template, takenIds).state);
+    setEditState((s) => addNewPoi(s, template, tokenPrefix, takenIds).state);
   };
 
   // ─── Render ─────────────────────────────────────────────────────────────────
 
   const fileName = `${region.id}_pois_plan.md`;
   const newMd = useMemo(
-    () => (showExport ? serializeCatalogToMd(effectiveMd, merged) : ''),
-    [showExport, effectiveMd, merged],
+    () => (showExport
+      ? serializeCatalogToMd(effectiveMd, merged, { tokenVerbund, tokenSlug })
+      : ''),
+    [showExport, effectiveMd, merged, tokenVerbund, tokenSlug],
   );
 
   return (
@@ -1560,6 +1576,55 @@ export default function CatalogTab({ onJumpTo }: { onJumpTo?: (panelId: string) 
         >
           i
         </button>
+
+        {/* Token-Präfix: <verbund (≤4)>-<representation (≤12)>-<code (4, generiert)>.
+            Nur in Bearbeiten editierbar; betrifft NUR neu angelegte POIs. */}
+        <div
+          title={
+            'Token-Präfix dieses Representationskatalogs. Format: '
+            + 'Verbund (≤4) − Representation (≤12) − Code (4, generiert). '
+            + 'Änderung betrifft nur NEU angelegte POIs; bestehende Tokens bleiben stabil.'
+          }
+          style={{
+            display: 'flex', alignItems: 'center', gap: 3,
+            fontSize: 11, color: '#4a5568',
+            padding: '2px 8px', borderRadius: 4,
+            border: '1px solid #e2e8f0', background: '#f7fafc',
+          }}
+        >
+          <span style={{ color: '#718096' }}>Token:</span>
+          {editMode ? (
+            <>
+              <input
+                value={tokenVerbund}
+                maxLength={VERBUND_MAX_LEN}
+                onChange={(e) => setVerbundDraft(sanitizeVerbund(e.target.value))}
+                title="Verbund (max. 4 Zeichen, a–z 0–9)"
+                style={{
+                  width: 42, fontFamily: 'monospace', fontSize: 11, textAlign: 'center',
+                  padding: '2px 3px', borderRadius: 3, border: '1px solid #cbd5e0',
+                }}
+              />
+              <span style={{ color: '#a0aec0' }}>−</span>
+              <input
+                value={tokenSlug}
+                maxLength={SLUG_MAX_LEN}
+                onChange={(e) => setSlugDraft(sanitizeSlug(e.target.value))}
+                title="Representation (max. 12 Zeichen, a–z 0–9)"
+                style={{
+                  width: 92, fontFamily: 'monospace', fontSize: 11, textAlign: 'center',
+                  padding: '2px 3px', borderRadius: 3, border: '1px solid #cbd5e0',
+                }}
+              />
+              <span style={{ color: '#a0aec0' }}>−</span>
+              <span style={{ fontFamily: 'monospace', color: '#a0aec0' }} title="4-stelliger Code, automatisch generiert">▪▪▪▪</span>
+            </>
+          ) : (
+            <code style={{ fontFamily: 'monospace', fontSize: 11, color: '#2d3748' }}>
+              {tokenPrefix}<span style={{ color: '#a0aec0' }}>▪▪▪▪</span>
+            </code>
+          )}
+        </div>
 
         <button
           onClick={() => setEditMode((m) => !m)}
@@ -1726,6 +1791,9 @@ export default function CatalogTab({ onJumpTo }: { onJumpTo?: (panelId: string) 
             setCatalogSource('live');
             // Auto-save-Effect (auf editState) persistiert bzw. raeumt localStorage.
             setEditState((s) => reconcileEdits(s, committedBase));
+            // Präfix-Drafts loslassen — der committete Wert steht jetzt in der Basis.
+            setVerbundDraft(null);
+            setSlugDraft(null);
           }}
         />
       )}

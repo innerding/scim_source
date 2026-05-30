@@ -12,7 +12,7 @@ import type {
   CatalogCluster, CatalogPoi, CoordStatus, PoiCatalogState, Subcategory,
 } from './poiCatalog.types';
 import { bucketOf, containerOf } from './poiCatalog.containerSystem';
-import { isToken } from './poiCatalog.token';
+import { isToken, sanitizeSlug, sanitizeVerbund, verbundOf } from './poiCatalog.token';
 
 interface ParseOptions {
   region_id: string;
@@ -99,6 +99,17 @@ export function parsePoiCatalog(md: string, opts: ParseOptions): PoiCatalogState
   const pois: CatalogPoi[] = [];
   const clusters: CatalogCluster[] = [];
   const warnings: string[] = [];
+
+  // Token-Präfix aus der Header-Zeile `**Token-Präfix:** <verbund> · <slug>`.
+  // Default: verbundOf(region_id) bzw. region_id, damit Bestandskataloge ohne
+  // die Zeile genau das bisherige Verhalten behalten.
+  let tokenVerbund = verbundOf(opts.region_id);
+  let tokenSlug = sanitizeSlug(opts.region_id) || opts.region_id;
+  const prefixMatch = md.match(/^\*\*Token-Präfix:\*\*\s*([a-z0-9]{1,4})\s*·\s*([a-z0-9]{1,12})/m);
+  if (prefixMatch) {
+    tokenVerbund = sanitizeVerbund(prefixMatch[1]) || tokenVerbund;
+    tokenSlug = sanitizeSlug(prefixMatch[2]) || tokenSlug;
+  }
 
   let i = 0;
   let currentSub: Subcategory | null = null;
@@ -292,6 +303,8 @@ export function parsePoiCatalog(md: string, opts: ParseOptions): PoiCatalogState
   return {
     region_id: opts.region_id,
     region_name: opts.region_name,
+    token_verbund: tokenVerbund,
+    token_slug: tokenSlug,
     generated_at: new Date().toISOString(),
     pois,
     clusters,

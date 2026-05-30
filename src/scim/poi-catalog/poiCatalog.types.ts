@@ -79,6 +79,11 @@ export interface CatalogCluster {
 export interface PoiCatalogState {
   region_id: string;           // 'gruenberg'
   region_name: string;         // 'Grünberg'
+  // Token-Präfix dieses Representationskatalogs (aus der .md-Frontmatter).
+  // Neue Fixstern-Token werden als `<token_verbund>-<token_slug>-<suffix>`
+  // gemintet. Default: verbundOf(region_id) bzw. region_id.
+  token_verbund: string;       // 'skg' (1–4 Zeichen)
+  token_slug: string;          // 'gruenberg' (1–12 Zeichen)
   generated_at: string;        // from md frontmatter or fallback
   pois: CatalogPoi[];
   clusters: CatalogCluster[];

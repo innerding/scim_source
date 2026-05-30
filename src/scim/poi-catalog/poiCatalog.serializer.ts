@@ -135,6 +135,22 @@ function renderClusterSection(catalog: MergedCatalog): string {
   return out.join('\n');
 }
 
+// ─── Token-Präfix-Zeile updaten ──────────────────────────────────────────────
+// Schreibt `**Token-Präfix:** <verbund> · <slug>` in den Header. Ersetzt eine
+// vorhandene Zeile oder fügt sie direkt nach der `**Stand:**`-Zeile ein. So
+// reist das Präfix mit der .md (Frontmatter ist die Wahrheit, ann_C2).
+function updateTokenPrefixLine(prefix: string, verbund: string, slug: string): string {
+  const line = `**Token-Präfix:** ${verbund} · ${slug}`;
+  if (/^\*\*Token-Präfix:\*\*[^\n]*/m.test(prefix)) {
+    return prefix.replace(/^\*\*Token-Präfix:\*\*[^\n]*/m, line);
+  }
+  // Einfügen nach der Stand-Zeile.
+  if (/^\*\*Stand:\*\*[^\n]*/m.test(prefix)) {
+    return prefix.replace(/^(\*\*Stand:\*\*[^\n]*)/m, `$1\n${line}`);
+  }
+  return prefix;
+}
+
 // ─── Header-Counts updaten ───────────────────────────────────────────────────
 
 function updateHeaderCounts(prefix: string, catalog: MergedCatalog): string {
@@ -150,7 +166,16 @@ function updateHeaderCounts(prefix: string, catalog: MergedCatalog): string {
 
 // ─── Haupt-Funktion: Original-md + Edits → neue md ───────────────────────────
 
-export function serializeCatalogToMd(originalMd: string, catalog: MergedCatalog): string {
+interface SerializeOptions {
+  tokenVerbund?: string;
+  tokenSlug?: string;
+}
+
+export function serializeCatalogToMd(
+  originalMd: string,
+  catalog: MergedCatalog,
+  opts: SerializeOptions = {},
+): string {
   const lines = originalMd.split('\n');
 
   // Section-Grenzen suchen
@@ -179,7 +204,10 @@ export function serializeCatalogToMd(originalMd: string, catalog: MergedCatalog)
     prefixLines.pop();
   }
 
-  const prefix = updateHeaderCounts(prefixLines.join('\n'), catalog);
+  let prefix = updateHeaderCounts(prefixLines.join('\n'), catalog);
+  if (opts.tokenVerbund && opts.tokenSlug) {
+    prefix = updateTokenPrefixLine(prefix, opts.tokenVerbund, opts.tokenSlug);
+  }
   const tab1 = renderTabelle1(catalog);
   const middle = middleLines.join('\n').replace(/\n+$/, '') + '\n\n---\n\n';
   const cluster = renderClusterSection(catalog);
