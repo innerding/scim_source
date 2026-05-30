@@ -1,8 +1,10 @@
 # Grünberg POI-Plan v2
-**Stand:** 2026-05-29  ·  **67 POIs**  ·  ✓ 52 · ≈ 15 · ❓ 0
+**Stand:** 2026-05-30  ·  **67 POIs**  ·  ✓ 52 · ≈ 15 · ❓ 0
 
 Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 **✓** aus OSM/bestätigt · **≈** abgeleitet/geschätzt · **❓** fehlt
+
+---
 
 ---
 
@@ -130,7 +132,7 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 |---|---|---|---|---|---|---|
 | skg-gruenberg-7m5f | aussichtspunkt+ | Grünberg Plateau 984 m | Aussichtsplateau mit Sender, Bergbahn, Gasthaus, Spiel- und Aktiv-Angeboten | 13.81838, 47.89868 | Sender | ≈ |
 | skg-gruenberg-e8z3 | badewiese | Badewiese | Bahnstation, Liegewiese, Strandbuffet, Busparkplatz | 13.80455, 47.91494 | Badewiese Weyer | ≈ |
-| skg-gruenberg-g474 | bergbahn | Grünberg Talstation | Talstation der Grünbergseilbahn am Traunsee — Einstiegspunkt zum Berg, mit Schiffsanlegestelle und Parkmöglichkeit | 13.80802, 47.91339 | Talstation | ≈ |
+| skg-gruenberg-g474 | bergbahn+ | Grünberg Talstation 422 m | Talstation der Grünbergseilbahn am Traunsee — Einstiegspunkt zum Berg, mit Schiffsanlegestelle und Parkmöglichkeit | 13.80802, 47.91339 | Talstation | ≈ |
 
 ---
 
@@ -186,6 +188,8 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 
 ---
 
+---
+
 ## Cluster
 
 ### Sender *(9 POIs)*
@@ -194,15 +198,15 @@ sender Sender *(Cluster-Icon)* · spielplatz Abenteuerspielplatz · sommerrodeln
 
 ### Talstation *(9 POIs)*
 
-talstation Talstation *(Cluster-Icon)* · rastplatz Seerast · gewaesser Liegewiese · segel-verein ASKÖ-Segeln · bar Loungerie · parkplatz Bergbahn · parkplatz am See · hotel+ Seehotel Weyer 4-Sterne · bergbahn Grünberg Talstation
+talstation Talstation *(Cluster-Icon)* · rastplatz Seerast · segel-verein ASKÖ-Segeln · bar Loungerie · gewaesser Liegewiese · parkplatz Bergbahn · parkplatz am See · hotel+ Seehotel Weyer 4-Sterne · bergbahn+ Grünberg Talstation 422 m
 
 ### Badewiese Weyer *(8 POIs)*
 
-gewaesser Liegewiese *(Cluster-Icon)* · denkmal+ Kriegerdenkmal Seebahnhof A° 1954 · volleyball Beachvolleyball · strand-buffet Strand-Buffet · badewiese Weyer · parkplatz PKW + Busse · badewiese Badewiese · schiffsanlegestelle Traunsee Schifffahrt
+gewaesser Liegewiese *(Cluster-Icon)* · denkmal+ Kriegerdenkmal Seebahnhof A° 1954 · volleyball Beachvolleyball · strand-buffet Strand-Buffet · badewiese Weyer · schiffsanlegestelle Traunsee Schifffahrt · parkplatz PKW + Busse · badewiese Badewiese
 
 ### Bootshafen Gmunden *(3 POIs)*
 
-boots-hafen Bootshafen *(Cluster-Icon)* · parkplatz Busparkplatz · wc WC-Anlage
+boots-hafen Bootshafen *(Cluster-Icon)* · wc WC-Anlage · parkplatz Busparkplatz
 
 ### Laudachsee *(3 POIs)*
 
@@ -218,4 +222,5 @@ blondchen Laudachsee 25 m *(Cluster-Icon)* · rastplatz Liegewiese · gasthaus R
 - Bei genug niedrigem Zoom **vereinigen sich** die Cluster-POIs zu **einem Cluster-POI** (Icon des Cluster-Identitäts-POIs, z. B. Sendemast).
 - Vereinigtes Cluster-POI hat keinen Ring mehr.
 - **Hover** über vereinigtes Cluster-POI → kleines Panel mit Liste der enthaltenen POIs.
+
 
