@@ -118,9 +118,31 @@ export function listDrafts(): Draft[] {
   return migrated;
 }
 
+// Wegwerfbare OSM-Fetch-Caches (colourMeshOverlay) — regenerierbar, dürfen bei
+// Platznot fallen. Schlüssel-Präfixe von dort.
+function pruneOsmCache(): number {
+  const keys: string[] = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && (k.startsWith('scim3_osm_edges_v1') || k.startsWith('scim3_osm_edges_v2'))) keys.push(k);
+  }
+  for (const k of keys) localStorage.removeItem(k);
+  return keys.length;
+}
+
 // WIRFT bei Fehler (z. B. Quota) — Aufrufer (onSave) macht das sichtbar.
+// Selbstheilung: ist localStorage durch den OSM-Cache voll, räumen wir den
+// (wegwerfbar) und versuchen genau einmal erneut.
 export function saveDrafts(drafts: Draft[]): void {
-  localStorage.setItem(DRAFTS_KEY, JSON.stringify(drafts));
+  try {
+    localStorage.setItem(DRAFTS_KEY, JSON.stringify(drafts));
+  } catch (e) {
+    if (pruneOsmCache() > 0) {
+      localStorage.setItem(DRAFTS_KEY, JSON.stringify(drafts)); // wirft erneut, wenn's immer noch nicht reicht
+    } else {
+      throw e;
+    }
+  }
 }
 
 // Gesamtgröße des localStorage (Bytes, UTF-16-nah) — fürs Speicher-Budget.

@@ -436,11 +436,36 @@ export async function fetchOsmEdges(
       },
     }));
 
+  // Cache begrenzen: nur die neuesten paar Einträge behalten, alte v1-Generation
+  // ganz weg. Verhindert, dass jeder Filter-Toggle ~700 KB anhäuft und den
+  // localStorage zustopft (war die Ursache, dass Draft-Speichern scheiterte).
+  pruneOsmEdgeCache(3);
   try {
     localStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), edges }));
-  } catch { /* localStorage voll oder gesperrt — egal */ }
+  } catch { /* localStorage voll oder gesperrt — egal, Cache ist optional */ }
 
   return edges;
+}
+
+// Behält die neuesten `keep` v2-Einträge (nach ts), löscht den Rest + alle v1.
+function pruneOsmEdgeCache(keep: number): void {
+  try {
+    const v2: { key: string; ts: number }[] = [];
+    const stale: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (!k) continue;
+      if (k.startsWith('scim3_osm_edges_v1')) { stale.push(k); continue; }
+      if (k.startsWith(OSM_CACHE_KEY_PREFIX)) {
+        let ts = 0;
+        try { ts = (JSON.parse(localStorage.getItem(k) || '{}') as { ts?: number }).ts ?? 0; } catch { /* ignore */ }
+        v2.push({ key: k, ts });
+      }
+    }
+    v2.sort((a, b) => b.ts - a.ts);
+    for (const { key } of v2.slice(keep)) stale.push(key);
+    for (const k of stale) localStorage.removeItem(k);
+  } catch { /* ignore */ }
 }
 
 // ─── Base-Tile-URLs ──────────────────────────────────────────────────────────
