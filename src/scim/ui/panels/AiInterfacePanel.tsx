@@ -2644,6 +2644,24 @@ REIHENFOLGE: Anwenden → auto Verschweißen → auto Lückenschließen → Mens
 OFFEN/GEPARKT: Linienlöschen-Detail (Long-Press verlängert / Doppelklick bis Gabelung, unsicher); "Hochstellen" (Operator-Option, geparkt); Coord→Katalog-Round-Trip; %-Dezimierung verworfen.`,
     date: '2026-05-30',
   },
+  {
+    id: 'ann_080',
+    category: 'next_intent',
+    label: 'Um-/Ausbauplan — Drawer-Werkzeug + Netz-Engine',
+    related_panel: 'geometry_editor',
+    content: `UM-/AUSBAUPLAN (2026-05-30). Volltext: docs/umbauplan_drawer_netz_engine.md. Baut auf ann_078 (Theorie) + ann_079 (Werkzeugleiste-Spec).
+
+GEOMAN-ENTSCHEIDUNG: (A) zähmen + Custom-Gesten aufsatteln — für Stabilität. Geoman behalten (Drag/Vertex-Edit/Schließen/Snapping), Rechteck aus, Toolbar verstecken, Snap-Toggle treibt Geoman-Snapping, Long-Press-Löschen grün→rot custom (ersetzt removalMode). (B) ersetzen bleibt offen.
+
+REIHENFOLGE: erst Engine-Rückgrat (ohne zusammengeschweißtes/sackgassenfreies Netz macht alles keinen Sinn), dann Werkzeuge. Jede Stufe einzeln deploybar.
+
+ENGINE-RÜCKGRAT: E1 graphCompose (rein, kein UI): Kanten → Knoten (verschweißt per ε) + Kanten from/to + Grad + Komponenten (Union-Find), mit Tests. ← ERSTER SCHRITT. E2 Sackgassen echt + Verschweiß-Anzeige: degree-1 erkennen, Ausnahme POI in Reichweite (anchorPois), gelb; ersetzt Stub. E3 Lückenschließ-Automat: Komponenten per EINER Toleranz verbinden. E4 Sackgassen-Tools (Mensch): ausschließen / zu Start-End-POI. E5 Verschweiß-Automat (final, nach Hand-Korrektur).
+
+WERKZEUGLEISTE/GESTEN (danach): U1 Umriss-Interaktion (Geoman zähmen, Snap-Toggle, Long-Press-Löschen, Klick-Setzen, Vertex-Drag). U2 Wegnetz-Leiste 3 Zonen (Filtermenü→Leiste; Neben-/Landstraße+m-Schieber nach links, TEMPORÄR/Test; Anschluss-Toleranz behalten). T1 Koord-Reduktion 0,3m (distanzbasiert). T2 Linien-setzen-Modus (sperrt Overpass) + Undo (Wegnetz) + Linienlöschen-Geste. T3 Coord→Katalog (Komfort, zuletzt).
+
+ZIEL: Anwenden → auto Verschweißen → auto Lückenschließen → Mensch korrigiert → auto Re-Verschweißen → zusammengeschweißt + sackgassenfrei + nur POIs als Endknoten. Regel: degree-1-Knoten = POI oder ausgeschlossen.`,
+    date: '2026-05-30',
+  },
 ];
 
 function AnnotationsTab() {
