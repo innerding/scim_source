@@ -24,7 +24,6 @@ import { parsePoiCatalog } from '../../poi-catalog/poiCatalog.parser';
 import RepresentBuildTetrahedron from '../RepresentBuildTetrahedron';
 import type { RepresentBuildFace } from '../RepresentBuildTetrahedron';
 import { useInspectorView } from '../../../runtime/repContext';
-import { commitToRepo, type CommitResult } from '../../../runtime/commitBridge';
 import {
   loadPathConfig, savePathConfig, type PathConfig, type BridlewayMode,
 } from '../../regio-content/pathConfig';
@@ -187,14 +186,14 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   // Aktiver Workspace-Draft. Alles, was gezeichnet wird, gehört zu diesem Draft;
   // ohne Draft entsteht beim ersten Zeichnen automatisch einer (lazy).
   const [activeDraftId, setActiveDraftId] = useState<string | null>(initial.draftId);
-  const [geometryId, setGeometryId] = useState<string | 'new'>(initial.geometryId);
-  const [name, setName] = useState(initial.name);
-  const [region, setRegion] = useState(initial.region);
+  // geometryId/name kommen aus dem geöffneten Draft bzw. der committeten Geometry
+  // (read-only im Drawer; Benennen passiert im Workspace).
+  const [geometryId] = useState<string | 'new'>(initial.geometryId);
+  const [name] = useState(initial.name);
   const [polygon, setPolygon] = useState<Position[] | null>(initial.polygon);
   const [maskPolygon, setMaskPolygon] = useState<Position[] | null>(initial.maskPolygon ?? null);
   // F6: ein katalog-gebundener Draft schaltet seine POI-Platzhalter direkt scharf.
-  const [overlayCatalogId, setOverlayCatalogId] = useState<string>(initial.catalogId);
-  const [showExport, setShowExport] = useState(false);
+  const [overlayCatalogId] = useState<string>(initial.catalogId);
   // F7.3: Maskierung ist eine REVERSIBLE Vorschau (Zwischenspeicher/Test), KEIN
   // Commit. Rein lokaler Zustand — wird nicht in den Draft geschrieben. B1 wird
   // ausgeblendet + gesperrt, B2 blau-gestrichelt (Umriss). Toggle nur im Wegnetz.
@@ -518,37 +517,6 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   }, [maskVisible, maskOpacity, maskPolygon, geometryId, tab, masked]);
 
   // Geometry-Wechsel laedt neue Daten in die Map
-  const onChangeGeometry = (id: string | 'new') => {
-    setGeometryId(id);
-    const map = mapRef.current;
-    if (!map) return;
-    if (polygonLayerRef.current) {
-      map.removeLayer(polygonLayerRef.current);
-      polygonLayerRef.current = null;
-    }
-    // Geometriewechsel verwirft auch eine offene Masken-Boundary (Slot 2).
-    if (maskLayerRef.current) {
-      map.removeLayer(maskLayerRef.current);
-      maskLayerRef.current = null;
-    }
-    setMaskPolygon(null);
-    if (id === 'new') {
-      setName('');
-      setRegion('');
-      setPolygon(null);
-    } else {
-      const g = GEOMETRIES.find((x) => x.id === id);
-      if (!g) return;
-      setName(g.name);
-      setRegion(g.region ?? '');
-      setPolygon(g.polygon);
-      const latlngs = g.polygon.map(([lng, lat]) => [lat, lng] as [number, number]);
-      const poly = L.polygon(latlngs, { color: SLOT1_COLOR }).addTo(map);
-      polygonLayerRef.current = poly;
-      map.fitBounds(poly.getBounds(), { padding: [30, 30] });
-    }
-  };
-
   // Inspector-Referenz-Polygon (violett, read-only) ein-/ausblenden.
   useEffect(() => {
     const map = mapRef.current;
@@ -815,39 +783,6 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     if (pathResult) renderPath(pathResult);
   }, [maskPolygon]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Export-JSON erzeugen
-  const exportJson = useMemo(() => {
-    if (!polygon || polygon.length < 3) return null;
-    const ring = [...polygon];
-    if (
-      ring[0][0] !== ring[ring.length - 1][0] ||
-      ring[0][1] !== ring[ring.length - 1][1]
-    ) ring.push(ring[0]);
-    return JSON.stringify({
-      type: 'Feature',
-      properties: {
-        name: name || 'Unbenannt',
-        region: region || undefined,
-        source: 'Operator-gezeichnet in SCIM Drawer (Umriss)',
-        drawn_at: new Date().toISOString().slice(0, 10),
-      },
-      geometry: {
-        type: 'Polygon',
-        coordinates: [ring],
-      },
-    }, null, 2);
-  }, [polygon, name, region]);
-
-  const proposedFileName = (
-    geometryId === 'new'
-      ? (name || 'unbenannt')
-          .toLowerCase()
-          .replace(/[äöüß]/g, (c) => ({ ä: 'ae', ö: 'oe', ü: 'ue', ß: 'ss' }[c] ?? c))
-          .replace(/[^a-z0-9-]+/g, '-')
-          .replace(/^-+|-+$/g, '')
-      : geometryId
-  ) + '.json';
-
   const onTetraFace = (f: RepresentBuildFace) => {
     if (f === 'geometry_draw') onJumpTo('geometry_editor');
     else if (f === 'catalog_magazination') onJumpTo('catalog');
@@ -1024,81 +959,6 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
         </label>
       </div>
 
-      {/* Umriss-Toolbar (nur im Umriss-Tab) */}
-      {tab === 'umriss' && (
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 12, padding: '8px 12px',
-          background: '#f7fafc', borderBottom: '1px solid #e2e8f0', flexWrap: 'wrap',
-        }}>
-          <label style={{ fontSize: 11, color: '#4a5568' }}>Bearbeite:</label>
-          <select
-            value={geometryId}
-            onChange={(e) => onChangeGeometry(e.target.value as string)}
-            style={{ fontSize: 12, padding: '3px 6px', borderRadius: 4, border: '1px solid #cbd5e0' }}
-          >
-            <option value="new">— Neu zeichnen —</option>
-            {GEOMETRIES.map((g) => (
-              <option key={g.id} value={g.id}>{g.name} ({g.id})</option>
-            ))}
-          </select>
-
-          <label style={{
-            fontSize: 11, color: geometryId === 'new' ? '#c05621' : '#4a5568',
-            marginLeft: 8, fontWeight: geometryId === 'new' ? 700 : 400,
-          }}>
-            {geometryId === 'new' ? 'Name (neu) →' : 'Name:'}
-          </label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="z.B. Lichtenberg"
-            style={{
-              fontSize: 12, padding: '3px 6px', borderRadius: 4,
-              border: geometryId === 'new' ? '1px solid #ed8936' : '1px solid #cbd5e0',
-              width: 140,
-              background: geometryId === 'new' ? '#fffaf0' : 'white',
-            }}
-          />
-
-          <label style={{ fontSize: 11, color: '#4a5568' }}>Region:</label>
-          <input
-            type="text"
-            value={region}
-            onChange={(e) => setRegion(e.target.value)}
-            placeholder="z.B. Gmunden"
-            style={{ fontSize: 12, padding: '3px 6px', borderRadius: 4, border: '1px solid #cbd5e0', width: 120 }}
-          />
-
-          <span style={{ flex: 1 }} />
-
-          <label style={{ fontSize: 11, color: '#4a5568' }}>POI-Overlay:</label>
-          <select
-            value={overlayCatalogId}
-            onChange={(e) => setOverlayCatalogId(e.target.value)}
-            style={{ fontSize: 12, padding: '3px 6px', borderRadius: 4, border: '1px solid #cbd5e0' }}
-          >
-            <option value="">— kein —</option>
-            {CATALOGS.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
-
-          <button
-            onClick={() => setShowExport(true)}
-            disabled={!polygon || polygon.length < 3}
-            style={{
-              fontSize: 12, padding: '4px 14px',
-              cursor: (!polygon || polygon.length < 3) ? 'not-allowed' : 'pointer',
-              border: '1px solid #2f855a', borderRadius: 4, fontWeight: 600,
-              background: (!polygon || polygon.length < 3) ? '#cbd5e0' : '#2f855a',
-              color: '#fff',
-            }}
-          >
-            ⬇ Export
-          </button>
-        </div>
-      )}
 
       {/* Inhaltszeile: optionales Wegnetz-Filtermenue + gemeinsamer Map-Canvas */}
       <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
@@ -1151,17 +1011,6 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
         </div>
       )}
 
-      {/* Export-Modal */}
-      {showExport && exportJson && (
-        <ExportModal
-          fileName={proposedFileName}
-          json={exportJson}
-          onClose={() => setShowExport(false)}
-          onCommitted={() => {
-            try { localStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ }
-          }}
-        />
-      )}
     </div>
   );
 }
@@ -1605,137 +1454,3 @@ function Connector({
   );
 }
 
-// ─── Export-Modal ───────────────────────────────────────────────────────────
-
-function ExportModal({
-  fileName, json, onClose, onCommitted,
-}: {
-  fileName: string;
-  json: string;
-  onClose: () => void;
-  onCommitted?: () => void;
-}) {
-  const [copied, setCopied] = useState(false);
-  const [committing, setCommitting] = useState(false);
-  const [commitResult, setCommitResult] = useState<CommitResult | null>(null);
-
-  const onCopy = () => {
-    navigator.clipboard.writeText(json).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    });
-  };
-
-  const onCommit = async () => {
-    setCommitting(true);
-    setCommitResult(null);
-    const path = `data/geometries/${fileName}`;
-    const result = await commitToRepo({
-      path,
-      content: json,
-      message: `geometry: ${fileName.replace(/\.json$/, '')} via Drawer-Bridge`,
-    });
-    setCommitResult(result);
-    setCommitting(false);
-    if (result.ok && onCommitted) onCommitted();
-  };
-
-  return (
-    <div style={{
-      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
-    }} onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()} style={{
-        background: 'white', borderRadius: 6, width: 'min(720px, 92vw)',
-        maxHeight: '85vh', display: 'flex', flexDirection: 'column',
-        boxShadow: '0 10px 40px rgba(0,0,0,0.3)',
-      }}>
-        <div style={{
-          padding: '12px 16px', borderBottom: '1px solid #e2e8f0',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        }}>
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: '#1a365d' }}>Geometry exportieren</div>
-            <div style={{ fontSize: 11, color: '#718096', marginTop: 2, fontFamily: 'monospace' }}>
-              Datei: data/geometries/{fileName}
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: 6 }}>
-            <button
-              onClick={onCommit}
-              disabled={committing || (commitResult?.ok === true)}
-              style={{
-                fontSize: 11, padding: '4px 12px',
-                cursor: committing ? 'wait' : (commitResult?.ok ? 'not-allowed' : 'pointer'),
-                border: '1px solid #2f855a',
-                background: commitResult?.ok ? '#9ae6b4' : '#2f855a',
-                color: commitResult?.ok ? '#22543d' : 'white',
-                borderRadius: 4, fontWeight: 600,
-                opacity: committing ? 0.7 : 1,
-              }}
-            >
-              {committing ? '… committe' : (commitResult?.ok ? '✓ committed' : 'Commit zu main')}
-            </button>
-            <button
-              onClick={onCopy}
-              style={{
-                fontSize: 11, padding: '4px 12px', cursor: 'pointer',
-                border: '1px solid #2b6cb0', background: copied ? '#2b6cb0' : 'white',
-                color: copied ? 'white' : '#2b6cb0', borderRadius: 4, fontWeight: 600,
-              }}
-            >
-              {copied ? '✓ kopiert' : 'In Zwischenablage'}
-            </button>
-            <button
-              onClick={onClose}
-              style={{
-                fontSize: 11, padding: '4px 12px', cursor: 'pointer',
-                border: '1px solid #cbd5e0', background: 'white', borderRadius: 4,
-              }}
-            >
-              Schließen
-            </button>
-          </div>
-        </div>
-        <pre style={{
-          flex: 1, overflow: 'auto', padding: '12px 16px', margin: 0,
-          fontSize: 11, fontFamily: 'monospace', color: '#2d3748',
-          background: '#f7fafc',
-        }}>{json}</pre>
-        {commitResult?.ok && (
-          <div style={{
-            padding: '8px 16px', fontSize: 11, color: '#22543d',
-            background: '#f0fff4', borderTop: '1px solid #9ae6b4',
-            display: 'flex', alignItems: 'center', gap: 10,
-          }}>
-            <span>✓ Commit auf main:</span>
-            <a href={commitResult.commit_url} target="_blank" rel="noreferrer"
-               style={{ color: '#2f855a', fontFamily: 'monospace' }}>
-              {commitResult.commit_sha.slice(0, 7)}
-            </a>
-            <span style={{ color: '#718096' }}>
-              · CF Pages Auto-Build laeuft, ~60 s bis live.
-            </span>
-          </div>
-        )}
-        {commitResult && !commitResult.ok && (
-          <div style={{
-            padding: '8px 16px', fontSize: 11, color: '#9b2c2c',
-            background: '#fff5f5', borderTop: '1px solid #feb2b2',
-          }}>
-            ✗ Commit fehlgeschlagen ({commitResult.status}): {commitResult.error}
-          </div>
-        )}
-        {!commitResult && (
-          <div style={{
-            padding: '8px 16px', fontSize: 11, color: '#7c2d12',
-            background: '#fff5f0', borderTop: '1px solid #fed7aa',
-          }}>
-            <strong>Direkt-Commit</strong> schreibt nach <code>data/geometries/{fileName}</code> auf main.
-            Falls Bridge nicht erreichbar: „In Zwischenablage" → paste in lokale Datei → manuell committen.
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
