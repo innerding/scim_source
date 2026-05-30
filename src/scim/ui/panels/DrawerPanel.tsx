@@ -272,6 +272,31 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     map.fitBounds(L.latLngBounds(pts), { padding: [40, 40] });
   };
 
+  // Katalog-POI-bbox als Fetch-Fläche (Position[]-Rechteck mit etwas Rand) —
+  // nur als Quelle für „Anwenden", wenn keine eigene Boundary da ist. Kein B1.
+  const catalogBboxPolygon = (catId: string): Position[] | null => {
+    const cat = CATALOGS.find((c) => c.id === catId);
+    if (!cat) return null;
+    const parsed = parsePoiCatalog(cat.md, {
+      region_id: cat.id, region_name: cat.name, source_path: `data/${cat.id}_pois_plan.md`,
+    });
+    const coords = parsed.pois
+      .filter((p) => p.coord && !(p.coord[0] === 0 && p.coord[1] === 0))
+      .map((p) => p.coord);
+    if (coords.length === 0) return null;
+    let minLng = Infinity, minLat = Infinity, maxLng = -Infinity, maxLat = -Infinity;
+    for (const [lng, lat] of coords) {
+      if (lng < minLng) minLng = lng; if (lng > maxLng) maxLng = lng;
+      if (lat < minLat) minLat = lat; if (lat > maxLat) maxLat = lat;
+    }
+    const padLng = (maxLng - minLng) * 0.1 || 0.005;
+    const padLat = (maxLat - minLat) * 0.1 || 0.005;
+    return [
+      [minLng - padLng, minLat - padLat], [maxLng + padLng, minLat - padLat],
+      [maxLng + padLng, maxLat + padLat], [minLng - padLng, maxLat + padLat],
+    ];
+  };
+
   // Map init (one-shot) — bleibt ueber Tab-Wechsel erhalten
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
@@ -700,7 +725,14 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     // Vorrang-Regel: das Netz wird aus der EIGENEN Boundary (B1) des Drafts abgeleitet.
     // Nur wenn der Drawer noch keine eigene Boundary hat, leiht der Inspector seine —
     // und sie wird dann als B1 übernommen (Inspector→B1).
+    // Quellen-Reihenfolge: eigene Boundary (B1) → Katalog-POI-Gebiet → Inspector.
     let src: Position[] | null = (polygon && polygon.length >= 3) ? polygon : null;
+    // Katalog gebunden, aber keine eigene Boundary → Netz fürs Katalog-POI-Gebiet
+    // holen (nur Fetch-Fläche, KEIN B1 — B1 zeichnest du danach).
+    if (!src && overlayCatalogId) {
+      src = catalogBboxPolygon(overlayCatalogId);
+    }
+    // Sonst leiht der Inspector seine Boundary — und sie wird als B1 übernommen.
     if (!src) {
       const ip = inspectorView?.geometry.polygon;
       if (ip && ip.length >= 3 && map) {
@@ -714,7 +746,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     }
     if (!src) {
       setPathStatus('error');
-      setPathError('Keine Boundary — im Umriss-Tab eine zeichnen oder eine Inspector-R wählen.');
+      setPathError('Keine Quelle — Boundary zeichnen, Katalog binden oder Inspector-R wählen.');
       return;
     }
     // Laufende Anfrage abbrechen
@@ -988,6 +1020,11 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
           <PathFilterMenu
             gebiet={inspectorView?.geometry.id ?? ''}
             gebietLabel={inspectorView?.geometry.name ?? ''}
+            canApply={
+              (!!polygon && polygon.length >= 3)
+              || !!overlayCatalogId
+              || !!(inspectorView?.geometry?.polygon && inspectorView.geometry.polygon.length >= 3)
+            }
             onResized={() => setTimeout(() => mapRef.current?.invalidateSize(), 60)}
             onApply={onApplyPath}
             status={pathStatus}
@@ -1037,11 +1074,12 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
 // ─── Wegnetz-Filter-Menue (Phase 2: UI + localStorage, keine Wirkung) ─────────
 
 function PathFilterMenu({
-  gebiet, gebietLabel, onResized, onApply, status, error, result, anchor,
+  gebiet, gebietLabel, canApply, onResized, onApply, status, error, result, anchor,
   crop,
 }: {
   gebiet: string;
   gebietLabel: string;
+  canApply: boolean;
   onResized: () => void;
   onApply: (cfg: PathConfig) => void;
   status: 'idle' | 'loading' | 'done' | 'error';
@@ -1106,13 +1144,13 @@ function PathFilterMenu({
         </button>
       </div>
 
-      {!gebiet && (
+      {!canApply && (
         <div style={{
           margin: 10, padding: '8px 10px', fontSize: 11, lineHeight: 1.5,
           background: '#fffaf0', border: '1px solid #fbd38d', borderRadius: 5, color: '#7c2d12',
         }}>
-          Keine Region aktiv. Im rechten Inspector-Header eine Representation
-          wählen — ihr Gebiet liefert den Konfig-Kontext.
+          Keine Quelle fürs Netz. Eine Boundary zeichnen, einen Katalog binden
+          oder eine Inspector-Representation wählen.
         </div>
       )}
 
@@ -1244,14 +1282,14 @@ function PathFilterMenu({
             savePathConfig({ ...cfg, gebiet });
             onApply(cfg);
           }}
-          disabled={!gebiet || status === 'loading'}
+          disabled={!canApply || status === 'loading'}
           style={{
             fontSize: 12, padding: '7px 12px', fontWeight: 600,
             border: '1px solid #2b6cb0', borderRadius: 5,
             background: status === 'loading' ? '#bee3f8' : '#ebf8ff',
             color: '#2b6cb0',
-            cursor: (!gebiet || status === 'loading') ? 'not-allowed' : 'pointer',
-            opacity: gebiet ? 1 : 0.5,
+            cursor: (!canApply || status === 'loading') ? 'not-allowed' : 'pointer',
+            opacity: canApply ? 1 : 0.5,
           }}
         >
           {status === 'loading' ? '… lade OSM' : 'Anwenden'}
