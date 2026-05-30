@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { graphCompose, deadEndNodes, classifyComponents } from './netGraph';
+import { graphCompose, deadEndNodes, classifyComponents, bridgeGaps } from './netGraph';
 import type { PathEdge } from './pathEngine';
 
 // Hilfs-Kantenbau: points als [lat,lng][].
@@ -54,5 +54,24 @@ describe('graphCompose', () => {
     expect(netz.length).toBe(1);   // die lange Kette
     expect(rest.length).toBe(1);   // das winzige Stück
     expect(netz[0].meters).toBeGreaterThan(rest[0].meters);
+  });
+
+  it('bridgeGaps: schließt Lücke innerhalb Toleranz, verschmilzt Komponenten', () => {
+    // Zwei getrennte Ketten; ihre nahen Enden liegen ~12 m auseinander.
+    const g = graphCompose([
+      edge(1, [[48.0000, 14.0000], [48.0010, 14.0000]]),
+      edge(2, [[48.00111, 14.0000], [48.0021, 14.0000]]), // ~12 m Lücke zu Kette 1
+    ]);
+    expect(g.componentCount).toBe(2);
+
+    const tight = bridgeGaps(g, 5);   // Toleranz 5 m → keine Brücke
+    expect(tight.bridges.length).toBe(0);
+    expect(tight.graph.componentCount).toBe(2);
+
+    const loose = bridgeGaps(g, 20);  // Toleranz 20 m → eine Brücke, 1 Komponente
+    expect(loose.bridges.length).toBe(1);
+    expect(loose.graph.componentCount).toBe(1);
+    // die verbundenen Enden sind nicht mehr degree-1 (Sackgasse aufgelöst).
+    expect(deadEndNodes(loose.graph).length).toBe(2); // nur noch die zwei äußeren Enden
   });
 });

@@ -88,11 +88,18 @@ export function graphCompose(edges: PathEdge[], weldMeters = 1.5): NetGraph {
       meters += distMeters(e.points[i - 1][0], e.points[i - 1][1], e.points[i][0], e.points[i][1]);
     }
     graphEdges.push({ edgeId: e.id, from, to, meters });
-    nodes[from].degree += 1;
-    nodes[to].degree += 1;
   }
 
-  // Union-Find für Komponenten.
+  return finalize(nodes, graphEdges);
+}
+
+// Grad (Neuzählung aus den Kanten) + Komponenten (Union-Find) setzen. Geteilt von
+// graphCompose und bridgeGaps, damit nach dem Brückenbau alles konsistent neu
+// gerechnet wird (verbundene Enden verlieren ihren degree-1-Status).
+function finalize(nodes: NetNode[], edges: NetGraphEdge[]): NetGraph {
+  for (const n of nodes) n.degree = 0;
+  for (const e of edges) { nodes[e.from].degree += 1; nodes[e.to].degree += 1; }
+
   const parent = nodes.map((_, i) => i);
   const find = (x: number): number => {
     let r = x;
@@ -103,7 +110,7 @@ export function graphCompose(edges: PathEdge[], weldMeters = 1.5): NetGraph {
     const ra = find(a); const rb = find(b);
     if (ra !== rb) parent[ra] = rb;
   };
-  for (const ge of graphEdges) union(ge.from, ge.to);
+  for (const e of edges) union(e.from, e.to);
 
   const compIndex = new Map<number, number>();
   for (const n of nodes) {
@@ -112,7 +119,7 @@ export function graphCompose(edges: PathEdge[], weldMeters = 1.5): NetGraph {
     n.component = compIndex.get(root) as number;
   }
 
-  return { nodes, edges: graphEdges, componentCount: compIndex.size };
+  return { nodes, edges, componentCount: compIndex.size };
 }
 
 // Bequeme Ableitungen fürs spätere E2/E3.
@@ -151,4 +158,56 @@ export function classifyComponents(graph: NetGraph, minNetMeters: number): Compo
 // Hilfs-Lookup: ist die Komponente eines Knotens ein „Netz" (schwarz)?
 export function netzComponents(graph: NetGraph, minNetMeters: number): Set<number> {
   return new Set(classifyComponents(graph, minNetMeters).filter((c) => c.isNetz).map((c) => c.component));
+}
+
+// E3 — Lückenfüller-Automat: lose Enden (degree-1) verschiedener Komponenten, die
+// näher als toleranceMeters liegen, mit einer Brücke verbinden → Komponenten
+// verschmelzen. Bewusst EINFACH + NACHVOLLZIEHBAR (SCIM-Stabilitätsregel):
+//   - nur Endpunkt↔Endpunkt (lose Enden), nicht Mid-Segment,
+//   - Kruskal-artig: kürzeste Lücken zuerst, jede Brücke verbindet zwei noch
+//     getrennte Komponenten (keine Mehrfach-/Ringbrücken).
+// Brücken tragen negative edgeId (−1, −2, …) zur Unterscheidung von OSM-Ways.
+export function bridgeGaps(
+  graph: NetGraph,
+  toleranceMeters: number,
+): { graph: NetGraph; bridges: NetGraphEdge[] } {
+  if (toleranceMeters <= 0) return { graph, bridges: [] };
+
+  const ends = graph.nodes.filter((n) => n.degree === 1);
+  const pairs: { a: number; b: number; d: number }[] = [];
+  for (let i = 0; i < ends.length; i++) {
+    for (let j = i + 1; j < ends.length; j++) {
+      const na = ends[i]; const nb = ends[j];
+      if (na.component === nb.component) continue;
+      const d = distMeters(na.lat, na.lng, nb.lat, nb.lng);
+      if (d <= toleranceMeters) pairs.push({ a: na.id, b: nb.id, d });
+    }
+  }
+  pairs.sort((x, y) => x.d - y.d);
+
+  // Union-Find über die bestehenden Komponenten-Indizes.
+  const parent: number[] = [];
+  for (let c = 0; c < graph.componentCount; c++) parent.push(c);
+  const find = (x: number): number => {
+    let r = x;
+    while (parent[r] !== r) { parent[r] = parent[parent[r]]; r = parent[r]; }
+    return r;
+  };
+
+  const bridges: NetGraphEdge[] = [];
+  let nextId = -1;
+  for (const p of pairs) {
+    const ca = find(graph.nodes[p.a].component);
+    const cb = find(graph.nodes[p.b].component);
+    if (ca === cb) continue; // schon (über eine kürzere Brücke) verbunden
+    parent[ca] = cb;
+    bridges.push({ edgeId: nextId--, from: p.a, to: p.b, meters: p.d });
+  }
+
+  if (bridges.length === 0) return { graph, bridges: [] };
+
+  // Knoten klonen (degree/component werden in finalize neu gesetzt), neu rechnen.
+  const nodes: NetNode[] = graph.nodes.map((n) => ({ ...n }));
+  const merged = finalize(nodes, [...graph.edges, ...bridges]);
+  return { graph: merged, bridges };
 }

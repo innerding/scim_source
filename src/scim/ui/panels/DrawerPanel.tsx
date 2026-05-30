@@ -32,7 +32,7 @@ import {
   type PathFetchResult, type AnchorSummary, type PoiInput, type CropResult,
   type PathEdge, type GateNode,
 } from '../../regio-content/pathEngine';
-import { graphCompose, netzComponents, type NetGraphEdge } from '../../regio-content/netGraph';
+import { graphCompose, bridgeGaps, netzComponents, type NetGraphEdge } from '../../regio-content/netGraph';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import gruenbergMd from '../../../../data/gruenberg_pois_plan.md?raw';
@@ -138,6 +138,10 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   // degree-1-Enden (Default: Grundfarbe der Komponente). Reiner Render-Zustand.
   const [netLenThresh, setNetLenThresh] = useState(300);
   const [sackgassenRot, setSackgassenRot] = useState(false);
+  // E3 — Lückenfüller: lose Enden < gapTol (m) werden mit Brücken verbunden,
+  // Komponenten verschmelzen. bridgeCount fürs Legenden-Feedback.
+  const [gapTol, setGapTol] = useState(8);
+  const [bridgeCount, setBridgeCount] = useState(0);
 
   // Inspector-Compare: das Polygon der vom Inspector gezeigten R kann
   // als read-only Referenz in Violett unter den Editor gelegt werden
@@ -623,13 +627,17 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   const NETZ_COLOR = '#222a35';
   const REST_COLOR = '#1f9d8f';
   const SACK_COLOR = '#e53e3e';
+  const BRIDGE_COLOR = '#dd6b20';
   const renderPath = (res: PathFetchResult | null) => {
     const layer = pathLayerRef.current;
     if (!layer) return;
     layer.clearLayers();
-    if (!res) return;
+    if (!res) { setBridgeCount(0); return; }
 
-    const graph = graphCompose(res.edges);
+    // E3: erst verschweißen (graphCompose), dann Lücken < gapTol überbrücken →
+    // Komponenten verschmelzen, bevor nach Länge klassifiziert wird.
+    const { graph, bridges } = bridgeGaps(graphCompose(res.edges), gapTol);
+    setBridgeCount(bridges.length);
     const netzSet = netzComponents(graph, netLenThresh);
     const geByEdgeId = new Map<number, NetGraphEdge>();
     for (const ge of graph.edges) geByEdgeId.set(ge.edgeId, ge);
@@ -660,6 +668,13 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     for (const s of styled) {
       if (!s.red) continue;
       L.polyline(s.edge.points, { color: s.color, weight: 3, opacity: 0.95 }).addTo(layer);
+    }
+    // E3: geschlossene Lücken als orange gestrichelte Brücken zeigen (nachvollziehbar).
+    for (const b of bridges) {
+      const a = graph.nodes[b.from]; const c = graph.nodes[b.to];
+      L.polyline([[a.lat, a.lng], [c.lat, c.lng]], {
+        color: BRIDGE_COLOR, weight: 2, opacity: 0.9, dashArray: '4 4',
+      }).addTo(layer);
     }
   };
 
@@ -751,7 +766,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     if (!pathResult) return;
     if (masked && cropResult) renderPath({ ...pathResult, edges: cropResult.edges });
     else renderPath(pathResult);
-  }, [netLenThresh, sackgassenRot]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [netLenThresh, sackgassenRot, gapTol]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // F7-Neufassung: Die Handoff-Brücke entfällt. Der Drawer schreibt direkt in den
   // Workspace-Draft (onSave); der Commit lebt im Workspace.
@@ -1074,6 +1089,9 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
             onNetLenThresh={setNetLenThresh}
             sackgassenRot={sackgassenRot}
             onSackgassenRot={setSackgassenRot}
+            gapTol={gapTol}
+            onGapTol={setGapTol}
+            bridgeCount={bridgeCount}
           />
         )}
         <div ref={mapContainerRef} style={{ flex: 1, minHeight: 0, minWidth: 0 }} />
@@ -1118,6 +1136,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
 function PathFilterMenu({
   gebiet, gebietLabel, canApply, onResized, onApply, status, error, result, anchor,
   crop, netLenThresh, onNetLenThresh, sackgassenRot, onSackgassenRot,
+  gapTol, onGapTol, bridgeCount,
 }: {
   gebiet: string;
   gebietLabel: string;
@@ -1133,6 +1152,9 @@ function PathFilterMenu({
   onNetLenThresh: (v: number) => void;
   sackgassenRot: boolean;
   onSackgassenRot: (v: boolean) => void;
+  gapTol: number;
+  onGapTol: (v: number) => void;
+  bridgeCount: number;
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const [cfg, setCfg] = useState<PathConfig>(() => loadPathConfig(gebiet));
@@ -1271,7 +1293,18 @@ function PathFilterMenu({
         </div>
       </Section>
 
-      <Section title="Konnektivität (E2)">
+      <Section title="Konnektivität (E2/E3)">
+        <Slider
+          label="Lücken-Toleranz (Verschmelzen)"
+          value={gapTol}
+          min={0} max={50} step={1}
+          onChange={onGapTol}
+        />
+        <div style={{ padding: '0 10px 4px', fontSize: 10, color: '#a0aec0', lineHeight: 1.5 }}>
+          Lose Enden näher als dieser Abstand werden mit einer
+          <b style={{ color: '#dd6b20' }}> orange Brücke</b> verbunden → Komponenten
+          verschmelzen.{bridgeCount > 0 && <> Aktuell <b>{bridgeCount}</b> Brücken.</>}
+        </div>
         <Slider
           label="Netz-Schwelle (Länge)"
           value={netLenThresh}
