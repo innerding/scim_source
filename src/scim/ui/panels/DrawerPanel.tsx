@@ -18,7 +18,7 @@ import '@geoman-io/leaflet-geoman-free';
 import '@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css';
 import type { Position } from 'geojson';
 import { GEOMETRIES } from '../../workspace/workspace.registry';
-import { saveHandoff, type HandoffNet } from '../../workspace/draftHandoff';
+import { type HandoffNet } from '../../workspace/draftHandoff';
 import { getDraft, createDraft, updateDraft } from '../../workspace/draftStore';
 import { parsePoiCatalog } from '../../poi-catalog/poiCatalog.parser';
 import RepresentBuildTetrahedron from '../RepresentBuildTetrahedron';
@@ -31,6 +31,7 @@ import {
 import {
   deriveWanderwegnetz, anchorPois, isNetEdge, cropNetToMask,
   type PathFetchResult, type AnchorSummary, type PoiInput, type CropResult,
+  type PathEdge, type GateNode,
 } from '../../regio-content/pathEngine';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -79,6 +80,19 @@ function addBoundaryControls(map: L.Map): void {
     removalMode: true,
     rotateMode: false,
   });
+}
+
+// F7: ein Wegnetz (HandoffNet-Form) aus Kanten + Gates bauen. Nur Netz-Kanten
+// (inNet). Wird für draft.net_unmasked (roh) und draft.net_masked (gecroppt) genutzt.
+function buildNet(
+  edges: PathEdge[], gates: GateNode[], cropped: boolean, gebiet: string, gebietName: string,
+): HandoffNet {
+  const net = edges.filter((e) => e.inNet);
+  return {
+    gebiet, gebietName, edges: net, gates, cropped,
+    primaryCount: net.filter((e) => e.source === 'primary').length,
+    connectorCount: net.filter((e) => e.source !== 'primary').length,
+  };
 }
 
 // ─── Hauptpanel ─────────────────────────────────────────────────────────────
@@ -187,18 +201,31 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   const [masked, setMasked] = useState<boolean>(false);
   const onToggleMask = () => setMasked((m) => !m);
 
-  // Persistenz in den aktiven Workspace-Draft (ersetzt den stillen Autospeicher).
-  // Bei einer offenen committeten Geometry (geometryId !== 'new') wird NICHT
-  // persistiert — die ist Referenz, kein Draft (Checkout-Kopie folgt in F8).
-  useEffect(() => {
-    // Slot 1 (polygon) → reference/B1; Slot 2 (maskPolygon) → boundary/B2.
-    if (activeDraftId) {
-      updateDraft(activeDraftId, { name, reference: polygon, boundary: maskPolygon });
-    } else if (geometryId === 'new' && polygon && polygon.length >= 3) {
-      const d = createDraft(name || 'Unbenannter Draft', { reference: polygon });
-      setActiveDraftId(d.id);
-    }
-  }, [activeDraftId, geometryId, name, polygon, maskPolygon]);
+  // F7-Neufassung: EXPLIZITES Speichern (kein stiller Autospeicher mehr).
+  // saved=true direkt nach dem Speichern (B2 solid blau, 2b); jede Änderung
+  // setzt es auf dirty zurück.
+  const [saved, setSaved] = useState(false);
+
+  const onSave = () => {
+    if (geometryId !== 'new') return;                 // committete Geometry = nur Ansicht
+    if ((!polygon || polygon.length < 3) && (!maskPolygon || maskPolygon.length < 3)) return;
+    const gebiet = inspectorView?.geometry.id ?? '';
+    const gebietName = inspectorView?.geometry.name ?? '';
+    const netUn = pathResult ? buildNet(pathResult.edges, [], false, gebiet, gebietName) : null;
+    // net_masked nur, wenn aktuell maskiert → macht den Draft rot (committbar).
+    const netMa = (masked && cropResult)
+      ? buildNet(cropResult.edges, cropResult.gates, true, gebiet, gebietName) : null;
+    const patch = {
+      name, reference: polygon, boundary: maskPolygon,
+      net_unmasked: netUn, net_masked: netMa, catalog_id: overlayCatalogId || null,
+    };
+    if (activeDraftId) updateDraft(activeDraftId, patch);
+    else { const d = createDraft(name || 'Unbenannter Draft', patch); setActiveDraftId(d.id); }
+    setSaved(true);
+  };
+
+  // Jede Änderung am Zustand → dirty (B2 nicht mehr solid; muss neu gespeichert werden).
+  useEffect(() => { setSaved(false); }, [polygon, maskPolygon, masked, pathResult, overlayCatalogId, name]);
 
   // Auf die aktuell im Inspector gewaehlte Region zoomen.
   const fitToInspector = () => {
@@ -658,34 +685,8 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     }
   }, [masked]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // [↩ An Workspace übergeben] (Umbauplan E): statt selbst ins Repo zu committen,
-  // reicht der Drawer einen Snapshot (Boundary + Maske + Wegnetz + Gates) an den
-  // Workspace zurück. Der Workspace ist das atomare Verbund-Commit-Gate (F).
-  const onHandoffToWorkspace = () => {
-    if (!polygon || polygon.length < 3) return;
-    let net: HandoffNet | null = null;
-    if (pathResult) {
-      const src = cropResult ? cropResult.edges : pathResult.edges;
-      const edges = src.filter((e) => e.inNet);
-      net = {
-        gebiet: inspectorView?.geometry.id ?? '',
-        gebietName: inspectorView?.geometry.name ?? '',
-        edges,
-        gates: cropResult ? cropResult.gates : [],
-        cropped: !!cropResult,
-        primaryCount: edges.filter((e) => e.source === 'primary').length,
-        connectorCount: edges.filter((e) => e.source !== 'primary').length,
-      };
-    }
-    saveHandoff({
-      name, region,
-      boundaryPolygon: polygon,
-      maskPolygon: maskPolygon ?? null,
-      net,
-      handedOffAt: Date.now(),
-    });
-    onJumpTo('workspace');
-  };
+  // F7-Neufassung: Die Handoff-Brücke entfällt. Der Drawer schreibt direkt in den
+  // Workspace-Draft (onSave); der Commit lebt im Workspace.
 
   // [Anwenden] im Wegnetz-Tab: Boundary-bbox -> Overpass -> Filter -> Render,
   // anschliessend POI-Anker (ann_074) berechnen + zeichnen.
@@ -830,6 +831,24 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
           </button>
         ))}
         <span style={{ flex: 1 }} />
+        {/* F7-Neufassung: expliziter Speichern-Button (tab-unabhängig). Speichert
+            den Draft in den Workspace; maskiert gespeichert = roter, committbarer Draft. */}
+        {geometryId === 'new' && (
+          <button
+            onClick={onSave}
+            disabled={saved || ((!polygon || polygon.length < 3) && (!maskPolygon || maskPolygon.length < 3))}
+            title={saved ? 'Gespeichert' : 'Draft in den Workspace speichern'}
+            style={{
+              fontSize: 12, padding: '6px 14px', marginBottom: 4, fontWeight: 700,
+              border: `1px solid ${saved ? '#9ae6b4' : '#2b6cb0'}`, borderRadius: 5,
+              background: saved ? '#f0fff4' : '#2b6cb0',
+              color: saved ? '#22543d' : '#fff',
+              cursor: saved ? 'default' : 'pointer',
+            }}
+          >
+            {saved ? '✓ Gespeichert' : '💾 Speichern'}
+          </button>
+        )}
         {tab === 'wegnetz' && (
           <span style={{ fontSize: 10, color: '#a0aec0', fontStyle: 'italic', marginBottom: 4 }}>
             Primär-Filter + Konnektoren live · Verschweißen folgt
@@ -986,11 +1005,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
             error={pathError}
             result={pathResult}
             anchor={anchorSummary}
-            hasMask={!!maskPolygon && maskPolygon.length >= 3}
-            hasNet={!!pathResult}
             crop={cropResult}
-            canHandoff={!!polygon && polygon.length >= 3}
-            onHandoff={onHandoffToWorkspace}
             masked={masked}
             onToggleMask={onToggleMask}
             canMask={!!maskPolygon && maskPolygon.length >= 3}
@@ -1048,7 +1063,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
 
 function PathFilterMenu({
   gebiet, gebietLabel, onResized, onApply, status, error, result, anchor,
-  hasMask, hasNet, crop, canHandoff, onHandoff,
+  crop,
   masked, onToggleMask, canMask,
 }: {
   gebiet: string;
@@ -1059,11 +1074,7 @@ function PathFilterMenu({
   error: string;
   result: import('../../regio-content/pathEngine').PathFetchResult | null;
   anchor: AnchorSummary | null;
-  hasMask: boolean;
-  hasNet: boolean;
   crop: CropResult | null;
-  canHandoff: boolean;
-  onHandoff: () => void;
   masked: boolean;
   onToggleMask: () => void;
   canMask: boolean;
@@ -1290,48 +1301,30 @@ function PathFilterMenu({
             </div>
           </div>
         )}
-        {/* F7.3: Maskierungs-Toggle. Sperrt B1, macht B2 committbar (blau-
-            gestrichelt im Umriss). Crop am Commit, hier nur Markierung. */}
+        {/* F7-Neufassung: Beschneiden-Toggle = reversible Vorschau. An → maskiertes
+            Netz erzeugen/anzeigen; zurück → löschen, unmaskiertes anzeigen. */}
         <button
           onClick={onToggleMask}
           disabled={!canMask}
           title={
             !canMask ? 'Erst B2 (finale Boundary) im Umriss-Tab über B1 zeichnen'
-              : masked ? 'Maskierung lösen — B1 wieder bearbeitbar'
-              : 'Maskieren: B1 sperren, B2 wird committbar'
+              : masked ? 'Zurück — maskiertes Netz verwerfen, unmaskiertes zeigen'
+              : 'Beschneiden: maskiertes Netz (Vorschau) erzeugen'
           }
           style={{
             fontSize: 12, padding: '7px 12px', fontWeight: 700,
             border: `1px solid ${masked ? '#2b6cb0' : '#c05621'}`, borderRadius: 5,
-            background: !canMask ? '#edf2f7' : masked ? '#2b6cb0' : '#fff5f5',
-            color: !canMask ? '#a0aec0' : masked ? '#fff' : '#c05621',
+            background: !canMask ? '#edf2f7' : masked ? '#ebf8ff' : '#fff5f5',
+            color: !canMask ? '#a0aec0' : masked ? '#2b6cb0' : '#c05621',
             cursor: canMask ? 'pointer' : 'not-allowed',
           }}
         >
-          {masked ? '✓ Maskiert · Ready for Commit' : '▦ Maskierung'}
-        </button>
-        {/* Draft-Lifecycle (Umbauplan E): zurueck an den Workspace statt
-            eigenem Repo-Commit. Der Workspace buendelt + committet (F). */}
-        <button
-          onClick={onHandoff}
-          disabled={!canHandoff}
-          title={
-            !canHandoff ? 'Erst im Umriss-Tab eine Boundary zeichnen'
-              : 'Boundary + Maske + Wegnetz als Übergabe an den Workspace (dort der atomare Verbund-Commit)'
-          }
-          style={{
-            fontSize: 12, padding: '7px 12px', fontWeight: 600,
-            border: '1px solid #2b6cb0', borderRadius: 5,
-            background: canHandoff ? '#2b6cb0' : '#edf2f7',
-            color: canHandoff ? '#fff' : '#a0aec0',
-            cursor: canHandoff ? 'pointer' : 'not-allowed',
-          }}
-        >
-          ↩ An Workspace übergeben
+          {masked ? '↩ zurück (unmaskiert)' : '▦ Beschneiden'}
         </button>
         <div style={{ fontSize: 10, color: '#a0aec0', lineHeight: 1.5 }}>
-          Übergibt Boundary {hasMask ? '+ Maske ' : ''}{hasNet ? '+ Wegnetz ' : ''}an den
-          Workspace. Der eigentliche Repo-Commit des Verbunds passiert dort (Umbauplan F).
+          „Beschneiden" ist eine reversible Vorschau. Gespeichert wird oben mit
+          „Speichern" — maskiert gespeichert = roter, committbarer Draft. Der Commit
+          selbst passiert im Workspace.
         </div>
 
         {/* Status / Legende */}
