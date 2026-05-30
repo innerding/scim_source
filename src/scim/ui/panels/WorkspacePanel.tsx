@@ -623,14 +623,23 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
                 padding: '8px 12px', borderRadius: 4, marginBottom: 6,
                 background: c.bg, border: `1px solid ${c.stroke}`, borderLeft: `4px solid ${c.stroke}`,
               }}>
-                <input
-                  value={d.name}
-                  onChange={(e) => onRenameDraft(d.id, e.target.value)}
-                  style={{
-                    flex: 1, minWidth: 0, fontSize: 13, fontWeight: 600, color: '#2d3748',
-                    border: 'none', background: 'transparent', padding: '2px 0',
-                  }}
-                />
+                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  <input
+                    value={d.name}
+                    onChange={(e) => onRenameDraft(d.id, e.target.value)}
+                    style={{
+                      fontSize: 13, fontWeight: 600, color: '#2d3748',
+                      border: 'none', background: 'transparent', padding: '2px 0',
+                    }}
+                  />
+                  {/* F7-Diagnose: was ist wirklich gespeichert? */}
+                  <span style={{ fontSize: 10, fontFamily: 'monospace', color: '#a0aec0' }}>
+                    B1 {d.reference && d.reference.length >= 3 ? '✓' : '–'} ·{' '}
+                    B2 {d.boundary && d.boundary.length >= 3 ? '✓' : '–'} ·{' '}
+                    Netz {d.net_unmasked ? '✓' : '–'}{d.net_masked ? '+M' : ''} ·{' '}
+                    {d.updated_at ? d.updated_at.slice(11, 19) : '—'}
+                  </span>
+                </div>
                 <span style={{ fontSize: 10, fontFamily: 'monospace', color: c.text, whiteSpace: 'nowrap' }}>
                   {c.label}
                 </span>
