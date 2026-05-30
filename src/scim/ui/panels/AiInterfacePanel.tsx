@@ -2538,6 +2538,38 @@ Drawer = eine Boundary + ihr Wegnetz bauen. Workspace = Komposition + atomarer
 Verbund-Commit. Inspector = fertige R als Referenz zeigen. Nicht vermischen.`,
     date: '2026-05-29',
   },
+  {
+    id: 'ann_076',
+    category: 'adr',
+    label: 'ZWISCHENSTAND — Tiefenschichtung & Workspace-Rolle',
+    related_panel: 'workspace',
+    content: `ZWISCHENSTAND (2026-05-30) — Validierung der Grundsatzgedanken gegen den realen Code-/Vertragsstand. Erfindet die SCIM nicht neu; ordnet das Gefühlte dem Vorhandenen zu und zieht EINE Konsequenz.
+
+KERNBEFUND — gefühlte Begriffe haben reale Gegenstücke:
+  Depth-Thetr            → NavDepthTetraeder (Tiefen-Tetraeder, ann_060); Faces: Package Pipeline / Runtime Builder / Versionen.
+  Control Sensus Core    → Sensus-Core-Paket + Vertrag: Panel 9 (Builder) → 10 (lokal) → 11 (Wirkungsprüfung) → 12 (Freigabe).
+  Package-Versionierung  → Vertrags-Leitsatz: "sichere, reduzierte und versionierte Übergabe an das Endgerät".
+  Cosmo Controls         → Navigator-Oberfläche (real).
+  Packages               → vertraglich definierte Sensus-Core-Pakete.
+Der benannte Architekturbruch ist real: Tiefen-Tetraeder und Sensus-Core-Kette existieren, aber die Übergabe Depth → Sensus-Core → Cosmo-Controls ist noch nicht durchgezogen.
+
+TRAGENDE WAHRHEITEN (bestätigt):
+  - "Im Workspace passiert mehr, als er zeigt" — Commit-Logik/Handoff/Katalog-Bindung hinter Listen.
+  - Umriss = semantischer Gatekeeper — pathEngine.anchorPois (in/out-Test), Crop kappt am Umriss.
+  - "Workflow-Ergebnis gehört zu einem Package-Zustand, nicht absolut zum Workspace" — Geist des Paketvertrags.
+  - Boundary = gemeinsamer Anker/Hitfeld, auf den Katalog und Wegnetz zeigen.
+
+BEGRIFFSHYGIENE: gefühlte Begriffe als Erklärung behalten, im Code bei existierenden Namen bleiben. Vermutungen nicht in Code härten. Colourmesh/Hitfeld/Package-Versionierung sind bisher Vertrag/Absicht (Runtime/BAK, Panel 9–12), nicht laufender Code.
+
+DIE EINE KONSEQUENZ (Workspace-Ausrichtung): Der Workspace ist das Kompositions- und Commit-Gate für Pakete, verankert auf der Boundary. Er ist NICHT die Sichtbarkeits-, Auswahl- oder Versionierungsinstanz — das ist der Versionen-Face/Sensus-Core-Layer. F1/F2/F3 sind damit richtig ausgerichtet; Versionsauswahl/Sichtbarkeits-Toggles gehören NICHT in den Workspace.
+
+GEHÖREN REPRESENTATIONEN IN DEN WORKSPACE? Gespalten: GEBOREN im Workspace (Komposition Boundary + Katalog + Wegnetz → data/representations/); REGIERT nicht vom Workspace (aktiv/sichtbar/historisch/experimentell entscheidet die Versionen-Face/Sensus-Core-Kette). Representationen liegen im Workspace, ihre Sichtbarkeit/Version gehört ihm nicht.
+
+WOZU DIE BOUNDARY (Engine-Regel, Vorform): (1) Anker/Identität — einzige Stelle mit exakten Koordinaten; Katalog & Wegnetz referenzieren per geometry_id (Mitgliedschaft = zeigt auf denselben Kopf). (2) Gatekeeper — trennt POIs innen/außen, kappt Wegnetz (Crop), erzeugt Gates. (3) Hitfeld/Darstellung — Repräsentationsfläche zur Laufzeit (Umriss zeichnen, Refresh, Geofencing).
+
+VERORTUNG MVP-LICHTENBERG: klärt Workspace-Ausrichtung + Vorform der Boundary-Engine-Regeln. Offene Leitfragen (Panel-Inventur, Sensus-Core-Verdrahtung) bleiben für den späteren Bauplan markiert.`,
+    date: '2026-05-30',
+  },
 ];
 
 function AnnotationsTab() {
