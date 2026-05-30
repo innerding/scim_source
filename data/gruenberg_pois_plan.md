@@ -1,5 +1,5 @@
 # Grünberg POI-Plan v2
-**Stand:** 2026-05-29  ·  **67 POIs**  ·  ✓ 52 · ≈ 15 · ❓ 0
+**Stand:** 2026-05-30  ·  **64 POIs**  ·  ✓ 48 · ≈ 13 · ❓ 0
 
 Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 **✓** aus OSM/bestätigt · **≈** abgeleitet/geschätzt · **❓** fehlt
@@ -14,14 +14,14 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 
 | Icon | Tagline | Description | Coord | Cluster | Status |
 |---|---|---|---|---|---|
-| schloss+ | Schloss Weyer A° 1596 | Renaissance-Schloss mit einer der größten Meissen-Porzellan-Sammlungen Europas | 13.81171, 47.91442 | — | ✓ |
-| denkmal+ | Kriegerdenkmal Seebahnhof A° 1954 | Zum Gedenken an 169 Gmundner Gefallene des Ersten Weltkriegs, Entwurf Helmut Stark | 13.80355, 47.91540 | Badewiese Weyer | ✓ |
+| schloss+ | Schloss Weyer A° 1596 | Renaissance-Schloss mit einer der größten Meissen-Porzellan-Sammlungen Europas | 13.81172, 47.91424 | — | ✓ |
+| denkmal+ | Kriegerdenkmal Seebahnhof A° 1954 | Zum Gedenken an 169 Gmundner Gefallene des Ersten Weltkriegs, Entwurf Helmut Stark | 13.80353, 47.91543 | Badewiese Weyer | ✓ |
 
 ### Points_others
 
 | Icon | Tagline | Description | Coord | Cluster | Status |
 |---|---|---|---|---|---|
-| sender | Sender | ORF-Sendeanlage am Plateau, seit 1955 | 13.82227, 47.89813 | Sender *(Cluster-Icon)* | ✓ |
+| sender | Sender | ORF-Sendeanlage am Plateau, seit 1955 | 13.81838, 47.89868 | Sender *(Cluster-Icon)* | ✓ |
 
 ### Square_Rest
 
@@ -33,104 +33,101 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 | aussichtspunkt | Adlerhorst |  | 13.81971, 47.88082 | — | ≈ |
 | aussichtspunkt+ | Katzenstein 1349 m |  | 13.85929, 47.87454 | — | ≈ |
 | aussichtspunkt+ | Freundschaftshöhe 1020 m |  | 13.83947, 47.88086 | — | ≈ |
+| aussichtspunkt+ | Grünberg 986 m | Plateau-Gipfel mit Rundblick über Traunsee und Alpenvorland | 13.81958, 47.89840 | Sender | ✓ |
 | aussichtspunkt+ | Hochgschirr 981 m |  | 13.83075, 47.89635 | — | ≈ |
 | aussichtspunkt+ | Überraschung 789 m | Felsformation in der Kaltenbachwildnis, durchquerbar seit 1902 | 13.82236, 47.87975 | — | ≈ |
 | aussichtspunkt+ | Schlosskogel 649 m |  | 13.81873, 47.87950 | — | ≈ |
 | rastplatz | Westhang |  | 13.80708, 47.90296 | — | ≈ |
-| rastplatz | Liegewiese | Rastplatz am Seeufer unter dem Katzenstein | 13.85238, 47.88080 | Laudachsee | ✓ |
-| rastplatz | Seerast | Rastpunkt am Gmundener Bootshafen | 13.80666, 47.91375 | Talstation | ✓ |
+| rastplatz | Rastplatz |  | 13.80825, 47.90800 | — | ≈ |
+| rastplatz | Laudachsee-Rast | Rastplatz am Seeufer mit Blick auf Traunstein | 13.85237, 47.88080 | (Laudachsee) | ✓ |
+| rastplatz | Seerast | Rastpunkt am Gmundener Bootshafen | 13.80666, 47.91371 | Talstation | ✓ |
+| rastplatz | Liegewiese | Liegewiese an der Talstation | 13.80708, 47.91289 | Talstation | ✓ |
 | unterstand | Holzknecht |  | 13.83791, 47.88997 | — | ≈ |
-| muehlibitschn | Mühlibankerl | beim Engelhof | 13.82167, 47.92014 | — | ✓ |
 
 ### Square_Move
 
 | Icon | Tagline | Description | Coord | Cluster | Status |
 |---|---|---|---|---|---|
-| spielplatz | Abenteuerspielplatz | Großer Naturspielplatz mit Klettergeräten am Plateau | 13.81943, 47.89819 | Sender | ✓ |
-| sommerrodeln | Sommerrodelbahn | Edelstahl-Sommerrodelbahn mit Talfahrt durch den Wald | 13.82020, 47.89851 | Sender | ✓ |
-| wipfelpfad | Baumwipfelpfad | Baumwipfelpfad mit Aussichtsturm und Rundtour durch den Hochwald | 13.81814, 47.89818 | Sender | ✓ |
-| paragleiten-start | Startplatz | Offizieller Paragleiter-Startplatz der Flying Swans mit Blick Richtung Traunsee | 13.81792, 47.89846 | Sender | ✓ |
-| klettergarten | Adlerhorst | Beliebter Kletterfelsen mit ~20 Routen, Schwierigkeitsgrade 4a bis 7a | 13.81969, 47.87905 | — | ≈ |
-| bogen-parcour | 3D-Bogenparcour | 28 Ziele im Wald, betrieben vom BSV Salzkammergut | 13.81134, 47.88150 | — | ✓ |
-| aussichtsturm | Alpenvorlandblick | Holzturm am Plateau-Rand mit weitem Blick ins Alpenvorland. | 13.82315, 47.89779 | Sender | ✓ |
-| volleyball | Beachvolleyball | Volleyballfeld an der Badewiese Weyer | 13.80381, 47.91526 | Badewiese Weyer | ✓ |
-| segel-verein | ASKÖ-Segeln | Segelclub ASKÖ Gmunden seit 1919, Boots- und E-Boot-Verleih | 13.80775, 47.91245 | Talstation | ✓ |
-| reiten | Lebenberg | Reitsportanlage | 13.82670, 47.91410 | — | ✓ |
+| spielplatz | Abenteuer | Großer Naturspielplatz mit Klettergeräten am Plateau | 13.81948, 47.89822 | Sender | ✓ |
+| sommerrodeln | Sommerrodeln | Edelstahl-Sommerrodelbahn mit Talfahrt durch den Wald | 13.82019, 47.89852 | Sender | ✓ |
+| wipfelpfad | Wipfelpfad | Baumwipfelpfad mit Aussichtsturm und Rundtour durch den Hochwald | 13.81816, 47.89817 | Sender | ✓ |
+| paragleiten-start | Startplatz | Offizieller Paragleiter-Startplatz mit Blick Richtung Traunsee | 13.81804, 47.89842 | Sender | ✓ |
+| klettergarten | Adlerhorst | Beliebter Kletterfelsen mit ~20 Routen, Schwierigkeitsgrade 4a bis 7a | 13.81917, 47.88031 | — | ≈ |
+| bogen-parcour | 3D-Bogenparcour | 28 Ziele im Wald, betrieben vom BSV Salzkammergut | 13.81154, 47.88155 | — | ✓ |
+| aussichtsturm | Alpenvorlandblick | Holzturm am Plateau-Rand mit Blick Richtung Norden ins Alpenvorland | 13.82316, 47.89776 | Sender | ✓ |
+| volleyball | Volleyball | Volleyballfeld an der Badewiese Weyer | 13.80380, 47.91526 | Badewiese Weyer | ✓ |
+| segeln | ASKÖ-Segeln | Segelclub ASKÖ Gmunden seit 1919, Boots- und E-Boot-Verleih | 13.80777, 47.91240 | — | ✓ |
 
 ### Regenerate_Substanze
 
 | Icon | Tagline | Description | Coord | Cluster | Status |
 |---|---|---|---|---|---|
-| gasthaus | Franzl im Holz |  | 13.84377, 47.90503 | — | ✓ |
-| gasthaus | Silberfuchs |  | 13.84345, 47.90404 | — | ✓ |
-| gasthaus | Ramsaualm | Almgasthaus über dem Laudachsee, 2008 nach Vorbild der abgebrannten Cumberland-Jagdhütte erbaut | 13.84983, 47.88067 | Laudachsee | ✓ |
-| gasthaus | Ramsau |  | 13.80918, 47.88698 | — | ✓ |
-| restaurant | Hois'n | Startpunkt für die Kaltenbachwildnis und den Traunstein-Anstieg, am Traunsee-Ostufer | 13.81137, 47.88089 | — | ✓ |
-| gasthaus | Grünbergalm | Almgasthaus am Plateau, traditionelle oberösterreichische Küche | 13.81890, 47.89847 | Sender | ✓ |
-| bar | Loungerie | Saisonal geöffnete Loungerie an der Talstation | 13.80690, 47.91362 | Talstation | ✓ |
-| strand-buffet | Strand-Buffet |  | 13.80445, 47.91532 | Badewiese Weyer | ✓ |
-| gasthaus | Bella Italia | Pizzeria am Seebahnhof | 13.80568, 47.91534 | — | ✓ |
+| gasthaus | Franzl im Holz |  | 13.84428, 47.90441 | — | ✓ |
+| gasthaus | Silberfuchs |  | 13.84347, 47.90405 | — | ✓ |
+| gasthaus | Ramsaualm | Almgasthaus über dem Laudachsee, 2008 nach Vorbild der abgebrannten Cumberland-Jagdhütte erbaut | 13.84988, 47.88062 | (Laudachsee) | ✓ |
+| gasthaus | Ramsau |  | 13.80895, 47.88695 | — | ✓ |
+| restaurant | Hois'n | Startpunkt für die Kaltenbachwildnis und den Traunstein-Anstieg, am Traunsee-Ostufer | 13.81153, 47.88083 | — | ✓ |
+| restaurant | Grünbergalm | Almgasthaus am Plateau, traditionelle oberösterreichische Küche | 13.81890, 47.89847 | Sender | ✓ |
+| bar | Lounge | Saisonal geöffnetes Restaurant an der Talstation | 13.80691, 47.91361 | Talstation | ✓ |
+| strand-buffet | Strand-Buffet |  | 13.80447, 47.91533 | Badewiese Weyer | ✓ |
+| restaurant | Bella Italia | Pizzeria am Seebahnhof | 13.80567, 47.91534 | — | ✓ |
 
 ### Regenerate_Water
 
 | Icon | Tagline | Description | Coord | Cluster | Status |
 |---|---|---|---|---|---|
-| gewaesser | Liegewiese | beim ASKÖ | 13.80715, 47.91285 | Talstation | ✓ |
-| blondchen | Laudachsee 25 m | Bergsee unter dem Katzenstein, 25 m tief — Reich der Nixe Blondchen nach der Sage vom Riesen Erla | 13.85356, 47.87898 | Laudachsee *(Cluster-Icon)* | ✓ |
-| gewaesser | Liegewiese |  | 13.80402, 47.91464 | Badewiese Weyer *(Cluster-Icon)* | ✓ |
-| badewiese | Weyer | Kostenfreie Badewiese am Traunsee-Ufer mit Holzsteg | 13.80459, 47.91496 | Badewiese Weyer | ✓ |
-| badewiese | Seereiterweg |  | 13.80840, 47.90792 | — | ✓ |
-| wc | Seereiterweg |  | 13.80822, 47.90784 | — | ✓ |
+| gewaesser+ | Laudachsee 895 m | Bergsee unter dem Katzenstein, 25 m tief — Reich der Nixe Blondchen nach der Sage vom Riesen Erla | 13.85334, 47.87914 | (Laudachsee) | ✓ |
+| gewaesser | Seereiter |  | 13.80841, 47.90794 | — | ✓ |
+| gewaesser | Liegewiese |  | 13.80410, 47.91473 | Badewiese Weyer | ✓ |
+| badewiese | Weyer | Kostenfreie Badewiese am Traunsee-Ufer mit Holzsteg | 13.80455, 47.91494 | Badewiese Weyer *(Cluster-Icon)* | ✓ |
+| wc | WC | Öffentliches WC zwischen Badewiese Weyer und Seebahnhof | 13.80606, 47.91448 | Bootshafen Gmunden | ✓ |
+| badewiese | Seereiterweg | Badeplatz am Traunsee-Westufer | 13.80840, 47.90792 | — | ✓ |
+| wc | Seereiterweg | Öffentliches WC beim Badeplatz Seereiterweg | 13.80822, 47.90784 | — | ✓ |
 | gewaesser | Kneippanlage | Kneippanlage Gmunden | 13.80526, 47.91590 | — | ✓ |
-| badewiese | Ramsau |  | 13.80864, 47.88704 | — | ✓ |
-| badewiese | Liegewiese | beim Umkehrplatz unterm Stoa | 13.81469, 47.87290 | — | ✓ |
-| wc | beim Umkehrplatz unterm Stoa |  | 13.81528, 47.87314 | — | ✓ |
-| wc | WC-Anlage | am Bootshafen | 13.80608, 47.91406 | Bootshafen Gmunden | ✓ |
-| muehlibitschn | Mühlibankerl | beim Engelhof | 13.82151, 47.92010 | — | ✓ |
+| muehlibitschn | Mühlibankerl | beim Engelhof | 13.82153, 47.92010 | — | ✓ |
 
 ### Transport_Vehicle
 
 | Icon | Tagline | Description | Coord | Cluster | Status |
 |---|---|---|---|---|---|
-| bergstation+ | Bergbahn 987 m | Bergstation der Grünbergseilbahn | 13.82162, 47.89834 | Sender | ✓ |
-| schiffsanlegestelle | Hois'n Wirt | Traunsee Schifffahrt | 13.81090, 47.88061 | — | ✓ |
-| schiffsanlegestelle | Gasthaus Ramsau | Traunsee Schifffahrt | 13.80833, 47.88684 | — | ✓ |
-| bahnstation | Gmundner Seebahnhof | Haltestelle der Traunseetram. Seit 2018 durchgehend bis Vorchdorf vereinigt. | 13.80535, 47.91633 | — | ✓ |
-| talstation | Talstation | Pendelbahn-Fahrt zum Grünberg-Plateau | 13.80800, 47.91349 | Talstation *(Cluster-Icon)* | ✓ |
-| schiffsanlegestelle | Landhotel Grünberg |  | 13.80550, 47.90360 | — | ✓ |
-| schiffsanlegestelle | Traunsee Schifffahrt | Anlegestelle Weyer | 13.80333, 47.91502 | Badewiese Weyer | ✓ |
+| talstation | Bergbahn | Großkabinen-Pendelbahn auf das Plateau, Neubau 2014 ersetzt Zweiseilumlaufbahn von 1957 | 13.80802, 47.91339 | Talstation *(Cluster-Icon)* | ✓ |
+| bergstation | Bergbahn | Bergstation der Grünbergseilbahn, 987 m, Talblick über Traunsee | 13.82156, 47.89832 | Sender | ✓ |
+| schiffsanlegestelle | Hois'n |  | 13.81090, 47.88064 | — | ✓ |
+| schiffsanlegestelle | Ramsau |  | 13.80554, 47.90366 | — | ✓ |
+| schiffsanlegestelle | Grünbergseilbahn | Anlegestelle der Traunsee-Schifffahrt, direkter Umstieg in die Grünbergseilbahn | 13.80551, 47.91302 | Talstation | ✓ |
+| bahnstation | Schloss Weyer | Haltestelle Schloss Weyer der Traunseetram. Seit 2018 durchgehend bis Vorchdorf vereinigt. | 13.80535, 47.91633 | — | ✓ |
+| bergbahn | Talstation | Pendelbahn-Fahrt zum Grünberg-Plateau | 13.80802, 47.91339 | Talstation | ✓ |
 
 ### Transport_Parking/(Charging)
 
 | Icon | Tagline | Description | Coord | Cluster | Status |
 |---|---|---|---|---|---|
-| parkplatz | Bergbahn | Hauptparkplatz an der Talstation der Grünbergseilbahn | 13.80867, 47.91275 | Talstation | ✓ |
-| parkplatz | am See | Parkplatz direkt am Traunsee-Ufer | 13.80681, 47.91390 | Talstation | ✓ |
-| parkplatz | PKW + Busse | Bus- und Reisegruppenparkplatz an der Badewiese | 13.80479, 47.91553 | Badewiese Weyer | ✓ |
-| parkplatz | Busparkplatz | am Bootshafen | 13.80643, 47.91449 | Bootshafen Gmunden | ✓ |
-| boots-hafen | Bootshafen | Bootshafen am Traunsee zwischen Weyer und Talstation | 13.80608, 47.91406 | Bootshafen Gmunden *(Cluster-Icon)* | ✓ |
-| parkplatz | Unterm Stoa | Umkehrplatz | 13.81528, 47.87288 | — | ✓ |
+| parkplatz | Bergbahn | Hauptparkplatz an der Talstation der Grünbergseilbahn | 13.80869, 47.91269 | Talstation | ✓ |
+| parkplatz | am See | Parkplatz direkt am Traunsee-Ufer | 13.80680, 47.91391 | Talstation | ✓ |
+| parkplatz | Busse | Bus- und Reisegruppenparkplatz an der Badewiese | 13.80478, 47.91555 | Badewiese Weyer | ✓ |
+| parkplatz | Hafen | Busparkplatz am Bootshafen | 13.80639, 47.91451 | Bootshafen Gmunden | ✓ |
+| boots-hafen | Bootshafen | Bootshafen am Traunsee zwischen Weyer und Talstation | 13.80605, 47.91408 | Bootshafen Gmunden *(Cluster-Icon)* | ✓ |
 
 ### Service_Sleep
 
 | Icon | Tagline | Description | Coord | Cluster | Status |
 |---|---|---|---|---|---|
-| hotel+ | Landhotel Grünberg 3-Sterne | Restaurant am See | 13.80630, 47.90380 | — | ✓ |
-| hotel+ | Seehotel Weyer 4-Sterne | Seehotel im Weyer Gmunden | 13.80759, 47.91371 | Talstation | ✓ |
+| hotel | Landhotel |  | 13.80624, 47.90385 | — | ✓ |
+| hotel | Seehotel Weyer | Seehotel im Weyer Gmunden | 13.80735, 47.91370 | Talstation | ✓ |
 
 ### Service_Others
 
 | Icon | Tagline | Description | Coord | Cluster | Status |
 |---|---|---|---|---|---|
-| werkstatt | Hammerschmid | Bikeshop unterm Stoan | 13.80400, 47.90000 | — | ✓ |
+| werkstatt | Hammerschmid | Bikeshop unterm Stoan | 13.80397, 47.89998 | — | ✓ |
 
 ### Cluster
 
 | Icon | Tagline | Description | Coord | Cluster | Status |
 |---|---|---|---|---|---|
-| aussichtspunkt+ | Grünberg Plateau 984 m | Aussichtsplateau mit Sender, Bergbahn, Gasthaus, Spiel- und Aktiv-Angeboten | 13.81838, 47.89868 | Sender | ≈ |
-| badewiese | Badewiese | Bahnstation, Liegewiese, Strandbuffet, Busparkplatz | 13.80455, 47.91494 | Badewiese Weyer | ≈ |
-| bergbahn | Grünberg Talstation | Talstation der Grünbergseilbahn am Traunsee — Einstiegspunkt zum Berg, mit Schiffsanlegestelle und Parkmöglichkeit | 13.80802, 47.91339 | Talstation | ≈ |
+| aussichtspunkt+ | Grünberg Plateau 984 m | Aussichtsplateau mit Sender, Bergbahn, Gasthaus, Spiel- und Aktiv-Angeboten | ↑ | Sender | cluster_ghost |
+| gewaesser | Badewiese | Bahnstation, Liegewiese, Strandbuffet, Busparkplatz | ↑ | Badewiese Weyer | cluster_ghost |
+| bergbahn+ | Grünberg Talstation 422 m | Talstation der Grünbergseilbahn am Traunsee — Einstiegspunkt zum Berg, mit Schiffsanlegestelle und Parkmöglichkeit | ↑ | Talstation | cluster_ghost |
 
 ---
 
@@ -188,25 +185,25 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 
 ## Cluster
 
-### Sender *(9 POIs)*
+### Sender *(10 POIs)*
 
-sender Sender *(Cluster-Icon)* · spielplatz Abenteuerspielplatz · sommerrodeln Sommerrodelbahn · wipfelpfad Baumwipfelpfad · paragleiten-start Startplatz · aussichtsturm Alpenvorlandblick · gasthaus Grünbergalm · bergstation+ Bergbahn 987 m · aussichtspunkt+ Grünberg Plateau 984 m
+sender Sender *(Cluster-Icon)* · aussichtspunkt+ Grünberg 986 m · spielplatz Abenteuer · sommerrodeln Sommerrodeln · wipfelpfad Wipfelpfad · paragleiten-start Startplatz · aussichtsturm Alpenvorlandblick · restaurant Grünbergalm · bergstation Bergbahn · aussichtspunkt+ Grünberg Plateau 984 m
 
-### Talstation *(9 POIs)*
+### Talstation *(10 POIs)*
 
-talstation Talstation *(Cluster-Icon)* · rastplatz Seerast · gewaesser Liegewiese · segel-verein ASKÖ-Segeln · bar Loungerie · parkplatz Bergbahn · parkplatz am See · hotel+ Seehotel Weyer 4-Sterne · bergbahn Grünberg Talstation
+talstation Bergbahn *(Cluster-Icon)* · rastplatz Seerast · rastplatz Liegewiese · bar Lounge · schiffsanlegestelle Grünbergseilbahn · bergbahn Talstation · parkplatz Bergbahn · parkplatz am See · hotel Seehotel Weyer · bergbahn+ Grünberg Talstation 422 m
 
-### Badewiese Weyer *(8 POIs)*
+### Badewiese Weyer *(7 POIs)*
 
-gewaesser Liegewiese *(Cluster-Icon)* · denkmal+ Kriegerdenkmal Seebahnhof A° 1954 · volleyball Beachvolleyball · strand-buffet Strand-Buffet · badewiese Weyer · parkplatz PKW + Busse · badewiese Badewiese · schiffsanlegestelle Traunsee Schifffahrt
+badewiese Weyer *(Cluster-Icon)* · denkmal+ Kriegerdenkmal Seebahnhof A° 1954 · volleyball Volleyball · strand-buffet Strand-Buffet · gewaesser Liegewiese · parkplatz Busse · gewaesser Badewiese
 
 ### Bootshafen Gmunden *(3 POIs)*
 
-boots-hafen Bootshafen *(Cluster-Icon)* · parkplatz Busparkplatz · wc WC-Anlage
+boots-hafen Bootshafen *(Cluster-Icon)* · wc WC · parkplatz Hafen
 
-### Laudachsee *(3 POIs)*
+### Optional Laudachsee *(3 POIs, kein Cluster-Icon)*
 
-blondchen Laudachsee 25 m *(Cluster-Icon)* · rastplatz Liegewiese · gasthaus Ramsaualm
+rastplatz Laudachsee-Rast · gasthaus Ramsaualm · gewaesser+ Laudachsee 895 m
 
 ---
 
