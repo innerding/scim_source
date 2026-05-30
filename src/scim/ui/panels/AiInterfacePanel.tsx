@@ -2577,7 +2577,7 @@ VERORTUNG MVP-LICHTENBERG: klärt Workspace-Ausrichtung + Vorform der Boundary-E
     related_panel: 'geometry_editor',
     content: `F7-BAUPLAN (2026-05-30) — Drawer-Lifecycle & gemeinsamer Verbund-Commit. Volltext: docs/f7_bauplan_drawer_lifecycle.md.
 
-PRINZIP: Die finale Boundary entsteht aus dem Netz, nicht umgekehrt. Der Draft hält den Rohzustand (editierbar bis zuletzt); der Commit leitet das Endprodukt ab (Crop, Gates) und friert ein — einziger Punkt ohne Rückweg.
+PRINZIP: Die finale Boundary entsteht aus dem Netz, nicht umgekehrt. Der Draft hält den Rohzustand (editierbar bis zuletzt); der Commit leitet das Endprodukt ab (Crop, Gates) und friert ein — einziger Punkt ohne Rückweg. SYMMETRIE DER NETZ-HERKÜNFTE: B1 entsteht aus dem OSM-Netz (roh, Einzugsgebiet); B2 entsteht aus unserem Netz (dem künftigen Colour-Mesh) — SCIM-getrieben statt OSM-getrieben. Heute reicht die Kette bis zum gefilterten/gecroppten Wegnetz (Vorstufe); im Zielbild entsteht B2 aus dem Colour-Mesh. Dieselbe Stelle im Lebenszyklus, nur das Netz darunter wird reicher.
 
 ZWEI BOUNDARIES:
   B1 (Referenz): grobe Arbeitsfläche + Namensträger, auf ihr wird das Netz geholt, Orientierung für den exakten Bau. Farbe gelb (Draft) → orange (mit Katalog). Läuft bis zum Commit mit, wird beim Commit GELÖSCHT.

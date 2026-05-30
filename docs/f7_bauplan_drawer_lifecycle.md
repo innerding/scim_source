@@ -8,6 +8,13 @@
 > Der Draft hält den Rohzustand (editierbar bis zuletzt). Der Commit leitet das
 > Endprodukt ab (Crop, Gates) und friert es ein — der einzige Punkt ohne Rückweg.
 
+**Symmetrie der zwei Netz-Herkünfte:** **B1 entsteht aus dem OSM-Netz** (roh, das
+Einzugsgebiet — worauf wir das Netz holen). **B2 entsteht aus unserem Netz** (dem
+künftigen **Colour-Mesh**) — feiner und von anderer Herkunft, SCIM-getrieben statt
+OSM-getrieben. Heute reicht die Kette bis zum gefilterten/gecroppten Wegnetz
+(Vorstufe); im Zielbild entsteht B2 aus dem Colour-Mesh. Dieselbe Stelle im
+Lebenszyklus, nur das Netz darunter wird reicher.
+
 ## Zwei Boundaries
 
 | | Rolle | Farbe | Schicksal |
