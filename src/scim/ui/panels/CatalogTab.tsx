@@ -16,12 +16,33 @@ import {
 import { compactDiff, diffLines, serializeCatalogToMd } from '../../poi-catalog/poiCatalog.serializer';
 import { fetchLatestCatalogMd, type CatalogSource } from '../../poi-catalog/catalogRuntime';
 import {
-  buildPrefix, sanitizeSlug, sanitizeVerbund, SLUG_MAX_LEN, VERBUND_MAX_LEN,
+  buildPrefix, isToken, mintToken, sanitizeSlug, sanitizeVerbund, SLUG_MAX_LEN, VERBUND_MAX_LEN,
 } from '../../poi-catalog/poiCatalog.token';
 import { commitToRepo, type CommitResult } from '../../../runtime/commitBridge';
 import type {
-  Bucket, CatalogPoi, CoordStatus, MergedPoi, PoiCatalogEditState, Subcategory,
+  Bucket, CatalogPoi, CoordStatus, MergedCatalog, MergedPoi, PoiCatalogEditState, Subcategory,
 } from '../../poi-catalog/poiCatalog.types';
+
+// Erstvergabe: POIs ohne echten Fixstern-Token (poi_NNN-Platzhalter aus nicht
+// migrierten Regionen) bekommen beim Export einen frischen, kollisionsfreien
+// Token mit dem aktuellen Präfix. Bestehende echte Token bleiben unangetastet.
+function assignTokensToPlaceholders(merged: MergedCatalog, prefix: string): MergedCatalog {
+  const taken = new Set(merged.pois.map((p) => p.id).filter(isToken));
+  const remap = new Map<string, string>();
+  const pois = merged.pois.map((p) => {
+    if (p._isDeleted || isToken(p.id)) return p;
+    const nt = mintToken(prefix, taken);
+    taken.add(nt);
+    remap.set(p.id, nt);
+    return { ...p, id: nt };
+  });
+  const clusters = merged.clusters.map((c) =>
+    c.identity_poi_id && remap.has(c.identity_poi_id)
+      ? { ...c, identity_poi_id: remap.get(c.identity_poi_id) }
+      : c,
+  );
+  return { ...merged, pois, clusters };
+}
 
 // Vite bundlet die .md als String — keine Netzwerk-Anfrage zur Laufzeit.
 // Änderungen in der .md werden mit dem nächsten Build wirksam.
@@ -1410,6 +1431,8 @@ export default function CatalogTab({ onJumpTo }: { onJumpTo?: (panelId: string) 
   // auch wenn sonst keine POI-Änderung vorliegt.
   const prefixDirty =
     tokenVerbund !== baseCatalog.token_verbund || tokenSlug !== baseCatalog.token_slug;
+  // POIs mit poi_NNN-Platzhalter (noch kein echter Token). Beim Export bekommen
+  // sie einen frischen Token mit dem aktuellen Präfix → Code-Spalte wird sauber.
 
   // Region-Wechsel: passenden Edit-State laden, Präfix-Drafts zurücksetzen
   useEffect(() => {
@@ -1426,6 +1449,11 @@ export default function CatalogTab({ onJumpTo }: { onJumpTo?: (panelId: string) 
   }, [editState, region.id]);
 
   const merged = useMemo(() => mergeEdits(baseCatalog, editState), [baseCatalog, editState]);
+  // Anzahl POIs mit poi_NNN-Platzhalter (noch kein echter Fixstern-Token).
+  const placeholderCount = useMemo(
+    () => merged.pois.filter((p) => !p._isDeleted && !isToken(p.id)).length,
+    [merged],
+  );
 
   // POIs pro Subkategorie in Container-System-Reihenfolge.
   // _isDeleted POIs werden ausgeblendet — sie sind im Aenderungs-Popover sichtbar
@@ -1526,10 +1554,15 @@ export default function CatalogTab({ onJumpTo }: { onJumpTo?: (panelId: string) 
 
   const fileName = `${region.id}_pois_plan.md`;
   const newMd = useMemo(
-    () => (showExport
-      ? serializeCatalogToMd(effectiveMd, merged, { tokenVerbund, tokenSlug })
-      : ''),
-    [showExport, effectiveMd, merged, tokenVerbund, tokenSlug],
+    () => {
+      if (!showExport) return '';
+      // Platzhalter-POIs (poi_NNN) bekommen beim Export echte Token.
+      const toExport = placeholderCount > 0
+        ? assignTokensToPlaceholders(merged, tokenPrefix)
+        : merged;
+      return serializeCatalogToMd(effectiveMd, toExport, { tokenVerbund, tokenSlug });
+    },
+    [showExport, effectiveMd, merged, tokenPrefix, tokenVerbund, tokenSlug, placeholderCount],
   );
 
   return (
@@ -1678,7 +1711,15 @@ export default function CatalogTab({ onJumpTo }: { onJumpTo?: (panelId: string) 
             ⬗ Präfix
           </span>
         )}
-        {(merged.dirty_count + merged.new_count + merged.deleted_count > 0 || prefixDirty) && (
+        {placeholderCount > 0 && (
+          <span
+            style={{ fontSize: 11, color: '#805ad5', fontFamily: 'monospace' }}
+            title={`${placeholderCount} POI ohne echten Token (poi_NNN) — bekommen beim Export ${tokenPrefix}xxxx`}
+          >
+            ⬗ Codes ({placeholderCount})
+          </span>
+        )}
+        {(merged.dirty_count + merged.new_count + merged.deleted_count > 0 || prefixDirty || placeholderCount > 0) && (
           <button
             onClick={() => setShowExport(true)}
             style={{ ...btnStyle, background: '#2f855a', color: 'white', borderColor: '#2f855a', fontWeight: 600 }}
