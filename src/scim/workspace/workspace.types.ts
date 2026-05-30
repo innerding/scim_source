@@ -94,4 +94,5 @@ export interface CatalogRef {
   poi_count: number;
   cluster_count: number;
   warning_count: number;
+  bytes: number;              // Datengröße der Katalog-.md (UTF-8) — fürs Budget
 }

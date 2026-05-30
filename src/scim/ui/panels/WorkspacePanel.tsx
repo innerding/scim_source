@@ -18,6 +18,10 @@ import type { RepresentBuildFace } from '../RepresentBuildTetrahedron';
 import { parsePoiCatalog } from '../../poi-catalog/poiCatalog.parser';
 import { GEOMETRIES, REPRESENTATIONS } from '../../workspace/workspace.registry';
 import type { CatalogRef } from '../../workspace/workspace.types';
+import { formatBytes } from '../../regio-content/pathEngine';
+
+// Datengröße eines Objekts als JSON (UTF-8-Bytes) — fürs Auslieferungs-Budget.
+const bytesOf = (obj: unknown): number => new TextEncoder().encode(JSON.stringify(obj)).length;
 import { commitToRepo } from '../../../runtime/commitBridge';
 import type { BoundaryGeometryFile, WegnetzFile, RepresentationFile } from '../../workspace/workspace.types';
 import type { Position } from 'geojson';
@@ -255,23 +259,21 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
   };
 
   const catalogs: CatalogRef[] = useMemo(() => {
-    const grunberg = parsePoiCatalog(gruenbergMd as string, {
-      region_id: 'gruenberg',
-      region_name: 'Grünberg',
-      source_path: 'data/gruenberg_pois_plan.md',
+    const sources = [
+      { md: gruenbergMd as string, region_id: 'gruenberg', region_name: 'Grünberg', source_path: 'data/gruenberg_pois_plan.md' },
+      { md: lichtenbergMd as string, region_id: 'lichtenberg', region_name: 'Lichtenberg', source_path: 'data/lichtenberg_pois_plan.md' },
+    ];
+    return sources.map((s) => {
+      const c = parsePoiCatalog(s.md, { region_id: s.region_id, region_name: s.region_name, source_path: s.source_path });
+      return {
+        id: c.region_id,
+        name: c.region_name,
+        poi_count: c.pois.length,
+        cluster_count: c.clusters.length,
+        warning_count: c.warnings.length,
+        bytes: new TextEncoder().encode(s.md).length,
+      };
     });
-    const lichtenberg = parsePoiCatalog(lichtenbergMd as string, {
-      region_id: 'lichtenberg',
-      region_name: 'Lichtenberg',
-      source_path: 'data/lichtenberg_pois_plan.md',
-    });
-    return [grunberg, lichtenberg].map((c) => ({
-      id: c.region_id,
-      name: c.region_name,
-      poi_count: c.pois.length,
-      cluster_count: c.clusters.length,
-      warning_count: c.warnings.length,
-    }));
   }, []);
 
   const onTetraFace = (f: RepresentBuildFace) => {
@@ -471,7 +473,7 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
 
       {/* Geometrien (committet) — Drafts leben jetzt in der Package-Pipeline (F4/F5) */}
       <Section
-        title="Boundary-Geometrien"
+        title={`Boundary-Geometrien · Σ ${formatBytes(GEOMETRIES.reduce((s, g) => s + bytesOf(g.raw), 0))}`}
         count={GEOMETRIES.length}
         action={{
           label: '+ neue Geometry',
@@ -487,7 +489,7 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
               icon="🗺"
               primary={g.name}
               badge={g.id}
-              secondary={`Polygon mit ${g.polygon.length} Punkten${g.region ? ` · ${g.region}` : ''}${g.drawn_at ? ` · gezeichnet ${g.drawn_at}` : ''}`}
+              secondary={`Polygon mit ${g.polygon.length} Punkten${g.region ? ` · ${g.region}` : ''}${g.drawn_at ? ` · gezeichnet ${g.drawn_at}` : ''} · ${formatBytes(bytesOf(g.raw))}`}
               action={{ label: 'Im Editor öffnen', onClick: () => onJumpTo('geometry_editor', g.id) }}
             />
           ))
@@ -496,7 +498,7 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
 
       {/* Kataloge */}
       <Section
-        title="Kataloge"
+        title={`Kataloge · Σ ${formatBytes(catalogs.reduce((s, c) => s + c.bytes, 0))}`}
         count={catalogs.length}
         action={{ label: '+ neuer Katalog', onClick: () => { /* Wave 2b */ }, disabled: true }}
       >
@@ -506,7 +508,7 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
             icon="📋"
             primary={c.name}
             badge={c.id}
-            secondary={`${c.poi_count} POIs · ${c.cluster_count} Cluster · ${c.warning_count} Warnungen`}
+            secondary={`${c.poi_count} POIs · ${c.cluster_count} Cluster · ${c.warning_count} Warnungen · ${formatBytes(c.bytes)}`}
             action={{ label: 'Im Katalog öffnen', onClick: () => onJumpTo('catalog') }}
           />
         ))}
@@ -514,7 +516,7 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
 
       {/* Representations */}
       <Section
-        title="Representations"
+        title={`Representations · Σ ${formatBytes(REPRESENTATIONS.reduce((s, r) => s + bytesOf(r), 0))}`}
         count={REPRESENTATIONS.length}
         action={{
           label: '+ neue Representation',
@@ -532,7 +534,7 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
                 icon="◇"
                 primary={r.name}
                 badge={r.id}
-                secondary={`Geometry: ${r.geometry_id}${r.catalog_id ? ` · Katalog: ${r.catalog_id}` : ' · kein Katalog'}${r.wegnetz_id ? ` · Wegnetz: ${r.wegnetz_id}` : ''}`}
+                secondary={`Geometry: ${r.geometry_id}${r.catalog_id ? ` · Katalog: ${r.catalog_id}` : ' · kein Katalog'}${r.wegnetz_id ? ` · Wegnetz: ${r.wegnetz_id}` : ''} · ${formatBytes(bytesOf(r))}`}
               />
             );
           })
