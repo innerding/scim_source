@@ -470,9 +470,7 @@ function Header({
           maxWidth: 130,
         }}
       >
-        <option value="__follow_url__">
-          folgt URL{repCtx.active ? ` · ${repCtx.active.representation.name}` : ''}
-        </option>
+        <option value="__follow_url__">— keine R —</option>
         {repCtx.registry.representations.map((rep) => {
           const geo = geometryById.get(rep.geometry_id);
           const regionLabel = geo?.region ? ` (${geo.region})` : '';
