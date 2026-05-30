@@ -865,6 +865,12 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
           </button>
         ))}
         <span style={{ flex: 1 }} />
+        {/* F7-Diagnose: an welchen Draft bindet der Drawer + was liegt im Speicher? */}
+        {geometryId === 'new' && (
+          <span style={{ fontSize: 9, fontFamily: 'monospace', color: '#718096', marginBottom: 6, marginRight: 8, whiteSpace: 'nowrap' }}>
+            {activeDraftId ? `→ ${activeDraftId}` : '→ NEU'} · B1 {polygon?.length ?? 0} · B2 {maskPolygon?.length ?? 0} · Netz {pathResult ? 'ja' : '–'}
+          </span>
+        )}
         {/* F7-Neufassung: expliziter Speichern-Button (tab-unabhängig). Speichert
             den Draft in den Workspace; maskiert gespeichert = roter, committbarer Draft. */}
         {geometryId === 'new' && (
