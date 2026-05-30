@@ -170,17 +170,22 @@ export function parsePoiCatalog(md: string, opts: ParseOptions): PoiCatalogState
 
     // Table row processing (within a subcategory)
     if (currentSub && line.trim().startsWith('|') && i + 1 < lines.length && isTableSeparator(lines[i + 1])) {
+      // Code-Spalte STRUKTURELL an der Kopfzeile erkennen, nicht am Inhalt der
+      // ersten Zelle. Sonst verrutschen Tabellen, deren Code keine Token sind
+      // (z.B. poi_NNN bei noch nicht migrierten Regionen wie Lichtenberg) — die
+      // Code-Zelle würde als Icon gelesen und alle Spalten kippen um eins.
+      const headerCells = parseRow(line);
+      const hasCodeColumn = headerCells.length > 0 && headerCells[0].trim().toLowerCase() === 'code';
       // Skip header + separator
       i += 2;
       while (i < lines.length && lines[i].trim().startsWith('|')) {
         const cells = parseRow(lines[i]);
-        // Fixstern-Token-Spalte (optional, immer ZUERST): erkennt man am
-        // Token-Muster verbund-representation-suffix in der ersten Zelle.
-        // Mit Code:   Code | Icon | Tagline | Description | Coord | Cluster | Status
-        // Ohne Code (alt, Migration ausstehend) → Fallback poi_NNN.
-        const hasCode = cells.length >= 1 && isToken(cells[0]);
-        const codeId = hasCode ? cells[0].trim() : null;
-        const body = hasCode ? cells.slice(1) : cells;
+        // Wenn die Tabelle eine Code-Spalte hat, ist die erste Zelle IMMER der
+        // Code (Token oder poi_NNN) und wird abgetrennt. Als stabile id zählt
+        // sie nur, wenn sie ein echter Fixstern-Token ist; poi_NNN → Fallback.
+        const codeCell = hasCodeColumn && cells.length >= 1 ? cells[0].trim() : null;
+        const codeId = codeCell && isToken(codeCell) ? codeCell : null;
+        const body = hasCodeColumn ? cells.slice(1) : cells;
         // 5 Spalten (alt):  Icon | Tagline | Coord | Cluster | Status
         // 6 Spalten (neu):  Icon | Tagline | Description | Coord | Cluster | Status
         const isNew = body.length >= 6;
