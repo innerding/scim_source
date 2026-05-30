@@ -1,8 +1,11 @@
 # Lichtenberg POI-Plan v1
-**Stand:** 2026-05-29  ·  **12 POIs**  ·  ✓ 11 · ≈ 0 · ❓ 0
+**Stand:** 2026-05-30  ·  **12 POIs**  ·  ✓ 11 · ≈ 0 · ❓ 0
+**Token-Präfix:** boeh · lichtenberg
 
 Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 **✓** aus OSM/bestätigt · **≈** abgeleitet/geschätzt · **❓** fehlt
+
+---
 
 ---
 
@@ -12,60 +15,60 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 
 ### Points_historical
 
-| Icon | Tagline | Description | Coord | Cluster | Status |
-|---|---|---|---|---|---|
-| bildstock | Schönangerer | Marterl am Wegrand beim Schönangerer-Hof | 14.24776, 48.40144 | — | ✓ |
-| bildstock+ | Rotes Kreuz seit 1973 | Hölzernes Wegkreuz im Wald-Sattel | 14.24486, 48.38024 | — | ✓ |
+| Code | Icon | Tagline | Description | Coord | Cluster | Status |
+|---|---|---|---|---|---|---|
+| poi_001 | bildstock | Schönangerer | Marterl am Wegrand beim Schönangerer-Hof | 14.24776, 48.40144 | — | ✓ |
+| poi_002 | bildstock+ | Rotes Kreuz seit 1973 | Hölzernes Wegkreuz im Wald-Sattel | 14.24486, 48.38024 | — | ✓ |
 
 ### Points_others
 
-| Icon | Tagline | Description | Coord | Cluster | Status |
-|---|---|---|---|---|---|
-| sender | Sender | UKW/DAB/TV-Sender 155 m hoch (seit 1960) | 14.25457, 48.38470 | Lichtenberg | ✓ |
+| Code | Icon | Tagline | Description | Coord | Cluster | Status |
+|---|---|---|---|---|---|---|
+| poi_003 | sender | Sender | UKW/DAB/TV-Sender 155 m hoch (seit 1960) | 14.25457, 48.38470 | Lichtenberg | ✓ |
 
 ### Square_Rest
 
-| Icon | Tagline | Description | Coord | Cluster | Status |
-|---|---|---|---|---|---|
-| aussichtswarte+ | Giselawarte 927 m | Steinblock-Aussichtswarte von 1857, 17,5 m hoch | 14.25445, 48.38515 | Lichtenberg *(Cluster-Icon)* | ✓ |
-| aussichtspunkt | Kogl | Blick über die Koglerau ins Donautal und auf das Alpenpanorama | 14.23873, 48.38005 | — | ✓ |
+| Code | Icon | Tagline | Description | Coord | Cluster | Status |
+|---|---|---|---|---|---|---|
+| poi_004 | aussichtswarte+ | Giselawarte 927 m | Steinblock-Aussichtswarte von 1857, 17,5 m hoch | 14.25445, 48.38515 | Lichtenberg *(Cluster-Icon)* | ✓ |
+| poi_005 | aussichtspunkt | Kogl | Blick über die Koglerau ins Donautal und auf das Alpenpanorama | 14.23873, 48.38005 | — | ✓ |
 
 ### Regenerate_Substanze
 
-| Icon | Tagline | Description | Coord | Cluster | Status |
-|---|---|---|---|---|---|
-| gasthaus+ | zur Gis a° 1702 | Jausenstation seit 1702 am Gipfel | 14.25622, 48.38309 | Lichtenberg | ✓ |
-| gasthaus | Eidenberger | Ausflugsgasthaus mit Tiroler Almhütte | 14.23322, 48.39395 | — | ✓ |
+| Code | Icon | Tagline | Description | Coord | Cluster | Status |
+|---|---|---|---|---|---|---|
+| poi_006 | gasthaus+ | zur Gis a° 1702 | Jausenstation seit 1702 am Gipfel | 14.25622, 48.38309 | Lichtenberg | ✓ |
+| poi_007 | gasthaus | Eidenberger | Ausflugsgasthaus mit Tiroler Almhütte | 14.23322, 48.39395 | — | ✓ |
 
 ### Regenerate_Water
 
-| Icon | Tagline | Description | Coord | Cluster | Status |
-|---|---|---|---|---|---|
-| gewaesser | Pollack-Quelle | Trinkwasserquelle am Berg | 14.25879, 48.38264 | Lichtenberg | ✓ |
+| Code | Icon | Tagline | Description | Coord | Cluster | Status |
+|---|---|---|---|---|---|---|
+| poi_008 | gewaesser | Pollack-Quelle | Trinkwasserquelle am Berg | 14.25879, 48.38264 | Lichtenberg | ✓ |
 
 ### Transport_Parking/(Charging)
 
-| Icon | Tagline | Description | Coord | Cluster | Status |
-|---|---|---|---|---|---|
-| parkplatz | Gisela Parkplatz |  | 14.25724, 48.38040 | Lichtenberg | ✓ |
+| Code | Icon | Tagline | Description | Coord | Cluster | Status |
+|---|---|---|---|---|---|---|
+| poi_009 | parkplatz | Gisela Parkplatz |  | 14.25724, 48.38040 | Lichtenberg | ✓ |
 
 ### Service_Sleep
 
-| Icon | Tagline | Description | Coord | Cluster | Status |
-|---|---|---|---|---|---|
-| hotel | Lamahof | Bauernhof-Unterkunft mit Lamas | 14.23566, 48.40170 | — | ✓ |
+| Code | Icon | Tagline | Description | Coord | Cluster | Status |
+|---|---|---|---|---|---|---|
+| poi_010 | hotel | Lamahof | Bauernhof-Unterkunft mit Lamas | 14.23566, 48.40170 | — | ✓ |
 
 ### Service_Others
 
-| Icon | Tagline | Description | Coord | Cluster | Status |
-|---|---|---|---|---|---|
-| werkstatt | Kranzler ab Hof | Ab-Hof-Verkauf | 14.25954, 48.37282 | — | ✓ |
+| Code | Icon | Tagline | Description | Coord | Cluster | Status |
+|---|---|---|---|---|---|---|
+| poi_011 | werkstatt | Kranzler ab Hof | Ab-Hof-Verkauf | 14.25954, 48.37282 | — | ✓ |
 
 ### Cluster
 
-| Icon | Tagline | Description | Coord | Cluster | Status |
-|---|---|---|---|---|---|
-| aussichtspunkt | Gis 927 m | Sender, Giselawarte und Gasthaus am Lichtenberg-Gipfel | ↑ | Lichtenberg | cluster_ghost |
+| Code | Icon | Tagline | Description | Coord | Cluster | Status |
+|---|---|---|---|---|---|---|
+| poi_012 | aussichtspunkt | Gis 927 m | Sender, Giselawarte und Gasthaus am Lichtenberg-Gipfel | ↑ | Lichtenberg | cluster_ghost |
 
 ---
 
@@ -119,11 +122,13 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 
 ---
 
+---
+
 ## Cluster
 
 ### Lichtenberg *(6 POIs)*
 
-aussichtswarte+ Giselawarte 927 m *(Cluster-Icon)* · sender Sender · gasthaus+ zur Gis a° 1702 · gewaesser Pollack-Quelle · aussichtspunkt Gis 927 m · parkplatz Gisela Parkplatz
+aussichtswarte+ Giselawarte 927 m *(Cluster-Icon)* · sender Sender · gasthaus+ zur Gis a° 1702 · gewaesser Pollack-Quelle · parkplatz Gisela Parkplatz · aussichtspunkt Gis 927 m
 
 ---
 
@@ -154,4 +159,5 @@ Diese Plan-md folgt der MVP-Variante aus `docs/howto_region_catalog.md`:
 - Bestehende Subkategorien wiederverwendet
 
 Quellen: OSM Overpass-API, Wikipedia (Lichtenberg/Eidenberg), Outdooractive, Alpenvereinaktiv.
+
 
