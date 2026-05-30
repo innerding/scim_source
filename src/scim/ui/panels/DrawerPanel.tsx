@@ -769,8 +769,9 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     renderPath(null);
     renderAnchors(null);
     renderGates(null);
-    // Bei R-Anwahl im Wegnetz-Tab auf die neue Region zoomen.
-    if (tab === 'wegnetz') setTimeout(fitToInspector, 80);
+    // Regel B: ohne eigene Boundary leiht der Inspector den Fokus — in BEIDEN Tabs
+    // auf die gewählte Region zoomen (nicht nur im Wegnetz-Tab).
+    setTimeout(fitToInspector, 80);
   }, [inspectorView?.geometry.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Maske geaendert/entfernt → bestehender Crop ist hinfaellig: Gate-Marker
