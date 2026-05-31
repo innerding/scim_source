@@ -1383,18 +1383,22 @@ function PathFilterMenu({
 
   if (collapsed) {
     return (
-      <div
+      <button
+        className="drawer-filter-reopen"
         onClick={() => { setCollapsed(false); onResized(); }}
-        title="Filter-Menü ausklappen"
+        title="Wegnetz-Filter ausklappen"
         style={{
-          width: 18, flexShrink: 0, cursor: 'pointer',
-          background: '#edf2f7', borderRight: '1px solid #cbd5e0',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: '#718096', fontSize: 12,
+          width: 28, flexShrink: 0, cursor: 'pointer',
+          background: '#edf2f7', border: 'none', borderRight: '1px solid #cbd5e0',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+          padding: '10px 0', color: '#2b6cb0',
         }}
       >
-        ▸
-      </div>
+        <span style={{ fontSize: 14, fontWeight: 700 }}>▸</span>
+        <span style={{ writingMode: 'vertical-rl', fontSize: 10, fontWeight: 700, letterSpacing: 1, color: '#718096' }}>
+          FILTER
+        </span>
+      </button>
     );
   }
 
