@@ -63,27 +63,9 @@ type DrawerTab = 'umriss' | 'wegnetz';
 // Koordinaten-Schlüssel (wie in netGraph): zum Abgleich Gate-POI ↔ Graph-Knoten.
 const poiCoordKey = (lat: number, lng: number): string => `${lat.toFixed(7)},${lng.toFixed(7)}`;
 
-// Geoman-Werkzeugleiste fuer den Umriss-Tab. Wird beim Tab-Wechsel
-// hinzugefuegt/entfernt, damit die Zeichen-Controls im Wegnetz-Tab nicht
-// stoeren.
-function addBoundaryControls(map: L.Map): void {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (map as any).pm.addControls({
-    position: 'topleft',
-    drawMarker: false,
-    drawCircleMarker: false,
-    drawPolyline: false,
-    drawRectangle: true,
-    drawPolygon: true,
-    drawCircle: false,
-    drawText: false,
-    editMode: true,
-    dragMode: false,
-    cutPolygon: false,
-    removalMode: true,
-    rotateMode: false,
-  });
-}
+// UÖ1: KEINE Geoman-Default-Toolbar mehr. Zeichnen/Bearbeiten werden über eigene
+// Umriss-Werkzeuge (Tool-Header links) per pm.enableDraw('Polygon') bzw.
+// per-Layer-Edit gesteuert — kein Rechteck, kein globales disable*.
 
 // F7: ein Wegnetz (HandoffNet-Form) aus Kanten + Gates bauen. Nur Netz-Kanten
 // (inNet). Wird für draft.net_unmasked (roh) und draft.net_masked (gecroppt) genutzt.
@@ -204,6 +186,10 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   // US1 — Master-Snap-Toggle der Tool-Header-Leiste (beide Tabs). Treibt Geomans
   // globales Snapping; default an.
   const [snapEnabled, setSnapEnabled] = useState(true);
+  // UÖ1/UÖ2 — Umriss: Geoman-Toolbar ist weg; Zeichnen/Bearbeiten laufen über
+  // eigene Werkzeuge (kein Rechteck, kein globales disable → kein Weißer-Screen).
+  const [umrissDraw, setUmrissDraw] = useState(false);
+  const [umrissEdit, setUmrissEdit] = useState(false);
 
   // Ebenen-Steuerleiste (Umbauplan A): Dimmer + On/Off je Layer, auf beide Tabs
   // wirksam. (1) OSM-Tiles, (2) editierbare Boundary, (3) Inspector-R-Vorlage.
@@ -392,8 +378,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     tiles.addTo(map);
     tileLayerRef.current = tiles;
 
-    // Zeichen-Controls nur im Umriss-Tab (Init startet dort).
-    addBoundaryControls(map);
+    // UÖ1: keine Geoman-Toolbar; Zeichnen/Bearbeiten über Umriss-Werkzeuge.
 
     // Snapping global aktiv (Umbauplan C): beim Zeichnen/Editieren rasten
     // Stuetzpunkte auf nahe Snap-Ziele ein. Welche Layer als Ziel gelten,
@@ -423,6 +408,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
         layer.setStyle?.({ color: SLOT2_COLOR, dashArray: SLOT2_DASH });
         setMaskPolygon(ringOf(layer));
       }
+      setUmrissDraw(false); // ein Polygon gezeichnet → Zeichnen-Modus aus
     });
 
     map.on('pm:remove', (e: L.LeafletEvent) => {
@@ -500,24 +486,37 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     if (!map) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const pm = (map as any).pm;
-    // F7.3: maskiert → B1 ist gesperrt, auch im Umriss-Tab keine Zeichen-Controls.
-    if (tab === 'umriss' && !masked) {
-      if (!pm.controlsVisible?.()) addBoundaryControls(map);
-    } else {
-      // Wegnetz oder maskiert: Boundary nur sichtbar, nicht bearbeitbar. Toolbar
-      // entfernen genuegt (ohne Werkzeuge kein Editieren). Die globalen disable*-Methoden
-      // genuegt (ohne Werkzeuge kein Editieren). Die globalen disable*-Methoden
-      // von Geoman NICHT aufrufen — sie iterieren ueber alle Map-Layer und
-      // greifen auf layer.pm zu; das programmatisch gezeichnete Boundary-Polygon
-      // hat kein pm und liess Geoman crashen (weisser Screen). Stattdessen
-      // gezielt nur am Boundary-Layer den Edit-Modus beenden, falls vorhanden.
-      pm.removeControls?.();
+    // Wegnetz oder maskiert: Boundary nur sichtbar, nicht bearbeitbar → Zeichnen aus
+    // + die Umriss-Modi zurücksetzen. KEIN globales disable* (Weißer-Screen-Falle);
+    // gezielt nur an den Boundary-Layern (optional chaining schützt pm-lose Layer).
+    if (tab !== 'umriss' || masked) {
+      pm?.disableDraw?.();
+      setUmrissDraw(false);
+      setUmrissEdit(false);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (polygonLayerRef.current as any)?.pm?.disable?.();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (maskLayerRef.current as any)?.pm?.disable?.();
     }
   }, [tab, masked]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // UÖ2: Umriss-Zeichnen/-Bearbeiten an Geoman durchreichen. Zeichnen über
+  // enableDraw('Polygon') (Klick = Punkt, Klick auf Startpunkt schließt; Snapping
+  // global aus snapEnabled). Bearbeiten per-Layer (kein globales disable).
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const pm = (map as any).pm;
+    if (tab !== 'umriss' || masked) return;
+    if (umrissDraw) pm?.enableDraw?.('Polygon'); else pm?.disableDraw?.();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const b1 = polygonLayerRef.current as any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const b2 = maskLayerRef.current as any;
+    if (umrissEdit) { b1?.pm?.enable?.({ allowSelfIntersection: false }); b2?.pm?.enable?.({ allowSelfIntersection: false }); }
+    else { b1?.pm?.disable?.(); b2?.pm?.disable?.(); }
+  }, [umrissDraw, umrissEdit, tab, masked]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Karte neu vermessen + auf die Inspector-R zoomen — NUR bei echtem Tab-Wechsel,
   // nicht beim Maskieren (sonst springt/zoomt die Karte unerwartet, F7.3a-Fix).
@@ -1182,6 +1181,28 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
 
   const drawerTools: { id: string; side: 'left' | 'center' | 'right'; tabs: DrawerTab[]; node: ReactNode }[] = [
     {
+      id: 'umriss-draw', side: 'left', tabs: ['umriss'],
+      node: (
+        <ToolToggle
+          active={umrissDraw}
+          onClick={() => { setUmrissDraw((v) => !v); setUmrissEdit(false); }}
+          label="✏️ Zeichnen"
+          title="Boundary zeichnen: Klick = Punkt, Klick auf den Startpunkt schließt"
+        />
+      ),
+    },
+    {
+      id: 'umriss-edit', side: 'left', tabs: ['umriss'],
+      node: (
+        <ToolToggle
+          active={umrissEdit}
+          onClick={() => { setUmrissEdit((v) => !v); setUmrissDraw(false); }}
+          label="✎ Bearbeiten"
+          title="Stützpunkte ziehen/verschieben (Vertex-Drag)"
+        />
+      ),
+    },
+    {
       id: 'snap', side: 'center', tabs: ['umriss', 'wegnetz'],
       node: (
         <ToolToggle
@@ -1471,9 +1492,6 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
         <div style={{ flex: 1, display: 'flex', gap: 6, alignItems: 'center', justifyContent: 'flex-start' }}>
           {drawerTools.filter((t) => t.side === 'left' && t.tabs.includes(tab))
             .map((t) => <span key={t.id}>{t.node}</span>)}
-          {tab === 'umriss' && (
-            <span style={{ fontSize: 10, color: '#a0aec0', fontStyle: 'italic' }}>Umriss-Werkzeuge folgen</span>
-          )}
         </div>
         {/* MITTE — geteilt (Snap) */}
         <div style={{ display: 'flex', gap: 6, alignItems: 'center', justifyContent: 'center' }}>
