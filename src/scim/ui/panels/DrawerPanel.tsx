@@ -849,13 +849,13 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     const attach = (pl: L.Polyline, s: typeof styled[number]) => {
       // Entfernen-Modus hat Vorrang: jedes Segment klickbar → raus/zurück.
       if (removeMode) {
-        pl.bindTooltip('Klick: Segment entfernen', { sticky: true, opacity: 0.9, offset: [-6, 0] });
+        pl.bindTooltip('Klick: Segment entfernen', { sticky: true, opacity: 0.9, direction: 'right', offset: [12, 0] });
         pl.on('click', (ev) => { L.DomEvent.stop(ev); toggleExclude(s.key); });
         return;
       }
       if (!s.clickable) return;
       pl.bindTooltip(s.kind === 'blue' ? 'abgeschnitten (blau) — Klick: zurück' : 'Klick: abgeschnitten (blau)',
-        { sticky: true, opacity: 0.9, offset: [-6, 0] });
+        { sticky: true, opacity: 0.9, direction: 'right', offset: [12, 0] });
       pl.on('click', (ev) => { L.DomEvent.stop(ev); toggleCut(s.key); });
     };
     const draw = (s: typeof styled[number]) => {
@@ -892,7 +892,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
         if (!excludedKeys.has(key)) continue;
         const pl = L.polyline(ge.points, { color: '#cbd5e0', weight: 2, opacity: 0.7, dashArray: '2 4' });
         if (removeMode) {
-          pl.bindTooltip('entfernt — Klick: zurück', { sticky: true, opacity: 0.9, offset: [-6, 0] });
+          pl.bindTooltip('entfernt — Klick: zurück', { sticky: true, opacity: 0.9, direction: 'right', offset: [12, 0] });
           pl.on('click', (ev) => { L.DomEvent.stop(ev); toggleExclude(key); });
         }
         pl.addTo(layer);
@@ -913,7 +913,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
           armed ? 'zweiten Punkt B auf dieser Straße klicken → Asphalt A–B aufnehmen'
             : (pendingConnect ? 'erst Punkt B auf der angefangenen Straße setzen'
               : 'OSM-Straße — Punkt A klicken, dann Punkt B → Asphalt dazwischen'),
-          { sticky: true, opacity: 0.9, offset: [-6, 0] },
+          { sticky: true, opacity: 0.9, direction: 'right', offset: [12, 0] },
         );
         pl.on('click', (ev) => {
           L.DomEvent.stop(ev);
@@ -942,12 +942,12 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
         if (asph) {
           L.polyline(p.points, { color: PICK_COLOR, weight: 5, opacity: 0.95 }).addTo(layer);
           const top = L.polyline(p.points, { color: '#ffffff', weight: 2, opacity: 1 });
-          top.bindTooltip(tip, { sticky: true, opacity: 0.9, offset: [-6, 0] });
+          top.bindTooltip(tip, { sticky: true, opacity: 0.9, direction: 'right', offset: [12, 0] });
           top.on('click', (ev) => { L.DomEvent.stop(ev); removePiece(nid); });
           top.addTo(layer);
         } else {
           const pl = L.polyline(p.points, { color: PICK_COLOR, weight: 3, opacity: 0.95 });
-          pl.bindTooltip(tip, { sticky: true, opacity: 0.9, offset: [-6, 0] });
+          pl.bindTooltip(tip, { sticky: true, opacity: 0.9, direction: 'right', offset: [12, 0] });
           pl.on('click', (ev) => { L.DomEvent.stop(ev); removePiece(nid); });
           pl.addTo(layer);
         }
@@ -1214,7 +1214,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       node: (
         <ToolToggle
           active={pickMode}
-          onClick={() => { setPickMode((v) => !v); setPendingConnect(null); }}
+          onClick={() => { setPickMode((v) => !v); setPendingConnect(null); setRemoveMode(false); setPoiConnectMode(false); }}
           label="⊟ OSM-Wege"
           title="OSM-Straßen zeigen; Punkt A → Punkt B auf derselben Straße füllt den Asphalt dazwischen"
         />
@@ -1225,7 +1225,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       node: (
         <ToolToggle
           active={removeMode}
-          onClick={() => setRemoveMode((v) => !v)}
+          onClick={() => { setRemoveMode((v) => !v); setPickMode(false); setPendingConnect(null); setPoiConnectMode(false); }}
           label="🗑 Entfernen"
           title="Segmente per Klick entfernen (grün oder schwarz) ↔ zurück"
         />
@@ -1236,7 +1236,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       node: (
         <ToolToggle
           active={poiConnectMode}
-          onClick={() => setPoiConnectMode((v) => !v)}
+          onClick={() => { setPoiConnectMode((v) => !v); setPickMode(false); setPendingConnect(null); setRemoveMode(false); }}
           label="🔗 POI-Connect"
           title="POIs 0,5–2 m vom Netz verbinden (jeder einzeln per Klick); >2 m nicht verbindbar"
         />
