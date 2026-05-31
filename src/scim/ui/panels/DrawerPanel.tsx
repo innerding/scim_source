@@ -28,7 +28,7 @@ import {
   loadPathConfig, savePathConfig, type PathConfig, type BridlewayMode,
 } from '../../regio-content/pathConfig';
 import {
-  deriveWanderwegnetz, anchorPois, cropNetToMask, netStats, formatBytes, isAsphalt, connectorPieceBetween, roundPolyline, simplifyNet,
+  deriveWanderwegnetz, anchorPois, cropNetToMask, netStats, formatBytes, isAsphalt, buildRoutePath, roundPolyline, simplifyNet,
   type PathFetchResult, type AnchorSummary, type PoiInput, type CropResult,
   type PathEdge, type GateNode,
 } from '../../regio-content/pathEngine';
@@ -147,11 +147,51 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   // synthetischer id (nid) → mehrere Stücke pro Straße möglich. Jedes Stück kennt
   // seine Quell-Straße (roadId) + einen Geometrie-Schlüssel (key) zur Dedup.
   const [pickMode, setPickMode] = useState(false);
-  const [manualPieces, setManualPieces] = useState<Map<number, { roadId: number; points: [number, number][]; key: string }>>(new Map());
+  // Ein Stück kennt optional seine Quell-Straße (roadId) + eigene highway/tags,
+  // weil eine geroutete A→B-Spanne über mehrere Ways laufen kann (dann zählt das
+  // dominante Way). asphalt cached den Asphalt-Status fürs Rendern.
+  const [manualPieces, setManualPieces] = useState<Map<number, { roadId: number; points: [number, number][]; key: string; highway?: string; tags?: Record<string, string>; asphalt?: boolean; straight?: boolean }>>(new Map());
   const pieceNidRef = useRef(1_000_000_000_000); // über OSM-Way-ids, kollidiert nicht
-  // Zwei-Punkt-Anwahl: erster Klick A merken, zweiter Klick B auf derselben Straße
-  // füllt den Asphalt dazwischen.
-  const [pendingConnect, setPendingConnect] = useState<{ roadId: number; lat: number; lng: number } | null>(null);
+  // Zwei-Punkt-Anwahl: erster Klick A merken, zweiter Klick B (beliebiger Punkt;
+  // das A→B-Routing spannt über mehrere Ways/Kreuzungen). Die Hover-Spur zwischen
+  // den Klicks entscheidet Verzweigungen.
+  const [pendingConnect, setPendingConnect] = useState<{ lat: number; lng: number } | null>(null);
+  const pendingConnectRef = useRef<{ lat: number; lng: number } | null>(null);
+  const hoverTrailRef = useRef<[number, number][]>([]);
+  const pickPreviewRef = useRef<L.LayerGroup | null>(null);
+  const edgesRef = useRef<PathEdge[]>([]); // zuletzt gerenderte Kanten — Basis fürs Routing
+  useEffect(() => { pendingConnectRef.current = pendingConnect; }, [pendingConnect]);
+
+  // Hover-Spur fürs A→B-Routing: zwischen A-Klick und B-Klick die Mausbewegung
+  // aufzeichnen — sie entscheidet die Verzweigung (statt blind kürzeste Route).
+  // Anzeige als feine Linie über einen eigenen Layer (kein React-Rerender).
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !pickMode) return undefined;
+    const onMove = (ev: L.LeafletMouseEvent) => {
+      const a = pendingConnectRef.current;
+      if (!a) return;
+      const { lat, lng } = ev.latlng;
+      const trail = hoverTrailRef.current;
+      const last = trail[trail.length - 1];
+      if (last) {
+        const mLng = 111320 * Math.cos((lat * Math.PI) / 180);
+        const d = Math.hypot((lng - last[1]) * mLng, (lat - last[0]) * 110540);
+        if (d < 4) return; // nur merkliche Bewegung aufnehmen (~4 m)
+      }
+      trail.push([lat, lng]);
+      if (!pickPreviewRef.current) pickPreviewRef.current = L.layerGroup().addTo(map);
+      pickPreviewRef.current.clearLayers();
+      L.polyline([[a.lat, a.lng], ...trail], {
+        color: '#9333ea', weight: 2, opacity: 0.5, dashArray: '2 4',
+      }).addTo(pickPreviewRef.current);
+    };
+    map.on('mousemove', onMove);
+    return () => {
+      map.off('mousemove', onMove);
+      pickPreviewRef.current?.clearLayers();
+    };
+  }, [pickMode]);
 
   // Entfernen: Ausschluss-Menge von Graph-Teilstücken (Schlüssel edgeId:seg). Im
   // Entfernen-Modus Klick auf ein Segment → raus (vor der Klassifizierung), nochmal
@@ -775,12 +815,16 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     if (n.has(key)) n.delete(key); else n.add(key);
     return n;
   });
-  const addPiece = (roadId: number, pts: [number, number][]) => setManualPieces((prev) => {
+  const addPiece = (
+    roadId: number,
+    pts: [number, number][],
+    meta?: { highway?: string; tags?: Record<string, string>; asphalt?: boolean; straight?: boolean },
+  ) => setManualPieces((prev) => {
     if (pts.length < 2) return prev;
     const key = `${roadId}:${pts[0]}:${pts[pts.length - 1]}`;
     for (const p of prev.values()) if (p.key === key) return prev; // schon vorhanden
     const n = new Map(prev);
-    n.set((pieceNidRef.current += 1), { roadId, points: pts, key });
+    n.set((pieceNidRef.current += 1), { roadId, points: pts, key, ...meta });
     return n;
   });
   const removePiece = (nid: number) => setManualPieces((prev) => {
@@ -805,12 +849,15 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     // T2: von Hand aufgenommene Teilstücke als zusätzliche inNet=true-Kanten
     // (gleiche edgeId, gecroppte Geometrie) anhängen; das Original bleibt inNet=false.
     const byId = new Map(res.edges.map((e) => [e.id, e]));
+    edgesRef.current = res.edges; // Basis fürs A→B-Routing (Map-Klick-Handler)
     const pieceEdges: PathEdge[] = [];
     for (const [nid, p] of manualPieces) {
+      if (p.points.length < 2) continue;
       const src = byId.get(p.roadId);
-      if (src && p.points.length >= 2) {
-        pieceEdges.push({ id: nid, highway: src.highway, source: 'connector_candidate', points: p.points, tags: src.tags, inNet: true });
-      }
+      const highway = p.highway ?? src?.highway ?? (p.straight ? 'path' : 'service');
+      const tags = p.tags ?? src?.tags ?? {};
+      // Gerader Lückenschluss (Fall 5) = Wanderweg-Gap, kein Asphalt → primary.
+      pieceEdges.push({ id: nid, highway, source: p.straight ? 'primary' : 'connector_candidate', points: p.points, tags, inNet: true });
     }
     let effEdges = pieceEdges.length ? [...res.edges, ...pieceEdges] : res.edges;
     // Datengröße-Reduktion: erst Punkte ausdünnen (DP, ±eps-Korridor, topologie-sicher),
@@ -935,30 +982,59 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       }
     }
 
-    // T2: Anwähl-Modus — Zwei-Punkt. Graue Straße: erster Klick = A, zweiter Klick
-    // = B auf DERSELBEN Straße → der Asphalt dazwischen wird aufgenommen (du
-    // bestimmst die Spanne → keine Ministrecken). Orange = aufgenommen (Klick raus).
+    // T2: Anwähl-Modus — Zwei-Punkt A→B. Klick A (beliebiger Punkt auf einem Weg
+    // oder einer Straße), dann B. Das Routing spannt über den genodeten Graphen
+    // ALLER Kanten — über beliebig viele Ways und Kreuzungen hinweg, ohne dass
+    // zwischen Einzelpunkten geklickt werden muss. Die Hover-Spur zwischen A und B
+    // entscheidet Verzweigungen. Fehlt die Verbindung (Lücke in OSM), kommt ein
+    // gerades Stück A→B. Orange/lila = aufgenommen (Klick raus).
     if (pickMode) {
+      // A→B abschließen: routen + aufnehmen.
+      const commitPick = (bLat: number, bLng: number) => {
+        const a = pendingConnectRef.current;
+        if (!a) return;
+        const route = buildRoutePath(edgesRef.current, [a.lat, a.lng], [bLat, bLng], hoverTrailRef.current);
+        if (route && route.points.length >= 2) {
+          // Dominante Quell-Straße am Routen-Mittelpunkt → highway/tags/Asphalt.
+          const mid = route.points[Math.floor(route.points.length / 2)];
+          let best = Infinity; let src: PathEdge | null = null;
+          for (const e of edgesRef.current) {
+            for (const p of e.points) {
+              const d = (p[0] - mid[0]) ** 2 + (p[1] - mid[1]) ** 2;
+              if (d < best) { best = d; src = e; }
+            }
+          }
+          const asph = route.mode === 'straight' ? false : (src ? isAsphalt(src) : false);
+          addPiece(src?.id ?? -1, route.points, {
+            highway: src?.highway, tags: src?.tags, asphalt: asph, straight: route.mode === 'straight',
+          });
+        }
+        setPendingConnect(null);
+        pendingConnectRef.current = null;
+        hoverTrailRef.current = [];
+        pickPreviewRef.current?.clearLayers();
+      };
+      // Klickbare Overlays über JEDE Kante (Straße sichtbar grau, Netz unsichtbar
+      // breit zum Treffen). Klick setzt A bzw. löst B aus.
       for (const e of res.edges) {
-        if (e.source === 'primary' || e.inNet) continue; // nur Straßen-Kandidaten
-        const armed = pendingConnect?.roadId === e.id;
-        const pl = L.polyline(e.points, {
-          color: armed ? PICK_COLOR : CAND_COLOR, weight: armed ? 3 : 2, opacity: 0.9, dashArray: '5 5',
-        });
+        const isCand = e.source !== 'primary' && !e.inNet;
+        const pl = isCand
+          ? L.polyline(e.points, { color: CAND_COLOR, weight: 2, opacity: 0.9, dashArray: '5 5' })
+          : L.polyline(e.points, { color: '#000', weight: 10, opacity: 0 }); // unsichtbarer Hit-Bereich
         pl.bindTooltip(
-          armed ? 'zweiten Punkt B auf dieser Straße klicken → Asphalt A–B aufnehmen'
-            : (pendingConnect ? 'erst Punkt B auf der angefangenen Straße setzen'
-              : 'OSM-Straße — Punkt A klicken, dann Punkt B → Asphalt dazwischen'),
+          pendingConnect ? 'Punkt B klicken → A→B wird über die Wege geroutet'
+            : 'Punkt A klicken (Weg oder Straße), dann B',
           { sticky: true, opacity: 0.9, direction: 'right', offset: [12, 0] },
         );
         pl.on('click', (ev) => {
           L.DomEvent.stop(ev);
           const ll = (ev as L.LeafletMouseEvent).latlng;
-          if (pendingConnect && pendingConnect.roadId === e.id) {
-            addPiece(e.id, connectorPieceBetween(e, pendingConnect.lat, pendingConnect.lng, ll.lat, ll.lng));
-            setPendingConnect(null);
+          if (pendingConnectRef.current) {
+            commitPick(ll.lat, ll.lng);
           } else {
-            setPendingConnect({ roadId: e.id, lat: ll.lat, lng: ll.lng });
+            setPendingConnect({ lat: ll.lat, lng: ll.lng });
+            pendingConnectRef.current = { lat: ll.lat, lng: ll.lng };
+            hoverTrailRef.current = [[ll.lat, ll.lng]];
           }
         });
         pl.addTo(layer);
@@ -967,13 +1043,13 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       if (pendingConnect) {
         L.circleMarker([pendingConnect.lat, pendingConnect.lng], {
           radius: 5, color: PICK_COLOR, weight: 3, fillColor: '#fff', fillOpacity: 1,
-        }).bindTooltip('Punkt A — jetzt B auf derselben Straße', { direction: 'top', offset: [0, -8], opacity: 0.9 }).addTo(layer);
+        }).bindTooltip('Punkt A — jetzt B setzen; fahre die gewünschte Strecke mit dem Cursor ab', { direction: 'top', offset: [0, -8], opacity: 0.9 }).addTo(layer);
       }
       // Aufgenommene Teilstücke obenauf (nur im Anwählmodus): Asphalt = weiß mit
       // lila Einfassung, andere Sorten = lila. Jedes per Klick wieder entfernbar.
       for (const [nid, p] of manualPieces) {
         const src = byId.get(p.roadId);
-        const asph = src ? isAsphalt(src) : true;
+        const asph = p.asphalt ?? (src ? isAsphalt(src) : true);
         const tip = 'aufgenommenes Teilstück — Klick: wieder raus';
         if (asph) {
           L.polyline(p.points, { color: PICK_COLOR, weight: 5, opacity: 0.95 }).addTo(layer);

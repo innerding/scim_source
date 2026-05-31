@@ -456,6 +456,222 @@ export function connectorPieceBetween(
   return cropPolyline(road.points, lo, hi, mLng);
 }
 
+// ─── A→B Graph-Routing (manuelles Lückenfüllen über mehrere Ways) ──────────────
+// Der Ursprungsfehler von connectorPieceBetween: es schneidet EIN einzelnes Way.
+// An Kreuzungen ist eine Straße in mehrere Ways zerlegt → A und B auf
+// verschiedenen Ways liessen sich nicht spannen, man musste Stück für Stück
+// klicken. Hier wird stattdessen über den genodeten GESAMT-Graphen geroutet
+// (alle gefetchten Kanten — Wanderweg UND Connector). Ein einziges A→B-Paar
+// spannt damit die ganze Strecke über beliebig viele Ways/Kreuzungen.
+//
+// Mehrdeutige Verzweigungen entscheidet die Hover-Spur (trail, [lat,lng][]):
+// Kanten fern der Spur werden teurer, der Pfad hugt also den Cursor-Pfad statt
+// blind die kürzeste (oft falsche) Route zu nehmen. Ohne Spur → kürzeste Route.
+//
+// Findet sich keine Verbindung (Teilstück fehlt im Overpass), kommt ein gerades
+// Stück A→B (≤ maxStraightMeters) — das ist Fall 5 (Wanderweg→Wanderweg, Lücke
+// in den OSM-Daten selbst).
+
+interface RouteSeg { from: number; to: number; meters: number; points: [number, number][]; }
+interface RoutingGraph { segs: RouteSeg[]; nodeCount: number; }
+
+const ROUTE_KEY = (lat: number, lng: number): string => `${lat.toFixed(7)},${lng.toFixed(7)}`;
+
+// Wie composeGraph in netGraph, aber OHNE inNet-Filter (Connector-Kandidaten
+// müssen mitrouten) und self-contained (kein Cross-Import).
+function composeRoutingGraph(edges: PathEdge[]): RoutingGraph {
+  const valid = edges.filter((e) => e.points.length >= 2);
+  const usage = new Map<string, number>();
+  for (const e of valid) {
+    const seen = new Set<string>();
+    for (const p of e.points) {
+      const k = ROUTE_KEY(p[0], p[1]);
+      if (seen.has(k)) continue;
+      seen.add(k);
+      usage.set(k, (usage.get(k) ?? 0) + 1);
+    }
+  }
+  const nodeOf = new Map<string, number>();
+  const getNode = (lat: number, lng: number): number => {
+    const k = ROUTE_KEY(lat, lng);
+    let id = nodeOf.get(k);
+    if (id === undefined) { id = nodeOf.size; nodeOf.set(k, id); }
+    return id;
+  };
+  const segs: RouteSeg[] = [];
+  for (const e of valid) {
+    const pts = e.points;
+    const mLng = 111320 * Math.cos((pts[0][0] * Math.PI) / 180);
+    let from = getNode(pts[0][0], pts[0][1]);
+    let sp: [number, number][] = [[pts[0][0], pts[0][1]]];
+    let m = 0;
+    for (let i = 1; i < pts.length; i++) {
+      m += Math.hypot((pts[i][1] - pts[i - 1][1]) * mLng, (pts[i][0] - pts[i - 1][0]) * M_LAT);
+      sp.push([pts[i][0], pts[i][1]]);
+      const last = i === pts.length - 1;
+      const shared = (usage.get(ROUTE_KEY(pts[i][0], pts[i][1])) ?? 0) >= 2;
+      if (last || shared) {
+        const to = getNode(pts[i][0], pts[i][1]);
+        if (to !== from && sp.length >= 2) segs.push({ from, to, meters: m, points: sp });
+        from = to; sp = [[pts[i][0], pts[i][1]]]; m = 0;
+      }
+    }
+  }
+  return { segs, nodeCount: nodeOf.size };
+}
+
+// Mittlere Distanz Segment→Hover-Spur (Meter), gemittelt über die MITTEN der
+// Teilstrecken. Bewusst NICHT die Eck-/Endpunkte abtasten: an einer Verzweigung
+// teilen sich beide Zweige die Kreuzungsknoten, und die liegen oft auf der Spur
+// (Distanz 0) — würden sie mitzählen, verschwände der Unterschied zwischen den
+// Zweigen. Die Segment-Mitten sind das, was die Zweige unterscheidet.
+function segTrailDist(seg: RouteSeg, trail: [number, number][]): number {
+  if (trail.length < 2) return 0;
+  const mLng = 111320 * Math.cos((seg.points[0][0] * Math.PI) / 180);
+  let sum = 0; let n = 0;
+  for (let i = 0; i + 1 < seg.points.length; i++) {
+    const a = seg.points[i]; const b = seg.points[i + 1];
+    const mid: [number, number] = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+    sum += projectToPolyline(mid[0], mid[1], trail, mLng).dist; n++;
+  }
+  return n ? sum / n : 0;
+}
+
+export interface RoutePathResult {
+  points: [number, number][];
+  mode: 'routed' | 'straight';
+  meters: number;
+}
+
+export function buildRoutePath(
+  edges: PathEdge[],
+  a: [number, number],
+  b: [number, number],
+  trail: [number, number][],
+  opts: { snapTolMeters?: number; trailWeight?: number; maxStraightMeters?: number } = {},
+): RoutePathResult | null {
+  const K = opts.trailWeight ?? 12;
+  const maxStraight = opts.maxStraightMeters ?? 400;
+
+  const straightFallback = (): RoutePathResult | null => {
+    const mLng = 111320 * Math.cos((a[0] * Math.PI) / 180);
+    const d = Math.hypot((b[1] - a[1]) * mLng, (b[0] - a[0]) * M_LAT);
+    if (d > maxStraight) return null;
+    return { points: [a, b], mode: 'straight', meters: d };
+  };
+
+  const g = composeRoutingGraph(edges);
+  if (g.segs.length === 0) return straightFallback();
+
+  // A/B auf das jeweils nächste Segment projizieren.
+  const snap = (lat: number, lng: number) => {
+    let best = Infinity, segIdx = -1, s = 0;
+    for (let i = 0; i < g.segs.length; i++) {
+      const seg = g.segs[i];
+      const mLng = 111320 * Math.cos((seg.points[0][0] * Math.PI) / 180);
+      const r = projectToPolyline(lat, lng, seg.points, mLng);
+      if (r.dist < best) { best = r.dist; segIdx = i; s = r.s; }
+    }
+    return { segIdx, s, dist: best };
+  };
+  const sa = snap(a[0], a[1]);
+  const sb = snap(b[0], b[1]);
+  if (sa.segIdx < 0 || sb.segIdx < 0) return straightFallback();
+
+  const segA = g.segs[sa.segIdx];
+  const segB = g.segs[sb.segIdx];
+  const mLngA = 111320 * Math.cos((segA.points[0][0] * Math.PI) / 180);
+  const mLngB = 111320 * Math.cos((segB.points[0][0] * Math.PI) / 180);
+
+  // Sonderfall: A und B auf demselben Segment → direkt zuschneiden.
+  if (sa.segIdx === sb.segIdx) {
+    const lo = Math.min(sa.s, sb.s); const hi = Math.max(sa.s, sb.s);
+    if (hi - lo < 1) return straightFallback();
+    const pts = cropPolyline(segA.points, lo, hi, mLngA);
+    return { points: pts, mode: 'routed', meters: hi - lo };
+  }
+
+  // Adjazenz aufbauen (beide Richtungen), Kosten = Länge + K · Spur-Distanz.
+  const adj: { to: number; segIdx: number; cost: number }[][] =
+    Array.from({ length: g.nodeCount }, () => []);
+  for (let i = 0; i < g.segs.length; i++) {
+    const seg = g.segs[i];
+    const cost = seg.meters + K * segTrailDist(seg, trail);
+    adj[seg.from].push({ to: seg.to, segIdx: i, cost });
+    adj[seg.to].push({ to: seg.from, segIdx: i, cost });
+  }
+
+  // Multi-Source-Dijkstra: Start an beiden Enden von segA mit den Teilkosten
+  // vom Projektionspunkt pA bis zum jeweiligen Knoten.
+  const dist = new Array(g.nodeCount).fill(Infinity);
+  const prevNode = new Array(g.nodeCount).fill(-1);
+  const prevSeg = new Array(g.nodeCount).fill(-1);
+  const seed = (node: number, d: number) => { if (d < dist[node]) { dist[node] = d; } };
+  seed(segA.from, sa.s);                       // pA → from (Bogenlänge ab Segmentanfang)
+  seed(segA.to, segA.meters - sa.s);           // pA → to
+  const visited = new Array(g.nodeCount).fill(false);
+  // Simple O(V^2)-Dijkstra (Graphen sind klein: einige hundert Knoten).
+  for (;;) {
+    let u = -1, bestD = Infinity;
+    for (let i = 0; i < g.nodeCount; i++) if (!visited[i] && dist[i] < bestD) { bestD = dist[i]; u = i; }
+    if (u < 0) break;
+    visited[u] = true;
+    for (const e of adj[u]) {
+      const nd = dist[u] + e.cost;
+      if (nd < dist[e.to]) { dist[e.to] = nd; prevNode[e.to] = u; prevSeg[e.to] = e.segIdx; }
+    }
+  }
+
+  // Bestes Ziel-Ende von segB wählen.
+  const endFrom = dist[segB.from] + sb.s;
+  const endTo = dist[segB.to] + (segB.meters - sb.s);
+  const exitNode = endFrom <= endTo ? segB.from : segB.to;
+  if (!Number.isFinite(dist[exitNode])) return straightFallback();
+
+  // Knotenkette exitNode → … → (Start-Ende von segA) rückwärts einsammeln.
+  const segChain: number[] = [];
+  let cur = exitNode;
+  while (prevSeg[cur] >= 0) { segChain.push(prevSeg[cur]); cur = prevNode[cur]; }
+  const entryNode = cur; // ein Ende von segA
+  segChain.reverse();
+
+  // Polylinie zusammensetzen: pA → entryNode (Teil von segA), Kette, exitNode → pB.
+  const out: [number, number][] = [];
+  const pushPts = (pts: [number, number][]) => {
+    for (const p of pts) {
+      const last = out[out.length - 1];
+      if (!last || last[0] !== p[0] || last[1] !== p[1]) out.push(p);
+    }
+  };
+  // Teil A: von pA zum entryNode.
+  if (entryNode === segA.from) {
+    pushPts(cropPolyline(segA.points, 0, sa.s, mLngA).reverse()); // segStart..pA → reversed = pA..from
+  } else {
+    pushPts(cropPolyline(segA.points, sa.s, segA.meters, mLngA)); // pA..to
+  }
+  // Mitte: Segmente der Kette, jeweils richtig orientiert.
+  let node = entryNode;
+  for (const si of segChain) {
+    const seg = g.segs[si];
+    const pts = seg.from === node ? seg.points : [...seg.points].reverse();
+    pushPts(pts);
+    node = seg.from === node ? seg.to : seg.from;
+  }
+  // Teil B: vom exitNode zu pB.
+  if (exitNode === segB.from) {
+    pushPts(cropPolyline(segB.points, 0, sb.s, mLngB)); // from..pB
+  } else {
+    pushPts(cropPolyline(segB.points, sb.s, segB.meters, mLngB).reverse()); // pB..to → reversed = to..pB
+  }
+
+  if (out.length < 2) return straightFallback();
+  let meters = 0;
+  for (let i = 1; i < out.length; i++) {
+    meters += Math.hypot((out[i][1] - out[i - 1][1]) * mLngA, (out[i][0] - out[i - 1][0]) * M_LAT);
+  }
+  return { points: out, mode: 'routed', meters };
+}
+
 // ─── Oeffentlicher Einstieg ────────────────────────────────────────────────────
 
 export async function deriveWanderwegnetz(
