@@ -162,9 +162,11 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   const edgesRef = useRef<PathEdge[]>([]); // zuletzt gerenderte Kanten — Basis fürs Routing
   useEffect(() => { pendingConnectRef.current = pendingConnect; }, [pendingConnect]);
 
-  // Hover-Spur fürs A→B-Routing: zwischen A-Klick und B-Klick die Mausbewegung
-  // aufzeichnen — sie entscheidet die Verzweigung (statt blind kürzeste Route).
-  // Anzeige als feine Linie über einen eigenen Layer (kein React-Rerender).
+  // A→B-Vorschau: die Mausbewegung zwischen A- und B-Klick wird still
+  // aufgezeichnet (steuert die Verzweigung), aber NICHT als Spur gezeigt —
+  // gezeigt wird stattdessen die VORSCHAU dessen, was final eingezeichnet würde:
+  // das Werkzeug routet A→(Cursor) und zeichnet das Ergebnis. Das ist mental
+  // klar ("das käme dabei raus"), die Cursor-Nähe lenkt es nur.
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !pickMode) return undefined;
@@ -177,14 +179,19 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       if (last) {
         const mLng = 111320 * Math.cos((lat * Math.PI) / 180);
         const d = Math.hypot((lng - last[1]) * mLng, (lat - last[0]) * 110540);
-        if (d < 4) return; // nur merkliche Bewegung aufnehmen (~4 m)
+        if (d < 4) return; // nur merkliche Bewegung aufnehmen (~4 m) — auch Recompute-Drossel
       }
       trail.push([lat, lng]);
       if (!pickPreviewRef.current) pickPreviewRef.current = L.layerGroup().addTo(map);
       pickPreviewRef.current.clearLayers();
-      L.polyline([[a.lat, a.lng], ...trail], {
-        color: '#9333ea', weight: 2, opacity: 0.5, dashArray: '2 4',
-      }).addTo(pickPreviewRef.current);
+      // Vorschau der finalen Route (was beim B-Klick eingezeichnet würde).
+      const preview = buildRoutePath(edgesRef.current, [a.lat, a.lng], [lat, lng], trail);
+      if (preview && preview.points.length >= 2) {
+        const dashed = preview.mode === 'straight';
+        L.polyline(preview.points, {
+          color: '#9333ea', weight: 3, opacity: 0.75, ...(dashed ? { dashArray: '4 5' } : {}),
+        }).addTo(pickPreviewRef.current);
+      }
     };
     map.on('mousemove', onMove);
     return () => {
@@ -1086,22 +1093,31 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
           radius: 5, color: PICK_COLOR, weight: 3, fillColor: '#fff', fillOpacity: 1,
         }).bindTooltip('Punkt A — jetzt B setzen; fahre die gewünschte Strecke mit dem Cursor ab', { direction: 'top', offset: [0, -8], opacity: 0.9 }).addTo(layer);
       }
-      // Aufgenommene Teilstücke obenauf (nur im Anwählmodus): Asphalt = weiß mit
-      // lila Einfassung, andere Sorten = lila. Jedes per Klick wieder entfernbar.
+      // Aufgenommene Teilstücke obenauf: Asphalt = weiß mit lila Einfassung,
+      // andere Sorten = lila. Klick entfernt sie wieder — ABER nur, wenn gerade
+      // KEIN A→B läuft (selecting). Sonst würde der B-Klick, der auf einem
+      // bestehenden Stück landet (z.B. an derselben Kreuzung), dieses Stück
+      // löschen statt B zu setzen. Während der Auswahl daher nicht-interaktiv,
+      // damit der Klick zur darunterliegenden Straße durchfällt.
+      const selecting = !!pendingConnect;
       for (const [nid, p] of manualPieces) {
         const src = byId.get(p.roadId);
         const asph = p.asphalt ?? (src ? isAsphalt(src) : true);
         const tip = 'aufgenommenes Teilstück — Klick: wieder raus';
         if (asph) {
-          L.polyline(p.points, { color: PICK_COLOR, weight: 5, opacity: 0.95 }).addTo(layer);
-          const top = L.polyline(p.points, { color: '#ffffff', weight: 2, opacity: 1 });
-          top.bindTooltip(tip, { sticky: true, opacity: 0.9, direction: 'right', offset: [12, 0] });
-          top.on('click', (ev) => { L.DomEvent.stop(ev); removePiece(nid); });
+          L.polyline(p.points, { color: PICK_COLOR, weight: 5, opacity: 0.95, interactive: false }).addTo(layer);
+          const top = L.polyline(p.points, { color: '#ffffff', weight: 2, opacity: 1, interactive: !selecting });
+          if (!selecting) {
+            top.bindTooltip(tip, { sticky: true, opacity: 0.9, direction: 'right', offset: [12, 0] });
+            top.on('click', (ev) => { L.DomEvent.stop(ev); removePiece(nid); });
+          }
           top.addTo(layer);
         } else {
-          const pl = L.polyline(p.points, { color: PICK_COLOR, weight: 3, opacity: 0.95 });
-          pl.bindTooltip(tip, { sticky: true, opacity: 0.9, direction: 'right', offset: [12, 0] });
-          pl.on('click', (ev) => { L.DomEvent.stop(ev); removePiece(nid); });
+          const pl = L.polyline(p.points, { color: PICK_COLOR, weight: 3, opacity: 0.95, interactive: !selecting });
+          if (!selecting) {
+            pl.bindTooltip(tip, { sticky: true, opacity: 0.9, direction: 'right', offset: [12, 0] });
+            pl.on('click', (ev) => { L.DomEvent.stop(ev); removePiece(nid); });
+          }
           pl.addTo(layer);
         }
       }
