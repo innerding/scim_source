@@ -21,6 +21,8 @@ import { GEOMETRIES, REPRESENTATIONS, wegnetzById } from '../workspace/workspace
 import type { BoundaryGeometry, Representation, WegnetzFile } from '../workspace/workspace.types';
 import { poiCompositeSvg } from '../poi-catalog/poiCatalog.composite';
 import { renderClusterPois } from './clusterOverlay';
+import { drawNet } from './netDraw';
+import type { DerivedNet, LatLng } from '../regio-content/netModel';
 import type { CatalogPoi } from '../poi-catalog/poiCatalog.types';
 
 interface OsmEdge {
@@ -392,18 +394,24 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
     // echte Wege (dunkle Linie), connector_candidate = Snap-Bruecken (blau,
     // gestrichelt). points sind bereits [lat,lng].
     if (vis.routes && activeRep && repWegnetz) {
-      // Homogenes Netz: alle inNet-Edges schwarz. primary und
-      // connector_candidate sind beide reale Netz-Segmente (echte OSM-Wege) —
-      // keine Sonder-Einfaerbung, sonst wirkt das Netz inhomogen.
-      for (const e of repWegnetz.edges) {
-        const pts = e.points;
-        if (!pts || pts.length < 2) continue;
-        L.polyline(pts as [number, number][], {
-          color: '#1a1a1a',
-          weight: 2.5,
-          opacity: 0.85,
-        }).addTo(layerGroup);
-      }
+      // Spiegel des Drawers: exakt dieselbe Zeichenfunktion (netDraw.drawNet),
+      // damit der Inspector nichts erfindet — Asphalt weiss-gekernt, Netz
+      // schwarz, nosm gestrichelt, ganz wie der Drawer es ausgibt. Eigener
+      // Sub-Layer, weil drawNet seinen Layer zu Beginn leert. POIs/Bridges
+      // macht der Inspector separat → hier leer. asphalt rekonstruiert aus
+      // source (netToPathEdges kodiert asphalt → 'connector_candidate'); nosm
+      // ist in der gespeicherten WegnetzFile nicht enthalten.
+      const netLayer = L.layerGroup();
+      const derived: DerivedNet = {
+        edges: repWegnetz.edges.map((e, i) => ({
+          key: `${e.id}:${i}`, wayId: e.id, seg: i,
+          points: e.points as LatLng[], klass: 'net' as const,
+          asphalt: e.source === 'connector_candidate', deadEnd: false, nosm: false,
+        })),
+        bridges: [], pois: [], redKeys: [], netMeters: 0, deadEnds: [], nodes: [],
+      };
+      drawNet(netLayer, derived);
+      netLayer.addTo(layerGroup);
     }
 
     // POI Load class lookup
