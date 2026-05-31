@@ -148,17 +148,26 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   const pendingConnectRef = useRef<{ lat: number; lng: number } | null>(null);
   const hoverTrailRef = useRef<[number, number][]>([]);
   const pickPreviewRef = useRef<L.LayerGroup | null>(null);
-  const edgesRef = useRef<PathEdge[]>([]); // zuletzt gerenderte Kanten — Basis fürs Routing
+  const edgesRef = useRef<PathEdge[]>([]); // OP+OSM-Pool als PathEdge — Basis fürs Routing
+  const routeModelEdgesRef = useRef<ModelEdge[]>([]); // dito als ModelEdge — für Asphalt-Lookup
   useEffect(() => { pendingConnectRef.current = pendingConnect; }, [pendingConnect]);
 
-  // A→B-Vorschau: die Mausbewegung zwischen A- und B-Klick wird still
-  // aufgezeichnet (steuert die Verzweigung), aber NICHT als Spur gezeigt —
-  // gezeigt wird stattdessen die VORSCHAU dessen, was final eingezeichnet würde:
-  // das Werkzeug routet A→(Cursor) und zeichnet das Ergebnis. Das ist mental
-  // klar ("das käme dabei raus"), die Cursor-Nähe lenkt es nur.
+  // Trassieren = echte Drag-Geste: mousedown = A, ziehen = Spur (steuert die
+  // Verzweigung), mouseup = B → Route ablegen (lila, verschmilzt). Solange
+  // Trassieren an ist, wird das Karten-Schieben deaktiviert — sonst pant Leaflet
+  // die Geste weg. Gezeigt wird die VORSCHAU der finalen Route, nicht die Spur.
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !pickMode) return undefined;
+    map.dragging.disable();
+
+    const onDown = (ev: L.LeafletMouseEvent) => {
+      const { lat, lng } = ev.latlng;
+      pendingConnectRef.current = { lat, lng };
+      setPendingConnect({ lat, lng });
+      hoverTrailRef.current = [[lat, lng]];
+      pickPreviewRef.current?.clearLayers();
+    };
     const onMove = (ev: L.LeafletMouseEvent) => {
       const a = pendingConnectRef.current;
       if (!a) return;
@@ -168,23 +177,50 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       if (last) {
         const mLng = 111320 * Math.cos((lat * Math.PI) / 180);
         const d = Math.hypot((lng - last[1]) * mLng, (lat - last[0]) * 110540);
-        if (d < 4) return; // nur merkliche Bewegung aufnehmen (~4 m) — auch Recompute-Drossel
+        if (d < 4) return; // nur merkliche Bewegung (~4 m) — auch Recompute-Drossel
       }
       trail.push([lat, lng]);
       if (!pickPreviewRef.current) pickPreviewRef.current = L.layerGroup().addTo(map);
       pickPreviewRef.current.clearLayers();
-      // Vorschau der finalen Route (was beim B-Klick eingezeichnet würde).
       const preview = buildRoutePath(edgesRef.current, [a.lat, a.lng], [lat, lng], trail);
       if (preview && preview.points.length >= 2) {
-        const dashed = preview.mode === 'straight';
         L.polyline(preview.points, {
-          color: '#9333ea', weight: 3, opacity: 0.75, ...(dashed ? { dashArray: '4 5' } : {}),
+          color: '#9333ea', weight: 3, opacity: 0.75,
+          ...(preview.mode === 'straight' ? { dashArray: '4 5' } : {}),
         }).addTo(pickPreviewRef.current);
       }
     };
+    const onUp = (ev: L.LeafletMouseEvent) => {
+      const a = pendingConnectRef.current;
+      pendingConnectRef.current = null;
+      setPendingConnect(null);
+      pickPreviewRef.current?.clearLayers();
+      if (a) {
+        const { lat, lng } = ev.latlng;
+        const route = buildRoutePath(edgesRef.current, [a.lat, a.lng], [lat, lng], hoverTrailRef.current);
+        if (route && route.points.length >= 2) {
+          const mid = route.points[Math.floor(route.points.length / 2)];
+          let best = Infinity; let asph = false;
+          for (const e of routeModelEdgesRef.current) {
+            for (const p of e.points) {
+              const dd = (p[0] - mid[0]) ** 2 + (p[1] - mid[1]) ** 2;
+              if (dd < best) { best = dd; asph = e.asphalt; }
+            }
+          }
+          const straight = route.mode === 'straight';
+          setNetModel((prev) => { undoRef.current.push(prev); return addDrawnEdge(prev, route.points, straight ? false : asph); });
+        }
+      }
+      hoverTrailRef.current = [];
+    };
+    map.on('mousedown', onDown);
     map.on('mousemove', onMove);
+    map.on('mouseup', onUp);
     return () => {
+      map.off('mousedown', onDown);
       map.off('mousemove', onMove);
+      map.off('mouseup', onUp);
+      map.dragging.enable();
       pickPreviewRef.current?.clearLayers();
     };
   }, [pickMode]);
@@ -873,52 +909,18 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     const ns = netStats(netModel.edges.map((e) => ({ id: e.id, highway: '', source: 'primary' as const, points: e.points, tags: {}, inNet: true })));
     setNetSummary({ net, wander: net - asph, asphalt: asph, rest, bytes: ns.bytes, points: ns.pointCount });
 
-    // Trassier-Basis: OP + OSM-Pool als PathEdge (für buildRoutePath).
-    const routeEdges: PathEdge[] = [...netModel.edges, ...osmPool].map((e) => ({ id: e.id, highway: '', source: 'primary', points: e.points, tags: {}, inNet: true }));
-    edgesRef.current = routeEdges;
+    // Trassier-Basis: OP + OSM-Pool (für buildRoutePath im Drag-Effekt).
+    routeModelEdgesRef.current = [...netModel.edges, ...osmPool];
+    edgesRef.current = routeModelEdgesRef.current.map((e) => ({ id: e.id, highway: '', source: 'primary', points: e.points, tags: {}, inNet: true }));
 
+    // Trassieren: OSM-Pool grau einblenden (nur Anzeige, nicht-interaktiv — die
+    // Drag-Geste liegt auf der Karte); A-Marker während des Ziehens.
     if (pickMode) {
-      const commitPick = (bLat: number, bLng: number): void => {
-        const a = pendingConnectRef.current;
-        if (!a) return;
-        const route = buildRoutePath(edgesRef.current, [a.lat, a.lng], [bLat, bLng], hoverTrailRef.current);
-        if (route && route.points.length >= 2) {
-          const mid = route.points[Math.floor(route.points.length / 2)];
-          let best = Infinity; let asphHit = false;
-          for (const e of [...netModel.edges, ...osmPool]) {
-            for (const p of e.points) {
-              const d = (p[0] - mid[0]) ** 2 + (p[1] - mid[1]) ** 2;
-              if (d < best) { best = d; asphHit = e.asphalt; }
-            }
-          }
-          pushModel(addDrawnEdge(netModel, route.points, route.mode === 'straight' ? false : asphHit));
-        }
-        setPendingConnect(null);
-        pendingConnectRef.current = null;
-        hoverTrailRef.current = [];
-        pickPreviewRef.current?.clearLayers();
-      };
       for (const e of osmPool) {
-        const pl = L.polyline(e.points, { color: '#a0aec0', weight: 2, opacity: 0.9, dashArray: '5 5' });
-        pl.bindTooltip(
-          pendingConnect ? 'Punkt B klicken → A→B wird über die Wege geroutet' : 'Punkt A klicken (über OSM ziehen), dann B',
-          { sticky: true, direction: 'right', offset: [12, 0], opacity: 0.9 },
-        );
-        pl.on('click', (ev) => {
-          L.DomEvent.stop(ev);
-          const ll = (ev as L.LeafletMouseEvent).latlng;
-          if (pendingConnectRef.current) { commitPick(ll.lat, ll.lng); }
-          else {
-            setPendingConnect({ lat: ll.lat, lng: ll.lng });
-            pendingConnectRef.current = { lat: ll.lat, lng: ll.lng };
-            hoverTrailRef.current = [[ll.lat, ll.lng]];
-          }
-        });
-        pl.addTo(layer);
+        L.polyline(e.points, { color: '#a0aec0', weight: 2, opacity: 0.9, dashArray: '5 5', interactive: false }).addTo(layer);
       }
       if (pendingConnect) {
-        L.circleMarker([pendingConnect.lat, pendingConnect.lng], { radius: 5, color: '#9333ea', weight: 3, fillColor: '#fff', fillOpacity: 1 })
-          .bindTooltip('Punkt A — jetzt B setzen; fahre die Strecke mit dem Cursor ab', { direction: 'top', offset: [0, -8], opacity: 0.9 })
+        L.circleMarker([pendingConnect.lat, pendingConnect.lng], { radius: 5, color: '#9333ea', weight: 3, fillColor: '#fff', fillOpacity: 1, interactive: false })
           .addTo(layer);
       }
     }
