@@ -193,43 +193,55 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   const routeModelEdgesRef = useRef<ModelEdge[]>([]); // dito als ModelEdge — für Asphalt-Lookup
   useEffect(() => { pendingConnectRef.current = pendingConnect; }, [pendingConnect]);
 
-  // Trassieren = klick-basiert: Klick A, dann Klick B. Das Karten-Schieben
-  // bleibt NORMAL — nur ZWISCHEN A und B wird es deaktiviert, damit das
-  // Abfahren der Strecke nicht pant. Vor A und nach B: normaler Verschub.
-  // Gezeigt wird die VORSCHAU der finalen Route (nicht die Spur).
+  // Zwei Klick-Werkzeuge: Trassieren = A→B über OSM routen. Kurzstrecke = freie,
+  // GERADE Verbindung A→B, die NICHT aus OSM kommt (verbindet das OP über einen
+  // Platz). Beide: Klick A, Klick B; Karten-Schieben nur zwischen A und B aus.
+  // Bei Kurzstrecke werden A und B (bei Snap) auf den nächsten Netz-Knoten gerastet.
   useEffect(() => {
     const map = mapRef.current;
     if (!map || (!pickMode && !shortMode)) return undefined;
-    // Kurzstrecken-Modus: feine Toleranzen, damit kurze Strecken nicht zu einem
-    // Knoten verschmelzen und das Mindeststück greift; kurze gerade Lücken erlaubt.
-    const ropts = shortMode
-      ? { mergeTolMeters: 0.5, minPieceMeters: 0.3, maxStraightMeters: 60 }
-      : {};
+
+    const snapNode = (p: LatLng): LatLng => {
+      if (!snapEnabledRef.current) return p;
+      const nodes = deriveNet(netModelRef.current).nodes;
+      let best = Infinity; let pick: LatLng | null = null;
+      for (const c of nodes) {
+        const mLng = 111320 * Math.cos((c[0] * Math.PI) / 180);
+        const d = Math.hypot((p[1] - c[1]) * mLng, (p[0] - c[0]) * 110540);
+        if (d < best) { best = d; pick = c; }
+      }
+      return (pick && best <= 12) ? pick : p;
+    };
 
     const onClick = (ev: L.LeafletMouseEvent) => {
-      const { lat, lng } = ev.latlng;
+      const click: LatLng = [ev.latlng.lat, ev.latlng.lng];
       if (!pendingConnectRef.current) {
-        // Klick A → Schieben aus, Strecke abfahren.
-        pendingConnectRef.current = { lat, lng };
-        setPendingConnect({ lat, lng });
-        hoverTrailRef.current = [[lat, lng]];
+        const a = shortMode ? snapNode(click) : click; // Kurzstrecke: A auf Knoten rasten
+        pendingConnectRef.current = { lat: a[0], lng: a[1] };
+        setPendingConnect({ lat: a[0], lng: a[1] });
+        hoverTrailRef.current = [[a[0], a[1]]];
         pickPreviewRef.current?.clearLayers();
         map.dragging.disable();
       } else {
-        // Klick B → Route ablegen, Schieben wieder an.
         const a = pendingConnectRef.current;
-        const route = buildRoutePath(edgesRef.current, [a.lat, a.lng], [lat, lng], hoverTrailRef.current, ropts);
-        if (route && route.points.length >= 2) {
-          const mid = route.points[Math.floor(route.points.length / 2)];
-          let best = Infinity; let asph = false;
-          for (const e of routeModelEdgesRef.current) {
-            for (const p of e.points) {
-              const dd = (p[0] - mid[0]) ** 2 + (p[1] - mid[1]) ** 2;
-              if (dd < best) { best = dd; asph = e.asphalt; }
+        if (shortMode) {
+          // GERADE Verbindung, nicht über OSM — über einen Platz hinweg.
+          const b = snapNode(click);
+          setNetModel((prev) => { undoRef.current.push(prev); return addDrawnEdge(prev, [[a.lat, a.lng], b], false); });
+        } else {
+          const route = buildRoutePath(edgesRef.current, [a.lat, a.lng], [click[0], click[1]], hoverTrailRef.current);
+          if (route && route.points.length >= 2) {
+            const mid = route.points[Math.floor(route.points.length / 2)];
+            let best = Infinity; let asph = false;
+            for (const e of routeModelEdgesRef.current) {
+              for (const p of e.points) {
+                const dd = (p[0] - mid[0]) ** 2 + (p[1] - mid[1]) ** 2;
+                if (dd < best) { best = dd; asph = e.asphalt; }
+              }
             }
+            const straight = route.mode === 'straight';
+            setNetModel((prev) => { undoRef.current.push(prev); return addDrawnEdge(prev, route.points, straight ? false : asph); });
           }
-          const straight = route.mode === 'straight';
-          setNetModel((prev) => { undoRef.current.push(prev); return addDrawnEdge(prev, route.points, straight ? false : asph); });
         }
         pendingConnectRef.current = null;
         setPendingConnect(null);
@@ -241,18 +253,25 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     const onMove = (ev: L.LeafletMouseEvent) => {
       const a = pendingConnectRef.current;
       if (!a) return; // nur zwischen A und B
-      const { lat, lng } = ev.latlng;
+      const cur: LatLng = [ev.latlng.lat, ev.latlng.lng];
+      if (!pickPreviewRef.current) pickPreviewRef.current = L.layerGroup().addTo(map);
+      if (shortMode) {
+        // Gerade Vorschaulinie A→Cursor.
+        pickPreviewRef.current.clearLayers();
+        L.polyline([[a.lat, a.lng], cur], { color: '#9333ea', weight: 3, opacity: 0.75, dashArray: '4 5' }).addTo(pickPreviewRef.current);
+        return;
+      }
+      // Trassieren: Spur aufzeichnen (Drossel) + geroutete Vorschau.
       const trail = hoverTrailRef.current;
       const last = trail[trail.length - 1];
       if (last) {
-        const mLng = 111320 * Math.cos((lat * Math.PI) / 180);
-        const d = Math.hypot((lng - last[1]) * mLng, (lat - last[0]) * 110540);
-        if (d < 4) return; // ~4 m Drossel
+        const mLng = 111320 * Math.cos((cur[0] * Math.PI) / 180);
+        const d = Math.hypot((cur[1] - last[1]) * mLng, (cur[0] - last[0]) * 110540);
+        if (d < 4) return;
       }
-      trail.push([lat, lng]);
-      if (!pickPreviewRef.current) pickPreviewRef.current = L.layerGroup().addTo(map);
+      trail.push([cur[0], cur[1]]);
       pickPreviewRef.current.clearLayers();
-      const preview = buildRoutePath(edgesRef.current, [a.lat, a.lng], [lat, lng], trail, ropts);
+      const preview = buildRoutePath(edgesRef.current, [a.lat, a.lng], [cur[0], cur[1]], trail);
       if (preview && preview.points.length >= 2) {
         L.polyline(preview.points, {
           color: '#9333ea', weight: 3, opacity: 0.75,
@@ -1335,7 +1354,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
           active={shortMode}
           onClick={() => { setShortMode((v) => !v); setPickMode(false); setPoiMode(false); setPendingConnect(null); setRemoveMode(false); setPoiConnectMode(false); }}
           label="⟜ Kurzstrecke"
-          title="Wie Trassieren, aber feine Toleranzen für sehr kurze Strecken (kein Kollabieren)"
+          title="Freie gerade Verbindung A→B (nicht aus OSM) — verbindet das Netz über einen Platz; A/B rasten bei Snap auf Netz-Knoten"
         />
       ),
     },
