@@ -1088,6 +1088,12 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
         <span style={{ flex: 1, textAlign: 'center', fontSize: 10, fontFamily: 'monospace', color: '#718096', marginBottom: 6 }}>
           Browser Cache {(localStorageBytes() / 1048576).toFixed(2)}/10 MB
         </span>
+        {/* Wegnetz-Hinweis LINKS vom Speichern-Button, damit dieser nicht wandert. */}
+        {tab === 'wegnetz' && (
+          <span style={{ fontSize: 10, color: '#a0aec0', fontStyle: 'italic', marginBottom: 4, marginRight: 8, whiteSpace: 'nowrap' }}>
+            Primär-Filter + Konnektoren live · Verschweißen folgt
+          </span>
+        )}
         {/* F7-Neufassung: expliziter Speichern-Button (tab-unabhängig). Speichert
             den Draft in den Workspace; maskiert gespeichert = roter, committbarer Draft. */}
         {geometryId === 'new' && (
@@ -1105,11 +1111,6 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
           >
             {saved ? '✓ Gespeichert' : '💾 Speichern'}
           </button>
-        )}
-        {tab === 'wegnetz' && (
-          <span style={{ fontSize: 10, color: '#a0aec0', fontStyle: 'italic', marginBottom: 4 }}>
-            Primär-Filter + Konnektoren live · Verschweißen folgt
-          </span>
         )}
       </div>
 
