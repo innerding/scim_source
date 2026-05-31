@@ -515,7 +515,18 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const pm = (map as any).pm;
     if (tab !== 'umriss' || masked) return;
-    if (umrissDraw) pm?.enableDraw?.('Polygon', { tooltips: false, cursorMarker: false }); else pm?.disableDraw?.();
+    if (umrissDraw) {
+      pm?.enableDraw?.('Polygon', {
+        tooltips: false,
+        cursorMarker: false,
+        // Zeichen-Stroke dezent (Stärke ~0.6) + leichte, dünne Hintline.
+        pathOptions: { color: SLOT1_COLOR, weight: 2, opacity: 0.6, fillOpacity: 0 },
+        templineStyle: { color: SLOT1_COLOR, weight: 1, opacity: 0.6 },
+        hintlineStyle: { color: SLOT1_COLOR, weight: 1, opacity: 0.4, dashArray: '4 5' },
+      });
+    } else {
+      pm?.disableDraw?.();
+    }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const b1 = polygonLayerRef.current as any;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
