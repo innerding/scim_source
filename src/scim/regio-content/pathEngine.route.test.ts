@@ -29,6 +29,16 @@ describe('buildRoutePath — A→B über mehrere Ways', () => {
     }
   });
 
+  it('Kurzstrecke: feine Toleranzen routen ein sehr kurzes Stück, default fällt auf gerade zurück', () => {
+    const tiny = [edge(7, 'connector_candidate', [[0, 0], [0, 0.00002]])]; // ~2.2 m Way
+    const A: [number, number] = [0, 0.000005];
+    const B: [number, number] = [0, 0.00001]; // ~0.55 m auseinander auf demselben Segment
+    // Default (merge 3 m) lässt den 2,2-m-Way zu einem Knoten kollabieren → gerade.
+    expect(buildRoutePath(tiny, A, B, [])!.mode).toBe('straight');
+    // Kurzstrecken-Toleranzen: Way bleibt erhalten → echtes Routing.
+    expect(buildRoutePath(tiny, A, B, [], { mergeTolMeters: 0.5, minPieceMeters: 0.3 })!.mode).toBe('routed');
+  });
+
   it('A und B auf demselben Way → direkter Zuschnitt', () => {
     const r = buildRoutePath(edges, [0, 0.0002], [0, 0.0008], []);
     expect(r).not.toBeNull();

@@ -141,6 +141,9 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   const undoModel = (): void => { const prev = undoRef.current.pop(); if (prev) setNetModel(prev); };
   // Karten-Klick-Modi (exklusiv): pickMode = Trassieren, removeMode = Löschen.
   const [pickMode, setPickMode] = useState(false);
+  // Kurzstrecken-Modus: gleiche Geste wie Trassieren, aber feine Toleranzen
+  // (kleiner Knoten-Merge + Mindeststück), damit kurze Strecken nicht kollabieren.
+  const [shortMode, setShortMode] = useState(false);
   // Zwei-Punkt-Anwahl: erster Klick A merken, zweiter Klick B (beliebiger Punkt;
   // das A→B-Routing spannt über mehrere Ways/Kreuzungen). Die Hover-Spur zwischen
   // den Klicks entscheidet Verzweigungen.
@@ -158,7 +161,12 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   // Gezeigt wird die VORSCHAU der finalen Route (nicht die Spur).
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !pickMode) return undefined;
+    if (!map || (!pickMode && !shortMode)) return undefined;
+    // Kurzstrecken-Modus: feine Toleranzen, damit kurze Strecken nicht zu einem
+    // Knoten verschmelzen und das Mindeststück greift; kurze gerade Lücken erlaubt.
+    const ropts = shortMode
+      ? { mergeTolMeters: 0.5, minPieceMeters: 0.3, maxStraightMeters: 60 }
+      : {};
 
     const onClick = (ev: L.LeafletMouseEvent) => {
       const { lat, lng } = ev.latlng;
@@ -172,7 +180,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       } else {
         // Klick B → Route ablegen, Schieben wieder an.
         const a = pendingConnectRef.current;
-        const route = buildRoutePath(edgesRef.current, [a.lat, a.lng], [lat, lng], hoverTrailRef.current);
+        const route = buildRoutePath(edgesRef.current, [a.lat, a.lng], [lat, lng], hoverTrailRef.current, ropts);
         if (route && route.points.length >= 2) {
           const mid = route.points[Math.floor(route.points.length / 2)];
           let best = Infinity; let asph = false;
@@ -206,7 +214,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       trail.push([lat, lng]);
       if (!pickPreviewRef.current) pickPreviewRef.current = L.layerGroup().addTo(map);
       pickPreviewRef.current.clearLayers();
-      const preview = buildRoutePath(edgesRef.current, [a.lat, a.lng], [lat, lng], trail);
+      const preview = buildRoutePath(edgesRef.current, [a.lat, a.lng], [lat, lng], trail, ropts);
       if (preview && preview.points.length >= 2) {
         L.polyline(preview.points, {
           color: '#9333ea', weight: 3, opacity: 0.75,
@@ -224,7 +232,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       hoverTrailRef.current = [];
       pickPreviewRef.current?.clearLayers();
     };
-  }, [pickMode]);
+  }, [pickMode, shortMode]);
 
   // Löschen-Modus (removeMode): Klick auf ein Teilstück → deleteKeys im Modell.
   const [removeMode, setRemoveMode] = useState(false);
@@ -914,9 +922,8 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     routeModelEdgesRef.current = [...netModel.edges, ...osmPool];
     edgesRef.current = routeModelEdgesRef.current.map((e) => ({ id: e.id, highway: '', source: 'primary', points: e.points, tags: {}, inNet: true }));
 
-    // Trassieren: OSM-Pool grau einblenden (nur Anzeige, nicht-interaktiv — die
-    // Drag-Geste liegt auf der Karte); A-Marker während des Ziehens.
-    if (pickMode) {
+    // Trassieren/Kurzstrecke: OSM-Pool grau einblenden (nur Anzeige); A-Marker.
+    if (pickMode || shortMode) {
       for (const e of osmPool) {
         L.polyline(e.points, { color: '#a0aec0', weight: 2, opacity: 0.9, dashArray: '5 5', interactive: false }).addTo(layer);
       }
@@ -995,7 +1002,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   // (Maskierung/B2-Crop ist ein eigener späterer Schritt — hier noch nicht aktiv.)
   useEffect(() => {
     renderPath();
-  }, [netModel, osmPool, pickMode, removeMode, pendingConnect]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [netModel, osmPool, pickMode, shortMode, removeMode, pendingConnect]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // F7-Neufassung: Die Handoff-Brücke entfällt. Der Drawer schreibt direkt in den
   // Workspace-Draft (onSave); der Commit lebt im Workspace.
@@ -1193,9 +1200,20 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       node: (
         <ToolToggle
           active={pickMode}
-          onClick={() => { setPickMode((v) => !v); setPendingConnect(null); setRemoveMode(false); setPoiConnectMode(false); }}
+          onClick={() => { setPickMode((v) => !v); setShortMode(false); setPendingConnect(null); setRemoveMode(false); setPoiConnectMode(false); }}
           label="✎ Trassieren"
-          title="Über OSM ziehen → Vorschau; Drop legt ein lila Stück ab, das mit dem Netz verschmilzt"
+          title="Klick A, Strecke abfahren, Klick B → lila Stück, verschmilzt (grobe Treffer-Toleranz)"
+        />
+      ),
+    },
+    {
+      id: 'kurzstrecke', side: 'right', tabs: ['wegnetz'],
+      node: (
+        <ToolToggle
+          active={shortMode}
+          onClick={() => { setShortMode((v) => !v); setPickMode(false); setPendingConnect(null); setRemoveMode(false); setPoiConnectMode(false); }}
+          label="⟜ Kurzstrecke"
+          title="Wie Trassieren, aber feine Toleranzen für sehr kurze Strecken (kein Kollabieren)"
         />
       ),
     },
@@ -1204,7 +1222,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       node: (
         <ToolToggle
           active={removeMode}
-          onClick={() => { setRemoveMode((v) => !v); setPickMode(false); setPendingConnect(null); setPoiConnectMode(false); }}
+          onClick={() => { setRemoveMode((v) => !v); setPickMode(false); setShortMode(false); setPendingConnect(null); setPoiConnectMode(false); }}
           label="🗑 Löschen"
           title="Teilstück anklicken → raus (isoliert / Sackgasse / zwischen Kreuzungen)"
         />
@@ -1240,7 +1258,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       node: (
         <ToolToggle
           active={poiConnectMode}
-          onClick={() => { setPoiConnectMode((v) => !v); setPickMode(false); setPendingConnect(null); setRemoveMode(false); }}
+          onClick={() => { setPoiConnectMode((v) => !v); setPickMode(false); setShortMode(false); setPendingConnect(null); setRemoveMode(false); }}
           label="🔗 POI-Connect"
           title="POIs 0,5–2 m vom Netz verbinden (jeder einzeln per Klick); >2 m nicht verbindbar"
         />

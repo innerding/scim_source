@@ -429,7 +429,7 @@ const ROUTE_KEY = (lat: number, lng: number): string => `${lat.toFixed(7)},${lng
 
 // Wie composeGraph in netGraph, aber OHNE inNet-Filter (Connector-Kandidaten
 // müssen mitrouten) und self-contained (kein Cross-Import).
-function composeRoutingGraph(edges: PathEdge[]): RoutingGraph {
+function composeRoutingGraph(edges: PathEdge[], mergeTol = 3): RoutingGraph {
   const valid = edges.filter((e) => e.points.length >= 2);
   const usage = new Map<string, number>();
   for (const e of valid) {
@@ -447,7 +447,8 @@ function composeRoutingGraph(edges: PathEdge[]): RoutingGraph {
   // immer exakt genodet — der Endpunkt der Verbindungsstrecke liegt dann ein
   // paar Meter neben dem Knie und wäre sonst ein isolierter Sackgassen-Knoten,
   // den das Routing nie erreicht. (Wie bridgeGaps fürs Netz, hier fürs Routing.)
-  const MERGE_TOL_M = 3;
+  // Im Kurzstrecken-Modus klein (sonst kollabieren kurze Strecken zu einem Knoten).
+  const MERGE_TOL_M = mergeTol;
   const nodeOf = new Map<string, number>();
   const nodeCoords: [number, number][] = [];
   const getNode = (lat: number, lng: number): number => {
@@ -517,10 +518,11 @@ export function buildRoutePath(
   a: [number, number],
   b: [number, number],
   trail: [number, number][],
-  opts: { snapTolMeters?: number; trailWeight?: number; maxStraightMeters?: number } = {},
+  opts: { snapTolMeters?: number; trailWeight?: number; maxStraightMeters?: number; mergeTolMeters?: number; minPieceMeters?: number } = {},
 ): RoutePathResult | null {
   const K = opts.trailWeight ?? 12;
   const maxStraight = opts.maxStraightMeters ?? 400;
+  const minPiece = opts.minPieceMeters ?? 1;
 
   const straightFallback = (): RoutePathResult | null => {
     const mLng = 111320 * Math.cos((a[0] * Math.PI) / 180);
@@ -529,7 +531,7 @@ export function buildRoutePath(
     return { points: [a, b], mode: 'straight', meters: d };
   };
 
-  const g = composeRoutingGraph(edges);
+  const g = composeRoutingGraph(edges, opts.mergeTolMeters ?? 3);
   if (g.segs.length === 0) return straightFallback();
 
   // A/B auf das jeweils nächste Segment projizieren.
@@ -555,7 +557,7 @@ export function buildRoutePath(
   // Sonderfall: A und B auf demselben Segment → direkt zuschneiden.
   if (sa.segIdx === sb.segIdx) {
     const lo = Math.min(sa.s, sb.s); const hi = Math.max(sa.s, sb.s);
-    if (hi - lo < 1) return straightFallback();
+    if (hi - lo < minPiece) return straightFallback();
     const pts = cropPolyline(segA.points, lo, hi, mLngA);
     return { points: pts, mode: 'routed', meters: hi - lo };
   }
