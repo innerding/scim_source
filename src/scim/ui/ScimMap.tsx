@@ -392,15 +392,16 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
     // echte Wege (dunkle Linie), connector_candidate = Snap-Bruecken (blau,
     // gestrichelt). points sind bereits [lat,lng].
     if (vis.routes && activeRep && repWegnetz) {
+      // Homogenes Netz: alle inNet-Edges schwarz. primary und
+      // connector_candidate sind beide reale Netz-Segmente (echte OSM-Wege) —
+      // keine Sonder-Einfaerbung, sonst wirkt das Netz inhomogen.
       for (const e of repWegnetz.edges) {
         const pts = e.points;
         if (!pts || pts.length < 2) continue;
-        const isConnector = e.source === 'connector_candidate';
         L.polyline(pts as [number, number][], {
-          color: isConnector ? '#2b6cb0' : '#1a1a1a',
-          weight: isConnector ? 1.5 : 2.5,
-          opacity: isConnector ? 0.7 : 0.85,
-          dashArray: isConnector ? '4 4' : undefined,
+          color: '#1a1a1a',
+          weight: 2.5,
+          opacity: 0.85,
         }).addTo(layerGroup);
       }
     }
