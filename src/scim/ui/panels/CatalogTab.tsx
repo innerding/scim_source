@@ -15,6 +15,7 @@ import {
 } from '../../poi-catalog/poiCatalog.editor';
 import { compactDiff, diffLines, serializeCatalogToMd } from '../../poi-catalog/poiCatalog.serializer';
 import { fetchLatestCatalogMd, type CatalogSource } from '../../poi-catalog/catalogRuntime';
+import { listDrafts, updateDraft } from '../../workspace/draftStore';
 import {
   buildPrefix, isToken, mintToken, sanitizeSlug, sanitizeVerbund, SLUG_MAX_LEN, VERBUND_MAX_LEN,
 } from '../../poi-catalog/poiCatalog.token';
@@ -511,12 +512,13 @@ function SubcategoryEdit({ value, onChange }: { value: Subcategory; onChange: (v
 interface RowProps {
   poi: MergedPoi;
   editMode: boolean;
+  incoming?: boolean;   // frisch aus dem „Brief" reingefallen, noch nicht bearbeitet
   onPatch: (changes: Partial<Omit<CatalogPoi, 'id'>>) => void;
   onDelete: () => void;
   onUndelete: () => void;
 }
 
-function PoiRow({ poi, editMode, onPatch, onDelete, onUndelete }: RowProps) {
+function PoiRow({ poi, editMode, incoming, onPatch, onDelete, onUndelete }: RowProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
   // Draw-ID des aktuell zugewiesenen Icons ermitteln (inkl. Plus-Suffix-Resolution).
   const resolvedIcon = resolveIcon(poi.icon);
@@ -535,6 +537,8 @@ function PoiRow({ poi, editMode, onPatch, onDelete, onUndelete }: RowProps) {
     borderLeft: `3px solid ${borderColor}`,
     textDecoration: poi._isDeleted ? 'line-through' : undefined,
     opacity: poi._isDeleted ? 0.55 : 1,
+    // Frisch aus dem „Brief" reingefallen → leicht rot, bis bearbeitet.
+    background: incoming ? '#fff5f5' : undefined,
   };
   const cellStyle: React.CSSProperties = { padding: '4px 8px', verticalAlign: 'middle' };
   // Fixstern-Code: erste Spalte, monospace, unauffällig, nicht editierbar.
@@ -684,11 +688,12 @@ const btnStyle: React.CSSProperties = {
 };
 
 function SubcategorySection({
-  subcategory, pois, editMode, onPatchPoi, onDeletePoi, onUndeletePoi, onAddPoi,
+  subcategory, pois, editMode, incomingIds, onPatchPoi, onDeletePoi, onUndeletePoi, onAddPoi,
 }: {
   subcategory: Subcategory;
   pois: MergedPoi[];
   editMode: boolean;
+  incomingIds: Set<string>;
   onPatchPoi: (id: string, changes: Partial<Omit<CatalogPoi, 'id'>>) => void;
   onDeletePoi: (id: string) => void;
   onUndeletePoi: (id: string) => void;
@@ -729,6 +734,7 @@ function SubcategorySection({
               key={p.id}
               poi={p}
               editMode={editMode}
+              incoming={incomingIds.has(p.id)}
               onPatch={(c) => onPatchPoi(p.id, c)}
               onDelete={() => onDeletePoi(p.id)}
               onUndelete={() => onUndeletePoi(p.id)}
@@ -748,11 +754,12 @@ function SubcategorySection({
 // ─── Cluster-Sort-Sektion (eine Sektion je Cluster, Mitglieder gemischt) ─────
 
 function ClusterGroupSection({
-  name, pois, editMode, onPatchPoi, onDeletePoi, onUndeletePoi,
+  name, pois, editMode, incomingIds, onPatchPoi, onDeletePoi, onUndeletePoi,
 }: {
   name: string;
   pois: MergedPoi[];
   editMode: boolean;
+  incomingIds: Set<string>;
   onPatchPoi: (id: string, changes: Partial<Omit<CatalogPoi, 'id'>>) => void;
   onDeletePoi: (id: string) => void;
   onUndeletePoi: (id: string) => void;
@@ -796,6 +803,7 @@ function ClusterGroupSection({
               key={p.id}
               poi={p}
               editMode={editMode}
+              incoming={incomingIds.has(p.id)}
               onPatch={(c) => onPatchPoi(p.id, c)}
               onDelete={() => onDeletePoi(p.id)}
               onUndelete={() => onUndeletePoi(p.id)}
@@ -1414,6 +1422,9 @@ export default function CatalogTab({ onJumpTo }: { onJumpTo?: (panelId: string) 
 
   const [editState, setEditState] = useState<PoiCatalogEditState>(() => loadEditState(region.id));
   const [editMode, setEditMode] = useState(false);
+  // POIs, die frisch aus dem „Brief" (Drawer-Export) reingefallen sind und noch
+  // nicht bearbeitet wurden → leicht rot markiert, bis angefasst.
+  const [incomingIds, setIncomingIds] = useState<Set<string>>(new Set());
   const [showExport, setShowExport] = useState(false);
   const [showFlowInfo, setShowFlowInfo] = useState(false);
   const [showChanges, setShowChanges] = useState(false);
@@ -1440,6 +1451,7 @@ export default function CatalogTab({ onJumpTo }: { onJumpTo?: (panelId: string) 
     setEditMode(false);
     setVerbundDraft(null);
     setSlugDraft(null);
+    setIncomingIds(new Set());
   }, [region.id]);
 
   // Auto-save bei jeder State-Änderung (nur wenn Edits vorhanden, sonst Storage leerräumen)
@@ -1527,8 +1539,30 @@ export default function CatalogTab({ onJumpTo }: { onJumpTo?: (panelId: string) 
 
   // ─── Handler ────────────────────────────────────────────────────────────────
 
-  const handlePatch = (id: string, changes: Partial<Omit<CatalogPoi, 'id'>>) =>
+  const handlePatch = (id: string, changes: Partial<Omit<CatalogPoi, 'id'>>) => {
     setEditState((s) => patchPoi(s, id, changes));
+    // Bearbeitet → rote „frisch reingefallen"-Markierung entfernen.
+    if (incomingIds.has(id)) setIncomingIds((prev) => { const n = new Set(prev); n.delete(id); return n; });
+  };
+
+  // „Brief öffnen": die poi_inbox aller Drafts für diesen Katalog fällt in den
+  // Katalog (als neue POIs mit ihren Drawer-Token), Bearbeiten an, frisch = rot.
+  // Der Brief im Draft wird dabei geleert (verbraucht).
+  const inboxCount = listDrafts().reduce((s, d) => s + (d.poi_inbox?.catalogId === region.id ? (d.poi_inbox?.pois.length ?? 0) : 0), 0);
+  const openInbox = () => {
+    const drafts = listDrafts().filter((d) => d.poi_inbox?.catalogId === region.id);
+    const incoming = drafts.flatMap((d) => d.poi_inbox?.pois ?? []);
+    if (incoming.length === 0) return;
+    const ids = new Set<string>();
+    setEditState((s) => {
+      const patches = { ...s.patches };
+      for (const p of incoming) { patches[p.id] = { is_new: true, new_poi: p }; ids.add(p.id); }
+      return { ...s, patches };
+    });
+    setIncomingIds(ids);
+    setEditMode(true);
+    for (const d of drafts) updateDraft(d.id, { poi_inbox: null }); // Brief verbraucht
+  };
   const handleDelete = (id: string) => setEditState((s) => deletePoi(s, id));
   const handleUndelete = (id: string) => setEditState((s) => undeletePoi(s, id));
   const handleReset = (id: string) => setEditState((s) => resetPoi(s, id));
@@ -1676,6 +1710,16 @@ export default function CatalogTab({ onJumpTo }: { onJumpTo?: (panelId: string) 
           {editMode ? '✓ Bearbeiten an' : '✎ Bearbeiten'}
         </button>
 
+        {inboxCount > 0 && (
+          <button
+            onClick={openInbox}
+            title={`${inboxCount} POI(s) vom Drawer — Brief öffnen: fällt in den Katalog (rot markiert, editier-/löschbar), dann committen`}
+            style={{ ...btnStyle, background: '#fff5f5', color: '#c53030', borderColor: '#e53e3e', fontWeight: 700 }}
+          >
+            ✉ Brief öffnen ({inboxCount})
+          </button>
+        )}
+
         <button
           onClick={() => setClusterSort((s) => !s)}
           title="Cluster-Sortierung: gruppiert nach Cluster (groesster zuerst), Ghost-POI vor Identity vor Rest"
@@ -1784,6 +1828,7 @@ export default function CatalogTab({ onJumpTo }: { onJumpTo?: (panelId: string) 
           name={g.name}
           pois={g.pois}
           editMode={editMode}
+          incomingIds={incomingIds}
           onPatchPoi={handlePatch}
           onDeletePoi={handleDelete}
           onUndeletePoi={handleUndelete}
@@ -1797,6 +1842,7 @@ export default function CatalogTab({ onJumpTo }: { onJumpTo?: (panelId: string) 
           subcategory={s.subcategory}
           pois={s.pois}
           editMode={editMode}
+          incomingIds={incomingIds}
           onPatchPoi={handlePatch}
           onDeletePoi={handleDelete}
           onUndeletePoi={handleUndelete}
@@ -1843,6 +1889,8 @@ export default function CatalogTab({ onJumpTo }: { onJumpTo?: (panelId: string) 
             setCatalogSource('live');
             // Auto-save-Effect (auf editState) persistiert bzw. raeumt localStorage.
             setEditState((s) => reconcileEdits(s, committedBase));
+            // Brief verbraucht → rote „frisch reingefallen"-Markierung weg.
+            setIncomingIds(new Set());
             // Präfix-Drafts loslassen — der committete Wert steht jetzt in der Basis.
             setVerbundDraft(null);
             setSlugDraft(null);
