@@ -20,6 +20,8 @@ import { parseCatalogById, CATALOG_REGISTRY } from '../poi-catalog/catalogRegist
 import { GEOMETRIES, REPRESENTATIONS, wegnetzById } from '../workspace/workspace.registry';
 import type { BoundaryGeometry, Representation, WegnetzFile } from '../workspace/workspace.types';
 import { poiCompositeSvg } from '../poi-catalog/poiCatalog.composite';
+import { renderClusterPois } from './clusterOverlay';
+import type { CatalogPoi } from '../poi-catalog/poiCatalog.types';
 
 interface OsmEdge {
   edge_id: string;
@@ -129,6 +131,7 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const layerGroupRef = useRef<L.LayerGroup | null>(null);
+  const clusterLayerRef = useRef<L.LayerGroup | null>(null);
   const baseTileRef = useRef<L.TileLayer | null>(null);
   const [vis, setVis] = useState<LayerVisibility>(DEFAULT_VISIBILITY);
 
@@ -174,17 +177,25 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
 
   // Catalog-POIs der aktiven R, sobald sie ein catalog_id-Feld hat.
   // Parsen ist nicht billig — daher memoisiert auf den Katalog-Identifikator.
-  const repCatalogPois = useMemo(() => {
+  const repCatalog = useMemo(() => {
+    const empty = { all: [] as CatalogPoi[], plain: [] as CatalogPoi[], members: [] as CatalogPoi[], ghostByCluster: new Map<string, CatalogPoi>() };
     const catId = activeRep?.representation.catalog_id;
-    if (!catId) return [];
+    if (!catId) return empty;
     const parsed = parseCatalogById(catId);
-    if (!parsed) return [];
-    // Nur POIs mit echter Koordinate zeichnen — Cluster-Ghosts und Missing
-    // werden uebersprungen.
-    return parsed.pois.filter((p) => (
-      p.coord_status !== 'missing'
-      && !(p.coord[0] === 0 && p.coord[1] === 0)
+    if (!parsed) return empty;
+    // Nur POIs mit echter Koordinate zeichnen — Missing/0,0 uebersprungen.
+    const withCoord = parsed.pois.filter((p) => (
+      p.coord_status !== 'missing' && !(p.coord[0] === 0 && p.coord[1] === 0)
     ));
+    // plain = einzeln gezeichnet; members = dynamisch geclustert; ghost liefert
+    // nur Icon/Tagline fuer das vereinigte Cluster-POI (Position = Schwerpunkt).
+    const plain = withCoord.filter((p) => !p.cluster && p.subcategory !== 'Cluster');
+    const members = withCoord.filter((p) => p.cluster && p.subcategory !== 'Cluster');
+    const ghostByCluster = new Map<string, CatalogPoi>();
+    for (const p of parsed.pois) {
+      if (p.subcategory === 'Cluster' && p.cluster) ghostByCluster.set(p.cluster, p);
+    }
+    return { all: withCoord, plain, members, ghostByCluster };
   }, [activeRep]);
   // Gespeichertes Wegnetz der aktiven R (ueber wegnetz_id). Liefert die echten
   // Edges fuer den Routen/Edges-Layer und das Colour-Mesh.
@@ -242,13 +253,19 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
     }
 
     const layerGroup = L.layerGroup().addTo(map);
+    // Separater Layer fuer die dynamischen Cluster-Marker — wird bei
+    // zoom/move neu gezeichnet, ohne den Haupt-Layer anzufassen. Zuletzt
+    // hinzugefuegt → liegt oben.
+    const clusterLayer = L.layerGroup().addTo(map);
     mapRef.current = map;
     layerGroupRef.current = layerGroup;
+    clusterLayerRef.current = clusterLayer;
 
     return () => {
       map.remove();
       mapRef.current = null;
       layerGroupRef.current = null;
+      clusterLayerRef.current = null;
       baseTileRef.current = null;
     };
   }, []);
@@ -426,14 +443,15 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
     // POIs aus dem Catalog der aktiven R (rep.catalog_id). Eigene
     // Render-Schleife mit leichterem Stil — kein Load-Class-Mapping,
     // weil der Catalog selbst keine Live-Last fuehrt.
-    if (availLayers.pois && vis.pois && activeRep && repCatalogPois.length > 0) {
+    // Nur die ungeclusterten POIs hier statisch; Cluster-Mitglieder + Ghost
+    // erledigt das dynamische Cluster-Overlay (eigener Layer, zoom-abhaengig).
+    if (availLayers.pois && vis.pois && activeRep && repCatalog.plain.length > 0) {
       const POI_SIZE = 30;
-      for (const poi of repCatalogPois) {
+      for (const poi of repCatalog.plain) {
         const [lon, lat] = poi.coord;
         const tooltip =
           `<strong>${poi.text}</strong><br/>` +
-          `<span style="color:#718096">${poi.subcategory}</span>` +
-          (poi.cluster ? `<br/><em>Cluster: ${poi.cluster}</em>` : '');
+          `<span style="color:#718096">${poi.subcategory}</span>`;
         // Exakt das realisierte Katalog-Composite: Container-Geometrie +
         // Kategoriefarbe + Icon + Deco. Toggle aus → leeres Icon, d.h. nur der
         // farbige Container als Platzhalter (gleiche Geometrie/Farbe wie echt).
@@ -471,10 +489,10 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
     if (repBbox) {
       const [minLon, minLat, maxLon, maxLat] = repBbox;
       map.fitBounds([[minLat, minLon], [maxLat, maxLon]], { padding: [24, 24] });
-    } else if (activeRep && repCatalogPois.length > 0) {
+    } else if (activeRep && repCatalog.all.length > 0) {
       // Katalog ohne Geometry: auf die POIs zoomen, nicht auf die Pipeline.
-      const lats = repCatalogPois.map((p) => p.coord[1]);
-      const lons = repCatalogPois.map((p) => p.coord[0]);
+      const lats = repCatalog.all.map((p) => p.coord[1]);
+      const lons = repCatalog.all.map((p) => p.coord[0]);
       map.fitBounds([
         [Math.min(...lats), Math.min(...lons)],
         [Math.max(...lats), Math.max(...lons)],
@@ -490,7 +508,21 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
         [Math.max(...lats), Math.max(...lons)],
       ]);
     }
-  }, [result, vis, osmEdges, repBbox, repPolygonLatLng, activeRep, repCatalogPois, availLayers, repWegnetz, wegnetzAsEdges]);
+  }, [result, vis, osmEdges, repBbox, repPolygonLatLng, activeRep, repCatalog, availLayers, repWegnetz, wegnetzAsEdges]);
+
+  // Dynamisches Cluster-Overlay: bei jedem zoom/move neu rechnen (Pixel-Logik).
+  // Eigener Layer, damit der Haupt-Render unberuehrt bleibt.
+  useEffect(() => {
+    const map = mapRef.current;
+    const layer = clusterLayerRef.current;
+    if (!map || !layer) return;
+    const active = availLayers.pois && vis.pois && !!activeRep && repCatalog.members.length > 0;
+    if (!active) { layer.clearLayers(); return; }
+    const draw = () => renderClusterPois(map, layer, repCatalog.members, repCatalog.ghostByCluster, vis.poiIcons);
+    draw();
+    map.on('zoomend moveend', draw);
+    return () => { map.off('zoomend moveend', draw); layer.clearLayers(); };
+  }, [activeRep, repCatalog, vis.pois, vis.poiIcons, availLayers]);
 
   if (!result.success) {
     return (
@@ -522,7 +554,7 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
   if (availLayers.routes && vis.routes && activeRep && repWegnetz?.edges?.length) activeLabels.push(`${repWegnetz.edges.length} Edges`);
   else if (availLayers.routes && vis.routes && !activeRep && routeLayerModel?.segments?.length) activeLabels.push(`${routeLayerModel.segments.length} Routen`);
   // POIs: bei gewaehltem Asset die Katalog-POIs zaehlen, sonst die Pipeline-POIs.
-  if (availLayers.pois && vis.pois && activeRep && repCatalogPois.length) activeLabels.push(`${repCatalogPois.length} POIs`);
+  if (availLayers.pois && vis.pois && activeRep && repCatalog.all.length) activeLabels.push(`${repCatalog.all.length} POIs`);
   else if (availLayers.pois && vis.pois && !activeRep && extraction?.extracted_pois?.length) activeLabels.push(`${extraction.extracted_pois.length} POIs`);
   const assetName = assetSel ? (activeRep?.representation.name ?? assetSel.id) : null;
   const body = activeLabels.length > 0 ? activeLabels.join(' · ') : '— alle Layer ausgeblendet —';
