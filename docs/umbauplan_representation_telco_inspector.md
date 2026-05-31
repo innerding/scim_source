@@ -44,6 +44,23 @@ synthetische Inspector-Mesh wird dabei **abgelöst**, nicht vorher gelöscht.
 ## Abhängigkeiten
 S1 → Voraussetzung für S2; S2 → für S3/S4. Telco-Quelle (P06) existiert bereits.
 
+## Gesamt-Roadmap (M1–M4) bis zur konsumierbaren User-App
+
+- **M1 — gültige Representation** (Operator, bald nach Umriss): Boundary + Netz +
+  Katalog committet.
+- **M2 — ColourMesh-Simulation** (dieser Plan, S1–S4): resampeltes Mesh + sim. Telco
+  (aus P06), im Inspector validiert. Operator-/Validierungs-Ansicht.
+- **M3 — Verpacken + Publizieren** (Auslieferungs-Schicht): Representation → **Sensus-
+  Core-Paket (P11)** = statische Mesh-Geometrie + stabile Segment-ids + volatiler
+  Load-Kanal → **nach R2 publizieren, versioniert**. Erst das macht „verschiedene
+  Pakete/Laufzeiten konsumierbar".
+- **M4 — Runtime-App-Shell**: lädt Paket über **R2** → Karte + POIs → **Routen-UI/UX**
+  (Wishlist → Route → Guidance, project_runtime_mvp) → **BCK/BAK** (Komfort-Korridor
+  vs. „out of your comfort"-Bonus) → **Telco-Sim-Button** (solange echtes Telco fehlt).
+
+Reihenfolge: M1 → M2 → M3 → M4. M2 ist die Vorschau dessen, was M3 paketiert und M4
+konsumiert.
+
 ## Offen / zu entscheiden
 - **Segment-id-Schema:** deterministisch + stabil über Re-Commits (sonst driftet das
   Telco-Mapping) — Prinzip wie project_poi_stable_id_token.
