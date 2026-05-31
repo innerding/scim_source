@@ -28,13 +28,13 @@ import {
   loadPathConfig, savePathConfig, type PathConfig, type BridlewayMode,
 } from '../../regio-content/pathConfig';
 import {
-  deriveWanderwegnetz, anchorPois, netStats, formatBytes, isAsphalt, buildRoutePath,
+  deriveWanderwegnetz, anchorPois, netStats, formatBytes, isAsphalt, buildRoutePath, cropNetToMask,
   type PathFetchResult, type AnchorSummary, type PoiInput, type CropResult,
   type PathEdge, type GateNode,
 } from '../../regio-content/pathEngine';
 import {
   deriveNet, addDrawnEdge, deleteKeys, deleteAllRed, addPoi, removePoi, emptyModel,
-  type NetModel, type ModelEdge, type LatLng, type GatePoi,
+  type NetModel, type ModelEdge, type LatLng, type GatePoi, type DerivedNet,
 } from '../../regio-content/netModel';
 import { drawNet } from '../netDraw';
 import { ICON_REGISTRY } from '../../poi-catalog/iconRegistry';
@@ -57,6 +57,14 @@ const POI_CATEGORIES: { value: string; label: string }[] = [
 ];
 
 interface PoiDraft { at: LatLng; category: string; tagline: string; note: string; icon: string; editId?: string; }
+
+// Netz-Klassen-Kanten (klass 'net') → PathEdge[] für Crop/Commit.
+function netToPathEdges(d: DerivedNet): PathEdge[] {
+  return d.edges.filter((e) => e.klass === 'net').map((e) => ({
+    id: e.wayId, highway: '', source: e.asphalt ? 'connector_candidate' : 'primary',
+    points: e.points, tags: {}, inNet: true,
+  }));
+}
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import gruenbergMd from '../../../../data/gruenberg_pois_plan.md?raw';
@@ -429,10 +437,12 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     if ((!polygon || polygon.length < 3) && (!maskPolygon || maskPolygon.length < 3)) return;
     const gebiet = inspectorView?.geometry.id ?? '';
     const gebietName = inspectorView?.geometry.name ?? '';
-    const netUn = pathResult ? buildNet(pathResult.edges, [], false, gebiet, gebietName) : null;
-    // net_masked nur, wenn aktuell maskiert → macht den Draft rot (committbar).
-    const netMa = (masked && cropResult)
-      ? buildNet(cropResult.edges, cropResult.gates, true, gebiet, gebietName) : null;
+    // Committet wird das EDITIERTE Netz (Modell), nicht der rohe Fetch.
+    const netEdges = netToPathEdges(deriveNet(netModel));
+    const netUn = netEdges.length ? buildNet(netEdges, [], false, gebiet, gebietName) : null;
+    // net_masked: das Modell-Netz auf B2 zugeschnitten (macht den Draft rot/committbar).
+    const crop = (maskPolygon && maskPolygon.length >= 3) ? cropNetToMask(netEdges, maskPolygon) : null;
+    const netMa = crop ? buildNet(crop.edges, crop.gates, true, gebiet, gebietName) : null;
     const patch = {
       name, reference: polygon, boundary: maskPolygon,
       net_unmasked: netUn, net_masked: netMa, catalog_id: overlayCatalogId || null,
@@ -996,6 +1006,17 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       : [];
     const derived = deriveNet(netModel, poiCoords);
 
+    // B2-Maskierungs-Vorschau: das NETZ auf die Maske zuschneiden; die Übertritte
+    // an der Maskengrenze werden Gate-Knoten (gültige Enden, nicht rot).
+    if (masked && maskPolygon && maskPolygon.length >= 3) {
+      const crop = cropNetToMask(netToPathEdges(derived), maskPolygon);
+      drawNet(layer, {
+        edges: crop.edges.filter((e) => e.inNet).map((e, i) => ({ key: `${e.id}:c${i}`, wayId: e.id, seg: i, points: e.points, klass: 'net' as const, asphalt: e.source !== 'primary', deadEnd: false })),
+        bridges: [], pois: crop.gates.map((g) => ({ at: g.inner, connected: true, gate: true })), redKeys: [], netMeters: 0, deadEnds: [], nodes: [],
+      }, {});
+      return;
+    }
+
     drawNet(layer, derived, {
       onSegmentClick: removeMode ? (k) => pushModel(deleteKeys(netModel, [k])) : undefined,
       pickTooltip: removeMode ? 'Klick: Teilstück löschen' : undefined,
@@ -1103,7 +1124,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   // (Maskierung/B2-Crop ist ein eigener späterer Schritt — hier noch nicht aktiv.)
   useEffect(() => {
     renderPath();
-  }, [netModel, osmPool, pickMode, shortMode, removeMode, poiMode, pendingConnect]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [netModel, osmPool, pickMode, shortMode, removeMode, poiMode, pendingConnect, masked, maskPolygon]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // F7-Neufassung: Die Handoff-Brücke entfällt. Der Drawer schreibt direkt in den
   // Workspace-Draft (onSave); der Commit lebt im Workspace.
