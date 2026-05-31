@@ -20,6 +20,19 @@ const COLOR = {
 const M_LAT = 110540;
 const mLngAt = (lat: number): number => 111320 * Math.cos((lat * Math.PI) / 180);
 
+// Platzhalter-Farbe je Kategorie (Bucket-Präfix der Katalog-Subcategory + Gate).
+function categoryColor(category?: string): string {
+  if (!category) return '#1a365d';
+  if (category === 'gate') return '#2f855a';
+  if (category.startsWith('Transport')) return '#2b6cb0';
+  if (category.startsWith('Service')) return '#dd6b20';
+  if (category.startsWith('Regenerate')) return '#319795';
+  if (category.startsWith('Points')) return '#805ad5';
+  if (category.startsWith('Square')) return '#4a5568';
+  if (category.startsWith('Help')) return '#e53e3e';
+  return '#1a365d';
+}
+
 export interface DrawNetOptions {
   /** Lösch-Werkzeug aktiv → Teilstücke klickbar; Klick liefert den Key. */
   onSegmentClick?: (key: string) => void;
@@ -107,12 +120,13 @@ export function drawNet(layer: L.LayerGroup, net: DerivedNet, opts: DrawNetOptio
 
   // 3) POIs: verbunden = ruhig, unverbunden = blinkt, Gate = eigener Marker.
   for (const p of net.pois) {
+    const col = categoryColor(p.category);
     const marker = L.circleMarker(p.at, {
-      radius: p.gate ? 6 : 5,
-      color: p.gate ? '#2f855a' : '#1a365d',
+      radius: 6,
+      color: col,
       weight: 2,
-      fillColor: p.connected ? '#c6f6d5' : '#fff',
-      fillOpacity: 0.95,
+      fillColor: p.connected ? col : '#fff',
+      fillOpacity: p.connected ? 0.85 : 0.95,
       className: p.connected ? undefined : 'poi-blink',
       interactive: false,
     });

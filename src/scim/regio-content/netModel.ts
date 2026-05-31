@@ -30,7 +30,18 @@ export interface ModelEdge {
   source: 'osm' | 'drawn';
   asphalt: boolean;
 }
-export interface GatePoi { at: LatLng; poiId?: string; tagline?: string; category?: string; }
+// Platzierter POI / Registry-Eintrag. Ein POI an einer Sackgassen-Spitze
+// legitimiert deren Arm (rot→net). Token erst beim Export → im Drawer nur id.
+export interface GatePoi {
+  at: LatLng;
+  category?: string;   // Katalog-Subcategory | 'gate'
+  tagline?: string;
+  note?: string;       // ein Satz → grau in Kurz-Description
+  icon?: string;       // gewähltes Icon (id) — sonst iconNote
+  iconNote?: string;   // Beschreibung, wenn kein Icon gewählt
+  id?: string;         // lokale temp-ID
+  poiId?: string;
+}
 export interface NetModel {
   edges: ModelEdge[];
   excluded: string[];   // gelöschte Teilstück-Keys `wayId:seg`
@@ -51,6 +62,7 @@ export interface DerivedNet {
   redKeys: string[];
   netMeters: number;
   deadEnds: LatLng[];   // degree-1-Enden OHNE Gate-POI (rote Sackgassen-Spitzen)
+  nodes: LatLng[];      // alle Graph-Knoten (für Snap beim POI-Setzen)
 }
 
 export function emptyModel(): NetModel {
@@ -293,7 +305,8 @@ export function deriveNet(model: NetModel, poiCoords: LatLng[] = []): DerivedNet
     .filter((n) => n.degree === 1 && !gateNodeIds.has(n.id))
     .map((n) => [n.lat, n.lng] as LatLng);
 
-  return { edges, bridges: integrated.bridges, pois, redKeys, netMeters, deadEnds };
+  const nodes: LatLng[] = graph.nodes.map((n) => [n.lat, n.lng] as LatLng);
+  return { edges, bridges: integrated.bridges, pois, redKeys, netMeters, deadEnds, nodes };
 }
 
 // ─── Aktionen (rein: NetModel -> NetModel) ──────────────────────────────────────
@@ -332,6 +345,16 @@ export function deleteAllRed(model: NetModel): NetModel {
 
 export function setGatePoi(model: NetModel, at: LatLng, poiId?: string): NetModel {
   return { ...model, gates: [...model.gates, { at, poiId }] };
+}
+
+/** Platzierten POI (Registry-Eintrag) hinzufügen. */
+export function addPoi(model: NetModel, poi: GatePoi): NetModel {
+  return { ...model, gates: [...model.gates, poi] };
+}
+
+/** Platzierten POI per id entfernen. */
+export function removePoi(model: NetModel, id: string): NetModel {
+  return { ...model, gates: model.gates.filter((g) => g.id !== id) };
 }
 
 /** Gate am Punkt setzen oder (falls dort schon eins ist) entfernen. */

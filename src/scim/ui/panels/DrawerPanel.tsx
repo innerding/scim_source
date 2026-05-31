@@ -33,10 +33,30 @@ import {
   type PathEdge, type GateNode,
 } from '../../regio-content/pathEngine';
 import {
-  deriveNet, addDrawnEdge, deleteKeys, deleteAllRed, toggleGatePoi, emptyModel,
-  type NetModel, type ModelEdge, type LatLng,
+  deriveNet, addDrawnEdge, deleteKeys, deleteAllRed, addPoi, removePoi, emptyModel,
+  type NetModel, type ModelEdge, type LatLng, type GatePoi,
 } from '../../regio-content/netModel';
 import { drawNet } from '../netDraw';
+import { ICON_REGISTRY } from '../../poi-catalog/iconRegistry';
+
+// POI-Kategorien fürs Modal = Katalog-Subcategories + Gate (ohne Cluster).
+const POI_CATEGORIES: { value: string; label: string }[] = [
+  { value: 'gate', label: 'Gate · Ein-/Ausstieg' },
+  { value: 'Transport_Vehicle', label: 'Transport · Bus/Bahn/Station' },
+  { value: 'Transport_Parking', label: 'Transport · Parkplatz' },
+  { value: 'Service_Sleep', label: 'Service · Übernachtung' },
+  { value: 'Service_Others', label: 'Service · Sonstiges' },
+  { value: 'Regenerate_Substanze', label: 'Regenerate · Substanz' },
+  { value: 'Regenerate_Water', label: 'Regenerate · Wasser' },
+  { value: 'Points_historical', label: 'Points · Historisch' },
+  { value: 'Points_others', label: 'Points · Sonstiges' },
+  { value: 'Square_Rest', label: 'Square · Rast' },
+  { value: 'Square_Move', label: 'Square · Bewegung' },
+  { value: 'Help_order', label: 'Help · Ordnung' },
+  { value: 'Help_emergency', label: 'Help · Notfall' },
+];
+
+interface PoiDraft { at: LatLng; category: string; tagline: string; note: string; icon: string; iconNote: string; }
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import gruenbergMd from '../../../../data/gruenberg_pois_plan.md?raw';
@@ -146,13 +166,14 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   const [shortMode, setShortMode] = useState(false);
   // Gate-Modus: Klick auf eine rote Sackgassen-Spitze setzt/entfernt ein Gate-POI
   // (Endpunkt wird gültiger Ein-/Ausstieg → Arm nicht mehr rot).
-  const [gateMode, setGateMode] = useState(false);
-  // Optionaler Name fürs nächste Gate (Kategorie „Ortszentrum"). Leer = einfaches Gate.
-  const [gateLabel, setGateLabel] = useState('');
-  const gateLabelRef = useRef('');
-  useEffect(() => { gateLabelRef.current = gateLabel; }, [gateLabel]);
+  const [poiMode, setPoiMode] = useState(false);
+  // POI-Erfassung: beim Klick öffnet ein Modal; nach „Ablegen" landet der POI in
+  // der Registry (op_model). Token erst beim Export → hier nur lokale id.
+  const [poiDraft, setPoiDraft] = useState<PoiDraft | null>(null);
+  const poiIdRef = useRef(1);
   const netModelRef = useRef<NetModel>(netModel);
   useEffect(() => { netModelRef.current = netModel; }, [netModel]);
+  const snapEnabledRef = useRef(true); // gespiegelt (snapEnabled wird später deklariert)
   // Zwei-Punkt-Anwahl: erster Klick A merken, zweiter Klick B (beliebiger Punkt;
   // das A→B-Routing spannt über mehrere Ways/Kreuzungen). Die Hover-Spur zwischen
   // den Klicks entscheidet Verzweigungen.
@@ -243,33 +264,45 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     };
   }, [pickMode, shortMode]);
 
-  // Gate-Werkzeug: Klick nahe einer roten Sackgassen-Spitze (oder einem
-  // bestehenden Gate) setzt/entfernt ein Gate-POI → Endpunkt wird gültiger
-  // Ein-/Ausstieg (Arm nicht mehr rot).
+  // POI-Werkzeug: Klick platziert einen POI. Frei platzierbar; bei aktivem Snap
+  // rastet er auf den nächsten Graph-Knoten (innerhalb der Treffer-Toleranz). Es
+  // öffnet ein Modal (Kategorie/Tagline/Notiz/Icon). Ein POI an einer Sackgassen-
+  // Spitze legitimiert den Arm (rot→net).
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !gateMode) return undefined;
+    if (!map || !poiMode) return undefined;
     const onClick = (ev: L.LeafletMouseEvent) => {
-      const click: LatLng = [ev.latlng.lat, ev.latlng.lng];
-      const m = netModelRef.current;
-      const d = deriveNet(m);
-      const cands: LatLng[] = [...d.deadEnds, ...m.gates.map((g) => g.at)];
-      let best = Infinity; let pick: LatLng | null = null;
-      for (const c of cands) {
-        const mLng = 111320 * Math.cos((c[0] * Math.PI) / 180);
-        const dist = Math.hypot((click[1] - c[1]) * mLng, (click[0] - c[0]) * 110540);
-        if (dist < best) { best = dist; pick = c; }
+      let at: LatLng = [ev.latlng.lat, ev.latlng.lng];
+      if (snapEnabledRef.current) {
+        const nodes = deriveNet(netModelRef.current).nodes;
+        let best = Infinity; let pick: LatLng | null = null;
+        for (const c of nodes) {
+          const mLng = 111320 * Math.cos((c[0] * Math.PI) / 180);
+          const dist = Math.hypot((at[1] - c[1]) * mLng, (at[0] - c[0]) * 110540);
+          if (dist < best) { best = dist; pick = c; }
+        }
+        if (pick && best <= 12) at = pick; // auf den Knoten einrasten
       }
-      if (pick && best <= 12) {
-        const at = pick;
-        const label = gateLabelRef.current.trim();
-        const meta = label ? { tagline: label, category: 'ortszentrum' } : {};
-        setNetModel((prev) => { undoRef.current.push(prev); return toggleGatePoi(prev, at, meta); });
-      }
+      setPoiDraft({ at, category: 'gate', tagline: '', note: '', icon: '', iconNote: '' });
     };
     map.on('click', onClick);
     return () => { map.off('click', onClick); };
-  }, [gateMode]);
+  }, [poiMode]);
+
+  const commitPoiDraft = (): void => {
+    if (!poiDraft) return;
+    const poi: GatePoi = {
+      at: poiDraft.at,
+      category: poiDraft.category,
+      tagline: poiDraft.tagline.trim() || undefined,
+      note: poiDraft.note.trim() || undefined,
+      icon: poiDraft.icon || undefined,
+      iconNote: poiDraft.iconNote.trim() || undefined,
+      id: `poi-${poiIdRef.current++}`,
+    };
+    setNetModel((prev) => { undoRef.current.push(prev); return addPoi(prev, poi); });
+    setPoiDraft(null);
+  };
 
   // Löschen-Modus (removeMode): Klick auf ein Teilstück → deleteKeys im Modell.
   const [removeMode, setRemoveMode] = useState(false);
@@ -294,6 +327,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   // US1 — Master-Snap-Toggle der Tool-Header-Leiste (beide Tabs). Treibt Geomans
   // globales Snapping; default an.
   const [snapEnabled, setSnapEnabled] = useState(true);
+  useEffect(() => { snapEnabledRef.current = snapEnabled; }, [snapEnabled]);
   // UÖ1/UÖ2 — Umriss: Geoman-Toolbar ist weg; Zeichnen/Bearbeiten laufen über
   // eigene Werkzeuge (kein Rechteck, kein globales disable → kein Weißer-Screen).
   const [umrissDraw, setUmrissDraw] = useState(false);
@@ -946,7 +980,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     drawNet(layer, derived, {
       onSegmentClick: removeMode ? (k) => pushModel(deleteKeys(netModel, [k])) : undefined,
       pickTooltip: removeMode ? 'Klick: Teilstück löschen' : undefined,
-      showDeadEnds: gateMode,
+      showDeadEnds: poiMode,
     });
 
     // Footer-Summen aus dem Modell.
@@ -1050,7 +1084,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   // (Maskierung/B2-Crop ist ein eigener späterer Schritt — hier noch nicht aktiv.)
   useEffect(() => {
     renderPath();
-  }, [netModel, osmPool, pickMode, shortMode, removeMode, gateMode, pendingConnect]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [netModel, osmPool, pickMode, shortMode, removeMode, poiMode, pendingConnect]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // F7-Neufassung: Die Handoff-Brücke entfällt. Der Drawer schreibt direkt in den
   // Workspace-Draft (onSave); der Commit lebt im Workspace.
@@ -1248,7 +1282,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       node: (
         <ToolToggle
           active={pickMode}
-          onClick={() => { setPickMode((v) => !v); setShortMode(false); setGateMode(false); setPendingConnect(null); setRemoveMode(false); setPoiConnectMode(false); }}
+          onClick={() => { setPickMode((v) => !v); setShortMode(false); setPoiMode(false); setPendingConnect(null); setRemoveMode(false); setPoiConnectMode(false); }}
           label="✎ Trassieren"
           title="Klick A, Strecke abfahren, Klick B → lila Stück, verschmilzt (grobe Treffer-Toleranz)"
         />
@@ -1259,7 +1293,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       node: (
         <ToolToggle
           active={shortMode}
-          onClick={() => { setShortMode((v) => !v); setPickMode(false); setGateMode(false); setPendingConnect(null); setRemoveMode(false); setPoiConnectMode(false); }}
+          onClick={() => { setShortMode((v) => !v); setPickMode(false); setPoiMode(false); setPendingConnect(null); setRemoveMode(false); setPoiConnectMode(false); }}
           label="⟜ Kurzstrecke"
           title="Wie Trassieren, aber feine Toleranzen für sehr kurze Strecken (kein Kollabieren)"
         />
@@ -1270,35 +1304,23 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       node: (
         <ToolToggle
           active={removeMode}
-          onClick={() => { setRemoveMode((v) => !v); setPickMode(false); setShortMode(false); setGateMode(false); setPendingConnect(null); setPoiConnectMode(false); }}
+          onClick={() => { setRemoveMode((v) => !v); setPickMode(false); setShortMode(false); setPoiMode(false); setPendingConnect(null); setPoiConnectMode(false); }}
           label="🗑 Löschen"
           title="Teilstück anklicken → raus (isoliert / Sackgasse / zwischen Kreuzungen)"
         />
       ),
     },
     {
-      id: 'gate', side: 'right', tabs: ['wegnetz'],
+      id: 'poi', side: 'right', tabs: ['wegnetz'],
       node: (
         <ToolToggle
-          active={gateMode}
-          onClick={() => { setGateMode((v) => !v); setPickMode(false); setShortMode(false); setRemoveMode(false); setPoiConnectMode(false); setPendingConnect(null); }}
-          label="⚑ Gate"
-          title="Rote Sackgassen-Spitze anklicken → Gate-POI (gültiger Ein-/Ausstieg); nochmal = weg"
+          active={poiMode}
+          onClick={() => { setPoiMode((v) => !v); setPickMode(false); setShortMode(false); setRemoveMode(false); setPoiConnectMode(false); setPendingConnect(null); }}
+          label="⊕ POI"
+          title="Klick platziert einen POI (Snap rastet auf Knoten); Modal für Kategorie/Name. POI an Sackgasse → Arm wird gültig."
         />
       ),
     },
-    ...(gateMode ? [{
-      id: 'gate-label', side: 'right' as const, tabs: ['wegnetz'] as DrawerTab[],
-      node: (
-        <input
-          value={gateLabel}
-          onChange={(e) => setGateLabel(e.target.value)}
-          placeholder="Ortszentrum xy (optional)"
-          title="Name fürs nächste Gate (Kategorie Ortszentrum); leer = einfaches Gate"
-          style={{ fontSize: 11, padding: '3px 8px', borderRadius: 5, border: '1px solid #cbd5e0', width: 150 }}
-        />
-      ),
-    }] : []),
     {
       id: 'alles-rot', side: 'right', tabs: ['wegnetz'],
       node: (
@@ -1329,7 +1351,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       node: (
         <ToolToggle
           active={poiConnectMode}
-          onClick={() => { setPoiConnectMode((v) => !v); setPickMode(false); setShortMode(false); setGateMode(false); setPendingConnect(null); setRemoveMode(false); }}
+          onClick={() => { setPoiConnectMode((v) => !v); setPickMode(false); setShortMode(false); setPoiMode(false); setPendingConnect(null); setRemoveMode(false); }}
           label="🔗 POI-Connect"
           title="POIs 0,5–2 m vom Netz verbinden (jeder einzeln per Klick); >2 m nicht verbindbar"
         />
@@ -1596,6 +1618,53 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
         <div ref={mapContainerRef} style={{ flex: 1, minHeight: 0, minWidth: 0 }} />
       </div>
 
+      {/* POI-Modal: Kategorie/Tagline/Notiz/Icon erfassen → Registry (op_model). */}
+      {poiDraft && (
+        <div
+          onClick={() => setPoiDraft(null)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.25)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ background: '#fff', borderRadius: 8, padding: 16, width: 360, boxShadow: '0 8px 30px rgba(0,0,0,0.3)', fontFamily: 'system-ui, sans-serif' }}
+          >
+            <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 10, color: '#1a365d' }}>POI ablegen</div>
+            <label style={{ display: 'block', fontSize: 11, color: '#4a5568', marginBottom: 8 }}>Kategorie
+              <select value={poiDraft.category} onChange={(e) => setPoiDraft({ ...poiDraft, category: e.target.value })}
+                style={{ display: 'block', width: '100%', fontSize: 12, padding: '5px 6px', marginTop: 2, borderRadius: 5, border: '1px solid #cbd5e0' }}>
+                {POI_CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+              </select>
+            </label>
+            <label style={{ display: 'block', fontSize: 11, color: '#4a5568', marginBottom: 8 }}>Tagline
+              <input value={poiDraft.tagline} onChange={(e) => setPoiDraft({ ...poiDraft, tagline: e.target.value })} placeholder="z. B. Busstation Gmunden"
+                style={{ display: 'block', width: '100%', fontSize: 12, padding: '5px 6px', marginTop: 2, borderRadius: 5, border: '1px solid #cbd5e0', boxSizing: 'border-box' }} />
+            </label>
+            <label style={{ display: 'block', fontSize: 11, color: '#4a5568', marginBottom: 8 }}>Notiz (ein Satz)
+              <input value={poiDraft.note} onChange={(e) => setPoiDraft({ ...poiDraft, note: e.target.value })} placeholder="kurz — landet grau in der Description"
+                style={{ display: 'block', width: '100%', fontSize: 12, padding: '5px 6px', marginTop: 2, borderRadius: 5, border: '1px solid #cbd5e0', boxSizing: 'border-box' }} />
+            </label>
+            <label style={{ display: 'block', fontSize: 11, color: '#4a5568', marginBottom: 8 }}>Icon
+              <select value={poiDraft.icon} onChange={(e) => setPoiDraft({ ...poiDraft, icon: e.target.value })}
+                style={{ display: 'block', width: '100%', fontSize: 12, padding: '5px 6px', marginTop: 2, borderRadius: 5, border: '1px solid #cbd5e0' }}>
+                <option value="">— kein Icon (stattdessen beschreiben) —</option>
+                {ICON_REGISTRY.map((i) => <option key={i.id} value={i.id}>{i.file_name}</option>)}
+              </select>
+            </label>
+            {!poiDraft.icon && (
+              <label style={{ display: 'block', fontSize: 11, color: '#4a5568', marginBottom: 8 }}>Icon-Notiz
+                <input value={poiDraft.iconNote} onChange={(e) => setPoiDraft({ ...poiDraft, iconNote: e.target.value })} placeholder="wie soll das Icon aussehen?"
+                  style={{ display: 'block', width: '100%', fontSize: 12, padding: '5px 6px', marginTop: 2, borderRadius: 5, border: '1px solid #cbd5e0', boxSizing: 'border-box' }} />
+              </label>
+            )}
+            <div style={{ fontSize: 10, color: '#a0aec0', margin: '8px 0' }}>Token wird beim Export vergeben · Coord erfasst</div>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button onClick={() => setPoiDraft(null)} style={{ fontSize: 12, padding: '5px 12px', borderRadius: 5, border: '1px solid #e2e8f0', background: '#fff', color: '#718096', cursor: 'pointer' }}>Abbrechen</button>
+              <button onClick={commitPoiDraft} style={{ fontSize: 12, fontWeight: 700, padding: '5px 14px', borderRadius: 5, border: '1px solid #276749', background: '#276749', color: '#fff', cursor: 'pointer' }}>Ablegen</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Status (nur Umriss-Tab) */}
       {tab === 'umriss' && (
         <div style={{
@@ -1666,6 +1735,24 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
                 onChange={(e) => setCoordDecimals(Number(e.target.value))} style={{ width: 50, margin: 0 }} />
             </span>
           </div>
+          {/* Posteingang: im Drawer erfasste POIs (Registry). Export → Katalog folgt später. */}
+          {netModel.gates.length > 0 && (
+            <div style={{
+              display: 'flex', flexWrap: 'wrap', gap: '4px 8px', alignItems: 'center',
+              padding: '5px 9px', borderRadius: 5, background: '#f0fff4', border: '1px solid #9ae6b4', color: '#22543d',
+            }}>
+              <b style={{ fontSize: 11 }}>Posteingang ({netModel.gates.length})</b>
+              {netModel.gates.map((g) => (
+                <span key={g.id ?? `${g.at[0]},${g.at[1]}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, background: '#fff', border: '1px solid #c6f6d5', borderRadius: 4, padding: '1px 4px' }}>
+                  {g.tagline || g.category || 'POI'}
+                  {g.id && (
+                    <button onClick={() => pushModel(removePoi(netModel, g.id as string))} title="aus dem Posteingang entfernen"
+                      style={{ border: 'none', background: 'transparent', color: '#a0aec0', cursor: 'pointer', fontSize: 11, padding: 0, lineHeight: 1 }}>✕</button>
+                  )}
+                </span>
+              ))}
+            </div>
+          )}
           {/* GELB — Maskierung + POI-Anker */}
           {((masked && cropResult) || anchorSummary) && (
             <div style={{
