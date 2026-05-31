@@ -35,6 +35,18 @@ export interface ActiveRepresentation {
   geometry: BoundaryGeometry;
 }
 
+// ─── Inspector-Asset ──────────────────────────────────────────────────────────
+// Welches *Workspace-Objekt* der Operator gerade im Inspector (ScimMap) sehen
+// will. Im Gegensatz zu inspectorView (immer eine volle R mit Geometry, von
+// DrawerPanel/P02 als Editier-Bezug genutzt) darf das hier auch ein Katalog
+// allein (nur POIs) oder eine Boundary allein sein. Rein operator-lokal, nur
+// ScimMap liest es. URL wird nicht angefasst.
+export type InspectorAssetKind = 'representation' | 'geometry' | 'catalog';
+export interface InspectorAsset {
+  kind: InspectorAssetKind;
+  id: string;
+}
+
 export interface RepresentationContextValue {
   // ─── Runtime-Schicht ─────────────────────────────────────────────────
   // Was die Endnutzer-App zeigt. Default-Quelle fuer alle Anschauer.
@@ -53,6 +65,14 @@ export interface RepresentationContextValue {
   setInspectorView: (repId: string | null) => void;
   /** Effektive Sicht: inspectorView wenn gesetzt, sonst active. */
   effectiveInspector: ActiveRepresentation | null;
+
+  // ─── Inspector-Asset (Workspace-Auge) ────────────────────────────────
+  // Welches Workspace-Objekt der Inspector roh anzeigen soll (Katalog →
+  // nur POIs; Boundary → nur Umriss; Representation → alles). Null = nichts
+  // erzwingen (Inspector folgt seiner Default-Logik).
+  inspectorAsset: InspectorAsset | null;
+  /** Setze das anzuzeigende Asset, oder null zum Loesen. */
+  setInspectorAsset: (asset: InspectorAsset | null) => void;
 
   /** Vollstaendige Registry, hilfreich fuer Listen-Panels und Dropdowns. */
   registry: {
@@ -96,6 +116,7 @@ function buildView(repId: string): ActiveRepresentation | null {
 export function RepresentationProvider({ children }: RepresentationProviderProps) {
   const [active, setActive] = useState<ActiveRepresentation | null>(() => resolveCurrent());
   const [inspectorView, setInspectorViewState] = useState<ActiveRepresentation | null>(null);
+  const [inspectorAsset, setInspectorAsset] = useState<InspectorAsset | null>(null);
 
   // Browser-Back/Forward synchronisieren
   useEffect(() => {
@@ -139,10 +160,13 @@ export function RepresentationProvider({ children }: RepresentationProviderProps
     inspectorView,
     setInspectorView,
     effectiveInspector,
+    inspectorAsset,
+    setInspectorAsset,
     registry: { representations: REPRESENTATIONS, geometries: GEOMETRIES },
   }), [
     active, setActiveRepresentation, clearActiveRepresentation,
     inspectorView, setInspectorView, effectiveInspector,
+    inspectorAsset, setInspectorAsset,
   ]);
 
   return createElement(RepresentationContext.Provider, { value }, children);
@@ -179,4 +203,12 @@ export function useActiveRepresentation(): ActiveRepresentation | null {
  */
 export function useInspectorView(): ActiveRepresentation | null {
   return useRepresentationContext().effectiveInspector;
+}
+
+/**
+ * Lese-Hook fuer das im Workspace per Auge gewaehlte Inspector-Asset
+ * (Katalog / Boundary / Representation). Null = kein Asset erzwungen.
+ */
+export function useInspectorAsset(): InspectorAsset | null {
+  return useRepresentationContext().inspectorAsset;
 }

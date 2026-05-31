@@ -180,12 +180,35 @@ function ListItem({
   );
 }
 
+// 👁-Knopf: schaltet das Asset im Inspector (ScimMap) an/aus.
+function EyeButton({ shown, onClick }: { shown: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      title={shown ? 'Inspector zeigt dieses Objekt — Klick: aus' : 'Dieses Objekt im Inspector zeigen'}
+      style={{
+        fontSize: 15, lineHeight: 1, cursor: 'pointer', padding: '4px 8px',
+        borderRadius: 4, border: `1px solid ${shown ? '#2b6cb0' : '#cbd5e0'}`,
+        background: shown ? '#ebf8ff' : '#fff',
+        filter: shown ? 'none' : 'grayscale(1) opacity(0.55)',
+      }}
+    >
+      👁
+    </button>
+  );
+}
+
 // ─── Hauptpanel ─────────────────────────────────────────────────────────────
 
 export default function WorkspacePanel({ onJumpTo }: Props) {
   const [showWizard, setShowWizard] = useState(false);
-  // 👁 Inspector-Sicht: welche Representation der rechte Inspector zeigt.
-  const { inspectorView, setInspectorView } = useRepresentationContext();
+  // 👁 Inspector-Sicht: welches Workspace-Objekt der rechte Inspector zeigt
+  // (Katalog → nur POIs, Boundary → nur Umriss, Representation → alles).
+  const { inspectorAsset, setInspectorAsset } = useRepresentationContext();
+  const assetShown = (kind: 'representation' | 'geometry' | 'catalog', id: string) =>
+    inspectorAsset?.kind === kind && inspectorAsset.id === id;
+  const toggleAsset = (kind: 'representation' | 'geometry' | 'catalog', id: string) =>
+    setInspectorAsset(assetShown(kind, id) ? null : { kind, id });
 
   // F4 — Draft-Pipeline: benannte Workspace-Objekte (ersetzt den stillen Autospeicher).
   const [drafts, setDrafts] = useState<Draft[]>(() => listDrafts());
@@ -493,6 +516,7 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
               primary={g.name}
               badge={g.id}
               secondary={`Polygon mit ${g.polygon.length} Punkten${g.region ? ` · ${g.region}` : ''}${g.drawn_at ? ` · gezeichnet ${g.drawn_at}` : ''} · ${formatBytes(bytesOf(g.raw))}`}
+              trailing={<EyeButton shown={assetShown('geometry', g.id)} onClick={() => toggleAsset('geometry', g.id)} />}
               action={{ label: 'Im Editor öffnen', onClick: () => onJumpTo('geometry_editor', g.id) }}
             />
           ))
@@ -512,6 +536,7 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
             primary={c.name}
             badge={c.id}
             secondary={`${c.poi_count} POIs · ${c.cluster_count} Cluster · ${c.warning_count} Warnungen · ${formatBytes(c.bytes)}`}
+            trailing={<EyeButton shown={assetShown('catalog', c.id)} onClick={() => toggleAsset('catalog', c.id)} />}
             action={{ label: 'Im Katalog öffnen', onClick: () => onJumpTo('catalog') }}
           />
         ))}
@@ -530,32 +555,16 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
         {REPRESENTATIONS.length === 0 ? (
           <EmptyHint text="Noch keine Representations. Wave 2b baut den Wizard: Geometry + Katalog + Name → Representation. Erst dann werden SystemAdjust-Settings, Regio-Content und QR-Code für diese Representation aktiv." />
         ) : (
-          REPRESENTATIONS.map((r) => {
-            const shown = inspectorView?.representation.id === r.id;
-            return (
-              <ListItem
-                key={r.id}
-                icon="◇"
-                primary={r.name}
-                badge={r.id}
-                secondary={`Geometry: ${r.geometry_id}${r.catalog_id ? ` · Katalog: ${r.catalog_id}` : ' · kein Katalog'}${r.wegnetz_id ? ` · Wegnetz: ${r.wegnetz_id}` : ''} · ${formatBytes(bytesOf(r))}`}
-                trailing={(
-                  <button
-                    onClick={() => setInspectorView(shown ? null : r.id)}
-                    title={shown ? 'Inspector zeigt diese Representation — Klick: aus' : 'Diese Representation im Inspector zeigen'}
-                    style={{
-                      fontSize: 15, lineHeight: 1, cursor: 'pointer', padding: '4px 8px',
-                      borderRadius: 4, border: `1px solid ${shown ? '#2b6cb0' : '#cbd5e0'}`,
-                      background: shown ? '#ebf8ff' : '#fff',
-                      filter: shown ? 'none' : 'grayscale(1) opacity(0.55)',
-                    }}
-                  >
-                    👁
-                  </button>
-                )}
-              />
-            );
-          })
+          REPRESENTATIONS.map((r) => (
+            <ListItem
+              key={r.id}
+              icon="◇"
+              primary={r.name}
+              badge={r.id}
+              secondary={`Geometry: ${r.geometry_id}${r.catalog_id ? ` · Katalog: ${r.catalog_id}` : ' · kein Katalog'}${r.wegnetz_id ? ` · Wegnetz: ${r.wegnetz_id}` : ''} · ${formatBytes(bytesOf(r))}`}
+              trailing={<EyeButton shown={assetShown('representation', r.id)} onClick={() => toggleAsset('representation', r.id)} />}
+            />
+          ))
         )}
       </Section>
 

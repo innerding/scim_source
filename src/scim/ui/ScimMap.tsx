@@ -12,10 +12,13 @@ import {
   addRoadHeatMesh, addPoiRoutes, fetchOsmEdges,
   TILE_OSM_URL, TILE_OSM_ATTR, TILE_MESH_URL, TILE_MESH_ATTR,
 } from './colourMeshOverlay';
-import { useInspectorView, useRepresentationContext } from '../../runtime/repContext';
+import { useInspectorView, useInspectorAsset, useRepresentationContext } from '../../runtime/repContext';
+import type { InspectorAsset } from '../../runtime/repContext';
 import { slugify } from '../../runtime/router';
 import { loadIncludedTypes } from '../regio-content/edgeTypeConfig';
-import { parseCatalogById } from '../poi-catalog/catalogRegistry';
+import { parseCatalogById, CATALOG_REGISTRY } from '../poi-catalog/catalogRegistry';
+import { GEOMETRIES, REPRESENTATIONS } from '../workspace/workspace.registry';
+import type { BoundaryGeometry, Representation } from '../workspace/workspace.types';
 
 interface OsmEdge {
   edge_id: string;
@@ -68,6 +71,55 @@ function polygonBbox(polygon: ReadonlyArray<readonly [number, number] | Readonly
   return [minLon, minLat, maxLon, maxLat];
 }
 
+// Was der Inspector aus einem Workspace-Asset macht. Anders als
+// ActiveRepresentation darf geometry hier null sein (Katalog hat keine).
+interface InspectedTarget {
+  representation: Representation;
+  geometry: BoundaryGeometry | null;
+}
+
+// Welche Layer ein Asset-Typ ueberhaupt enthaelt — der Inspector zeigt und
+// bietet nur diese an. Katalog: nur POIs. Boundary: nur Umriss. Representation
+// (oder kein Asset erzwungen): alles. Karte/Dark-Base ist immer verfuegbar.
+interface LayerAvailability { boundary: boolean; pois: boolean; colourmesh: boolean; routes: boolean; }
+const ALL_LAYERS: LayerAvailability = { boundary: true, pois: true, colourmesh: true, routes: true };
+
+function layersForAsset(asset: InspectorAsset | null): LayerAvailability {
+  if (!asset) return ALL_LAYERS;
+  if (asset.kind === 'catalog') return { boundary: false, pois: true, colourmesh: false, routes: false };
+  if (asset.kind === 'geometry') return { boundary: true, pois: false, colourmesh: false, routes: false };
+  return ALL_LAYERS; // representation
+}
+
+// Loest ein gewaehltes Asset in eine Inspector-Sicht auf. Synthetische
+// Representation fuer Katalog/Boundary, damit die bestehende Render-Logik
+// (rep.catalog_id → POIs, geometry.polygon → Umriss) unveraendert greift.
+function buildInspectedTarget(asset: InspectorAsset | null): InspectedTarget | null {
+  if (!asset) return null;
+  if (asset.kind === 'representation') {
+    const rep = REPRESENTATIONS.find((r) => r.id === asset.id);
+    if (!rep) return null;
+    return { representation: rep, geometry: GEOMETRIES.find((g) => g.id === rep.geometry_id) ?? null };
+  }
+  if (asset.kind === 'geometry') {
+    const geo = GEOMETRIES.find((g) => g.id === asset.id);
+    if (!geo) return null;
+    const rep: Representation = {
+      schema: 'scim3_representation_v1', id: `geo:${geo.id}`, name: geo.name,
+      geometry_id: geo.id, created_at: geo.drawn_at ?? '',
+    };
+    return { representation: rep, geometry: geo };
+  }
+  // catalog
+  const cat = CATALOG_REGISTRY.find((c) => c.id === asset.id);
+  if (!cat) return null;
+  const rep: Representation = {
+    schema: 'scim3_representation_v1', id: `cat:${cat.id}`, name: cat.name,
+    geometry_id: '', catalog_id: cat.id, created_at: '',
+  };
+  return { representation: rep, geometry: null };
+}
+
 export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -78,13 +130,18 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
   // Effektive Sicht des Inspectors: bevorzugt die Operator-Auswahl
   // (Compare-Modus), faellt auf die URL-aktive R zurueck. Siehe
   // runtime/repContext.ts → useInspectorView.
-  const activeRep = useInspectorView();
+  const fallbackView = useInspectorView();
+  const assetSel = useInspectorAsset();
   const repCtx = useRepresentationContext();
+  // Per Workspace-Auge gewaehltes Asset hat Vorrang vor der Default-Sicht.
+  const assetView = useMemo(() => buildInspectedTarget(assetSel), [assetSel]);
+  const availLayers = useMemo(() => layersForAsset(assetSel), [assetSel]);
+  const activeRep: InspectedTarget | null = assetSel ? assetView : fallbackView;
 
   // Aktueller Region-Slug fuer Edge-Type-Filter. Default-Slug, wenn
   // keine R aktiv ist (P02 schreibt dann auch unter dem Default-Key).
   const regionSlug = useMemo(
-    () => slugify(activeRep?.geometry.region ?? '') || 'default',
+    () => slugify(activeRep?.geometry?.region ?? '') || 'default',
     [activeRep],
   );
 
@@ -106,7 +163,7 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
   // Stabile Identitaet fuer Effect-Deps (sortiert).
   const edgeTypesKey = useMemo(() => [...edgeTypes].sort().join('|'), [edgeTypes]);
   const repBbox = useMemo(
-    () => (activeRep ? polygonBbox(activeRep.geometry.polygon) : null),
+    () => (activeRep?.geometry ? polygonBbox(activeRep.geometry.polygon) : null),
     [activeRep],
   );
 
@@ -126,7 +183,7 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
   }, [activeRep]);
   // Polygon-Ringe als [lat, lon][] fuer Leaflet vorbereiten.
   const repPolygonLatLng = useMemo(() => {
-    if (!activeRep) return null;
+    if (!activeRep?.geometry) return null;
     const ring = activeRep.geometry.polygon;
     if (!ring || ring.length < 3) return null;
     return ring.map((p) => [p[1], p[0]] as [number, number]);
@@ -195,7 +252,7 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
   // Hat einen Cache (24h) — beim zweiten Aufruf sofort da.
   // Aktive Representation hat Vorrang gegenueber der Pipeline-bbox.
   useEffect(() => {
-    if (!vis.colourmesh) return;
+    if (!vis.colourmesh || !availLayers.colourmesh) return;
     const pipelineBbox = result.success
       ? ((result.context.boundary as unknown as { computed_boundary: { bbox?: [number, number, number, number] } } | undefined)
          ?.computed_boundary?.bbox)
@@ -242,14 +299,14 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
     //   Wenn eine R aktiv ist, fuehrt sie die Sicht — das Pipeline-Rechteck
     //   wird unterdrueckt, der R-Polygon-Outline ersetzt es. Damit liegt
     //   nicht mehr das Gruenberg-Default unter Lichtenberg.
-    if (vis.boundary && repPolygonLatLng) {
+    if (availLayers.boundary && vis.boundary && repPolygonLatLng) {
       L.polygon(repPolygonLatLng, {
         color: '#0074d9',
         weight: 1.5,
         opacity: 0.9,
         fillOpacity: 0.05,
       }).addTo(layerGroup);
-    } else if (vis.boundary && boundary?.computed_boundary.bbox) {
+    } else if (availLayers.boundary && vis.boundary && boundary?.computed_boundary.bbox) {
       const [minLon, minLat, maxLon, maxLat] = boundary.computed_boundary.bbox;
       L.rectangle([[minLat, minLon], [maxLat, maxLon]], {
         color: '#0074d9',
@@ -308,7 +365,7 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
     //   - Pipeline-POIs werden nicht in die R-Sicht gezeichnet — die richtigen
     //     POIs kommen ueber rep.catalog_id, eigene Iteration.
     const meshBbox = repBbox ?? boundary?.computed_boundary.bbox;
-    if (vis.colourmesh && meshBbox) {
+    if (availLayers.colourmesh && vis.colourmesh && meshBbox) {
       const pois = activeRep ? [] : (extraction?.extracted_pois ?? []);
       const edgesToRender = osmEdges.length > 0
         ? osmEdges
@@ -324,7 +381,7 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
     // POIs aus dem Catalog der aktiven R (rep.catalog_id). Eigene
     // Render-Schleife mit leichterem Stil — kein Load-Class-Mapping,
     // weil der Catalog selbst keine Live-Last fuehrt.
-    if (vis.pois && activeRep && repCatalogPois.length > 0) {
+    if (availLayers.pois && vis.pois && activeRep && repCatalogPois.length > 0) {
       for (const poi of repCatalogPois) {
         const [lon, lat] = poi.coord;
         L.circleMarker([lat, lon], {
@@ -365,6 +422,14 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
     if (repBbox) {
       const [minLon, minLat, maxLon, maxLat] = repBbox;
       map.fitBounds([[minLat, minLon], [maxLat, maxLon]], { padding: [24, 24] });
+    } else if (activeRep && repCatalogPois.length > 0) {
+      // Katalog ohne Geometry: auf die POIs zoomen, nicht auf die Pipeline.
+      const lats = repCatalogPois.map((p) => p.coord[1]);
+      const lons = repCatalogPois.map((p) => p.coord[0]);
+      map.fitBounds([
+        [Math.min(...lats), Math.min(...lons)],
+        [Math.max(...lats), Math.max(...lons)],
+      ], { padding: [40, 40], maxZoom: 15 });
     } else if (boundary?.computed_boundary.bbox) {
       const [minLon, minLat, maxLon, maxLat] = boundary.computed_boundary.bbox;
       map.fitBounds([[minLat, minLon], [maxLat, maxLon]], { padding: [24, 24] });
@@ -376,7 +441,7 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
         [Math.max(...lats), Math.max(...lons)],
       ]);
     }
-  }, [result, vis, osmEdges, repBbox, repPolygonLatLng, activeRep, repCatalogPois]);
+  }, [result, vis, osmEdges, repBbox, repPolygonLatLng, activeRep, repCatalogPois, availLayers]);
 
   if (!result.success) {
     return (
@@ -384,7 +449,7 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
         width: '100%', height: '100%', display: 'flex', flexDirection: 'column',
         background: '#1a1a1a', color: '#ff4136', fontFamily: 'monospace', fontSize: 13,
       }}>
-        <Header label="Pipeline-Kontrolle" detail="Fehler" vis={vis} setVis={setVis} onNavigate={onNavigate} onCollapseToggle={onCollapseToggle} disabled repCtx={repCtx} />
+        <Header label="Pipeline-Kontrolle" detail="Fehler" vis={vis} setVis={setVis} avail={ALL_LAYERS} onNavigate={onNavigate} onCollapseToggle={onCollapseToggle} disabled repCtx={repCtx} />
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           Pipeline failed at: {result.failed_at_step ?? 'unknown'}
         </div>
@@ -398,32 +463,37 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
   const routeLayerModel = ctx.route_layer_model as unknown as RouteLayerModelState | undefined;
 
   const activeLabels: string[] = [];
-  if (vis.boundary && boundary?.computed_boundary.bbox) activeLabels.push('Boundary');
-  if (vis.colourmesh) {
+  if (availLayers.boundary && vis.boundary && (repPolygonLatLng || boundary?.computed_boundary.bbox)) activeLabels.push('Boundary');
+  if (availLayers.colourmesh && vis.colourmesh) {
     if (osmStatus === 'loading') activeLabels.push('Colour-Mesh (OSM laedt…)');
     else if (osmStatus === 'ok') activeLabels.push(`Colour-Mesh · ${osmEdges.length} OSM-Wege`);
     else if (osmStatus === 'failed') activeLabels.push('Colour-Mesh (synthetisch · OSM-Fehler)');
     else activeLabels.push('Colour-Mesh');
   }
-  if (vis.routes && routeLayerModel?.segments?.length) activeLabels.push(`${routeLayerModel.segments.length} Routen`);
-  if (vis.pois && extraction?.extracted_pois?.length) activeLabels.push(`${extraction.extracted_pois.length} POIs`);
-  const detail = activeLabels.length > 0 ? activeLabels.join(' · ') : '— alle Layer ausgeblendet —';
+  if (availLayers.routes && vis.routes && routeLayerModel?.segments?.length) activeLabels.push(`${routeLayerModel.segments.length} Routen`);
+  // POIs: bei gewaehltem Asset die Katalog-POIs zaehlen, sonst die Pipeline-POIs.
+  if (availLayers.pois && vis.pois && activeRep && repCatalogPois.length) activeLabels.push(`${repCatalogPois.length} POIs`);
+  else if (availLayers.pois && vis.pois && !activeRep && extraction?.extracted_pois?.length) activeLabels.push(`${extraction.extracted_pois.length} POIs`);
+  const assetName = assetSel ? (activeRep?.representation.name ?? assetSel.id) : null;
+  const body = activeLabels.length > 0 ? activeLabels.join(' · ') : '— alle Layer ausgeblendet —';
+  const detail = assetName ? `${assetName}: ${body}` : body;
 
   return (
     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Header label="Pipeline-Kontrolle" detail={detail} vis={vis} setVis={setVis} onNavigate={onNavigate} onCollapseToggle={onCollapseToggle} repCtx={repCtx} />
+      <Header label="Pipeline-Kontrolle" detail={detail} vis={vis} setVis={setVis} avail={availLayers} onNavigate={onNavigate} onCollapseToggle={onCollapseToggle} repCtx={repCtx} />
       <div ref={containerRef} style={{ flex: 1, minHeight: 0 }} />
     </div>
   );
 }
 
 function Header({
-  label, detail, vis, setVis, onNavigate, onCollapseToggle, disabled, repCtx,
+  label, detail, vis, setVis, avail, onNavigate, onCollapseToggle, disabled, repCtx,
 }: {
   label: string;
   detail: string;
   vis: LayerVisibility;
   setVis: (v: LayerVisibility) => void;
+  avail: LayerAvailability;
   onNavigate?: (face: RepresentBuildFace) => void;
   onCollapseToggle?: () => void;
   disabled?: boolean;
@@ -509,11 +579,11 @@ function Header({
           background: '#1a2535', border: '1px solid #2d4a6a', borderRadius: 4,
           padding: '8px 10px', minWidth: 160, boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
         }}>
-          <LayerToggle label="Boundary" checked={vis.boundary} onChange={(v) => setVis({ ...vis, boundary: v })} />
-          <LayerToggle label="POIs" checked={vis.pois} onChange={(v) => setVis({ ...vis, pois: v })} />
-          <LayerToggle label="Colour-Mesh" checked={vis.colourmesh} onChange={(v) => setVis({ ...vis, colourmesh: v })} />
-          <LayerToggle label="Dark Map" checked={vis.darkBase} onChange={(v) => setVis({ ...vis, darkBase: v })} />
-          <LayerToggle label="Routen / Edges" checked={vis.routes} onChange={(v) => setVis({ ...vis, routes: v })} />
+          {avail.boundary && <LayerToggle label="Boundary" checked={vis.boundary} onChange={(v) => setVis({ ...vis, boundary: v })} />}
+          {avail.pois && <LayerToggle label="POIs" checked={vis.pois} onChange={(v) => setVis({ ...vis, pois: v })} />}
+          {avail.colourmesh && <LayerToggle label="Colour-Mesh" checked={vis.colourmesh} onChange={(v) => setVis({ ...vis, colourmesh: v })} />}
+          <LayerToggle label="Karte" checked={vis.darkBase} onChange={(v) => setVis({ ...vis, darkBase: v })} />
+          {avail.routes && <LayerToggle label="Routen / Edges" checked={vis.routes} onChange={(v) => setVis({ ...vis, routes: v })} />}
         </div>
       )}
     </div>
