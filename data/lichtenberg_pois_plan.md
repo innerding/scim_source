@@ -15,6 +15,8 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 
 ---
 
+---
+
 ## Tabelle 1 · POI-Liste
 
 ### Points_historical
@@ -58,14 +60,14 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 
 | Code | Icon | Tagline | Description | Coord | Cluster | Status |
 |---|---|---|---|---|---|---|
-| boeh-lichtenberg-e6r6 |  | Eidenberger Reiter |  | 14.22941, 48.38387 | — | ✓ |
-| boeh-lichtenberg-83z7 |  | Lichtenberg |  | 14.25713, 48.36053 | — | ✓ |
-| boeh-lichtenberg-84jx |  | Neulichtenberg Köppelmayr |  | 14.22889, 48.36653 | — | ✓ |
-| boeh-lichtenberg-sd53 |  | Neulichtenberg Ort |  | 14.24072, 48.36203 | — | ✓ |
-| boeh-lichtenberg-7eg2 |  | Eidenberg Ort |  | 14.23276, 48.39449 | — | ✓ |
-| boeh-lichtenberg-nruw |  | Eidenberg Haslinger |  | 14.22748, 48.40133 | — | ✓ |
-| boeh-lichtenberg-7mff |  | Rohrbach |  | 14.26726, 48.40699 | — | ✓ |
-| boeh-lichtenberg-yff6 |  | Kirchschlag bei Linz |  | 14.27647, 48.41290 | — | ✓ |
+| boeh-lichtenberg-e6r6 | bushaltestelle | Eidenberger Reiter |  | 14.22941, 48.38387 | — | ✓ |
+| boeh-lichtenberg-83z7 | bushaltestelle | Lichtenberg |  | 14.25713, 48.36053 | — | ✓ |
+| boeh-lichtenberg-84jx | bushaltestelle | Neulichtenberg Köppelmayr |  | 14.22889, 48.36653 | — | ✓ |
+| boeh-lichtenberg-sd53 | bushaltestelle | Neulichtenberg Ort |  | 14.24072, 48.36203 | — | ✓ |
+| boeh-lichtenberg-7eg2 | bushaltestelle | Eidenberg Ort |  | 14.23276, 48.39449 | — | ✓ |
+| boeh-lichtenberg-nruw | bushaltestelle | Eidenberg Haslinger |  | 14.22748, 48.40133 | — | ✓ |
+| boeh-lichtenberg-7mff | bushaltestelle | Rohrbach |  | 14.26726, 48.40699 | — | ✓ |
+| boeh-lichtenberg-yff6 | bushaltestelle | Kirchschlag bei Linz |  | 14.27647, 48.41290 | — | ✓ |
 
 ### Transport_Parking/(Charging)
 
@@ -138,6 +140,8 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 - Service: Sub-Differenzierung allein durch das Innensymbol
 - Cluster: keine Sub (magenta einheitlich)
 - Hexagon-Ring: transparent als unsichtbarer Cluster-Ring · opaque als vereinigtes Cluster-POI beim Herauszoomen
+
+---
 
 ---
 
