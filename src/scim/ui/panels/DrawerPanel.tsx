@@ -175,6 +175,9 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   // auf die Punkte/Kanten der lila Vorlage ein. Nur sinnvoll, wenn die Vorlage
   // sichtbar ist.
   const [snapToTemplate, setSnapToTemplate] = useState(true);
+  // US1 — Master-Snap-Toggle der Tool-Header-Leiste (beide Tabs). Treibt Geomans
+  // globales Snapping; default an.
+  const [snapEnabled, setSnapEnabled] = useState(true);
 
   // Ebenen-Steuerleiste (Umbauplan A): Dimmer + On/Off je Layer, auf beide Tabs
   // wirksam. (1) OSM-Tiles, (2) editierbare Boundary, (3) Inspector-R-Vorlage.
@@ -560,6 +563,13 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     const layer = inspectorRefRef.current as any;
     if (layer?.options) layer.options.snapIgnore = !(snapToTemplate && showInspectorRef);
   }, [snapToTemplate, showInspectorRef, inspectorView]);
+
+  // US1: Master-Snap treibt Geomans globales Snapping (beim Zeichnen/Editieren).
+  useEffect(() => {
+    const map = mapRef.current;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (map as any)?.pm?.setGlobalOptions?.({ snappable: snapEnabled });
+  }, [snapEnabled]);
 
   // Slot 2 (B): Masken-Boundary dimmen/abschalten. Farbe (orange/gestrichelt)
   // bleibt erhalten, nur Opacity wird gesteuert.
@@ -1014,6 +1024,24 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     else if (a === 'load_thresholds') onJumpTo('P09');
   };
 
+  // US1 — Tool-Header-Registry. Adaptierbar: ein Werkzeug = ein Eintrag mit
+  // `side` (left=Umriss · center=geteilt · right=Wegnetz) + `tabs`. Die Leiste
+  // filtert nach aktivem Tab und ordnet nach Zone. Weitere Werkzeuge (US3) werden
+  // einfach als weitere Einträge ergänzt — kein Umbau am Gerüst nötig.
+  const drawerTools: { id: string; side: 'left' | 'center' | 'right'; tabs: DrawerTab[]; node: ReactNode }[] = [
+    {
+      id: 'snap', side: 'center', tabs: ['umriss', 'wegnetz'],
+      node: (
+        <ToolToggle
+          active={snapEnabled}
+          onClick={() => setSnapEnabled((v) => !v)}
+          label="⊹ Snap"
+          title="Einrasten beim Zeichnen/Editieren auf nahe Punkte und Kanten (beide Tabs)"
+        />
+      ),
+    },
+  ];
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', fontFamily: 'system-ui, sans-serif' }}>
       {/* Tab-Strip Umriss / Wegnetz */}
@@ -1200,6 +1228,35 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
         </label>
       </div>
 
+
+      {/* Tool-Header-Leiste (US1) — tab-gefiltert, drei Zonen: Umriss links ·
+          Snap mittig · Wegnetz rechts. Werkzeuge kommen aus `drawerTools`. */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 8, padding: '4px 12px',
+        background: '#eef2f7', borderBottom: '1px solid #e2e8f0', minHeight: 30,
+      }}>
+        {/* LINKS — Umriss */}
+        <div style={{ flex: 1, display: 'flex', gap: 6, alignItems: 'center', justifyContent: 'flex-start' }}>
+          {drawerTools.filter((t) => t.side === 'left' && t.tabs.includes(tab))
+            .map((t) => <span key={t.id}>{t.node}</span>)}
+          {tab === 'umriss' && (
+            <span style={{ fontSize: 10, color: '#a0aec0', fontStyle: 'italic' }}>Umriss-Werkzeuge folgen</span>
+          )}
+        </div>
+        {/* MITTE — geteilt (Snap) */}
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center', justifyContent: 'center' }}>
+          {drawerTools.filter((t) => t.side === 'center' && t.tabs.includes(tab))
+            .map((t) => <span key={t.id}>{t.node}</span>)}
+        </div>
+        {/* RECHTS — Wegnetz */}
+        <div style={{ flex: 1, display: 'flex', gap: 6, alignItems: 'center', justifyContent: 'flex-end' }}>
+          {tab === 'wegnetz' && (
+            <span style={{ fontSize: 10, color: '#a0aec0', fontStyle: 'italic' }}>Wegnetz-Werkzeuge folgen</span>
+          )}
+          {drawerTools.filter((t) => t.side === 'right' && t.tabs.includes(tab))
+            .map((t) => <span key={t.id}>{t.node}</span>)}
+        </div>
+      </div>
 
       {/* Inhaltszeile: optionales Wegnetz-Filtermenue + gemeinsamer Map-Canvas */}
       <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
@@ -1692,6 +1749,30 @@ function PathFilterMenu({
 }
 
 // Ebenen-Steuerleiste (A): ein Layer = On/Off-Checkbox + Opacity-Slider.
+// US1 — generischer Tool-Knopf für die Tool-Header-Leiste (Toggle/Aktion).
+function ToolToggle({
+  label, title, active, onClick, disabled,
+}: {
+  label: string; title: string; active?: boolean; onClick: () => void; disabled?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      style={{
+        fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 5,
+        border: `1px solid ${disabled ? '#cbd5e0' : active ? '#2b6cb0' : '#cbd5e0'}`,
+        background: disabled ? '#edf2f7' : active ? '#ebf8ff' : '#fff',
+        color: disabled ? '#a0aec0' : active ? '#2b6cb0' : '#4a5568',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
 function LayerDimmer({
   label, color, on, opacity, onToggle, onOpacity, disabled, disabledHint,
 }: {
