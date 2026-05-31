@@ -58,8 +58,8 @@ export function defaultPathConfig(gebiet: string): PathConfig {
       bridleway: 'nur_wenn_foot_erlaubt',
     },
     konnektoren: {
-      nebenstrasse: { aktiv: true, max_laenge_meter: 80 },
-      landstrasse: { aktiv: true, max_laenge_meter: 20 },
+      nebenstrasse: { aktiv: true, max_laenge_meter: 500 },
+      landstrasse: { aktiv: true, max_laenge_meter: 250 },
       anschluss_toleranz_meter: 10,
     },
     ausschluesse: {

@@ -28,7 +28,7 @@ import {
   loadPathConfig, savePathConfig, type PathConfig, type BridlewayMode,
 } from '../../regio-content/pathConfig';
 import {
-  deriveWanderwegnetz, anchorPois, cropNetToMask, netStats, formatBytes, isAsphalt, connectorPieceBetween,
+  deriveWanderwegnetz, anchorPois, cropNetToMask, netStats, formatBytes, isAsphalt, connectorPieceBetween, reducePolyline,
   type PathFetchResult, type AnchorSummary, type PoiInput, type CropResult,
   type PathEdge, type GateNode,
 } from '../../regio-content/pathEngine';
@@ -144,7 +144,9 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   const [appliedCfgSig, setAppliedCfgSig] = useState<string | null>(null);
   // Längen-Summen fürs Footer-Feld. „Netz" = nur SCHWARZE Komponenten (≥ Schwelle),
   // darin Wanderweg + Asphalt; „rest" = grüne Komponenten (vom Netz exkludiert).
-  const [netSummary, setNetSummary] = useState<{ net: number; wander: number; asphalt: number; rest: number } | null>(null);
+  const [netSummary, setNetSummary] = useState<{ net: number; wander: number; asphalt: number; rest: number; bytes: number; points: number } | null>(null);
+  // Koord-Reduktion (0–0,3 m): dünnt über-abgetastete Punkte aus → kleineres Netz.
+  const [coordReduce, setCoordReduce] = useState(0);
 
   // E2b — Konnektivitätsfärbung: Komponenten ≥ netLenThresh (m) gelten als „Netz"
   // (schwarz), kürzere als „Rest" (grün). sackgassenRot legt rot über alle
@@ -778,7 +780,9 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
         pieceEdges.push({ id: nid, highway: src.highway, source: 'connector_candidate', points: p.points, tags: src.tags, inNet: true });
       }
     }
-    const effEdges = pieceEdges.length ? [...res.edges, ...pieceEdges] : res.edges;
+    let effEdges = pieceEdges.length ? [...res.edges, ...pieceEdges] : res.edges;
+    // Koord-Reduktion (0,3 m): über-abgetastete Punkte ausdünnen (Anfang/Ende bleiben).
+    if (coordReduce > 0) effEdges = effEdges.map((e) => ({ ...e, points: reducePolyline(e.points, coordReduce) }));
 
     // E3: erst NODEN (graphCompose splittet an Kreuzungen), dann Lücken < gapTol
     // überbrücken (gapTol=0 → keine Brücken, roher genodeter Graph = A/B-Vergleich).
@@ -837,7 +841,8 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       if (isNetz) { sNet += ge.meters; if (asph) sAsph += ge.meters; else sWander += ge.meters; }
       else { sRest += ge.meters; if (ge.edgeId >= 0) greenKeys.push(`${ge.edgeId}:${ge.seg}`); }
     }
-    setNetSummary({ net: sNet, wander: sWander, asphalt: sAsph, rest: sRest });
+    const ns = netStats(effEdges.filter((e) => e.inNet));
+    setNetSummary({ net: sNet, wander: sWander, asphalt: sAsph, rest: sRest, bytes: ns.bytes, points: ns.pointCount });
     greenKeysRef.current = greenKeys;
 
     // Sackgassen-Teilstücke sind anklickbar: Klick → blau (abgeschnitten) ↔ zurück.
@@ -1038,7 +1043,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     if (!pathResult) return;
     if (masked && cropResult) renderPath({ ...pathResult, edges: cropResult.edges });
     else renderPath(pathResult);
-  }, [netLenThresh, sackgassenRot, gapTol, cutEdges, pickMode, manualPieces, removeMode, excludedKeys, pendingConnect]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [netLenThresh, sackgassenRot, gapTol, cutEdges, pickMode, manualPieces, removeMode, excludedKeys, pendingConnect, coordReduce]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // F7-Neufassung: Die Handoff-Brücke entfällt. Der Drawer schreibt direkt in den
   // Workspace-Draft (onSave); der Commit lebt im Workspace.
@@ -1235,6 +1240,23 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
           label="🔗 POI-Connect"
           title="POIs 0,5–2 m vom Netz verbinden (jeder einzeln per Klick); >2 m nicht verbindbar"
         />
+      ),
+    },
+    {
+      id: 'coordreduce', side: 'right', tabs: ['wegnetz'],
+      node: (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 1, minWidth: 124 }}>
+          <span style={{ fontSize: 9, fontWeight: 700, color: '#4a5568', textAlign: 'center', whiteSpace: 'nowrap' }}>
+            Koord-Reduktion <span style={{ fontFamily: 'monospace', color: '#2b6cb0' }}>{coordReduce.toFixed(2)} m</span>
+            {netSummary && <span style={{ color: '#718096' }}> · {formatBytes(netSummary.bytes)}</span>}
+          </span>
+          <input
+            type="range" min={0} max={0.3} step={0.05} value={coordReduce}
+            onChange={(e) => setCoordReduce(Number(e.target.value))}
+            title="Punkte näher als dieser Abstand zusammenfassen (kleineres Netz)"
+            style={{ width: '100%', margin: 0 }}
+          />
+        </div>
       ),
     },
     {
@@ -1557,15 +1579,11 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
             {sackgassenRot && <span><span style={{ display: 'inline-block', width: 14, borderTop: '3px solid #e53e3e', verticalAlign: 'middle' }} /> Sackgassen</span>}
             {cutEdges.size > 0 && <span><span style={{ display: 'inline-block', width: 14, borderTop: '3px solid #3182ce', verticalAlign: 'middle' }} /> {cutEdges.size} abgeschnitten</span>}
             <span style={{ color: '#718096' }}>{pathResult.primaryCount} primär · {pathResult.connectorCount} Konnekt. · {pathResult.rawWayCount} Ways</span>
-            {(() => {
-              const u = netStats(pathResult.edges.filter((e) => e.inNet));
-              const m = (masked && cropResult) ? netStats(cropResult.edges.filter((e) => e.inNet)) : null;
-              return (
-                <span style={{ fontFamily: 'monospace', color: '#2c5282' }}>
-                  Netz {u.edgeCount}K·{u.pointCount}P·{formatBytes(u.bytes)}{m && ` | mask ${m.edgeCount}K·${formatBytes(m.bytes)}`}
-                </span>
-              );
-            })()}
+            {netSummary && (
+              <span style={{ fontFamily: 'monospace', color: '#2c5282' }}>
+                {netSummary.points} Punkte · {formatBytes(netSummary.bytes)}{coordReduce > 0 && ` (reduziert ${coordReduce.toFixed(2)} m)`}
+              </span>
+            )}
           </div>
           {/* GELB — Maskierung + POI-Anker */}
           {((masked && cropResult) || anchorSummary) && (

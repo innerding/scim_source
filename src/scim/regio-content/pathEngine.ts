@@ -185,6 +185,23 @@ function distMeters(aLat: number, aLng: number, bLat: number, bLng: number): num
   return 2 * R * Math.asin(Math.min(1, Math.sqrt(s)));
 }
 
+// Koordinaten-Reduktion (distanzbasiert): verwirft Zwischenpunkte, die näher als
+// minMeters am letzten behaltenen Punkt liegen; Anfang + Ende bleiben immer. Bei
+// ≤ 0,3 m trifft das nur über-abgetastete Quasi-Duplikate (Kreuzungen liegen weiter
+// auseinander) → Topologie bleibt erhalten. Senkt das Auslieferungs-Budget.
+export function reducePolyline(points: [number, number][], minMeters: number): [number, number][] {
+  if (minMeters <= 0 || points.length <= 2) return points;
+  const out: [number, number][] = [points[0]];
+  let last = points[0];
+  for (let i = 1; i < points.length - 1; i++) {
+    if (distMeters(last[0], last[1], points[i][0], points[i][1]) >= minMeters) {
+      out.push(points[i]); last = points[i];
+    }
+  }
+  out.push(points[points.length - 1]);
+  return out;
+}
+
 // Gesamtlänge des Netzes in Metern (alle inNet-Kanten). Wanderweg = netMeters − asphaltMeters.
 export function netMeters(edges: PathEdge[]): number {
   let m = 0;
