@@ -22,7 +22,13 @@ Anwahl-Stabilitätsproblem an Way-Stößen).
 | 3 | **Verbinden** | Verschmelzen-Toleranz (auto) + manuelle Verbindung Wanderwegpunkt→Wanderwegpunkt | auto da (E3); manuell = neu |
 | 4 | **Sackgassen** | rot anzeigen · MVP unkompliziert entfernen · blau behalten/später | rot/blau da; entfernen = neu |
 | 5 | **Wege/Straßen** | lila Anwahl (T2) + Klick-Toleranz + unkomplizierte Abwahl | da (T2); Toleranz/Stöße = Schliff |
-| 6 | **Maskieren** | B2 beschneiden → Gate-POIs (Randstummel werden POIs) | da |
+| 6 | **Normalisieren** | abschließendes Verschmelzen (E5): backen → neu noden → POIs re-anchoren → Sackgassen prunen. Einmalige Aktion (Button), kein Regler-Modus | neu (E5) |
+| 7 | **Maskieren** | B2 beschneiden → Gate-POIs (Randstummel werden POIs) | da |
+
+**Reihenfolge-Regel:** Normalisieren (6) MUSS vor Maskieren (7) laufen — die
+Gate-Erkennung beim Maskieren arbeitet auf der Netz-Topologie; sie braucht das
+endgültige, gebackene Netz, sonst werden Gates auf einem noch transienten Stand
+gesetzt.
 
 ## Profi-Dropdown (expandable, eingeklappt — „einmal pro Gebiet")
 
@@ -51,7 +57,8 @@ Reine Umlagerung der bestehenden Sektionen, **kein Funktionsverlust**:
 
 - **Werkzeug 3 manuell (Zwei-Punkt-Verbindung Wanderwegpunkt→Wanderwegpunkt):**
   neue Snap-Interaktion — eigener Schritt.
-- **Werkzeug 4 „entfernen" + Normalisierung/Persistenz:** mit `project_netz_normalisierung`
-  (E5) zusammenlegen — backen, re-anchoren, prunen, persistieren.
+- **Werkzeug 6 Normalisieren (E5) + Persistenz:** mit `project_netz_normalisierung`
+  zusammenlegen — backen, re-anchoren, prunen, persistieren. Im Flow fix vor
+  Maskieren verortet, aber eigener Bau-Ausbau.
 - **Anwahl-Stabilität an Stößen** (`project_wegnetz_befunde`): Klick-Toleranz +
   Ways über Stöße zusammenfassen — Schliff in Werkzeug 5.
