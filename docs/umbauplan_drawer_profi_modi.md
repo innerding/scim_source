@@ -39,6 +39,26 @@ Reine Umlagerung der bestehenden Sektionen, **kein Funktionsverlust**:
 - Anker: Snap-Schwelle, POI-Ausnahme-Distanz
 - Diagnose: Lücken markieren
 
+## Layout-Entscheidungen (2026-05-31)
+
+- **2 Tabs bleiben** (Umriss/Wegnetz); Tool-Header-Leiste ist **tab-gefiltert** —
+  nur die für den Tab relevanten Tools. So genug Platz.
+- **Orientierung je Tab:** Umriss-Tools **links** ausgerichtet, Wegnetz-Tools
+  **rechts**; **Snap mittig**, in beiden Tabs.
+- **Linkes Filter-Panel bleibt** (OSM-Filter inkl. **Nebenstraße/Landstraße**) und
+  bekommt einen **dauerhaft sichtbaren Ausfahr-Button** (statt dünnem ▸-Streifen).
+- **Pro-Dropdown rechts** hält die selteneren Defaults (Ausschlüsse, Anker-Snap,
+  Diagnose) **+ Koord-Reduktion 0,3 m**.
+- **„Festziehen"-Maschine rechts:** Verschweiß-Automat ⊕ Stoß-Verbindungs-Automat
+  als *ein* Knopf (re-verschweißt + verbindet an Stößen).
+- **Aufräumen:** Diagnose-Header-Leiste für Browser-Cache raus → nur kurze
+  **Cache-Füllstand-Angabe in der Speicherzeile**.
+- **Leitprinzip: anpassbar bauen.** Workflow ist noch nicht ausgereift → Struktur
+  so, dass Tools leicht hinzu-/umgehängt werden können. Getrennte Tabs erlauben
+  genau diesen Um-/Ausbau. Nicht in Details verlieren.
+- *Offen (später):* zwei Orte für Einstellungen (linkes Filter-Panel + Pro-Dropdown)
+  — beim Bauen prüfen, ob sie zusammenwachsen.
+
 ## Umbauschritte (klein, je deploybar)
 
 - **US1 · Leisten-Gerüst:** kompakte Werkzeug-Reihe (6 Buttons), immer einer
