@@ -18,6 +18,7 @@ import type { Position } from 'geojson';
 import type { HandoffNet } from './draftHandoff';
 import type { PathFetchResult } from '../regio-content/pathEngine';
 import type { NetModel } from '../regio-content/netModel';
+import type { CatalogPoi } from '../poi-catalog/poiCatalog.types';
 
 export const DRAFTS_KEY = 'scim3:drafts';
 const LEGACY_DRAFT_KEY = 'scim3_geometry_draft';
@@ -48,6 +49,10 @@ export interface Draft {
   // EINE Wahrheit des Netz-Edits. Wird beim Öffnen wiederhergestellt, damit
   // Edits nicht verloren gehen. (osmPool wird aus path_fetch rekonstruiert.)
   op_model?: NetModel | null;
+  // POI-Posteingang: im Drawer erfasste, katalog-fertige POIs (mit Token), die an
+  // den Katalog gehen sollen — der „rote Brief". Gates sind hier NICHT enthalten
+  // (die bleiben netz-intern). Wird im Workspace gesichtet/importiert.
+  poi_inbox?: { catalogId: string; pois: CatalogPoi[] } | null;
   catalog_id: string | null;       // gebundener Katalog → orange
   created_at: string;
   updated_at: string;
@@ -194,6 +199,7 @@ export function createDraft(name: string, opts: Partial<Draft> = {}): Draft {
     net_masked: opts.net_masked ?? null,
     path_fetch: opts.path_fetch ?? null,
     op_model: opts.op_model ?? null,
+    poi_inbox: opts.poi_inbox ?? null,
     catalog_id: opts.catalog_id ?? null,
     created_at: ts,
     updated_at: ts,

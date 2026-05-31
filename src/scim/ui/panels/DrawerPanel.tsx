@@ -38,6 +38,9 @@ import {
 } from '../../regio-content/netModel';
 import { drawNet } from '../netDraw';
 import { ICON_REGISTRY } from '../../poi-catalog/iconRegistry';
+import { parseCatalogById } from '../../poi-catalog/catalogRegistry';
+import { mintToken, buildPrefix } from '../../poi-catalog/poiCatalog.token';
+import type { CatalogPoi, Bucket, Subcategory } from '../../poi-catalog/poiCatalog.types';
 
 // POI-Kategorien fürs Modal = Katalog-Subcategories + Gate (ohne Cluster).
 const POI_CATEGORIES: { value: string; label: string }[] = [
@@ -57,6 +60,17 @@ const POI_CATEGORIES: { value: string; label: string }[] = [
 ];
 
 interface PoiDraft { at: LatLng; category: string; tagline: string; note: string; icon: string; editId?: string; }
+
+// Katalog-Bucket aus dem Subcategory-Präfix.
+function bucketOf(sub: string): Bucket {
+  if (sub.startsWith('Square')) return 'Squares';
+  if (sub.startsWith('Points')) return 'Points';
+  if (sub.startsWith('Regenerate')) return 'Regenerate';
+  if (sub.startsWith('Transport')) return 'Transport';
+  if (sub.startsWith('Service')) return 'Service';
+  if (sub.startsWith('Help')) return 'Help';
+  return 'Points';
+}
 
 // Netz-Klassen-Kanten (klass 'net') → PathEdge[] für Crop/Commit.
 function netToPathEdges(d: DerivedNet): PathEdge[] {
@@ -482,6 +496,36 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       setSaveError(`Speichern fehlgeschlagen: ${(e as Error).message} · localStorage ${formatBytes(localStorageBytes())}`);
       setSaved(false);
     }
+  };
+
+  // POI-Export (Schritt 1 des „roten Briefs"): die NICHT-Gate-POIs der Registry
+  // werden zu katalog-fertigen CatalogPoi (mit gemintetem Token) und als
+  // poi_inbox in den Draft gelegt — der Workspace zeigt sie später als roten Brief.
+  const [poiExportMsg, setPoiExportMsg] = useState<string>('');
+  const onExportPois = () => {
+    if (!overlayCatalogId || !activeDraftId) { setPoiExportMsg('Kein gebundener Katalog / ungespeicherter Draft.'); return; }
+    const cat = parseCatalogById(overlayCatalogId);
+    if (!cat) { setPoiExportMsg('Katalog nicht gefunden.'); return; }
+    const prefix = buildPrefix(cat.token_verbund, cat.token_slug);
+    const taken = new Set<string>(cat.pois.map((p) => p.id));
+    const inbox: CatalogPoi[] = [];
+    for (const g of netModel.gates) {
+      if (!g.category || g.category === 'gate') continue; // Gates bleiben netz-intern
+      const token = mintToken(prefix, taken); taken.add(token);
+      inbox.push({
+        id: token,
+        bucket: bucketOf(g.category),
+        subcategory: g.category as Subcategory,
+        icon: g.icon ?? '',
+        text: g.tagline ?? '',
+        description_short: g.note || undefined,
+        coord: [g.at[1], g.at[0]],   // [lon, lat]
+        coord_status: 'exact',
+      });
+    }
+    if (inbox.length === 0) { setPoiExportMsg('Keine exportierbaren POIs (nur Gates / leer).'); return; }
+    updateDraft(activeDraftId, { poi_inbox: { catalogId: overlayCatalogId, pois: inbox } });
+    setPoiExportMsg(`${inbox.length} POI(s) als „roter Brief" an Katalog „${cat.region_name}" gelegt — Sichten/Importieren im Workspace.`);
   };
 
   // Jede Änderung am Zustand → dirty (B2 nicht mehr solid; muss neu gespeichert werden).
@@ -1808,6 +1852,17 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
                   )}
                 </span>
               ))}
+              {netModel.gates.some((g) => g.category && g.category !== 'gate') && (
+                <button
+                  onClick={onExportPois}
+                  disabled={!overlayCatalogId || !activeDraftId}
+                  title={!overlayCatalogId ? 'Kein Katalog gebunden' : !activeDraftId ? 'Erst Draft speichern' : 'Nicht-Gate-POIs als roten Brief an den Katalog legen'}
+                  style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 4, border: '1px solid #276749', background: (!overlayCatalogId || !activeDraftId) ? '#edf2f7' : '#276749', color: (!overlayCatalogId || !activeDraftId) ? '#a0aec0' : '#fff', cursor: (!overlayCatalogId || !activeDraftId) ? 'not-allowed' : 'pointer' }}
+                >
+                  📤 → Katalog
+                </button>
+              )}
+              {poiExportMsg && <span style={{ fontSize: 10, color: '#22543d' }}>{poiExportMsg}</span>}
             </div>
           )}
           {/* GELB — Maskierung + POI-Anker */}
