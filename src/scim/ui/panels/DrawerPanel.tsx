@@ -853,7 +853,9 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
         pl.on('click', (ev) => { L.DomEvent.stop(ev); toggleExclude(s.key); });
         return;
       }
-      if (!s.clickable) return;
+      // Blau (abgeschnitten) gehört zum Sackgassen-Thema: nur wenn Sackgassen-rot
+      // an ist UND kein anderer Karten-Modus läuft → keine Kollision mit A–B.
+      if (!sackgassenRot || pickMode || poiConnectMode || !s.clickable) return;
       pl.bindTooltip(s.kind === 'blue' ? 'abgeschnitten (blau) — Klick: zurück' : 'Klick: abgeschnitten (blau)',
         { sticky: true, opacity: 0.9, direction: 'right', offset: [12, 0] });
       pl.on('click', (ev) => { L.DomEvent.stop(ev); toggleCut(s.key); });
@@ -1043,7 +1045,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     if (!pathResult) return;
     if (masked && cropResult) renderPath({ ...pathResult, edges: cropResult.edges });
     else renderPath(pathResult);
-  }, [netLenThresh, sackgassenRot, gapTol, cutEdges, pickMode, manualPieces, removeMode, excludedKeys, pendingConnect, coordReduce]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [netLenThresh, sackgassenRot, gapTol, cutEdges, pickMode, manualPieces, removeMode, excludedKeys, pendingConnect, coordReduce, poiConnectMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // F7-Neufassung: Die Handoff-Brücke entfällt. Der Drawer schreibt direkt in den
   // Workspace-Draft (onSave); der Commit lebt im Workspace.
