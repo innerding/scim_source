@@ -476,12 +476,9 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       }
     });
 
-    map.on('pm:edit', (e: L.LeafletEvent) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const layer = (e as any).layer;
-      if (layer === polygonLayerRef.current) setPolygon(ringOf(layer));
-      else if (layer === maskLayerRef.current) setMaskPolygon(ringOf(layer));
-    });
+    // Hinweis: pm:edit / pm:markerdrag sind in Geoman LAYER-ONLY-Events — sie
+    // blubbern NICHT zur Map. Der State-Commit nach dem Editieren passiert daher
+    // layer-gebunden im Bearbeiten-Effekt (Suche „pm:edit" weiter unten).
 
     poiLayerRef.current = L.layerGroup().addTo(map);
     pathLayerRef.current = L.layerGroup().addTo(map);
@@ -585,13 +582,15 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     // Feines Fadenkreuz nur im Zeichnen-Modus.
     mapContainerRef.current?.classList.toggle('scim-draw-cursor', tab === 'umriss' && !masked && umrissDraw);
 
-    // Fill folgt dem Vertex-Drag LIVE. Diese Geoman-Events feuern NUR auf dem
-    // Layer (nicht auf der Map — map.on griff deshalb nie). Daher direkt an B1/B2
-    // hängen: bei jeder Marker-Bewegung das invertierte Außen-Fill aus dem
-    // AKTUELLEN Layer-Ring nachführen (Loch = sichtbare Boundary).
+    // Diese Geoman-Edit-Events feuern NUR auf dem Layer (nicht auf der Map —
+    // map.on griff deshalb nie). Daher direkt an B1/B2 hängen:
+    //   pm:markerdrag → invertiertes Außen-Fill LIVE nachführen (nur optisch).
+    //   pm:edit       → die WAHRHEIT nachziehen: sobald ein Punkt abgelegt ist,
+    //                   den ganzen Ring des Layers in den State schreiben →
+    //                   alles (Fill, Speicherung, Netz) rendert aus dem neuen Ring.
     if (!umrissEdit) return undefined;
     const worldRing: L.LatLngExpression[] = [[-90, -180], [-90, 180], [90, 180], [90, -180]];
-    const syncFill = () => {
+    const liveFill = () => {
       const inv = invFillLayerRef.current;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const activeLayer = (masked ? maskLayerRef.current : polygonLayerRef.current) as any;
@@ -601,15 +600,30 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       if (!Array.isArray(ring) || ring.length < 3) return;
       inv.setLatLngs([worldRing, ring]);
     };
-    const evts = ['pm:markerdrag', 'pm:markerdragend', 'pm:vertexadded', 'pm:vertexremoved'];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const attached: any[] = [];
+    const commit = (lyr: any) => {
+      if (!lyr?.toGeoJSON) return;
+      const ring = lyr.toGeoJSON().geometry.coordinates[0] as Position[];
+      if (!ring || ring.length < 4) return; // GeoJSON-Ring ist geschlossen (Dreieck = 4 Punkte)
+      if (lyr === polygonLayerRef.current) setPolygon(ring);
+      else if (lyr === maskLayerRef.current) setMaskPolygon(ring);
+    };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const attached: { lyr: any; onDrag: () => void; onEdit: () => void }[] = [];
     for (const lyr of [b1, b2]) {
       if (!lyr?.on) continue;
-      for (const ev of evts) lyr.on(ev, syncFill);
-      attached.push(lyr);
+      const onDrag = () => liveFill();
+      const onEdit = () => { liveFill(); commit(lyr); };
+      lyr.on('pm:markerdrag', onDrag);
+      lyr.on('pm:edit', onEdit);
+      attached.push({ lyr, onDrag, onEdit });
     }
-    return () => { for (const lyr of attached) for (const ev of evts) lyr.off?.(ev, syncFill); };
+    return () => {
+      for (const { lyr, onDrag, onEdit } of attached) {
+        lyr.off?.('pm:markerdrag', onDrag);
+        lyr.off?.('pm:edit', onEdit);
+      }
+    };
   }, [umrissDraw, umrissEdit, editB1, maskPolygon, tab, masked]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Karte neu vermessen + auf die Inspector-R zoomen — NUR bei echtem Tab-Wechsel,
