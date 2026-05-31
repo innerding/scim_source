@@ -633,9 +633,9 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     // maskiert B2 (maskPolygon). Farbe folgt dem Zustand.
     const active = masked ? maskPolygon : polygon;
     if (!isDraft || !active || active.length < 3 || !boundaryVisible) return;
-    // Während des Bearbeitens das Außen-Fill ausblenden — es folgt dem Vertex-Drag
-    // nicht live (State aktualisiert erst beim Loslassen) und würde nachlaufen.
-    if (umrissEdit) return;
+    // Beim Bearbeiten wird dieses Overlay aus dem State neu aufgebaut (Stand bei
+    // Edit-Beginn) und dann vom Vertex-Drag live nachgeführt (Effekt unten),
+    // damit das Fill mit den Punkten mitgeht statt nachzulaufen.
     const worldRing: [number, number][] = [[-90, -180], [-90, 180], [90, 180], [90, -180]];
     const hole = active.map(([lng, lat]) => [lat, lng] as [number, number]);
     const color = masked
@@ -652,6 +652,42 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     tileLayerRef.current?.bringToBack();
     invFillLayerRef.current = inv;
   }, [polygon, maskPolygon, geometryId, overlayCatalogId, boundaryVisible, boundaryOpacity, tab, masked, umrissEdit]);
+
+  // Fill folgt dem Vertex-Drag LIVE: während des Bearbeitens das invertierte
+  // Overlay bei jeder Marker-Bewegung aus dem AKTUELLEN Layer-Ring nachführen,
+  // damit das Loch (= sichtbare Boundary) mit den Punkten mitgeht statt erst beim
+  // Loslassen (State-Update) nachzuspringen.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !umrissEdit) return undefined;
+    const worldRing: L.LatLngExpression[] = [[-90, -180], [-90, 180], [90, 180], [90, -180]];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const sync = (e: any) => {
+      const inv = invFillLayerRef.current;
+      if (!inv) return;
+      // Nur den Layer nachführen, den das Fill repräsentiert (aktive Boundary):
+      // unmaskiert B1 (polygon), maskiert B2 (maskPolygon).
+      const activeLayer = masked ? maskLayerRef.current : polygonLayerRef.current;
+      const layer = e?.layer ?? e?.target ?? activeLayer;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if (layer !== activeLayer || !(layer as any)?.getLatLngs) return;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const rings = (layer as any).getLatLngs();
+      const ring = Array.isArray(rings[0]) ? rings[0] : rings;
+      if (!Array.isArray(ring) || ring.length < 3) return;
+      inv.setLatLngs([worldRing, ring]);
+    };
+    map.on('pm:markerdrag', sync);
+    map.on('pm:markerdragend', sync);
+    map.on('pm:vertexadded', sync);
+    map.on('pm:vertexremoved', sync);
+    return () => {
+      map.off('pm:markerdrag', sync);
+      map.off('pm:markerdragend', sync);
+      map.off('pm:vertexadded', sync);
+      map.off('pm:vertexremoved', sync);
+    };
+  }, [umrissEdit, masked]);
 
   // Ebenen-Steuerleiste (A): Inspector-R-Vorlage dimmen.
   useEffect(() => {
