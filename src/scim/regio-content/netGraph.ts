@@ -125,6 +125,14 @@ export function graphCompose(edges: PathEdge[]): NetGraph {
   return finalize(nodes, graphEdges);
 }
 
+// Graph ohne bestimmte Kanten neu rechnen (für manuelles Entfernen von
+// Teilstücken). `keep` entscheidet pro Kante; Grad + Komponenten werden frisch
+// gesetzt, sodass Klassifizierung/Sackgassen sofort stimmen.
+export function filterEdges(graph: NetGraph, keep: (e: NetGraphEdge) => boolean): NetGraph {
+  const nodes = graph.nodes.map((n) => ({ ...n }));
+  return finalize(nodes, graph.edges.filter(keep));
+}
+
 // Grad (Neuzählung aus den Kanten) + Komponenten (Union-Find) setzen. Geteilt von
 // graphCompose und bridgeGaps, damit nach dem Brückenbau alles konsistent neu
 // gerechnet wird (verbundene Enden verlieren ihren degree-1-Status).

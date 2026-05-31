@@ -32,7 +32,7 @@ import {
   type PathFetchResult, type AnchorSummary, type PoiInput, type CropResult,
   type PathEdge, type GateNode,
 } from '../../regio-content/pathEngine';
-import { graphCompose, bridgeGaps, netzComponents, type NetGraphEdge } from '../../regio-content/netGraph';
+import { graphCompose, bridgeGaps, filterEdges, netzComponents, type NetGraphEdge } from '../../regio-content/netGraph';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import gruenbergMd from '../../../../data/gruenberg_pois_plan.md?raw';
@@ -162,6 +162,13 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   const [pickMode, setPickMode] = useState(false);
   const [manualPieces, setManualPieces] = useState<Map<number, { roadId: number; points: [number, number][]; key: string }>>(new Map());
   const pieceNidRef = useRef(1_000_000_000_000); // über OSM-Way-ids, kollidiert nicht
+
+  // Entfernen: Ausschluss-Menge von Graph-Teilstücken (Schlüssel edgeId:seg). Im
+  // Entfernen-Modus Klick auf ein Segment → raus (vor der Klassifizierung), nochmal
+  // → zurück. greenKeysRef hält die aktuell grünen Keys für „alle Grünen entfernen".
+  const [removeMode, setRemoveMode] = useState(false);
+  const [excludedKeys, setExcludedKeys] = useState<Set<string>>(new Set());
+  const greenKeysRef = useRef<string[]>([]);
   // zuletzt angewandte Config (für Anschluss-Toleranz beim manuellen Anwählen).
   const lastCfgRef = useRef<PathConfig | null>(null);
   // E4a — „abgeschnitten" (blau): Sackgassen, hinter denen real ein Weg weitergeht,
@@ -691,6 +698,11 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     n.delete(nid);
     return n;
   });
+  const toggleExclude = (key: string) => setExcludedKeys((prev) => {
+    const n = new Set(prev);
+    if (n.has(key)) n.delete(key); else n.add(key);
+    return n;
+  });
   const CAND_COLOR = '#a0aec0';   // grau = nicht aufgenommener OSM-Kandidat
   const LILA = '#9333ea';         // Straßen: Asphalt (weißer Kern, lila Einfassung) / andere Sorten (lila)
   const PICK_COLOR = LILA;        // manuell aufgenommenes Teilstück (Markierung)
@@ -715,7 +727,14 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     // E3: erst NODEN (graphCompose splittet an Kreuzungen), dann Lücken < gapTol
     // überbrücken (gapTol=0 → keine Brücken, roher genodeter Graph = A/B-Vergleich).
     const composed = graphCompose(effEdges);
-    const { graph, bridges } = bridgeGaps(composed, gapTol);
+    const merged = bridgeGaps(composed, gapTol);
+    const bridges = merged.bridges;
+    const graph0 = merged.graph; // vor dem Entfernen (für Ghosts)
+    // Entfernen: ausgeschlossene Teilstücke aus dem Graphen nehmen → Grade/Komponenten
+    // frisch rechnen, damit Klassifizierung + Summen sofort stimmen.
+    const graph = excludedKeys.size
+      ? filterEdges(graph0, (e) => !excludedKeys.has(`${e.edgeId}:${e.seg}`))
+      : graph0;
     const netzSet = netzComponents(graph, netLenThresh);
 
     // Maskiert: Gate-Knoten (innerer Gate am Maskenrand) sind POIs, KEINE
@@ -755,16 +774,24 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     // Längen-Summen: „Netz" = nur SCHWARZE Komponenten (≥ Schwelle), darin
     // Wanderweg + Asphalt; „rest" = grüne Komponenten (vom Netz exkludiert).
     let sNet = 0; let sAsph = 0; let sWander = 0; let sRest = 0;
+    const greenKeys: string[] = [];
     for (const ge of graph.edges) {
       const isNetz = netzSet.has(graph.nodes[ge.from].component);
       const asph = ge.edgeId >= 0 && (asphaltByEdgeId.get(ge.edgeId) ?? false);
       if (isNetz) { sNet += ge.meters; if (asph) sAsph += ge.meters; else sWander += ge.meters; }
-      else sRest += ge.meters;
+      else { sRest += ge.meters; if (ge.edgeId >= 0) greenKeys.push(`${ge.edgeId}:${ge.seg}`); }
     }
     setNetSummary({ net: sNet, wander: sWander, asphalt: sAsph, rest: sRest });
+    greenKeysRef.current = greenKeys;
 
     // Sackgassen-Teilstücke sind anklickbar: Klick → blau (abgeschnitten) ↔ zurück.
     const attach = (pl: L.Polyline, s: typeof styled[number]) => {
+      // Entfernen-Modus hat Vorrang: jedes Segment klickbar → raus/zurück.
+      if (removeMode) {
+        pl.bindTooltip('Klick: Segment entfernen', { sticky: true, opacity: 0.9 });
+        pl.on('click', (ev) => { L.DomEvent.stop(ev); toggleExclude(s.key); });
+        return;
+      }
       if (!s.clickable) return;
       pl.bindTooltip(s.kind === 'blue' ? 'abgeschnitten (blau) — Klick: zurück' : 'Klick: abgeschnitten (blau)',
         { sticky: true, opacity: 0.9 });
@@ -795,6 +822,21 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     }
     for (const s of styled) if (s.kind === 'red') draw(s);
     for (const s of styled) if (s.kind === 'blue') draw(s);
+
+    // Entfernen: ausgeschlossene Teilstücke als blasse Geister zeigen (im
+    // Entfernen-Modus per Klick zurückholbar).
+    if (excludedKeys.size) {
+      for (const ge of graph0.edges) {
+        const key = `${ge.edgeId}:${ge.seg}`;
+        if (!excludedKeys.has(key)) continue;
+        const pl = L.polyline(ge.points, { color: '#cbd5e0', weight: 2, opacity: 0.7, dashArray: '2 4' });
+        if (removeMode) {
+          pl.bindTooltip('entfernt — Klick: zurück', { sticky: true, opacity: 0.9 });
+          pl.on('click', (ev) => { L.DomEvent.stop(ev); toggleExclude(key); });
+        }
+        pl.addTo(layer);
+      }
+    }
 
     // T2: Anwähl-Modus — Connector-Straßen als klickbares Overlay. Grau gestrichelt
     // = nicht aufgenommen (Klick → nur das Teilstück zwischen den nächsten
@@ -929,7 +971,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     if (!pathResult) return;
     if (masked && cropResult) renderPath({ ...pathResult, edges: cropResult.edges });
     else renderPath(pathResult);
-  }, [netLenThresh, sackgassenRot, gapTol, cutEdges, pickMode, manualPieces]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [netLenThresh, sackgassenRot, gapTol, cutEdges, pickMode, manualPieces, removeMode, excludedKeys]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // F7-Neufassung: Die Handoff-Brücke entfällt. Der Drawer schreibt direkt in den
   // Workspace-Draft (onSave); der Commit lebt im Workspace.
@@ -1103,6 +1145,17 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
           onClick={() => setPickMode((v) => !v)}
           label="⊟ OSM-Wege"
           title="OSM-Straßen gestrichelt zeigen + Teilstücke anwählen"
+        />
+      ),
+    },
+    {
+      id: 'entfernen', side: 'right', tabs: ['wegnetz'],
+      node: (
+        <ToolToggle
+          active={removeMode}
+          onClick={() => setRemoveMode((v) => !v)}
+          label="🗑 Entfernen"
+          title="Segmente per Klick entfernen (grün oder schwarz) ↔ zurück"
         />
       ),
     },
@@ -1364,6 +1417,9 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
             onClearInclude={() => setManualPieces(new Map())}
             cutCount={cutEdges.size}
             onClearCut={() => setCutEdges(new Set())}
+            excludedCount={excludedKeys.size}
+            onRemoveGreen={() => setExcludedKeys((prev) => new Set([...prev, ...greenKeysRef.current]))}
+            onClearExcluded={() => setExcludedKeys(new Set())}
           />
         )}
         <div ref={mapContainerRef} style={{ flex: 1, minHeight: 0, minWidth: 0 }} />
@@ -1459,6 +1515,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
 function PathFilterMenu({
   gebiet, gebietLabel, canApply, onResized, onCfgChange, status, error,
   includeCount, onClearInclude, cutCount, onClearCut,
+  excludedCount, onRemoveGreen, onClearExcluded,
 }: {
   gebiet: string;
   gebietLabel: string;
@@ -1471,6 +1528,9 @@ function PathFilterMenu({
   onClearInclude: () => void;
   cutCount: number;
   onClearCut: () => void;
+  excludedCount: number;
+  onRemoveGreen: () => void;
+  onClearExcluded: () => void;
 }) {
   // US2: zwei gestapelte Drop-Panels links — Filter + Profi, immer nur eins offen;
   // null = beide eingeklappt (zwei vertikale Reopen-Tabs).
@@ -1694,6 +1754,31 @@ function PathFilterMenu({
             {cutCount === 0 && includeCount === 0 && (
               <span style={{ color: '#cbd5e0' }}>keine</span>
             )}
+          </div>
+          <div style={{ marginTop: 6 }}>
+            <b>Entfernen:</b> Segmente per Klick raus (Werkzeug „🗑" oben).
+            <div style={{ marginTop: 4, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              <button
+                onClick={onRemoveGreen}
+                style={{
+                  fontSize: 10, padding: '1px 6px', borderRadius: 4,
+                  border: '1px solid #9ae6b4', background: '#f0fff4', color: '#276749', cursor: 'pointer',
+                }}
+              >
+                alle Grünen entfernen
+              </button>
+              {excludedCount > 0 && (
+                <button
+                  onClick={onClearExcluded}
+                  style={{
+                    fontSize: 10, padding: '1px 6px', borderRadius: 4,
+                    border: '1px solid #cbd5e0', background: '#edf2f7', color: '#4a5568', cursor: 'pointer',
+                  }}
+                >
+                  {excludedCount} entfernt · zurücksetzen
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </Section>
