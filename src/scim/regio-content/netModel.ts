@@ -140,17 +140,26 @@ function integrate(edges: ModelEdge[]): { edges: ModelEdge[]; bridges: BridgeMar
         }
       }
 
-      // (2) Echte Kreuzung Segment×Segment.
+      // (2) Fly-over = TRANSVERSALE Kreuzung im Segment-Inneren — NICHT an einem
+      // geteilten Knoten. Eine Trasse, die einer Linie folgt, läuft durch deren
+      // Kreuzungen (geteilte Stützpunkte); diese Berührungen sind KEINE Brücken.
       for (let j = 0; j + 1 < d.points.length; j++) {
         for (let i = 0; i + 1 < o.points.length; i++) {
           const P = segCross(d.points[j], d.points[j + 1], o.points[i], o.points[i + 1]);
           if (!P) continue;
-          if (isDrawnEnd(P)) continue; // Kreuzung am Trassen-Endpunkt → von (1) als Knoten behandelt
-          // Mitten-Kreuzung → Fly-over (Brücke), kein Knoten.
+          if (isDrawnEnd(P)) continue;                                   // Trassen-Endpunkt = Verbindung
+          if (d.points.some((p) => distM(P, p) <= WELD_TOL_M)) continue; // auf Trassen-Knoten
+          if (o.points.some((p) => distM(P, p) <= WELD_TOL_M)) continue; // auf Linien-Knoten = Kreuzung
           bridges.push({ at: P, overEdgeId: d.id });
         }
       }
     }
+  }
+
+  // Doppelte Brückenzeichen (≈ gleicher Punkt) zusammenfassen.
+  const dedupedBridges: BridgeMark[] = [];
+  for (const b of bridges) {
+    if (!dedupedBridges.some((x) => distM(x.at, b.at) <= WELD_TOL_M)) dedupedBridges.push(b);
   }
 
   // Split-Punkte in die Ziel-Kanten einfügen (von hinten, Indizes stabil halten).
@@ -160,7 +169,7 @@ function integrate(edges: ModelEdge[]): { edges: ModelEdge[]; bridges: BridgeMar
     list.sort((a, b) => b.afterIndex - a.afterIndex);
     for (const s of list) e.points.splice(s.afterIndex + 1, 0, s.point);
   }
-  return { edges: work, bridges };
+  return { edges: work, bridges: dedupedBridges };
 }
 
 // ─── Ableitung ───────────────────────────────────────────────────────────────────

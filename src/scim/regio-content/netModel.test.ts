@@ -86,6 +86,17 @@ describe('netModel — Endpunkt-auf-Linie-Noding', () => {
   });
 });
 
+describe('netModel — KEIN Brückenzeichen an Kreuzungen', () => {
+  it('Trasse durch einen geteilten T-Knoten erzeugt keine Brücke', () => {
+    const o1 = osm(1, [[0, 0], [0, 0.0010], [0, 0.0020]]);      // Hauptlinie mit Knoten M
+    const o2 = osm(2, [[0, 0.0010], [0.0006, 0.0010]]);          // Stich an M → T-Kreuzung
+    // Trasse folgt der Hauptlinie und läuft DURCH M (M ist auch Trassen-Stützpunkt).
+    const m = addDrawnEdge(model([o1, o2]), [[0, 0.0002], [0, 0.0010], [0, 0.0018]]);
+    const d = deriveNet(m);
+    expect(d.bridges.length).toBe(0);
+  });
+});
+
 describe('netModel — Fly-over (Brücke, keine Verbindung)', () => {
   it('Trasse quer über eine Linie ohne dort zu enden → BridgeMark, bleibt getrennt', () => {
     // X-Y liegt auf lat 0 (lng 0..0.0020). Trasse kreuzt bei (0, 0.0010), endet aber ±55 m entfernt.
