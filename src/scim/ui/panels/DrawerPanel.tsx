@@ -1736,13 +1736,14 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
                 {netSummary.points} Punkte · <b>{formatBytes(netSummary.bytes)}</b>
               </span>
             )}
-            {/* Datengröße-Reduktion (Auslieferungs-Budget): DP-Korridor + Stellen. */}
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#4a5568' }} title="Punkt-Reduktion (Douglas-Peucker): garantierter ±-Korridor, Kurven bleiben drin, Kreuzungen erhalten">
+            {/* Datengröße-/Abstands-Hebel (aktuell ohne Wirkung aufs Modell) — vorgesehen
+                für spätere Colour-Mesh-Abstands-Harmonisierung. */}
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#4a5568' }} title="Punkt-Reduktion (Douglas-Peucker) / später Colour-Mesh-Abstand">
               DP <span style={{ fontFamily: 'monospace', color: '#2b6cb0' }}>{dpEps.toFixed(2)} m</span>
               <input type="range" min={0} max={0.3} step={0.03} value={dpEps}
                 onChange={(e) => setDpEps(Number(e.target.value))} style={{ width: 70, margin: 0 }} />
             </span>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#4a5568' }} title="Nachkommastellen runden (kleiner Zusatz-Hebel, ~5%); 7≈1cm · 6≈0,11m · 5≈1,1m">
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#4a5568' }} title="Nachkommastellen runden; 7≈1cm · 6≈0,11m · 5≈1,1m">
               Stellen <span style={{ fontFamily: 'monospace', color: '#2b6cb0' }}>{coordDecimals}</span>
               <input type="range" min={5} max={7} step={1} value={coordDecimals}
                 onChange={(e) => setCoordDecimals(Number(e.target.value))} style={{ width: 50, margin: 0 }} />

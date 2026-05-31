@@ -131,7 +131,8 @@ export function drawNet(layer: L.LayerGroup, net: DerivedNet, opts: DrawNetOptio
       interactive: false,
     });
     if (p.gate && p.tagline) {
-      marker.bindTooltip(p.tagline, { permanent: true, direction: 'top', offset: [0, -8], opacity: 0.9, className: 'gate-label' });
+      marker.options.interactive = true; // damit der Hover-Tooltip greift
+      marker.bindTooltip(p.tagline, { direction: 'top', offset: [0, -8], opacity: 0.9, className: 'gate-label' });
     }
     marker.addTo(layer);
   }
