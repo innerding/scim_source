@@ -529,17 +529,34 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
         count={catalogs.length}
         action={{ label: '+ neuer Katalog', onClick: () => { /* Wave 2b */ }, disabled: true }}
       >
-        {catalogs.map((c) => (
-          <ListItem
-            key={c.id}
-            icon="📋"
-            primary={c.name}
-            badge={c.id}
-            secondary={`${c.poi_count} POIs · ${c.cluster_count} Cluster · ${c.warning_count} Warnungen · ${formatBytes(c.bytes)}`}
-            trailing={<EyeButton shown={assetShown('catalog', c.id)} onClick={() => toggleAsset('catalog', c.id)} />}
-            action={{ label: 'Im Katalog öffnen', onClick: () => onJumpTo('catalog') }}
-          />
-        ))}
+        {catalogs.map((c) => {
+          // „Roter Brief": Summe der POIs in allen Draft-Posteingängen für diesen Katalog.
+          const inbox = drafts.reduce((s, d) => s + (d.poi_inbox?.catalogId === c.id ? (d.poi_inbox?.pois.length ?? 0) : 0), 0);
+          return (
+            <ListItem
+              key={c.id}
+              icon="📋"
+              primary={c.name}
+              badge={c.id}
+              secondary={`${c.poi_count} POIs · ${c.cluster_count} Cluster · ${c.warning_count} Warnungen · ${formatBytes(c.bytes)}`}
+              trailing={(
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  {inbox > 0 && (
+                    <button
+                      onClick={() => onJumpTo('catalog')}
+                      title={`${inbox} neue(r) POI(s) vom Drawer — im Katalog öffnen & importieren`}
+                      style={{ fontSize: 11, fontWeight: 700, padding: '2px 7px', borderRadius: 4, border: '1px solid #e53e3e', background: '#fff5f5', color: '#c53030', cursor: 'pointer' }}
+                    >
+                      ✉ {inbox}
+                    </button>
+                  )}
+                  <EyeButton shown={assetShown('catalog', c.id)} onClick={() => toggleAsset('catalog', c.id)} />
+                </span>
+              )}
+              action={{ label: 'Im Katalog öffnen', onClick: () => onJumpTo('catalog') }}
+            />
+          );
+        })}
       </Section>
 
       {/* Representations */}
