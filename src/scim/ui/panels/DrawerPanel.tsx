@@ -28,11 +28,15 @@ import {
   loadPathConfig, savePathConfig, type PathConfig, type BridlewayMode,
 } from '../../regio-content/pathConfig';
 import {
-  deriveWanderwegnetz, anchorPois, cropNetToMask, netStats, formatBytes, isAsphalt, buildRoutePath, roundPolyline, simplifyNet,
+  deriveWanderwegnetz, anchorPois, netStats, formatBytes, isAsphalt, buildRoutePath,
   type PathFetchResult, type AnchorSummary, type PoiInput, type CropResult,
   type PathEdge, type GateNode,
 } from '../../regio-content/pathEngine';
-import { graphCompose, bridgeGaps, filterEdges, netzComponents, type NetGraphEdge } from '../../regio-content/netGraph';
+import {
+  deriveNet, addDrawnEdge, deleteKeys, deleteAllRed, emptyModel,
+  type NetModel, type ModelEdge,
+} from '../../regio-content/netModel';
+import { drawNet } from '../netDraw';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import gruenbergMd from '../../../../data/gruenberg_pois_plan.md?raw';
@@ -59,9 +63,6 @@ const DRAFT_STROKE_ORANGE = '#ed8936';
 const SLOT2_DASH = '6 4';
 
 type DrawerTab = 'umriss' | 'wegnetz';
-
-// Koordinaten-Schlüssel (wie in netGraph): zum Abgleich Gate-POI ↔ Graph-Knoten.
-const poiCoordKey = (lat: number, lng: number): string => `${lat.toFixed(7)},${lng.toFixed(7)}`;
 
 // UÖ1: KEINE Geoman-Default-Toolbar mehr. Zeichnen/Bearbeiten werden über eigene
 // Umriss-Werkzeuge (Tool-Header links) per pm.enableDraw('Polygon') bzw.
@@ -130,26 +131,16 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   const [dpEps, setDpEps] = useState(0);
   const [coordDecimals, setCoordDecimals] = useState(7);
 
-  // E2b — Konnektivitätsfärbung: Komponenten ≥ netLenThresh (m) gelten als „Netz"
-  // (schwarz), kürzere als „Rest" (grün). sackgassenRot legt rot über alle
-  // degree-1-Enden (Default: Grundfarbe der Komponente). Reiner Render-Zustand.
-  const [netLenThresh, setNetLenThresh] = useState(300);
-  const [sackgassenRot, setSackgassenRot] = useState(false);
-  // E3 — Lückenfüller: lose Enden < gapTol (m) werden mit Brücken verbunden,
-  // Komponenten verschmelzen. bridgeCount fürs Legenden-Feedback.
-  const [gapTol, setGapTol] = useState(8);
-  // T2 — Wege manuell aus OSM anwählen: im Anwähl-Modus werden die nicht
-  // aufgenommenen Connector-Straßen (inNet=false) grau gestrichelt + klickbar
-  // gezeigt; Klick nimmt sie ins Netz auf (Gegenstück zur blauen Abwahl).
-  // manualPieces: beliebig viele aufgenommene TEILSTÜCKE, je mit eigener
-  // synthetischer id (nid) → mehrere Stücke pro Straße möglich. Jedes Stück kennt
-  // seine Quell-Straße (roadId) + einen Geometrie-Schlüssel (key) zur Dedup.
+  // Wegnetz-Modell (Rückbau) — die EINE Wahrheit. Aus deriveNet(netModel) wird
+  // alles abgeleitet (Färbung, Sackgassen, Netz=längste Komponente, Brücken).
+  const [netModel, setNetModel] = useState<NetModel>(() => emptyModel());
+  // OSM-Pool = Connector-Kandidaten aus dem Fetch; nur Quelle fürs Trassieren.
+  const [osmPool, setOsmPool] = useState<ModelEdge[]>([]);
+  const undoRef = useRef<NetModel[]>([]);
+  const pushModel = (next: NetModel): void => { undoRef.current.push(netModel); setNetModel(next); };
+  const undoModel = (): void => { const prev = undoRef.current.pop(); if (prev) setNetModel(prev); };
+  // Karten-Klick-Modi (exklusiv): pickMode = Trassieren, removeMode = Löschen.
   const [pickMode, setPickMode] = useState(false);
-  // Ein Stück kennt optional seine Quell-Straße (roadId) + eigene highway/tags,
-  // weil eine geroutete A→B-Spanne über mehrere Ways laufen kann (dann zählt das
-  // dominante Way). asphalt cached den Asphalt-Status fürs Rendern.
-  const [manualPieces, setManualPieces] = useState<Map<number, { roadId: number; points: [number, number][]; key: string; highway?: string; tags?: Record<string, string>; asphalt?: boolean; straight?: boolean }>>(new Map());
-  const pieceNidRef = useRef(1_000_000_000_000); // über OSM-Way-ids, kollidiert nicht
   // Zwei-Punkt-Anwahl: erster Klick A merken, zweiter Klick B (beliebiger Punkt;
   // das A→B-Routing spannt über mehrere Ways/Kreuzungen). Die Hover-Spur zwischen
   // den Klicks entscheidet Verzweigungen.
@@ -198,12 +189,8 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     };
   }, [pickMode]);
 
-  // Entfernen: Ausschluss-Menge von Graph-Teilstücken (Schlüssel edgeId:seg). Im
-  // Entfernen-Modus Klick auf ein Segment → raus (vor der Klassifizierung), nochmal
-  // → zurück. greenKeysRef hält die aktuell grünen Keys für „alle Grünen entfernen".
+  // Löschen-Modus (removeMode): Klick auf ein Teilstück → deleteKeys im Modell.
   const [removeMode, setRemoveMode] = useState(false);
-  const [excludedKeys, setExcludedKeys] = useState<Set<string>>(new Set());
-  const greenKeysRef = useRef<string[]>([]);
 
   // POI-Connector: Button → POIs 0,5–2 m vom Netz „schreien", jeder einzeln per
   // Klick verbindbar (Stich). <0,5 m = auf dem Pfad; >2 m = nicht verbindbar →
@@ -212,12 +199,6 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   const [acceptedPois, setAcceptedPois] = useState<Set<string>>(new Set());
   // zuletzt angewandte Config (für Anschluss-Toleranz beim manuellen Anwählen).
   const lastCfgRef = useRef<PathConfig | null>(null);
-  // E4a — „abgeschnitten" (blau): Sackgassen, hinter denen real ein Weg weitergeht,
-  // aber keine OSM-Daten mehr liegen (Datenrand). Per Klick auf das Stummel-Segment
-  // markiert; blau läuft VOR der Sackgassen(rot)-Bewertung und nimmt sie davon aus.
-  // Lokaler Render-Zustand (noch nicht im Draft persistiert). Schlüssel pro
-  // Teilstück = `${edgeId}:${seg}` (genodete Graph-Kante).
-  const [cutEdges, setCutEdges] = useState<Set<string>>(new Set());
 
   // Inspector-Compare: das Polygon der vom Inspector gezeigten R kann
   // als read-only Referenz in Violett unter den Editor gelegt werden
@@ -516,11 +497,14 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     }
 
     // B1-Overpass aus dem Draft wiederherstellen — kein erneuter Overpass-Abruf.
-    // Netz sofort sichtbar, A→B-Routing-Basis (edgesRef) gesetzt.
+    // Modell speisen (OP = primär, OSM-Pool = Connector), dann zeichnet der
+    // Render-Effekt automatisch.
     if (initial.pathFetch) {
-      setPathResult(initial.pathFetch);
+      const pf = initial.pathFetch;
+      setPathResult(pf);
       setPathStatus('done');
-      renderPath(initial.pathFetch);
+      setOsmPool(pf.edges.filter((e) => e.source !== 'primary').map((e) => ({ id: e.id, points: e.points, source: 'osm', asphalt: isAsphalt(e) })));
+      setNetModel({ edges: pf.edges.filter((e) => e.source === 'primary').map((e) => ({ id: e.id, points: e.points, source: 'osm', asphalt: isAsphalt(e) })), excluded: [], gates: [] });
     }
 
     return () => {
@@ -855,235 +839,76 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     }
   }, [poiConnectMode, acceptedPois, overlayCatalogId, pathResult, masked, cropResult]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Wegnetz auf den Map-Layer zeichnen — E2b: Färbung nach KONNEKTIVITÄT
-  // (nicht mehr nach Herkunft). Der Graph wird verschweißt (graphCompose),
-  // Komponenten nach Länge klassifiziert:
-  //   schwarz = Netz (Komponente ≥ netLenThresh)
-  //   grün    = Rest (kürzere Komponenten / abgetrennte Äste)
-  //   rot     = Sackgassen (degree-1-Enden) — nur wenn sackgassenRot an
-  // Default tragen Sackgassen die Grundfarbe ihrer Komponente.
-  const NETZ_COLOR = '#222a35';
-  const REST_COLOR = '#1f9d8f';
-  const SACK_COLOR = '#e53e3e';
-  const CUT_COLOR = '#3182ce';   // blau = abgeschnitten (Datenrand)
-  const BRIDGE_COLOR = '#dd6b20';
-  const toggleCut = (key: string) => setCutEdges((prev) => {
-    const n = new Set(prev);
-    if (n.has(key)) n.delete(key); else n.add(key);
-    return n;
-  });
-  const addPiece = (
-    roadId: number,
-    pts: [number, number][],
-    meta?: { highway?: string; tags?: Record<string, string>; asphalt?: boolean; straight?: boolean },
-  ) => setManualPieces((prev) => {
-    if (pts.length < 2) return prev;
-    const key = `${roadId}:${pts[0]}:${pts[pts.length - 1]}`;
-    for (const p of prev.values()) if (p.key === key) return prev; // schon vorhanden
-    const n = new Map(prev);
-    n.set((pieceNidRef.current += 1), { roadId, points: pts, key, ...meta });
-    return n;
-  });
-  const toggleExclude = (key: string) => setExcludedKeys((prev) => {
-    const n = new Set(prev);
-    if (n.has(key)) n.delete(key); else n.add(key);
-    return n;
-  });
-  const CAND_COLOR = '#a0aec0';   // grau = nicht aufgenommener OSM-Kandidat
-  const LILA = '#9333ea';         // Straßen: Asphalt (weißer Kern, lila Einfassung) / andere Sorten (lila)
-  const PICK_COLOR = LILA;        // manuell aufgenommenes Teilstück (Markierung)
-  const renderPath = (res: PathFetchResult | null) => {
+  // EINE Zeichenfunktion: draw(deriveNet(netModel)). Plus im Trassier-Modus den
+  // OSM-Pool (grau, klickbar A/B) und den A-Marker; die Vorschau zeichnet der
+  // mousemove-Effekt. Im Lösch-Modus sind die Teilstücke klickbar (deleteKeys).
+  const renderPath = (): void => {
     const layer = pathLayerRef.current;
     if (!layer) return;
-    layer.clearLayers();
-    if (!res) return;
 
-    // T2: von Hand aufgenommene Teilstücke als zusätzliche inNet=true-Kanten
-    // (gleiche edgeId, gecroppte Geometrie) anhängen; das Original bleibt inNet=false.
-    const byId = new Map(res.edges.map((e) => [e.id, e]));
-    edgesRef.current = res.edges; // Basis fürs A→B-Routing (Map-Klick-Handler)
-    const pieceEdges: PathEdge[] = [];
-    for (const [nid, p] of manualPieces) {
-      if (p.points.length < 2) continue;
-      const src = byId.get(p.roadId);
-      const highway = p.highway ?? src?.highway ?? (p.straight ? 'path' : 'service');
-      const tags = p.tags ?? src?.tags ?? {};
-      // Gerader Lückenschluss (Fall 5) = Wanderweg-Gap, kein Asphalt → primary.
-      pieceEdges.push({ id: nid, highway, source: p.straight ? 'primary' : 'connector_candidate', points: p.points, tags, inNet: true });
-    }
-    let effEdges = pieceEdges.length ? [...res.edges, ...pieceEdges] : res.edges;
-    // Datengröße-Reduktion: erst Punkte ausdünnen (DP, ±eps-Korridor, topologie-sicher),
-    // dann Koordinaten auf N Stellen runden. Beides senkt das Netz-JSON.
-    if (dpEps > 0) effEdges = simplifyNet(effEdges, dpEps);
-    if (coordDecimals < 7) effEdges = effEdges.map((e) => ({ ...e, points: roundPolyline(e.points, coordDecimals) }));
+    const poiCoords: [number, number][] = overlayCatalogId
+      ? regionPois(overlayCatalogId).map((p) => [p.lat, p.lng] as [number, number])
+      : [];
+    const derived = deriveNet(netModel, poiCoords);
 
-    // E3: erst NODEN (graphCompose splittet an Kreuzungen), dann Lücken < gapTol
-    // überbrücken (gapTol=0 → keine Brücken, roher genodeter Graph = A/B-Vergleich).
-    const composed = graphCompose(effEdges);
-    const merged = bridgeGaps(composed, gapTol);
-    const bridges = merged.bridges;
-    const graph0 = merged.graph; // vor dem Entfernen (für Ghosts)
-    // Entfernen: ausgeschlossene Teilstücke aus dem Graphen nehmen → Grade/Komponenten
-    // frisch rechnen, damit Klassifizierung + Summen sofort stimmen.
-    const graph = excludedKeys.size
-      ? filterEdges(graph0, (e) => !excludedKeys.has(`${e.edgeId}:${e.seg}`))
-      : graph0;
-    const netzSet = netzComponents(graph, netLenThresh);
+    drawNet(layer, derived, {
+      onSegmentClick: removeMode ? (k) => pushModel(deleteKeys(netModel, [k])) : undefined,
+      pickTooltip: removeMode ? 'Klick: Teilstück löschen' : undefined,
+    });
 
-    // Maskiert: Gate-Knoten (innerer Gate am Maskenrand) sind POIs, KEINE
-    // Sackgassen — „aus Sacken werden durch Beschneidung POIs". Von Rot ausgenommen.
-    const poiKeys = new Set<string>();
-    if (masked && cropResult) {
-      for (const g of cropResult.gates) poiKeys.add(poiCoordKey(g.inner[0], g.inner[1]));
-    }
-    const isPoiEnd = (nodeId: number): boolean =>
-      poiKeys.has(poiCoordKey(graph.nodes[nodeId].lat, graph.nodes[nodeId].lng));
-
-    // Asphalt-Eigenschaft pro Quell-Way (project_asphalt_tracking).
-    const asphaltByEdgeId = new Map<number, boolean>();
-    for (const e of effEdges) asphaltByEdgeId.set(e.id, isAsphalt(e));
-
-    // Pro Graph-Teilstück (genodet) Farbe + Gewicht ableiten. Reihenfolge der
-    // Klassen: blau (abgeschnitten, manuell) → rot (Sackgasse, Toggle) → Grundfarbe.
-    type Kind = 'base' | 'red' | 'blue';
-    const styled: { ge: NetGraphEdge; key: string; color: string; weight: number; kind: Kind; clickable: boolean; asphalt: boolean }[] = [];
-    for (const ge of graph.edges) {
-      if (ge.edgeId < 0) continue; // Brücken separat (orange gestrichelt)
-      const key = `${ge.edgeId}:${ge.seg}`;
-      const isNetz = netzSet.has(graph.nodes[ge.from].component);
-      const asphalt = asphaltByEdgeId.get(ge.edgeId) ?? false;
-      let color = isNetz ? NETZ_COLOR : REST_COLOR;
-      const weight = isNetz ? 3 : 2;
-      // echte Sackgasse = degree-1-Ende, das KEIN POI (Gate) ist.
-      const isSack =
-        (graph.nodes[ge.from].degree === 1 && !isPoiEnd(ge.from))
-        || (graph.nodes[ge.to].degree === 1 && !isPoiEnd(ge.to));
-      let kind: Kind = 'base';
-      if (cutEdges.has(key)) { color = CUT_COLOR; kind = 'blue'; }        // blau VOR rot
-      else if (sackgassenRot && isSack) { color = SACK_COLOR; kind = 'red'; }
-      styled.push({ ge, key, color, weight, kind, clickable: isSack, asphalt });
-    }
-
-    // Längen-Summen: „Netz" = nur SCHWARZE Komponenten (≥ Schwelle), darin
-    // Wanderweg + Asphalt; „rest" = grüne Komponenten (vom Netz exkludiert).
-    let sNet = 0; let sAsph = 0; let sWander = 0; let sRest = 0;
-    const greenKeys: string[] = [];
-    for (const ge of graph.edges) {
-      const isNetz = netzSet.has(graph.nodes[ge.from].component);
-      const asph = ge.edgeId >= 0 && (asphaltByEdgeId.get(ge.edgeId) ?? false);
-      if (isNetz) { sNet += ge.meters; if (asph) sAsph += ge.meters; else sWander += ge.meters; }
-      else { sRest += ge.meters; if (ge.edgeId >= 0) greenKeys.push(`${ge.edgeId}:${ge.seg}`); }
-    }
-    const ns = netStats(effEdges.filter((e) => e.inNet));
-    setNetSummary({ net: sNet, wander: sWander, asphalt: sAsph, rest: sRest, bytes: ns.bytes, points: ns.pointCount });
-    greenKeysRef.current = greenKeys;
-
-    // Sackgassen-Teilstücke sind anklickbar: Klick → blau (abgeschnitten) ↔ zurück.
-    const attach = (pl: L.Polyline, s: typeof styled[number]) => {
-      // Entfernen-Modus hat Vorrang: jedes Segment klickbar → raus/zurück.
-      if (removeMode) {
-        pl.bindTooltip('Klick: Segment entfernen', { sticky: true, opacity: 0.9, direction: 'right', offset: [12, 0] });
-        pl.on('click', (ev) => { L.DomEvent.stop(ev); toggleExclude(s.key); });
-        return;
+    // Footer-Summen aus dem Modell.
+    const len = (pts: [number, number][]): number => {
+      let m = 0;
+      for (let i = 1; i < pts.length; i++) {
+        const mLng = 111320 * Math.cos((pts[i][0] * Math.PI) / 180);
+        m += Math.hypot((pts[i][1] - pts[i - 1][1]) * mLng, (pts[i][0] - pts[i - 1][0]) * 110540);
       }
-      // Blau (abgeschnitten) gehört zum Sackgassen-Thema: nur wenn Sackgassen-rot
-      // an ist UND kein anderer Karten-Modus läuft → keine Kollision mit A–B.
-      if (!sackgassenRot || pickMode || poiConnectMode || !s.clickable) return;
-      pl.bindTooltip(s.kind === 'blue' ? 'abgeschnitten (blau) — Klick: zurück' : 'Klick: abgeschnitten (blau)',
-        { sticky: true, opacity: 0.9, direction: 'right', offset: [12, 0] });
-      pl.on('click', (ev) => { L.DomEvent.stop(ev); toggleCut(s.key); });
+      return m;
     };
-    const draw = (s: typeof styled[number]) => {
-      // Asphalt (nur Grundfarbe): weiß mit schwarzer Einfassung beidseitig (Casing).
-      if (s.kind === 'base' && s.asphalt) {
-        L.polyline(s.ge.points, { color: '#1a202c', weight: s.weight + 2.5, opacity: 0.95 }).addTo(layer);
-        const top = L.polyline(s.ge.points, { color: '#ffffff', weight: s.weight / 2, opacity: 1 });
-        attach(top, s);
-        top.addTo(layer);
-        return;
-      }
-      const pl = L.polyline(s.ge.points, {
-        color: s.color, weight: s.kind === 'base' ? s.weight : 3,
-        opacity: s.kind === 'base' ? 0.85 : 0.95,
-      });
-      attach(pl, s);
-      pl.addTo(layer);
-    };
-    // Zeichenreihenfolge: Grundfarben unten, dann Brücken, dann rot, dann blau oben.
-    for (const s of styled) if (s.kind === 'base') draw(s);
-    for (const b of bridges) {
-      L.polyline(b.points, {
-        color: BRIDGE_COLOR, weight: 2, opacity: 0.9, dashArray: '4 4',
-      }).addTo(layer);
+    let net = 0; let asph = 0; let rest = 0;
+    for (const e of derived.edges) {
+      const m = len(e.points);
+      if (e.klass === 'net') { net += m; if (e.asphalt) asph += m; } else rest += m;
     }
-    for (const s of styled) if (s.kind === 'red') draw(s);
-    for (const s of styled) if (s.kind === 'blue') draw(s);
+    const ns = netStats(netModel.edges.map((e) => ({ id: e.id, highway: '', source: 'primary' as const, points: e.points, tags: {}, inNet: true })));
+    setNetSummary({ net, wander: net - asph, asphalt: asph, rest, bytes: ns.bytes, points: ns.pointCount });
 
-    // Entfernen: ausgeschlossene Teilstücke als blasse Geister zeigen (im
-    // Entfernen-Modus per Klick zurückholbar).
-    if (excludedKeys.size) {
-      for (const ge of graph0.edges) {
-        const key = `${ge.edgeId}:${ge.seg}`;
-        if (!excludedKeys.has(key)) continue;
-        const pl = L.polyline(ge.points, { color: '#cbd5e0', weight: 2, opacity: 0.7, dashArray: '2 4' });
-        if (removeMode) {
-          pl.bindTooltip('entfernt — Klick: zurück', { sticky: true, opacity: 0.9, direction: 'right', offset: [12, 0] });
-          pl.on('click', (ev) => { L.DomEvent.stop(ev); toggleExclude(key); });
-        }
-        pl.addTo(layer);
-      }
-    }
+    // Trassier-Basis: OP + OSM-Pool als PathEdge (für buildRoutePath).
+    const routeEdges: PathEdge[] = [...netModel.edges, ...osmPool].map((e) => ({ id: e.id, highway: '', source: 'primary', points: e.points, tags: {}, inNet: true }));
+    edgesRef.current = routeEdges;
 
-    // T2: Anwähl-Modus — Zwei-Punkt A→B. Klick A (beliebiger Punkt auf einem Weg
-    // oder einer Straße), dann B. Das Routing spannt über den genodeten Graphen
-    // ALLER Kanten — über beliebig viele Ways und Kreuzungen hinweg, ohne dass
-    // zwischen Einzelpunkten geklickt werden muss. Die Hover-Spur zwischen A und B
-    // entscheidet Verzweigungen. Fehlt die Verbindung (Lücke in OSM), kommt ein
-    // gerades Stück A→B. Orange/lila = aufgenommen (Klick raus).
     if (pickMode) {
-      // A→B abschließen: routen + aufnehmen.
-      const commitPick = (bLat: number, bLng: number) => {
+      const commitPick = (bLat: number, bLng: number): void => {
         const a = pendingConnectRef.current;
         if (!a) return;
         const route = buildRoutePath(edgesRef.current, [a.lat, a.lng], [bLat, bLng], hoverTrailRef.current);
         if (route && route.points.length >= 2) {
-          // Dominante Quell-Straße am Routen-Mittelpunkt → highway/tags/Asphalt.
           const mid = route.points[Math.floor(route.points.length / 2)];
-          let best = Infinity; let src: PathEdge | null = null;
-          for (const e of edgesRef.current) {
+          let best = Infinity; let asphHit = false;
+          for (const e of [...netModel.edges, ...osmPool]) {
             for (const p of e.points) {
               const d = (p[0] - mid[0]) ** 2 + (p[1] - mid[1]) ** 2;
-              if (d < best) { best = d; src = e; }
+              if (d < best) { best = d; asphHit = e.asphalt; }
             }
           }
-          const asph = route.mode === 'straight' ? false : (src ? isAsphalt(src) : false);
-          addPiece(src?.id ?? -1, route.points, {
-            highway: src?.highway, tags: src?.tags, asphalt: asph, straight: route.mode === 'straight',
-          });
+          pushModel(addDrawnEdge(netModel, route.points, route.mode === 'straight' ? false : asphHit));
         }
         setPendingConnect(null);
         pendingConnectRef.current = null;
         hoverTrailRef.current = [];
         pickPreviewRef.current?.clearLayers();
       };
-      // Klickbare Overlays über JEDE Kante (Straße sichtbar grau, Netz unsichtbar
-      // breit zum Treffen). Klick setzt A bzw. löst B aus.
-      for (const e of res.edges) {
-        const isCand = e.source !== 'primary' && !e.inNet;
-        const pl = isCand
-          ? L.polyline(e.points, { color: CAND_COLOR, weight: 2, opacity: 0.9, dashArray: '5 5' })
-          : L.polyline(e.points, { color: '#000', weight: 10, opacity: 0 }); // unsichtbarer Hit-Bereich
+      for (const e of osmPool) {
+        const pl = L.polyline(e.points, { color: '#a0aec0', weight: 2, opacity: 0.9, dashArray: '5 5' });
         pl.bindTooltip(
-          pendingConnect ? 'Punkt B klicken → A→B wird über die Wege geroutet'
-            : 'Punkt A klicken (Weg oder Straße), dann B',
-          { sticky: true, opacity: 0.9, direction: 'right', offset: [12, 0] },
+          pendingConnect ? 'Punkt B klicken → A→B wird über die Wege geroutet' : 'Punkt A klicken (über OSM ziehen), dann B',
+          { sticky: true, direction: 'right', offset: [12, 0], opacity: 0.9 },
         );
         pl.on('click', (ev) => {
           L.DomEvent.stop(ev);
           const ll = (ev as L.LeafletMouseEvent).latlng;
-          if (pendingConnectRef.current) {
-            commitPick(ll.lat, ll.lng);
-          } else {
+          if (pendingConnectRef.current) { commitPick(ll.lat, ll.lng); }
+          else {
             setPendingConnect({ lat: ll.lat, lng: ll.lng });
             pendingConnectRef.current = { lat: ll.lat, lng: ll.lng };
             hoverTrailRef.current = [[ll.lat, ll.lng]];
@@ -1091,26 +916,10 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
         });
         pl.addTo(layer);
       }
-      // Marker für den gesetzten ersten Punkt A.
       if (pendingConnect) {
-        L.circleMarker([pendingConnect.lat, pendingConnect.lng], {
-          radius: 5, color: PICK_COLOR, weight: 3, fillColor: '#fff', fillOpacity: 1,
-        }).bindTooltip('Punkt A — jetzt B setzen; fahre die gewünschte Strecke mit dem Cursor ab', { direction: 'top', offset: [0, -8], opacity: 0.9 }).addTo(layer);
-      }
-      // Aufgenommene Teilstücke obenauf, NUR Anzeige: Asphalt = weiß mit lila
-      // Einfassung, andere Sorten = lila. Kein Klick-Löschen mehr im A→B-Modus
-      // (verwirrte + traf beim B-Setzen versehentlich); Zurücksetzen über den
-      // Sammel-Button im Filter-Menü. Durchweg nicht-interaktiv, damit Klicks
-      // zur darunterliegenden Straße durchfallen.
-      for (const p of manualPieces.values()) {
-        const src = byId.get(p.roadId);
-        const asph = p.asphalt ?? (src ? isAsphalt(src) : true);
-        if (asph) {
-          L.polyline(p.points, { color: PICK_COLOR, weight: 5, opacity: 0.95, interactive: false }).addTo(layer);
-          L.polyline(p.points, { color: '#ffffff', weight: 2, opacity: 1, interactive: false }).addTo(layer);
-        } else {
-          L.polyline(p.points, { color: PICK_COLOR, weight: 3, opacity: 0.95, interactive: false }).addTo(layer);
-        }
+        L.circleMarker([pendingConnect.lat, pendingConnect.lng], { radius: 5, color: '#9333ea', weight: 3, fillColor: '#fff', fillOpacity: 1 })
+          .bindTooltip('Punkt A — jetzt B setzen; fahre die Strecke mit dem Cursor ab', { direction: 'top', offset: [0, -8], opacity: 0.9 })
+          .addTo(layer);
       }
     }
   };
@@ -1179,31 +988,11 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     }
   };
 
-  // F7.3: Maskierung = REVERSIBLE Vorschau (Zwischenspeicher). masked an → Netz-
-  // Crop-Vorschau inkl. Gate-POIs; aus → voller Netz-Zustand zurück. Der echte,
-  // destruktive Crop passiert UNSICHTBAR erst am Commit im Workspace — der User
-  // bekommt ihn im Drawer nicht als Aktion zu sehen. Nichts wird persistiert.
+  // Render: bei jeder Modell-/Modus-Änderung neu zeichnen (deriveNet → drawNet).
+  // (Maskierung/B2-Crop ist ein eigener späterer Schritt — hier noch nicht aktiv.)
   useEffect(() => {
-    if (!pathResult) return;
-    if (masked && maskPolygon && maskPolygon.length >= 3) {
-      const res = cropNetToMask(pathResult.edges, maskPolygon);
-      setCropResult(res);
-      renderPath({ ...pathResult, edges: res.edges });
-      renderGates(res.gates);
-    } else {
-      setCropResult(null);
-      renderPath(pathResult);
-      renderGates(null);
-    }
-  }, [masked]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // E2b: Schwelle/Sackgassen-Toggle ändern nur die Färbung → ohne neuen Fetch
-  // den aktuellen Zustand (maskiert oder voll) neu zeichnen.
-  useEffect(() => {
-    if (!pathResult) return;
-    if (masked && cropResult) renderPath({ ...pathResult, edges: cropResult.edges });
-    else renderPath(pathResult);
-  }, [netLenThresh, sackgassenRot, gapTol, cutEdges, pickMode, manualPieces, removeMode, excludedKeys, pendingConnect, dpEps, coordDecimals, poiConnectMode]); // eslint-disable-line react-hooks/exhaustive-deps
+    renderPath();
+  }, [netModel, osmPool, pickMode, removeMode, pendingConnect]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // F7-Neufassung: Die Handoff-Brücke entfällt. Der Drawer schreibt direkt in den
   // Workspace-Draft (onSave); der Commit lebt im Workspace.
@@ -1252,7 +1041,16 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       const res = await deriveWanderwegnetz(src, cfg, ctrl.signal);
       if (ctrl.signal.aborted) return;
       setPathResult(res);
-      renderPath(res);
+      // Modell speisen: OP = primäres Netz, OSM-Pool = Connector-Kandidaten.
+      const opEdges: ModelEdge[] = res.edges
+        .filter((e) => e.source === 'primary')
+        .map((e) => ({ id: e.id, points: e.points, source: 'osm', asphalt: isAsphalt(e) }));
+      const pool: ModelEdge[] = res.edges
+        .filter((e) => e.source !== 'primary')
+        .map((e) => ({ id: e.id, points: e.points, source: 'osm', asphalt: isAsphalt(e) }));
+      undoRef.current = [];
+      setOsmPool(pool);
+      setNetModel({ edges: opEdges, excluded: [], gates: [] });
       // Frisches Netz → alter Crop ist hinfaellig.
       setCropResult(null);
       renderGates(null);
@@ -1284,7 +1082,9 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     setPathResult(null);
     setAnchorSummary(null);
     setCropResult(null);
-    renderPath(null);
+    setOsmPool([]);
+    setNetModel(emptyModel());
+    renderPath();
     renderAnchors(null);
     renderGates(null);
     // Regel B: ohne eigene Boundary/Katalog leiht der Inspector den Fokus.
@@ -1304,7 +1104,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     if (!cropResult) return;
     setCropResult(null);
     renderGates(null);
-    if (pathResult) renderPath(pathResult);
+    renderPath();
   }, [maskPolygon]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const onTetraFace = (f: RepresentBuildFace) => {
@@ -1386,48 +1186,50 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       ),
     },
     {
-      id: 'netz', side: 'right', tabs: ['wegnetz'],
-      node: (
-        <ToolSlider label="Netz-Schwelle" value={netLenThresh} min={0} max={3000} step={25} onChange={setNetLenThresh} />
-      ),
-    },
-    {
-      id: 'sackgassen', side: 'right', tabs: ['wegnetz'],
-      node: (
-        <ToolToggle
-          active={sackgassenRot}
-          onClick={() => setSackgassenRot((v) => !v)}
-          label="⚠ Sackgassen"
-          title="Sackgassen (degree-1-Enden) rot einblenden"
-        />
-      ),
-    },
-    {
-      id: 'verbinden', side: 'right', tabs: ['wegnetz'],
-      node: (
-        <ToolSlider label="Verbinden (inkl. verschmelzen)" value={gapTol} min={0} max={50} step={1} onChange={setGapTol} />
-      ),
-    },
-    {
-      id: 'osm', side: 'right', tabs: ['wegnetz'],
+      id: 'trassieren', side: 'right', tabs: ['wegnetz'],
       node: (
         <ToolToggle
           active={pickMode}
           onClick={() => { setPickMode((v) => !v); setPendingConnect(null); setRemoveMode(false); setPoiConnectMode(false); }}
-          label="⊟ OSM-Wege"
-          title="OSM-Straßen zeigen; Punkt A → Punkt B auf derselben Straße füllt den Asphalt dazwischen"
+          label="✎ Trassieren"
+          title="Über OSM ziehen → Vorschau; Drop legt ein lila Stück ab, das mit dem Netz verschmilzt"
         />
       ),
     },
     {
-      id: 'entfernen', side: 'right', tabs: ['wegnetz'],
+      id: 'loeschen', side: 'right', tabs: ['wegnetz'],
       node: (
         <ToolToggle
           active={removeMode}
           onClick={() => { setRemoveMode((v) => !v); setPickMode(false); setPendingConnect(null); setPoiConnectMode(false); }}
-          label="🗑 Entfernen"
-          title="Segmente per Klick entfernen (grün oder schwarz) ↔ zurück"
+          label="🗑 Löschen"
+          title="Teilstück anklicken → raus (isoliert / Sackgasse / zwischen Kreuzungen)"
         />
+      ),
+    },
+    {
+      id: 'alles-rot', side: 'right', tabs: ['wegnetz'],
+      node: (
+        <button
+          onClick={() => pushModel(deleteAllRed(netModel))}
+          title="Alles Rote löschen (nicht verbunden + Sackgassen)"
+          style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 5, border: '1px solid #e53e3e', background: '#fff5f5', color: '#c53030', cursor: 'pointer' }}
+        >
+          ⊘ Alles Rote löschen
+        </button>
+      ),
+    },
+    {
+      id: 'undo', side: 'right', tabs: ['wegnetz'],
+      node: (
+        <button
+          onClick={undoModel}
+          disabled={undoRef.current.length === 0}
+          title="Letzten Schritt zurück"
+          style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 5, border: '1px solid #cbd5e0', background: '#fff', color: undoRef.current.length === 0 ? '#a0aec0' : '#2d3748', cursor: undoRef.current.length === 0 ? 'not-allowed' : 'pointer' }}
+        >
+          ↶ Undo
+        </button>
       ),
     },
     {
@@ -1690,13 +1492,13 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
             onCfgChange={setCurrentCfg}
             status={pathStatus}
             error={pathError}
-            includeCount={manualPieces.size}
-            onClearInclude={() => setManualPieces(new Map())}
-            cutCount={cutEdges.size}
-            onClearCut={() => setCutEdges(new Set())}
-            excludedCount={excludedKeys.size}
-            onRemoveGreen={() => setExcludedKeys((prev) => new Set([...prev, ...greenKeysRef.current]))}
-            onClearExcluded={() => setExcludedKeys(new Set())}
+            includeCount={netModel.edges.filter((e) => e.source === 'drawn').length}
+            onClearInclude={() => pushModel({ ...netModel, edges: netModel.edges.filter((e) => e.source !== 'drawn') })}
+            cutCount={0}
+            onClearCut={() => { /* kein separater Cut mehr */ }}
+            excludedCount={netModel.excluded.length}
+            onRemoveGreen={() => pushModel(deleteAllRed(netModel))}
+            onClearExcluded={() => pushModel({ ...netModel, excluded: [] })}
           />
         )}
         <div ref={mapContainerRef} style={{ flex: 1, minHeight: 0, minWidth: 0 }} />
@@ -1750,11 +1552,10 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
                 <span style={{ fontWeight: 400, color: '#2f6f4f' }}> ( Wanderweg {Math.round(netSummary.wander)} m · <span style={{ color: '#1a202c' }}>Asphalt {Math.round(netSummary.asphalt)} m</span> )</span>
               </span>
             )}
-            <span><span style={{ display: 'inline-block', width: 14, borderTop: '3px solid #222a35', verticalAlign: 'middle' }} /> <b>Netz</b> (schwarz, ≥{netLenThresh} m)</span>
-            <span><span style={{ display: 'inline-block', width: 14, borderTop: '2px solid #1f9d8f', verticalAlign: 'middle' }} /> <b>Rest</b>{netSummary && <span style={{ color: '#718096' }}> (∉ {Math.round(netSummary.rest)} m)</span>}</span>
+            <span><span style={{ display: 'inline-block', width: 14, borderTop: '3px solid #1a202c', verticalAlign: 'middle' }} /> <b>Netz</b> (längste Komponente)</span>
+            <span><span style={{ display: 'inline-block', width: 14, borderTop: '3px solid #e53e3e', verticalAlign: 'middle' }} /> <b>rot</b>{netSummary && <span style={{ color: '#718096' }}> (∉ {Math.round(netSummary.rest)} m)</span>}</span>
             <span><span style={{ display: 'inline-block', width: 14, height: 5, background: '#fff', border: '1.5px solid #1a202c', verticalAlign: 'middle' }} /> <b>Asphalt</b></span>
-            {sackgassenRot && <span><span style={{ display: 'inline-block', width: 14, borderTop: '3px solid #e53e3e', verticalAlign: 'middle' }} /> Sackgassen</span>}
-            {cutEdges.size > 0 && <span><span style={{ display: 'inline-block', width: 14, borderTop: '3px solid #3182ce', verticalAlign: 'middle' }} /> {cutEdges.size} abgeschnitten</span>}
+            <span><span style={{ display: 'inline-block', width: 14, borderTop: '3px solid #9333ea', verticalAlign: 'middle' }} /> <b>lila</b> (trassiert)</span>
             <span style={{ color: '#718096' }}>{pathResult.primaryCount} primär · {pathResult.connectorCount} Konnekt. · {pathResult.rawWayCount} Ways</span>
             {netSummary && (
               <span style={{ fontFamily: 'monospace', color: '#2c5282' }}>
@@ -2122,25 +1923,6 @@ function ReopenTab({ label, onClick }: { label: string; onClick: () => void }) {
 }
 
 // US3 — kompakter Inline-Schieber für die Tool-Header-Leiste (Label oben, Wert mit).
-function ToolSlider({
-  label, value, min, max, step, unit = 'm', onChange,
-}: {
-  label: string; value: number; min: number; max: number; step: number; unit?: string; onChange: (v: number) => void;
-}) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 1, minWidth: 104 }}>
-      <span style={{ fontSize: 9, fontWeight: 700, color: '#4a5568', textAlign: 'center', whiteSpace: 'nowrap' }}>
-        {label} <span style={{ fontFamily: 'monospace', color: '#2b6cb0' }}>{value}{unit}</span>
-      </span>
-      <input
-        type="range" min={min} max={max} step={step} value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        style={{ width: '100%', margin: 0 }}
-      />
-    </div>
-  );
-}
-
 // US1 — generischer Tool-Knopf für die Tool-Header-Leiste (Toggle/Aktion).
 function ToolToggle({
   label, title, active, onClick, disabled,
