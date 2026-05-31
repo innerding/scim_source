@@ -190,6 +190,9 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   // eigene Werkzeuge (kein Rechteck, kein globales disable → kein Weißer-Screen).
   const [umrissDraw, setUmrissDraw] = useState(false);
   const [umrissEdit, setUmrissEdit] = useState(false);
+  // UÖ6: sobald B2 existiert, ist B2 default bearbeitbar; B1 nur, wenn editB1 an
+  // (Toggle erscheint nach „Bearbeiten"). B1 bleibt sonst Snap-Quelle.
+  const [editB1, setEditB1] = useState(false);
 
   // Ebenen-Steuerleiste (Umbauplan A): Dimmer + On/Off je Layer, auf beide Tabs
   // wirksam. (1) OSM-Tiles, (2) editierbare Boundary, (3) Inspector-R-Vorlage.
@@ -520,9 +523,9 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
         tooltips: false,
         cursorMarker: false,
         // Zeichen-Stroke dezent (Stärke ~0.6) + leichte, dünne Hintline.
-        pathOptions: { color: SLOT1_COLOR, weight: 2, opacity: 0.6, fillOpacity: 0 },
-        templineStyle: { color: SLOT1_COLOR, weight: 1, opacity: 0.6 },
-        hintlineStyle: { color: SLOT1_COLOR, weight: 1, opacity: 0.4, dashArray: '4 5' },
+        pathOptions: { color: SLOT1_COLOR, weight: 2, opacity: 0.9, fillOpacity: 0 },
+        templineStyle: { color: SLOT1_COLOR, weight: 2, opacity: 0.85 },
+        hintlineStyle: { color: SLOT1_COLOR, weight: 1.5, opacity: 0.5, dashArray: '4 5' },
       });
     } else {
       pm?.disableDraw?.();
@@ -531,11 +534,17 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     const b1 = polygonLayerRef.current as any;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const b2 = maskLayerRef.current as any;
-    if (umrissEdit) { b1?.pm?.enable?.({ allowSelfIntersection: false }); b2?.pm?.enable?.({ allowSelfIntersection: false }); }
-    else { b1?.pm?.disable?.(); b2?.pm?.disable?.(); }
+    // Punkt löschen: Geoman entfernt einen Stützpunkt per Rechtsklick (contextmenu).
+    pm?.setGlobalOptions?.({ removeVertexOn: 'contextmenu' });
+    const hasB2 = !!(maskPolygon && maskPolygon.length >= 3);
+    if (umrissEdit) {
+      // B2 default bearbeitbar; B1 nur ohne B2 ODER wenn editB1 an (sonst Snap-Quelle).
+      if (hasB2) b2?.pm?.enable?.({ allowSelfIntersection: false }); else b2?.pm?.disable?.();
+      if (!hasB2 || editB1) b1?.pm?.enable?.({ allowSelfIntersection: false }); else b1?.pm?.disable?.();
+    } else { b1?.pm?.disable?.(); b2?.pm?.disable?.(); }
     // Feines Fadenkreuz nur im Zeichnen-Modus.
     mapContainerRef.current?.classList.toggle('scim-draw-cursor', tab === 'umriss' && !masked && umrissDraw);
-  }, [umrissDraw, umrissEdit, tab, masked]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [umrissDraw, umrissEdit, editB1, maskPolygon, tab, masked]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Karte neu vermessen + auf die Inspector-R zoomen — NUR bei echtem Tab-Wechsel,
   // nicht beim Maskieren (sonst springt/zoomt die Karte unerwartet, F7.3a-Fix).
@@ -1242,10 +1251,23 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
           active={umrissEdit}
           onClick={() => { setUmrissEdit((v) => !v); setUmrissDraw(false); }}
           label="✎ Bearbeiten"
-          title="Stützpunkte ziehen/verschieben (Vertex-Drag)"
+          title="Stützpunkte ziehen/verschieben (Vertex-Drag) · Rechtsklick auf Punkt = löschen"
         />
       ),
     },
+    // UÖ6: B1-Bearbeiten-Toggle — nur sichtbar, wenn bearbeitet wird UND B2 existiert
+    // (sonst ist B2 default; B1 ist gesperrt = nur Snap-Quelle).
+    ...(umrissEdit && maskPolygon && maskPolygon.length >= 3 ? [{
+      id: 'umriss-editb1', side: 'left' as const, tabs: ['umriss'] as DrawerTab[],
+      node: (
+        <ToolToggle
+          active={editB1}
+          onClick={() => setEditB1((v) => !v)}
+          label="B1 bearbeiten"
+          title="B1 (Referenz) ebenfalls bearbeitbar machen — sonst gesperrt (nur Snap-Quelle)"
+        />
+      ),
+    }] : []),
     {
       id: 'snap', side: 'center', tabs: ['umriss', 'wegnetz'],
       node: (
