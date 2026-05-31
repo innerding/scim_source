@@ -250,13 +250,16 @@ export function addRoadHeatMesh(
   edges: Edge[],
   bbox: [number, number, number, number],
   pois: POI[],
+  allowSynthetic: boolean = true,
 ): void {
   const hotspots = generateHotspots(bbox, pois);
 
   // Falls echter Graph duenn (z.B. Mock mit 3 Edges) — synthetisches Netz dazu.
+  // Im Inspector einer echten R abgeschaltet (allowSynthetic=false): dort gibt
+  // es echte Wegnetz-Edges, kein Test-Mesh.
   const allEdges: Edge[] = [];
   if (edges) allEdges.push(...edges);
-  if (allEdges.length < 20) {
+  if (allowSynthetic && allEdges.length < 20) {
     allEdges.push(...generateSyntheticEdges(bbox));
   }
 

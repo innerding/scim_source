@@ -6,6 +6,7 @@
 
 import type {
   BoundaryGeometry, BoundaryGeometryFile, Representation, RepresentationFile,
+  WegnetzFile,
 } from './workspace.types';
 
 // ─── Geometrien ─────────────────────────────────────────────────────────────
@@ -56,4 +57,20 @@ export const REPRESENTATIONS: Representation[] = Object.entries(representationMo
 
 export function representationById(id: string): Representation | undefined {
   return REPRESENTATIONS.find((r) => r.id === id);
+}
+
+// ─── Wegnetze ───────────────────────────────────────────────────────────────
+// Das gespeicherte Wegnetz (edges + gates) einer Representation. Wird im
+// Inspector fuer den Routen/Edges-Layer gebraucht.
+
+const wegnetzModules = import.meta.glob<WegnetzFile>(
+  '../../../data/wegnetze/*.json',
+  { eager: true, import: 'default' },
+);
+
+export const WEGNETZE: WegnetzFile[] = Object.entries(wegnetzModules)
+  .map(([, file]) => file);
+
+export function wegnetzById(id: string): WegnetzFile | undefined {
+  return WEGNETZE.find((w) => w.id === id);
 }

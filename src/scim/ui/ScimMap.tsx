@@ -17,8 +17,9 @@ import type { InspectorAsset } from '../../runtime/repContext';
 import { slugify } from '../../runtime/router';
 import { loadIncludedTypes } from '../regio-content/edgeTypeConfig';
 import { parseCatalogById, CATALOG_REGISTRY } from '../poi-catalog/catalogRegistry';
-import { GEOMETRIES, REPRESENTATIONS } from '../workspace/workspace.registry';
-import type { BoundaryGeometry, Representation } from '../workspace/workspace.types';
+import { GEOMETRIES, REPRESENTATIONS, wegnetzById } from '../workspace/workspace.registry';
+import type { BoundaryGeometry, Representation, WegnetzFile } from '../workspace/workspace.types';
+import { ICON_REGISTRY, iconById } from '../poi-catalog/iconRegistry';
 
 interface OsmEdge {
   edge_id: string;
@@ -43,17 +44,45 @@ interface LayerVisibility {
   boundary: boolean;
   routes: boolean;
   pois: boolean;
+  poiIcons: boolean;   // POIs als echtes Icon (true) oder Platzhalter-Punkt (false)
   colourmesh: boolean;
-  darkBase: boolean;
+  mapBase: boolean;    // Basemap-Tiles ueberhaupt anzeigen
+  darkBase: boolean;   // dunkle Tiles (true) vs. helles OSM (false)
 }
 
 const DEFAULT_VISIBILITY: LayerVisibility = {
   boundary: true,
   routes: false,
   pois: true,
+  poiIcons: true,
   colourmesh: true,
+  mapBase: true,
   darkBase: true,
 };
+
+// Bucket → Kategoriefarbe (parallel zu netDraw.categoryColor; hier auf den
+// Catalog-Bucket statt der Netz-Kategorie). Platzhalter-Punkt und Icon-Rahmen.
+function bucketColor(bucket?: string): string {
+  if (!bucket) return '#1a365d';
+  if (bucket.startsWith('Transport')) return '#2b6cb0';
+  if (bucket.startsWith('Service')) return '#dd6b20';
+  if (bucket.startsWith('Regenerate')) return '#319795';
+  if (bucket.startsWith('Points')) return '#805ad5';
+  if (bucket.startsWith('Square')) return '#4a5568';
+  if (bucket.startsWith('Help')) return '#e53e3e';
+  if (bucket.startsWith('Cluster')) return '#2f855a';
+  return '#1a365d';
+}
+
+// Icon-Eintrag zu einem CatalogPoi.icon-Feld finden — exakt, sonst normalisiert
+// (Case + Sonderzeichen weg), damit Alt-Werte wie 'aussichtspunkt+' noch greifen.
+function findIcon(iconField?: string) {
+  if (!iconField) return undefined;
+  const exact = iconById(iconField);
+  if (exact) return exact;
+  const norm = iconField.toLowerCase().replace(/[^a-z0-9]/g, '');
+  return ICON_REGISTRY.find((e) => e.id.toLowerCase().replace(/[^a-z0-9]/g, '') === norm);
+}
 
 // Polygon (outer ring) -> [minLon, minLat, maxLon, maxLat].
 function polygonBbox(polygon: ReadonlyArray<readonly [number, number] | ReadonlyArray<number>>): [number, number, number, number] | null {
@@ -181,6 +210,21 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
       && !(p.coord[0] === 0 && p.coord[1] === 0)
     ));
   }, [activeRep]);
+  // Gespeichertes Wegnetz der aktiven R (ueber wegnetz_id). Liefert die echten
+  // Edges fuer den Routen/Edges-Layer und das Colour-Mesh.
+  const repWegnetz = useMemo<WegnetzFile | null>(() => {
+    const wid = activeRep?.representation.wegnetz_id;
+    if (!wid) return null;
+    return wegnetzById(wid) ?? null;
+  }, [activeRep]);
+  // Wegnetz-Edges in die Colour-Mesh-Edge-Form ([lon,lat]-coordinates) bringen.
+  const wegnetzAsEdges = useMemo(() => {
+    if (!repWegnetz) return [];
+    return repWegnetz.edges.map((e) => ({
+      edge_id: String(e.id),
+      geometry: { coordinates: e.points.map(([lat, lon]) => [lon, lat] as [number, number]) },
+    }));
+  }, [repWegnetz]);
   // Polygon-Ringe als [lat, lon][] fuer Leaflet vorbereiten.
   const repPolygonLatLng = useMemo(() => {
     if (!activeRep?.geometry) return null;
@@ -211,13 +255,15 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
       wheelDebounceTime: 0,
       preferCanvas: true,
     });
-    // Initiale Base-Tile: darkBase entscheidet, unabhaengig vom Mesh.
-    const initialUrl = DEFAULT_VISIBILITY.darkBase ? TILE_MESH_URL : TILE_OSM_URL;
-    const initialAttr = DEFAULT_VISIBILITY.darkBase ? TILE_MESH_ATTR : TILE_OSM_ATTR;
-    baseTileRef.current = L.tileLayer(initialUrl, {
-      attribution: initialAttr,
-      maxZoom: 19,
-    }).addTo(map);
+    // Initiale Base-Tile: nur wenn mapBase an; darkBase entscheidet den Stil.
+    if (DEFAULT_VISIBILITY.mapBase) {
+      const initialUrl = DEFAULT_VISIBILITY.darkBase ? TILE_MESH_URL : TILE_OSM_URL;
+      const initialAttr = DEFAULT_VISIBILITY.darkBase ? TILE_MESH_ATTR : TILE_OSM_ATTR;
+      baseTileRef.current = L.tileLayer(initialUrl, {
+        attribution: initialAttr,
+        maxZoom: 19,
+      }).addTo(map);
+    }
 
     const layerGroup = L.layerGroup().addTo(map);
     mapRef.current = map;
@@ -231,22 +277,26 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
     };
   }, []);
 
-  // Base-Tile-Layer austauschen, wenn der Dark-Map-Toggle umgelegt wird.
-  // Entkoppelt vom Colour-Mesh-Overlay — beide Achsen frei kombinierbar.
+  // Base-Tile-Layer steuern: mapBase = Tiles ueberhaupt, darkBase = Stil.
+  // Karte aus → Tile-Layer ganz entfernen (nur Container-Hintergrund + Overlays).
+  // Entkoppelt vom Colour-Mesh-Overlay — alle Achsen frei kombinierbar.
   useEffect(() => {
     const map = mapRef.current;
+    if (!map) return;
     const oldBase = baseTileRef.current;
-    if (!map || !oldBase) return;
+    if (!vis.mapBase) {
+      if (oldBase) { map.removeLayer(oldBase); baseTileRef.current = null; }
+      return;
+    }
     const wantUrl = vis.darkBase ? TILE_MESH_URL : TILE_OSM_URL;
     const wantAttr = vis.darkBase ? TILE_MESH_ATTR : TILE_OSM_ATTR;
-    // Vermeide Tausch wenn schon korrekt (Leaflet-internes _url-Feld).
-    const currentUrl = (oldBase as unknown as { _url: string })._url;
-    if (currentUrl === wantUrl) return;
-    map.removeLayer(oldBase);
+    const currentUrl = oldBase ? (oldBase as unknown as { _url: string })._url : null;
+    if (oldBase && currentUrl === wantUrl) return;
+    if (oldBase) map.removeLayer(oldBase);
     baseTileRef.current = L.tileLayer(wantUrl, {
       attribution: wantAttr, maxZoom: 19,
     }).addTo(map);
-  }, [vis.darkBase]);
+  }, [vis.mapBase, vis.darkBase]);
 
   // OSM-Wege via Overpass holen, sobald colourmesh an und bbox bekannt.
   // Hat einen Cache (24h) — beim zweiten Aufruf sofort da.
@@ -345,6 +395,23 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
       }
     }
 
+    // Routen/Edges der aktiven R: das gespeicherte Wegnetz (edges). primary =
+    // echte Wege (dunkle Linie), connector_candidate = Snap-Bruecken (blau,
+    // gestrichelt). points sind bereits [lat,lng].
+    if (vis.routes && activeRep && repWegnetz) {
+      for (const e of repWegnetz.edges) {
+        const pts = e.points;
+        if (!pts || pts.length < 2) continue;
+        const isConnector = e.source === 'connector_candidate';
+        L.polyline(pts as [number, number][], {
+          color: isConnector ? '#2b6cb0' : '#1a1a1a',
+          weight: isConnector ? 1.5 : 2.5,
+          opacity: isConnector ? 0.7 : 0.85,
+          dashArray: isConnector ? '4 4' : undefined,
+        }).addTo(layerGroup);
+      }
+    }
+
     // POI Load class lookup
     const poiLoadClass = new Map<string, string>();
     if (poiModel?.evaluated_pois) {
@@ -367,11 +434,13 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
     const meshBbox = repBbox ?? boundary?.computed_boundary.bbox;
     if (availLayers.colourmesh && vis.colourmesh && meshBbox) {
       const pois = activeRep ? [] : (extraction?.extracted_pois ?? []);
-      const edgesToRender = osmEdges.length > 0
-        ? osmEdges
-        : (activeRep ? [] : (graph?.edges ?? []));
+      // Aktive R: echte Edges — OSM-Wege wenn schon geladen, sonst die
+      // gespeicherten Wegnetz-Edges (sofort da). Niemals synthetisch.
+      const edgesToRender = activeRep
+        ? (osmEdges.length > 0 ? osmEdges : wegnetzAsEdges)
+        : (osmEdges.length > 0 ? osmEdges : (graph?.edges ?? []));
       if (edgesToRender.length > 0) {
-        addRoadHeatMesh(layerGroup, edgesToRender, meshBbox, pois);
+        addRoadHeatMesh(layerGroup, edgesToRender, meshBbox, pois, !activeRep);
       }
       if (pois.length > 0) {
         addPoiRoutes(layerGroup, pois);
@@ -384,19 +453,40 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
     if (availLayers.pois && vis.pois && activeRep && repCatalogPois.length > 0) {
       for (const poi of repCatalogPois) {
         const [lon, lat] = poi.coord;
-        L.circleMarker([lat, lon], {
-          radius: 7,
-          color: '#1a365d',
-          weight: 1.5,
-          fillColor: '#e0eeff',
-          fillOpacity: 0.95,
-        })
-          .bindTooltip(
-            `<strong>${poi.text}</strong><br/>` +
-            `<span style="color:#718096">${poi.subcategory}</span>` +
-            (poi.cluster ? `<br/><em>Cluster: ${poi.cluster}</em>` : ''),
-          )
-          .addTo(layerGroup);
+        const col = bucketColor(poi.bucket);
+        const tooltip =
+          `<strong>${poi.text}</strong><br/>` +
+          `<span style="color:#718096">${poi.subcategory}</span>` +
+          (poi.cluster ? `<br/><em>Cluster: ${poi.cluster}</em>` : '');
+        const entry = vis.poiIcons ? findIcon(poi.icon) : undefined;
+        if (entry?.svg_cleaned) {
+          // Echtes Icon in einem runden Chip (auf hell wie dunkel sichtbar),
+          // Rahmen in Kategoriefarbe. SVG auf 100% gezogen, fuellt den Chip.
+          const svg = entry.svg_cleaned
+            .replace(/width="[^"]*"/, 'width="100%"')
+            .replace(/height="[^"]*"/, 'height="100%"');
+          const html =
+            `<div style="width:30px;height:30px;border-radius:50%;background:#fff;` +
+            `border:2px solid ${col};box-shadow:0 1px 3px rgba(0,0,0,.45);` +
+            `display:flex;align-items:center;justify-content:center;">` +
+            `<div style="width:21px;height:21px;line-height:0;">${svg}</div></div>`;
+          L.marker([lat, lon], {
+            icon: L.divIcon({ html, className: '', iconSize: [30, 30], iconAnchor: [15, 15] }),
+          })
+            .bindTooltip(tooltip)
+            .addTo(layerGroup);
+        } else {
+          // Platzhalter-Punkt in Kategoriefarbe (kein Icon gewaehlt / Toggle aus).
+          L.circleMarker([lat, lon], {
+            radius: 7,
+            color: '#fff',
+            weight: 1.5,
+            fillColor: col,
+            fillOpacity: 0.95,
+          })
+            .bindTooltip(tooltip)
+            .addTo(layerGroup);
+        }
       }
     }
 
@@ -441,7 +531,7 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
         [Math.max(...lats), Math.max(...lons)],
       ]);
     }
-  }, [result, vis, osmEdges, repBbox, repPolygonLatLng, activeRep, repCatalogPois, availLayers]);
+  }, [result, vis, osmEdges, repBbox, repPolygonLatLng, activeRep, repCatalogPois, availLayers, repWegnetz, wegnetzAsEdges]);
 
   if (!result.success) {
     return (
@@ -470,7 +560,8 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
     else if (osmStatus === 'failed') activeLabels.push('Colour-Mesh (synthetisch · OSM-Fehler)');
     else activeLabels.push('Colour-Mesh');
   }
-  if (availLayers.routes && vis.routes && routeLayerModel?.segments?.length) activeLabels.push(`${routeLayerModel.segments.length} Routen`);
+  if (availLayers.routes && vis.routes && activeRep && repWegnetz?.edges?.length) activeLabels.push(`${repWegnetz.edges.length} Edges`);
+  else if (availLayers.routes && vis.routes && !activeRep && routeLayerModel?.segments?.length) activeLabels.push(`${routeLayerModel.segments.length} Routen`);
   // POIs: bei gewaehltem Asset die Katalog-POIs zaehlen, sonst die Pipeline-POIs.
   if (availLayers.pois && vis.pois && activeRep && repCatalogPois.length) activeLabels.push(`${repCatalogPois.length} POIs`);
   else if (availLayers.pois && vis.pois && !activeRep && extraction?.extracted_pois?.length) activeLabels.push(`${extraction.extracted_pois.length} POIs`);
@@ -581,20 +672,24 @@ function Header({
         }}>
           {avail.boundary && <LayerToggle label="Boundary" checked={vis.boundary} onChange={(v) => setVis({ ...vis, boundary: v })} />}
           {avail.pois && <LayerToggle label="POIs" checked={vis.pois} onChange={(v) => setVis({ ...vis, pois: v })} />}
+          {avail.pois && vis.pois && <LayerToggle label="↳ echte Icons" checked={vis.poiIcons} onChange={(v) => setVis({ ...vis, poiIcons: v })} indent />}
           {avail.colourmesh && <LayerToggle label="Colour-Mesh" checked={vis.colourmesh} onChange={(v) => setVis({ ...vis, colourmesh: v })} />}
-          <LayerToggle label="Karte" checked={vis.darkBase} onChange={(v) => setVis({ ...vis, darkBase: v })} />
           {avail.routes && <LayerToggle label="Routen / Edges" checked={vis.routes} onChange={(v) => setVis({ ...vis, routes: v })} />}
+          <div style={{ borderTop: '1px solid #2d4a6a', margin: '6px 0 4px' }} />
+          <LayerToggle label="Karte" checked={vis.mapBase} onChange={(v) => setVis({ ...vis, mapBase: v })} />
+          {vis.mapBase && <LayerToggle label="↳ dunkel" checked={vis.darkBase} onChange={(v) => setVis({ ...vis, darkBase: v })} indent />}
         </div>
       )}
     </div>
   );
 }
 
-function LayerToggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
+function LayerToggle({ label, checked, onChange, indent }: { label: string; checked: boolean; onChange: (v: boolean) => void; indent?: boolean }) {
   return (
     <label style={{
       display: 'flex', alignItems: 'center', gap: 6,
-      padding: '3px 0', cursor: 'pointer', color: '#e0eeff', fontSize: 11,
+      padding: '3px 0', paddingLeft: indent ? 14 : 0, cursor: 'pointer',
+      color: indent ? '#a9c4e0' : '#e0eeff', fontSize: 11,
     }}>
       <input
         type="checkbox" checked={checked}
