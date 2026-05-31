@@ -1384,7 +1384,7 @@ function ExportModal({ originalMd, newMd, fileName, onClose, onCommitted }: {
 
 // ─── Haupt-Komponente ─────────────────────────────────────────────────────────
 
-export default function CatalogTab({ onJumpTo }: { onJumpTo?: (panelId: string) => void } = {}) {
+export default function CatalogTab({ onJumpTo, openCatalogId, onCatalogConsumed }: { onJumpTo?: (panelId: string) => void; openCatalogId?: string | null; onCatalogConsumed?: () => void } = {}) {
   const role = useRole();
   if (role !== 'operator') return null;
 
@@ -1453,6 +1453,15 @@ export default function CatalogTab({ onJumpTo }: { onJumpTo?: (panelId: string) 
     setSlugDraft(null);
     setIncomingIds(new Set());
   }, [region.id]);
+
+  // Sprung mit Ziel-Katalog (z. B. Klick auf den roten Brief im Workspace):
+  // gewünschte Region öffnen statt der Default-Region.
+  useEffect(() => {
+    if (openCatalogId && REGIONS.some((r) => r.id === openCatalogId)) {
+      setRegionId(openCatalogId);
+      onCatalogConsumed?.();
+    }
+  }, [openCatalogId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-save bei jeder State-Änderung (nur wenn Edits vorhanden, sonst Storage leerräumen)
   useEffect(() => {

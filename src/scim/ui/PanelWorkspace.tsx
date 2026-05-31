@@ -32,6 +32,8 @@ interface Props {
   onJumpTo?: (panelId: string, geometryId?: string) => void;
   openGeometryId?: string | null;
   onGeometryConsumed?: () => void;
+  openCatalogId?: string | null;
+  onCatalogConsumed?: () => void;
 }
 
 const TAB_ORDER: TabId[] = ['catalog', 'input', 'simulation', 'result', 'validation', 'leistungsblatt', 'raw'];
@@ -148,13 +150,15 @@ function StubPanel({ id, description }: { id: string; description: string }) {
   );
 }
 
-function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, onGeometryConsumed }: {
+function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, onGeometryConsumed, openCatalogId, onCatalogConsumed }: {
   activeId: string;
   activeTab: TabId;
   result: ScimPipelineResult;
   onJumpTo?: (panelId: string, geometryId?: string) => void;
   openGeometryId?: string | null;
   onGeometryConsumed?: () => void;
+  openCatalogId?: string | null;
+  onCatalogConsumed?: () => void;
 }) {
   const role = useRole();
   if (activeId === WORKSPACE_DESCRIPTOR.id) {
@@ -165,7 +169,7 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
   }
   if (activeId === CATALOG_DESCRIPTOR.id) {
     if (role !== 'operator') return null;
-    return <CatalogTab onJumpTo={onJumpTo} />;
+    return <CatalogTab onJumpTo={onJumpTo} openCatalogId={openCatalogId} onCatalogConsumed={onCatalogConsumed} />;
   }
   if (activeId === SYSTEM_DESCRIPTOR.id) {
     return <SystemPanel activeTab={activeTab} result={result} />;
@@ -207,7 +211,7 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
   }
 }
 
-export default function PanelWorkspace({ activeId, activeTab, onTabChange, result, onJumpTo, openGeometryId, onGeometryConsumed }: Props) {
+export default function PanelWorkspace({ activeId, activeTab, onTabChange, result, onJumpTo, openGeometryId, onGeometryConsumed, openCatalogId, onCatalogConsumed }: Props) {
   const role = useRole();
 
   // Resolve tabs for the current entry
@@ -251,11 +255,11 @@ export default function PanelWorkspace({ activeId, activeTab, onTabChange, resul
       {/* Geometry-Editor braucht volle Hoehe ohne Padding */}
       {activeId === DRAWER_DESCRIPTOR.id ? (
         <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
-          <PanelContent activeId={activeId} activeTab={activeTab} result={result} onJumpTo={onJumpTo} openGeometryId={openGeometryId} onGeometryConsumed={onGeometryConsumed} />
+          <PanelContent activeId={activeId} activeTab={activeTab} result={result} onJumpTo={onJumpTo} openGeometryId={openGeometryId} onGeometryConsumed={onGeometryConsumed} openCatalogId={openCatalogId} onCatalogConsumed={onCatalogConsumed} />
         </div>
       ) : (
         <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
-          <PanelContent activeId={activeId} activeTab={activeTab} result={result} onJumpTo={onJumpTo} openGeometryId={openGeometryId} onGeometryConsumed={onGeometryConsumed} />
+          <PanelContent activeId={activeId} activeTab={activeTab} result={result} onJumpTo={onJumpTo} openGeometryId={openGeometryId} onGeometryConsumed={onGeometryConsumed} openCatalogId={openCatalogId} onCatalogConsumed={onCatalogConsumed} />
         </div>
       )}
     </div>

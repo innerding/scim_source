@@ -543,7 +543,7 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                   {inbox > 0 && (
                     <button
-                      onClick={() => onJumpTo('catalog')}
+                      onClick={() => onJumpTo('catalog', c.id)}
                       title={`${inbox} neue(r) POI(s) vom Drawer — im Katalog öffnen & importieren`}
                       style={{ fontSize: 11, fontWeight: 700, padding: '2px 7px', borderRadius: 4, border: '1px solid #e53e3e', background: '#fff5f5', color: '#c53030', cursor: 'pointer' }}
                     >
@@ -553,7 +553,7 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
                   <EyeButton shown={assetShown('catalog', c.id)} onClick={() => toggleAsset('catalog', c.id)} />
                 </span>
               )}
-              action={{ label: 'Im Katalog öffnen', onClick: () => onJumpTo('catalog') }}
+              action={{ label: 'Im Katalog öffnen', onClick: () => onJumpTo('catalog', c.id) }}
             />
           );
         })}

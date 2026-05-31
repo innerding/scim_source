@@ -19,6 +19,8 @@ export default function App() {
   const [showManual, setShowManual] = useState(false);
   // Beim Sprung in den Geometry-Editor optional die zu oeffnende Boundary mitgeben.
   const [pendingGeometryId, setPendingGeometryId] = useState<string | null>(null);
+  // Beim Sprung ins Katalog-Panel optional die zu oeffnende Katalog-Region mitgeben.
+  const [pendingCatalogId, setPendingCatalogId] = useState<string | null>(null);
 
   // Wrapper: wenn Panel wechselt, default-Tab 'input' setzen
   const goTo = (id: string, tab: TabId = 'input') => {
@@ -50,12 +52,15 @@ export default function App() {
           activeTab={activeTab}
           onTabChange={setActiveTab}
           result={result}
-          onJumpTo={(id, geometryId) => {
-            if (geometryId) setPendingGeometryId(geometryId);
+          onJumpTo={(id, arg) => {
+            if (id === 'catalog' && arg) setPendingCatalogId(arg);
+            else if (arg) setPendingGeometryId(arg);
             goTo(id);
           }}
           openGeometryId={pendingGeometryId}
           onGeometryConsumed={() => setPendingGeometryId(null)}
+          openCatalogId={pendingCatalogId}
+          onCatalogConsumed={() => setPendingCatalogId(null)}
         />
         <div style={{
           flexShrink: 0,
