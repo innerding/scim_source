@@ -33,8 +33,8 @@ import {
   type PathEdge, type GateNode,
 } from '../../regio-content/pathEngine';
 import {
-  deriveNet, addDrawnEdge, deleteKeys, deleteAllRed, emptyModel,
-  type NetModel, type ModelEdge,
+  deriveNet, addDrawnEdge, deleteKeys, deleteAllRed, toggleGatePoi, emptyModel,
+  type NetModel, type ModelEdge, type LatLng,
 } from '../../regio-content/netModel';
 import { drawNet } from '../netDraw';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -144,6 +144,11 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   // Kurzstrecken-Modus: gleiche Geste wie Trassieren, aber feine Toleranzen
   // (kleiner Knoten-Merge + Mindeststück), damit kurze Strecken nicht kollabieren.
   const [shortMode, setShortMode] = useState(false);
+  // Gate-Modus: Klick auf eine rote Sackgassen-Spitze setzt/entfernt ein Gate-POI
+  // (Endpunkt wird gültiger Ein-/Ausstieg → Arm nicht mehr rot).
+  const [gateMode, setGateMode] = useState(false);
+  const netModelRef = useRef<NetModel>(netModel);
+  useEffect(() => { netModelRef.current = netModel; }, [netModel]);
   // Zwei-Punkt-Anwahl: erster Klick A merken, zweiter Klick B (beliebiger Punkt;
   // das A→B-Routing spannt über mehrere Ways/Kreuzungen). Die Hover-Spur zwischen
   // den Klicks entscheidet Verzweigungen.
@@ -233,6 +238,32 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       pickPreviewRef.current?.clearLayers();
     };
   }, [pickMode, shortMode]);
+
+  // Gate-Werkzeug: Klick nahe einer roten Sackgassen-Spitze (oder einem
+  // bestehenden Gate) setzt/entfernt ein Gate-POI → Endpunkt wird gültiger
+  // Ein-/Ausstieg (Arm nicht mehr rot).
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !gateMode) return undefined;
+    const onClick = (ev: L.LeafletMouseEvent) => {
+      const click: LatLng = [ev.latlng.lat, ev.latlng.lng];
+      const m = netModelRef.current;
+      const d = deriveNet(m);
+      const cands: LatLng[] = [...d.deadEnds, ...m.gates.map((g) => g.at)];
+      let best = Infinity; let pick: LatLng | null = null;
+      for (const c of cands) {
+        const mLng = 111320 * Math.cos((c[0] * Math.PI) / 180);
+        const dist = Math.hypot((click[1] - c[1]) * mLng, (click[0] - c[0]) * 110540);
+        if (dist < best) { best = dist; pick = c; }
+      }
+      if (pick && best <= 12) {
+        const at = pick;
+        setNetModel((prev) => { undoRef.current.push(prev); return toggleGatePoi(prev, at); });
+      }
+    };
+    map.on('click', onClick);
+    return () => { map.off('click', onClick); };
+  }, [gateMode]);
 
   // Löschen-Modus (removeMode): Klick auf ein Teilstück → deleteKeys im Modell.
   const [removeMode, setRemoveMode] = useState(false);
@@ -909,6 +940,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     drawNet(layer, derived, {
       onSegmentClick: removeMode ? (k) => pushModel(deleteKeys(netModel, [k])) : undefined,
       pickTooltip: removeMode ? 'Klick: Teilstück löschen' : undefined,
+      showDeadEnds: gateMode,
     });
 
     // Footer-Summen aus dem Modell.
@@ -1012,7 +1044,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   // (Maskierung/B2-Crop ist ein eigener späterer Schritt — hier noch nicht aktiv.)
   useEffect(() => {
     renderPath();
-  }, [netModel, osmPool, pickMode, shortMode, removeMode, pendingConnect]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [netModel, osmPool, pickMode, shortMode, removeMode, gateMode, pendingConnect]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // F7-Neufassung: Die Handoff-Brücke entfällt. Der Drawer schreibt direkt in den
   // Workspace-Draft (onSave); der Commit lebt im Workspace.
@@ -1210,7 +1242,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       node: (
         <ToolToggle
           active={pickMode}
-          onClick={() => { setPickMode((v) => !v); setShortMode(false); setPendingConnect(null); setRemoveMode(false); setPoiConnectMode(false); }}
+          onClick={() => { setPickMode((v) => !v); setShortMode(false); setGateMode(false); setPendingConnect(null); setRemoveMode(false); setPoiConnectMode(false); }}
           label="✎ Trassieren"
           title="Klick A, Strecke abfahren, Klick B → lila Stück, verschmilzt (grobe Treffer-Toleranz)"
         />
@@ -1221,7 +1253,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       node: (
         <ToolToggle
           active={shortMode}
-          onClick={() => { setShortMode((v) => !v); setPickMode(false); setPendingConnect(null); setRemoveMode(false); setPoiConnectMode(false); }}
+          onClick={() => { setShortMode((v) => !v); setPickMode(false); setGateMode(false); setPendingConnect(null); setRemoveMode(false); setPoiConnectMode(false); }}
           label="⟜ Kurzstrecke"
           title="Wie Trassieren, aber feine Toleranzen für sehr kurze Strecken (kein Kollabieren)"
         />
@@ -1232,9 +1264,20 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       node: (
         <ToolToggle
           active={removeMode}
-          onClick={() => { setRemoveMode((v) => !v); setPickMode(false); setShortMode(false); setPendingConnect(null); setPoiConnectMode(false); }}
+          onClick={() => { setRemoveMode((v) => !v); setPickMode(false); setShortMode(false); setGateMode(false); setPendingConnect(null); setPoiConnectMode(false); }}
           label="🗑 Löschen"
           title="Teilstück anklicken → raus (isoliert / Sackgasse / zwischen Kreuzungen)"
+        />
+      ),
+    },
+    {
+      id: 'gate', side: 'right', tabs: ['wegnetz'],
+      node: (
+        <ToolToggle
+          active={gateMode}
+          onClick={() => { setGateMode((v) => !v); setPickMode(false); setShortMode(false); setRemoveMode(false); setPoiConnectMode(false); setPendingConnect(null); }}
+          label="⚑ Gate"
+          title="Rote Sackgassen-Spitze anklicken → Gate-POI (gültiger Ein-/Ausstieg); nochmal = weg"
         />
       ),
     },
@@ -1268,7 +1311,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       node: (
         <ToolToggle
           active={poiConnectMode}
-          onClick={() => { setPoiConnectMode((v) => !v); setPickMode(false); setShortMode(false); setPendingConnect(null); setRemoveMode(false); }}
+          onClick={() => { setPoiConnectMode((v) => !v); setPickMode(false); setShortMode(false); setGateMode(false); setPendingConnect(null); setRemoveMode(false); }}
           label="🔗 POI-Connect"
           title="POIs 0,5–2 m vom Netz verbinden (jeder einzeln per Klick); >2 m nicht verbindbar"
         />

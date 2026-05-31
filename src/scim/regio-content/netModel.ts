@@ -50,6 +50,7 @@ export interface DerivedNet {
   pois: DerivedPoi[];
   redKeys: string[];
   netMeters: number;
+  deadEnds: LatLng[];   // degree-1-Enden OHNE Gate-POI (rote Sackgassen-Spitzen)
 }
 
 export function emptyModel(): NetModel {
@@ -282,7 +283,12 @@ export function deriveNet(model: NetModel, poiCoords: LatLng[] = []): DerivedNet
     gate: model.gates.some((g) => distM(g.at, at) <= WELD_TOL_M),
   }));
 
-  return { edges, bridges: integrated.bridges, pois, redKeys, netMeters };
+  // Rote Sackgassen-Spitzen = degree-1-Knoten, die KEIN Gate sind.
+  const deadEnds: LatLng[] = graph.nodes
+    .filter((n) => n.degree === 1 && !gateNodeIds.has(n.id))
+    .map((n) => [n.lat, n.lng] as LatLng);
+
+  return { edges, bridges: integrated.bridges, pois, redKeys, netMeters, deadEnds };
 }
 
 // ─── Aktionen (rein: NetModel -> NetModel) ──────────────────────────────────────
@@ -320,5 +326,12 @@ export function deleteAllRed(model: NetModel): NetModel {
 }
 
 export function setGatePoi(model: NetModel, at: LatLng, poiId?: string): NetModel {
+  return { ...model, gates: [...model.gates, { at, poiId }] };
+}
+
+/** Gate am Punkt setzen oder (falls dort schon eins ist) entfernen. */
+export function toggleGatePoi(model: NetModel, at: LatLng, poiId?: string, tolMeters = HIT_TOL_M): NetModel {
+  const hit = model.gates.find((g) => distM(g.at, at) <= tolMeters);
+  if (hit) return { ...model, gates: model.gates.filter((g) => g !== hit) };
   return { ...model, gates: [...model.gates, { at, poiId }] };
 }

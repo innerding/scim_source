@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  deriveNet, addDrawnEdge, deleteAllRed, setGatePoi, emptyModel,
+  deriveNet, addDrawnEdge, deleteAllRed, setGatePoi, toggleGatePoi, emptyModel,
   type NetModel, type ModelEdge, type LatLng,
 } from './netModel';
 
@@ -39,6 +39,16 @@ describe('netModel — Sackgassen-Arm', () => {
     expect(armEdges.every((e) => e.klass === 'red')).toBe(true);
     // Dreieck-Kern bleibt Netz.
     expect(d.edges.filter((e) => e.wayId <= 3).every((e) => e.klass === 'net')).toBe(true);
+  });
+
+  it('deadEnds listet die rote Spitze; toggleGatePoi setzt und entfernt', () => {
+    const tip: LatLng = [-0.0006, 0];
+    const m0 = model([...triangle(), arm]);
+    expect(deriveNet(m0).deadEnds.some((p) => Math.abs(p[0] - tip[0]) < 1e-6)).toBe(true);
+    const m1 = toggleGatePoi(m0, tip);        // setzen
+    expect(deriveNet(m1).edges.filter((e) => e.wayId === 4).every((e) => e.klass === 'net')).toBe(true);
+    const m2 = toggleGatePoi(m1, tip);        // entfernen
+    expect(deriveNet(m2).edges.filter((e) => e.wayId === 4).every((e) => e.klass === 'red')).toBe(true);
   });
 
   it('Gate-POI an der Spitze macht den Arm gültig (net)', () => {

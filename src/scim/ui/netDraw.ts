@@ -25,6 +25,8 @@ export interface DrawNetOptions {
   onSegmentClick?: (key: string) => void;
   /** Trassier-/Lösch-Hinweis im Tooltip. */
   pickTooltip?: string;
+  /** Gate-Werkzeug aktiv → rote Sackgassen-Spitzen als Ringe markieren. */
+  showDeadEnds?: boolean;
 }
 
 // Brückenzeichen: an der Überfliegung zwei kurze Striche quer zur oberen Linie
@@ -94,6 +96,13 @@ export function drawNet(layer: L.LayerGroup, net: DerivedNet, opts: DrawNetOptio
       }
     }
     drawBridgeMark(layer, b.at, dir);
+  }
+
+  // 2b) Gate-Werkzeug: rote Sackgassen-Spitzen als anklickbare Ringe markieren.
+  if (opts.showDeadEnds) {
+    for (const at of net.deadEnds) {
+      L.circleMarker(at, { radius: 6, color: COLOR.red, weight: 2, fillColor: '#fff', fillOpacity: 0.9, interactive: false }).addTo(layer);
+    }
   }
 
   // 3) POIs: verbunden = ruhig, unverbunden = blinkt, Gate = eigener Marker.
