@@ -1368,7 +1368,9 @@ function PathFilterMenu({
   cutCount: number;
   onClearCut: () => void;
 }) {
-  const [collapsed, setCollapsed] = useState(false);
+  // US2: zwei gestapelte Drop-Panels links — Filter + Profi, immer nur eins offen;
+  // null = beide eingeklappt (zwei vertikale Reopen-Tabs).
+  const [panelOpen, setPanelOpen] = useState<'filter' | 'pro' | null>('filter');
   const [cfg, setCfg] = useState<PathConfig>(() => loadPathConfig(gebiet));
 
   // Bei Gebietswechsel (andere Inspector-R) neue Config laden
@@ -1382,42 +1384,80 @@ function PathFilterMenu({
 
   const update = (fn: (c: PathConfig) => PathConfig) => setCfg((c) => fn(c));
 
-  if (collapsed) {
+  // Profi-Panel-Inhalt (selten gebrauchte Defaults).
+  const proBody = (
+    <>
+      <Section title="Ausschlüsse">
+        <Check
+          label="foot=no"
+          checked={cfg.ausschluesse.foot_no}
+          onChange={(v) => update((c) => ({ ...c, ausschluesse: { ...c.ausschluesse, foot_no: v } }))}
+        />
+        <Check
+          label="access=private"
+          checked={cfg.ausschluesse.access_private}
+          onChange={(v) => update((c) => ({ ...c, ausschluesse: { ...c.ausschluesse, access_private: v } }))}
+        />
+        <Check
+          label="access=no"
+          checked={cfg.ausschluesse.access_no}
+          onChange={(v) => update((c) => ({ ...c, ausschluesse: { ...c.ausschluesse, access_no: v } }))}
+        />
+      </Section>
+
+      <Section title="Diagnose">
+        <Check
+          label="Lücken markieren"
+          checked={cfg.diagnose.luecken_markieren}
+          onChange={(v) => update((c) => ({ ...c, diagnose: { ...c.diagnose, luecken_markieren: v } }))}
+        />
+        <Slider
+          label="POI-Ausnahme-Distanz"
+          value={cfg.diagnose.sackgasse_poi_ausnahme_meter}
+          min={0} max={100} step={5}
+          onChange={(v) => update((c) => ({ ...c, diagnose: { ...c.diagnose, sackgasse_poi_ausnahme_meter: v } }))}
+        />
+      </Section>
+
+      <Section title="Anker (POI-Verbindung)">
+        <Slider
+          label="Snap-Schwelle"
+          value={cfg.anker.snap_schwelle_meter}
+          min={0.5} max={6} step={0.5}
+          onChange={(v) => update((c) => ({ ...c, anker: { ...c.anker, snap_schwelle_meter: v } }))}
+        />
+        <div style={{ padding: '0 10px', fontSize: 10, color: '#a0aec0', lineHeight: 1.5 }}>
+          Unter der Schwelle gilt der POI als auf dem Pfad; darüber bekommt er
+          einen connected-POI-Stich (ann_074). Gelände-abhängig.
+        </div>
+      </Section>
+    </>
+  );
+
+  // Vollständig eingeklappt → zwei vertikale Reopen-Tabs (Filter oben, Profi unten).
+  if (panelOpen === null) {
     return (
-      <button
-        className="drawer-filter-reopen"
-        onClick={() => { setCollapsed(false); onResized(); }}
-        title="Wegnetz-Filter ausklappen"
-        style={{
-          width: 28, flexShrink: 0, cursor: 'pointer',
-          background: '#edf2f7', border: 'none', borderRight: '1px solid #cbd5e0',
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
-          padding: '10px 0', color: '#2b6cb0',
-        }}
-      >
-        <span style={{ fontSize: 14, fontWeight: 700 }}>▸</span>
-        <span style={{ writingMode: 'vertical-rl', fontSize: 10, fontWeight: 700, letterSpacing: 1, color: '#718096' }}>
-          FILTER
-        </span>
-      </button>
+      <div style={{ display: 'flex', flexDirection: 'column', flexShrink: 0, borderRight: '1px solid #cbd5e0' }}>
+        <ReopenTab label="FILTER" onClick={() => { setPanelOpen('filter'); onResized(); }} />
+        <ReopenTab label="PROFI" onClick={() => { setPanelOpen('pro'); onResized(); }} />
+      </div>
     );
   }
 
+  const isFilter = panelOpen === 'filter';
   return (
     <div style={{
-      width: 290, flexShrink: 0, overflowY: 'auto',
-      background: '#f7fafc', borderRight: '1px solid #cbd5e0',
-      fontSize: 12, color: '#2d3748',
+      width: 290, flexShrink: 0, display: 'flex', flexDirection: 'column',
+      background: '#f7fafc', borderRight: '1px solid #cbd5e0', fontSize: 12, color: '#2d3748',
     }}>
-      {/* Kopf */}
+      {/* Kopf des offenen Panels */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '8px 10px', borderBottom: '1px solid #e2e8f0', background: '#edf2f7',
-        position: 'sticky', top: 0, zIndex: 1,
+        padding: '8px 10px', borderBottom: '1px solid #e2e8f0', background: '#edf2f7', flexShrink: 0,
       }}>
-        <span style={{ fontWeight: 700, color: '#1a365d' }}>Wegnetz-Filter</span>
+        <span style={{ fontWeight: 700, color: '#1a365d' }}>{isFilter ? 'Wegnetz-Filter' : 'Profi'}</span>
         <button
-          onClick={() => { setCollapsed(true); onResized(); }}
+          onClick={() => { setPanelOpen(null); onResized(); }}
           title="Einklappen"
           style={{
             fontSize: 12, padding: '2px 8px', cursor: 'pointer',
@@ -1428,15 +1468,19 @@ function PathFilterMenu({
         </button>
       </div>
 
-      {!canApply && (
-        <div style={{
-          margin: 10, padding: '8px 10px', fontSize: 11, lineHeight: 1.5,
-          background: '#fffaf0', border: '1px solid #fbd38d', borderRadius: 5, color: '#7c2d12',
-        }}>
-          Keine Quelle fürs Netz. Eine Boundary zeichnen, einen Katalog binden
-          oder eine Inspector-Representation wählen.
-        </div>
-      )}
+      {/* Scrollbarer Inhalt des offenen Panels */}
+      <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
+        {isFilter ? (
+          <>
+            {!canApply && (
+              <div style={{
+                margin: 10, padding: '8px 10px', fontSize: 11, lineHeight: 1.5,
+                background: '#fffaf0', border: '1px solid #fbd38d', borderRadius: 5, color: '#7c2d12',
+              }}>
+                Keine Quelle fürs Netz. Eine Boundary zeichnen, einen Katalog binden
+                oder eine Inspector-Representation wählen.
+              </div>
+            )}
 
       <Section title="Region">
         <div style={{ padding: '0 10px 4px', fontSize: 12 }}>
@@ -1594,51 +1638,6 @@ function PathFilterMenu({
         </div>
       </Section>
 
-      <Section title="Ausschlüsse">
-        <Check
-          label="foot=no"
-          checked={cfg.ausschluesse.foot_no}
-          onChange={(v) => update((c) => ({ ...c, ausschluesse: { ...c.ausschluesse, foot_no: v } }))}
-        />
-        <Check
-          label="access=private"
-          checked={cfg.ausschluesse.access_private}
-          onChange={(v) => update((c) => ({ ...c, ausschluesse: { ...c.ausschluesse, access_private: v } }))}
-        />
-        <Check
-          label="access=no"
-          checked={cfg.ausschluesse.access_no}
-          onChange={(v) => update((c) => ({ ...c, ausschluesse: { ...c.ausschluesse, access_no: v } }))}
-        />
-      </Section>
-
-      <Section title="Diagnose">
-        <Check
-          label="Lücken markieren"
-          checked={cfg.diagnose.luecken_markieren}
-          onChange={(v) => update((c) => ({ ...c, diagnose: { ...c.diagnose, luecken_markieren: v } }))}
-        />
-        <Slider
-          label="POI-Ausnahme-Distanz"
-          value={cfg.diagnose.sackgasse_poi_ausnahme_meter}
-          min={0} max={100} step={5}
-          onChange={(v) => update((c) => ({ ...c, diagnose: { ...c.diagnose, sackgasse_poi_ausnahme_meter: v } }))}
-        />
-      </Section>
-
-      <Section title="Anker (POI-Verbindung)">
-        <Slider
-          label="Snap-Schwelle"
-          value={cfg.anker.snap_schwelle_meter}
-          min={0.5} max={6} step={0.5}
-          onChange={(v) => update((c) => ({ ...c, anker: { ...c.anker, snap_schwelle_meter: v } }))}
-        />
-        <div style={{ padding: '0 10px', fontSize: 10, color: '#a0aec0', lineHeight: 1.5 }}>
-          Unter der Schwelle gilt der POI als auf dem Pfad; darüber bekommt er
-          einen connected-POI-Stich (ann_074). Gelände-abhängig.
-        </div>
-      </Section>
-
       {/* Aktionen */}
       <div style={{ padding: '10px', display: 'flex', flexDirection: 'column', gap: 8 }}>
         <button
@@ -1752,11 +1751,49 @@ function PathFilterMenu({
           Netz-Schwelle trennt beide; Sackgassen lassen sich rot einblenden.
         </div>
       </div>
+          </>
+        ) : proBody}
+      </div>
+
+      {/* Umschalt-Leiste zum anderen Panel (immer nur eins offen). */}
+      <button
+        onClick={() => { setPanelOpen(isFilter ? 'pro' : 'filter'); onResized(); }}
+        title={`${isFilter ? 'Profi' : 'Wegnetz-Filter'} öffnen`}
+        style={{
+          flexShrink: 0, cursor: 'pointer', textAlign: 'left',
+          padding: '8px 10px', border: 'none', borderTop: '1px solid #cbd5e0',
+          background: '#edf2f7', color: '#2b6cb0', fontWeight: 700, fontSize: 12,
+        }}
+      >
+        ▸ {isFilter ? 'Profi' : 'Wegnetz-Filter'}
+      </button>
     </div>
   );
 }
 
 // Ebenen-Steuerleiste (A): ein Layer = On/Off-Checkbox + Opacity-Slider.
+// US2 — vertikaler Reopen-Tab für ein eingeklapptes Drop-Panel (Filter/Profi).
+function ReopenTab({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button
+      className="drawer-filter-reopen"
+      onClick={onClick}
+      title={`${label} ausklappen`}
+      style={{
+        width: 28, flex: 1, cursor: 'pointer',
+        background: '#edf2f7', border: 'none', borderRight: '1px solid #cbd5e0', borderBottom: '1px solid #cbd5e0',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+        padding: '10px 0', color: '#2b6cb0',
+      }}
+    >
+      <span style={{ fontSize: 14, fontWeight: 700 }}>▸</span>
+      <span style={{ writingMode: 'vertical-rl', fontSize: 10, fontWeight: 700, letterSpacing: 1, color: '#718096' }}>
+        {label}
+      </span>
+    </button>
+  );
+}
+
 // US1 — generischer Tool-Knopf für die Tool-Header-Leiste (Toggle/Aktion).
 function ToolToggle({
   label, title, active, onClick, disabled,
