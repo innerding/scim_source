@@ -56,3 +56,7 @@ html, body, #root {
   color: #c53030 !important;
   border-color: #e53e3e !important;
 }
+
+/* POI „schreit": Verbindungs-Kandidat (0,5–2 m), bis er bestätigt/abgelehnt ist */
+@keyframes poiScream { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+.poi-scream { animation: poiScream 0.9s ease-in-out infinite; }

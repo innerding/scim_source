@@ -122,6 +122,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   const inspectorRefRef = useRef<L.Polygon | null>(null);
   const pathLayerRef = useRef<L.LayerGroup | null>(null);
   const anchorLayerRef = useRef<L.LayerGroup | null>(null);
+  const poiConnectLayerRef = useRef<L.LayerGroup | null>(null);
   const gateLayerRef = useRef<L.LayerGroup | null>(null);
   const pathAbortRef = useRef<AbortController | null>(null);
 
@@ -169,6 +170,12 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   const [removeMode, setRemoveMode] = useState(false);
   const [excludedKeys, setExcludedKeys] = useState<Set<string>>(new Set());
   const greenKeysRef = useRef<string[]>([]);
+
+  // POI-Connector: Button → POIs 0,5–2 m vom Netz „schreien", jeder einzeln per
+  // Klick verbindbar (Stich). <0,5 m = auf dem Pfad; >2 m = nicht verbindbar →
+  // gilt als nicht akzeptiert (in der End-User-App stark ausgegraut).
+  const [poiConnectMode, setPoiConnectMode] = useState(false);
+  const [acceptedPois, setAcceptedPois] = useState<Set<string>>(new Set());
   // zuletzt angewandte Config (für Anschluss-Toleranz beim manuellen Anwählen).
   const lastCfgRef = useRef<PathConfig | null>(null);
   // E4a — „abgeschnitten" (blau): Sackgassen, hinter denen real ein Weg weitergeht,
@@ -443,6 +450,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     poiLayerRef.current = L.layerGroup().addTo(map);
     pathLayerRef.current = L.layerGroup().addTo(map);
     anchorLayerRef.current = L.layerGroup().addTo(map);
+    poiConnectLayerRef.current = L.layerGroup().addTo(map);
     gateLayerRef.current = L.layerGroup().addTo(map);
     mapRef.current = map;
 
@@ -645,7 +653,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     const layer = poiLayerRef.current;
     if (!map || !layer) return;
     layer.clearLayers();
-    if (!overlayCatalogId || !catalogPoiVisible) return;
+    if (!overlayCatalogId || !catalogPoiVisible || poiConnectMode) return;
     const cat = CATALOGS.find((c) => c.id === overlayCatalogId);
     if (!cat) return;
     const parsed = parsePoiCatalog(cat.md, {
@@ -666,7 +674,52 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       marker.bindTooltip(p.text, { direction: 'top', offset: [0, -8], opacity: 0.9 });
       marker.addTo(layer);
     }
-  }, [overlayCatalogId, catalogPoiVisible, catalogPoiSize]);
+  }, [overlayCatalogId, catalogPoiVisible, catalogPoiSize, poiConnectMode]);
+
+  // POI-Connector (v1): klassifiziert die Katalog-POIs nach Netz-Distanz und macht
+  // 0,5–2-m-Kandidaten per Klick verbindbar. <0,5 m grün (auf dem Pfad); 0,5–2 m
+  // orange & „schreiend" (Klick verbindet → Stich, dann grün); >2 m grau (nicht
+  // verbindbar → unaccepted, in der End-User-App stark ausgegraut).
+  useEffect(() => {
+    const layer = poiConnectLayerRef.current;
+    if (!layer) return;
+    layer.clearLayers();
+    if (!poiConnectMode || !overlayCatalogId || !pathResult) return;
+    const pois = regionPois(overlayCatalogId);
+    const src = (masked && cropResult) ? { ...pathResult, edges: cropResult.edges } : pathResult;
+    const summary = anchorPois(pois, src, 0.5, []); // 0,5 m = on-path-Schwelle; keine Boundary-Filterung
+    for (const r of summary.results) {
+      const key = `${r.poi[0]},${r.poi[1]}`;
+      const accepted = acceptedPois.has(key);
+      let color = '#2f855a'; let scream = false; let connectable = false; let tip: string;
+      if (r.status === 'on_path') {
+        tip = `${r.text} · auf dem Pfad (${r.distanceMeters.toFixed(1)} m)`;
+      } else if (r.distanceMeters <= 2) {
+        connectable = true;
+        if (accepted) { color = '#2f855a'; tip = `${r.text} · verbunden (${r.distanceMeters.toFixed(1)} m) — Klick: trennen`; }
+        else { color = '#dd6b20'; scream = true; tip = `${r.text} · ${r.distanceMeters.toFixed(1)} m — Klick: verbinden`; }
+      } else {
+        color = '#a0aec0';
+        tip = `${r.text} · ${r.distanceMeters.toFixed(1)} m — zu weit (>2 m), nicht verbindbar`;
+      }
+      if (accepted && connectable && r.snap) {
+        L.polyline([r.poi, r.snap], { color: '#2f855a', weight: 1.5, opacity: 0.85, dashArray: '3 3' }).addTo(layer);
+      }
+      const m = L.circleMarker(r.poi, {
+        radius: scream ? 6 : 5, color, weight: scream ? 3 : 2, fillColor: '#fff', fillOpacity: 0.95,
+        className: scream ? 'poi-scream' : undefined,
+      });
+      m.bindTooltip(tip, { direction: 'top', offset: [0, -8], opacity: 0.9 });
+      if (connectable) {
+        m.on('click', () => setAcceptedPois((prev) => {
+          const n = new Set(prev);
+          if (n.has(key)) n.delete(key); else n.add(key);
+          return n;
+        }));
+      }
+      m.addTo(layer);
+    }
+  }, [poiConnectMode, acceptedPois, overlayCatalogId, pathResult, masked, cropResult]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Wegnetz auf den Map-Layer zeichnen — E2b: Färbung nach KONNEKTIVITÄT
   // (nicht mehr nach Herkunft). Der Graph wird verschweißt (graphCompose),
@@ -1156,6 +1209,17 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
           onClick={() => setRemoveMode((v) => !v)}
           label="🗑 Entfernen"
           title="Segmente per Klick entfernen (grün oder schwarz) ↔ zurück"
+        />
+      ),
+    },
+    {
+      id: 'poiconnect', side: 'right', tabs: ['wegnetz'],
+      node: (
+        <ToolToggle
+          active={poiConnectMode}
+          onClick={() => setPoiConnectMode((v) => !v)}
+          label="🔗 POI-Connect"
+          title="POIs 0,5–2 m vom Netz verbinden (jeder einzeln per Klick); >2 m nicht verbindbar"
         />
       ),
     },
