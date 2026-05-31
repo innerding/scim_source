@@ -116,6 +116,9 @@ export function drawNet(layer: L.LayerGroup, net: DerivedNet, opts: DrawNetOptio
       className: p.connected ? undefined : 'poi-blink',
       interactive: false,
     });
+    if (p.gate && p.tagline) {
+      marker.bindTooltip(p.tagline, { permanent: true, direction: 'top', offset: [0, -8], opacity: 0.9, className: 'gate-label' });
+    }
     marker.addTo(layer);
   }
 }

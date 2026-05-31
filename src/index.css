@@ -65,6 +65,10 @@ html, body, #root {
 @keyframes poiBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
 .poi-blink { animation: poiBlink 0.8s ease-in-out infinite; }
 
+/* Gate-POI-Label (Kategorie Ortszentrum) — kleines grünes Schild am Marker */
+.gate-label { background: #f0fff4; border: 1px solid #2f855a; color: #22543d; font-size: 10px; font-weight: 600; padding: 1px 5px; }
+.gate-label::before { display: none; }
+
 /* Feines Fadenkreuz beim Umriss-Zeichnen (aus v0.3-Prototyp: dünne Arme, Mitte-Gap,
    halbtransparent). Hotspot mittig (16 16). Überschreibt Geomans Draw-Cursor. */
 .scim-draw-cursor, .scim-draw-cursor * {

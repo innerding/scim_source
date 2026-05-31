@@ -30,7 +30,7 @@ export interface ModelEdge {
   source: 'osm' | 'drawn';
   asphalt: boolean;
 }
-export interface GatePoi { at: LatLng; poiId?: string; }
+export interface GatePoi { at: LatLng; poiId?: string; tagline?: string; category?: string; }
 export interface NetModel {
   edges: ModelEdge[];
   excluded: string[];   // gelöschte Teilstück-Keys `wayId:seg`
@@ -43,7 +43,7 @@ export interface DerivedEdge {
   points: LatLng[]; klass: EdgeClass; asphalt: boolean; deadEnd: boolean;
 }
 export interface BridgeMark { at: LatLng; overEdgeId: number; }
-export interface DerivedPoi { at: LatLng; connected: boolean; gate: boolean; }
+export interface DerivedPoi { at: LatLng; connected: boolean; gate: boolean; tagline?: string; category?: string; }
 export interface DerivedNet {
   edges: DerivedEdge[];
   bridges: BridgeMark[];
@@ -277,11 +277,16 @@ export function deriveNet(model: NetModel, poiCoords: LatLng[] = []): DerivedNet
   for (const g of model.gates) {
     if (!allPoiCoords.some((p) => distM(p, g.at) <= WELD_TOL_M)) allPoiCoords.push(g.at);
   }
-  const pois: DerivedPoi[] = allPoiCoords.map((at) => ({
-    at,
-    connected: netNodes.some((n) => distM([n.lat, n.lng], at) <= WELD_TOL_M),
-    gate: model.gates.some((g) => distM(g.at, at) <= WELD_TOL_M),
-  }));
+  const pois: DerivedPoi[] = allPoiCoords.map((at) => {
+    const g = model.gates.find((gg) => distM(gg.at, at) <= WELD_TOL_M);
+    return {
+      at,
+      connected: netNodes.some((n) => distM([n.lat, n.lng], at) <= WELD_TOL_M),
+      gate: !!g,
+      tagline: g?.tagline,
+      category: g?.category,
+    };
+  });
 
   // Rote Sackgassen-Spitzen = degree-1-Knoten, die KEIN Gate sind.
   const deadEnds: LatLng[] = graph.nodes
@@ -330,8 +335,10 @@ export function setGatePoi(model: NetModel, at: LatLng, poiId?: string): NetMode
 }
 
 /** Gate am Punkt setzen oder (falls dort schon eins ist) entfernen. */
-export function toggleGatePoi(model: NetModel, at: LatLng, poiId?: string, tolMeters = HIT_TOL_M): NetModel {
+export function toggleGatePoi(
+  model: NetModel, at: LatLng, meta: { poiId?: string; tagline?: string; category?: string } = {}, tolMeters = HIT_TOL_M,
+): NetModel {
   const hit = model.gates.find((g) => distM(g.at, at) <= tolMeters);
   if (hit) return { ...model, gates: model.gates.filter((g) => g !== hit) };
-  return { ...model, gates: [...model.gates, { at, poiId }] };
+  return { ...model, gates: [...model.gates, { at, ...meta }] };
 }

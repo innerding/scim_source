@@ -147,6 +147,10 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   // Gate-Modus: Klick auf eine rote Sackgassen-Spitze setzt/entfernt ein Gate-POI
   // (Endpunkt wird gültiger Ein-/Ausstieg → Arm nicht mehr rot).
   const [gateMode, setGateMode] = useState(false);
+  // Optionaler Name fürs nächste Gate (Kategorie „Ortszentrum"). Leer = einfaches Gate.
+  const [gateLabel, setGateLabel] = useState('');
+  const gateLabelRef = useRef('');
+  useEffect(() => { gateLabelRef.current = gateLabel; }, [gateLabel]);
   const netModelRef = useRef<NetModel>(netModel);
   useEffect(() => { netModelRef.current = netModel; }, [netModel]);
   // Zwei-Punkt-Anwahl: erster Klick A merken, zweiter Klick B (beliebiger Punkt;
@@ -258,7 +262,9 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       }
       if (pick && best <= 12) {
         const at = pick;
-        setNetModel((prev) => { undoRef.current.push(prev); return toggleGatePoi(prev, at); });
+        const label = gateLabelRef.current.trim();
+        const meta = label ? { tagline: label, category: 'ortszentrum' } : {};
+        setNetModel((prev) => { undoRef.current.push(prev); return toggleGatePoi(prev, at, meta); });
       }
     };
     map.on('click', onClick);
@@ -1281,6 +1287,18 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
         />
       ),
     },
+    ...(gateMode ? [{
+      id: 'gate-label', side: 'right' as const, tabs: ['wegnetz'] as DrawerTab[],
+      node: (
+        <input
+          value={gateLabel}
+          onChange={(e) => setGateLabel(e.target.value)}
+          placeholder="Ortszentrum xy (optional)"
+          title="Name fürs nächste Gate (Kategorie Ortszentrum); leer = einfaches Gate"
+          style={{ fontSize: 11, padding: '3px 8px', borderRadius: 5, border: '1px solid #cbd5e0', width: 150 }}
+        />
+      ),
+    }] : []),
     {
       id: 'alles-rot', side: 'right', tabs: ['wegnetz'],
       node: (
