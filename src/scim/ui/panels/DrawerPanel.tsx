@@ -150,10 +150,6 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   // E3 — Lückenfüller: lose Enden < gapTol (m) werden mit Brücken verbunden,
   // Komponenten verschmelzen. bridgeCount fürs Legenden-Feedback.
   const [gapTol, setGapTol] = useState(8);
-  const [bridgeCount, setBridgeCount] = useState(0);
-  // Verschmelzen an/aus: aus = roher genodeter Graph (kein bridgeGaps) → direkter
-  // A/B-Vergleich „vorher/nachher" (nachvollziehbar statt am Schieberwert erahnt).
-  const [mergeOn, setMergeOn] = useState(true);
   // T2 — Wege manuell aus OSM anwählen: im Anwähl-Modus werden die nicht
   // aufgenommenen Connector-Straßen (inNet=false) grau gestrichelt + klickbar
   // gezeigt; Klick nimmt sie ins Netz auf (Gegenstück zur blauen Abwahl).
@@ -699,7 +695,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     const layer = pathLayerRef.current;
     if (!layer) return;
     layer.clearLayers();
-    if (!res) { setBridgeCount(0); return; }
+    if (!res) return;
 
     // T2: von Hand aufgenommene Teilstücke als zusätzliche inNet=true-Kanten
     // (gleiche edgeId, gecroppte Geometrie) anhängen; das Original bleibt inNet=false.
@@ -713,12 +709,10 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     }
     const effEdges = pieceEdges.length ? [...res.edges, ...pieceEdges] : res.edges;
 
-    // E3: erst NODEN (graphCompose splittet an Kreuzungen). Bei mergeOn dann
-    // Lücken < gapTol überbrücken → Komponenten verschmelzen; bei aus bleibt der
-    // rohe genodete Graph (A/B-Vergleich). Danach nach Länge klassifizieren.
+    // E3: erst NODEN (graphCompose splittet an Kreuzungen), dann Lücken < gapTol
+    // überbrücken (gapTol=0 → keine Brücken, roher genodeter Graph = A/B-Vergleich).
     const composed = graphCompose(effEdges);
-    const { graph, bridges } = mergeOn ? bridgeGaps(composed, gapTol) : { graph: composed, bridges: [] };
-    setBridgeCount(bridges.length);
+    const { graph, bridges } = bridgeGaps(composed, gapTol);
     const netzSet = netzComponents(graph, netLenThresh);
 
     // Maskiert: Gate-Knoten (innerer Gate am Maskenrand) sind POIs, KEINE
@@ -921,7 +915,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     if (!pathResult) return;
     if (masked && cropResult) renderPath({ ...pathResult, edges: cropResult.edges });
     else renderPath(pathResult);
-  }, [netLenThresh, sackgassenRot, gapTol, cutEdges, mergeOn, pickMode, manualPieces]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [netLenThresh, sackgassenRot, gapTol, cutEdges, pickMode, manualPieces]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // F7-Neufassung: Die Handoff-Brücke entfällt. Der Drawer schreibt direkt in den
   // Workspace-Draft (onSave); der Commit lebt im Workspace.
@@ -1061,6 +1055,40 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
           onClick={() => setSnapEnabled((v) => !v)}
           label="⊹ Snap"
           title="Einrasten beim Zeichnen/Editieren auf nahe Punkte und Kanten (beide Tabs)"
+        />
+      ),
+    },
+    {
+      id: 'netz', side: 'right', tabs: ['wegnetz'],
+      node: (
+        <ToolSlider label="Netz-Schwelle" value={netLenThresh} min={0} max={3000} step={25} onChange={setNetLenThresh} />
+      ),
+    },
+    {
+      id: 'sackgassen', side: 'right', tabs: ['wegnetz'],
+      node: (
+        <ToolToggle
+          active={sackgassenRot}
+          onClick={() => setSackgassenRot((v) => !v)}
+          label="⚠ Sackgassen"
+          title="Sackgassen (degree-1-Enden) rot einblenden"
+        />
+      ),
+    },
+    {
+      id: 'verbinden', side: 'right', tabs: ['wegnetz'],
+      node: (
+        <ToolSlider label="Verbinden (inkl. verschmelzen)" value={gapTol} min={0} max={50} step={1} onChange={setGapTol} />
+      ),
+    },
+    {
+      id: 'osm', side: 'right', tabs: ['wegnetz'],
+      node: (
+        <ToolToggle
+          active={pickMode}
+          onClick={() => setPickMode((v) => !v)}
+          label="⊟ OSM-Wege"
+          title="OSM-Straßen gestrichelt zeigen + Teilstücke anwählen"
         />
       ),
     },
@@ -1296,10 +1324,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
             .map((t) => <span key={t.id}>{t.node}</span>)}
         </div>
         {/* RECHTS — Wegnetz */}
-        <div style={{ flex: 1, display: 'flex', gap: 6, alignItems: 'center', justifyContent: 'flex-end' }}>
-          {tab === 'wegnetz' && (
-            <span style={{ fontSize: 10, color: '#a0aec0', fontStyle: 'italic' }}>Wegnetz-Werkzeuge folgen</span>
-          )}
+        <div style={{ flex: 1, display: 'flex', gap: 10, alignItems: 'center', justifyContent: 'flex-end' }}>
           {drawerTools.filter((t) => t.side === 'right' && t.tabs.includes(tab))
             .map((t) => <span key={t.id}>{t.node}</span>)}
         </div>
@@ -1324,16 +1349,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
             anchor={anchorSummary}
             crop={cropResult}
             netLenThresh={netLenThresh}
-            onNetLenThresh={setNetLenThresh}
             sackgassenRot={sackgassenRot}
-            onSackgassenRot={setSackgassenRot}
-            gapTol={gapTol}
-            onGapTol={setGapTol}
-            bridgeCount={bridgeCount}
-            mergeOn={mergeOn}
-            onMergeOn={setMergeOn}
-            pickMode={pickMode}
-            onPickMode={setPickMode}
             includeCount={manualPieces.size}
             onClearInclude={() => setManualPieces(new Map())}
             cutCount={cutEdges.size}
@@ -1381,9 +1397,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
 
 function PathFilterMenu({
   gebiet, gebietLabel, canApply, onResized, onCfgChange, status, error, result, anchor,
-  crop, netLenThresh, onNetLenThresh, sackgassenRot, onSackgassenRot,
-  gapTol, onGapTol, bridgeCount, mergeOn, onMergeOn,
-  pickMode, onPickMode, includeCount, onClearInclude, cutCount, onClearCut,
+  crop, netLenThresh, sackgassenRot, includeCount, onClearInclude, cutCount, onClearCut,
 }: {
   gebiet: string;
   gebietLabel: string;
@@ -1395,17 +1409,8 @@ function PathFilterMenu({
   result: import('../../regio-content/pathEngine').PathFetchResult | null;
   anchor: AnchorSummary | null;
   crop: CropResult | null;
-  netLenThresh: number;
-  onNetLenThresh: (v: number) => void;
-  sackgassenRot: boolean;
-  onSackgassenRot: (v: boolean) => void;
-  gapTol: number;
-  onGapTol: (v: number) => void;
-  bridgeCount: number;
-  mergeOn: boolean;
-  onMergeOn: (v: boolean) => void;
-  pickMode: boolean;
-  onPickMode: (v: boolean) => void;
+  netLenThresh: number;       // nur für die Legende (Steuerung lebt im Tool-Header)
+  sackgassenRot: boolean;     // nur für die Legende
   includeCount: number;
   onClearInclude: () => void;
   cutCount: number;
@@ -1599,88 +1604,37 @@ function PathFilterMenu({
         </div>
       </Section>
 
-      <Section title="Konnektivität (E2/E3)">
-        <Check
-          label="Verschmelzen (Lücken überbrücken)"
-          checked={mergeOn}
-          onChange={onMergeOn}
-        />
-        <div style={{ padding: '0 10px 4px', fontSize: 10, color: '#a0aec0', lineHeight: 1.5 }}>
-          Aus = roher genodeter Graph (kein Brücken) — zum direkten A/B-Vergleich
-          „vorher/nachher".
-        </div>
-        <div style={{ opacity: mergeOn ? 1 : 0.4, pointerEvents: mergeOn ? 'auto' : 'none' }}>
-          <Slider
-            label="Lücken-Toleranz (Verschmelzen)"
-            value={gapTol}
-            min={0} max={50} step={1}
-            onChange={onGapTol}
-          />
-          <div style={{ padding: '0 10px 4px', fontSize: 10, color: '#a0aec0', lineHeight: 1.5 }}>
-            Lose Enden näher als dieser Abstand werden mit einer
-            <b style={{ color: '#dd6b20' }}> orange Brücke</b> verbunden → Komponenten
-            verschmelzen.{mergeOn && bridgeCount > 0 && <> Aktuell <b>{bridgeCount}</b> Brücken.</>}
+      <Section title="Sackgassen & Anwahl">
+        <div style={{ padding: '0 10px', fontSize: 10, color: '#a0aec0', lineHeight: 1.5 }}>
+          Netz-Schwelle, Sackgassen, Verbinden und OSM-Anwählen liegen jetzt in der
+          <b> Werkzeugleiste oben</b>. Hier nur die Rücksetzer der Hand-Markierungen:
+          <div style={{ marginTop: 4, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {cutCount > 0 && (
+              <button
+                onClick={onClearCut}
+                style={{
+                  fontSize: 10, padding: '1px 6px', borderRadius: 4,
+                  border: '1px solid #90cdf4', background: '#ebf8ff', color: '#3182ce', cursor: 'pointer',
+                }}
+              >
+                {cutCount} blau · zurücksetzen
+              </button>
+            )}
+            {includeCount > 0 && (
+              <button
+                onClick={onClearInclude}
+                style={{
+                  fontSize: 10, padding: '1px 6px', borderRadius: 4,
+                  border: '1px solid #d6bcfa', background: '#faf5ff', color: '#9333ea', cursor: 'pointer',
+                }}
+              >
+                {includeCount} aufgenommen · zurücksetzen
+              </button>
+            )}
+            {cutCount === 0 && includeCount === 0 && (
+              <span style={{ color: '#cbd5e0' }}>keine</span>
+            )}
           </div>
-        </div>
-        <Slider
-          label="Netz-Schwelle (Länge)"
-          value={netLenThresh}
-          min={0} max={3000} step={25}
-          onChange={onNetLenThresh}
-        />
-        <div style={{ padding: '0 10px 4px', fontSize: 10, color: '#a0aec0', lineHeight: 1.5 }}>
-          Komponenten ab dieser Gesamtlänge gelten als <b style={{ color: '#222a35' }}>Netz</b> (schwarz),
-          kürzere als <b style={{ color: '#1f9d8f' }}>Rest</b> (grün). Live, ohne neu zu laden.
-        </div>
-        <Check
-          label="Sackgassen rot"
-          checked={sackgassenRot}
-          onChange={onSackgassenRot}
-        />
-        <div style={{ padding: '0 10px', fontSize: 10, color: '#a0aec0', lineHeight: 1.5 }}>
-          Legt <b style={{ color: '#e53e3e' }}>rot</b> über alle degree-1-Enden (Sackgassen),
-          egal welche Grundfarbe.
-        </div>
-        <div style={{ padding: '4px 10px 0', fontSize: 10, color: '#a0aec0', lineHeight: 1.5 }}>
-          Sackgassen-Segment auf der Karte anklicken → <b style={{ color: '#3182ce' }}>blau</b> =
-          abgeschnitten (Datenrand, geht real weiter). Blau wird von der Rot-Bewertung
-          ausgenommen. {cutCount > 0 && (
-            <button
-              onClick={onClearCut}
-              style={{
-                marginLeft: 4, fontSize: 10, padding: '1px 6px', borderRadius: 4,
-                border: '1px solid #90cdf4', background: '#ebf8ff', color: '#3182ce', cursor: 'pointer',
-              }}
-            >
-              {cutCount} blau · zurücksetzen
-            </button>
-          )}
-        </div>
-      </Section>
-
-      <Section title="OSM-Wege anwählen (T2)">
-        <Check
-          label="Anwähl-Modus"
-          checked={pickMode}
-          onChange={onPickMode}
-        />
-        <div style={{ padding: '0 10px', fontSize: 10, color: '#a0aec0', lineHeight: 1.5 }}>
-          Zeigt die nicht aufgenommenen <b style={{ color: '#a0aec0' }}>OSM-Straßen</b> grau
-          gestrichelt. Klick nimmt nur das <b style={{ color: '#9333ea' }}>Teilstück</b> zwischen
-          den nächsten Wanderweg-Anschlüssen auf (fehlt einer, endet es am Klick = Gate-POI);
-          mehrere Stücke je Straße möglich. Klick aufs lila Stück → wieder raus.
-          Aufgenommenes wird als Asphalt geführt.
-          {includeCount > 0 && (
-            <button
-              onClick={onClearInclude}
-              style={{
-                marginLeft: 4, fontSize: 10, padding: '1px 6px', borderRadius: 4,
-                border: '1px solid #d6bcfa', background: '#faf5ff', color: '#9333ea', cursor: 'pointer',
-              }}
-            >
-              {includeCount} aufgenommen · zurücksetzen
-            </button>
-          )}
         </div>
       </Section>
 
@@ -1819,6 +1773,26 @@ function ReopenTab({ label, onClick }: { label: string; onClick: () => void }) {
         {label}
       </span>
     </button>
+  );
+}
+
+// US3 — kompakter Inline-Schieber für die Tool-Header-Leiste (Label oben, Wert mit).
+function ToolSlider({
+  label, value, min, max, step, unit = 'm', onChange,
+}: {
+  label: string; value: number; min: number; max: number; step: number; unit?: string; onChange: (v: number) => void;
+}) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 1, minWidth: 104 }}>
+      <span style={{ fontSize: 9, fontWeight: 700, color: '#4a5568', textAlign: 'center', whiteSpace: 'nowrap' }}>
+        {label} <span style={{ fontFamily: 'monospace', color: '#2b6cb0' }}>{value}{unit}</span>
+      </span>
+      <input
+        type="range" min={min} max={max} step={step} value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        style={{ width: '100%', margin: 0 }}
+      />
+    </div>
   );
 }
 
