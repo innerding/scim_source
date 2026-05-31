@@ -17,6 +17,7 @@
 import type { Position } from 'geojson';
 import type { HandoffNet } from './draftHandoff';
 import type { PathFetchResult } from '../regio-content/pathEngine';
+import type { NetModel } from '../regio-content/netModel';
 
 export const DRAFTS_KEY = 'scim3:drafts';
 const LEGACY_DRAFT_KEY = 'scim3_geometry_draft';
@@ -43,6 +44,10 @@ export interface Draft {
   // Zähler). Damit der Drawer beim Wiederöffnen das Netz zeigt und A→B routen kann,
   // OHNE Overpass erneut abzufragen. Roh/Arbeits-Schicht — stirbt am Commit.
   path_fetch?: PathFetchResult | null;
+  // Editiertes OP-Netz (Wegnetz-Editor: Trassierungen, Löschungen, Gates) — die
+  // EINE Wahrheit des Netz-Edits. Wird beim Öffnen wiederhergestellt, damit
+  // Edits nicht verloren gehen. (osmPool wird aus path_fetch rekonstruiert.)
+  op_model?: NetModel | null;
   catalog_id: string | null;       // gebundener Katalog → orange
   created_at: string;
   updated_at: string;
@@ -188,6 +193,7 @@ export function createDraft(name: string, opts: Partial<Draft> = {}): Draft {
     net_unmasked: opts.net_unmasked ?? null,
     net_masked: opts.net_masked ?? null,
     path_fetch: opts.path_fetch ?? null,
+    op_model: opts.op_model ?? null,
     catalog_id: opts.catalog_id ?? null,
     created_at: ts,
     updated_at: ts,

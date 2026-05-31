@@ -294,17 +294,17 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       if (d) return {
         draftId: d.id, geometryId: 'new' as const, name: d.name, region: '',
         polygon: d.reference ?? null, maskPolygon: d.boundary ?? null,
-        catalogId: d.catalog_id ?? '', pathFetch: d.path_fetch ?? null,
+        catalogId: d.catalog_id ?? '', pathFetch: d.path_fetch ?? null, opModel: d.op_model ?? null,
       };
     }
     if (openGeometryId) {
       const g = GEOMETRIES.find((x) => x.id === openGeometryId);
       if (g) return {
         draftId: null, geometryId: g.id, name: g.name, region: g.region ?? '',
-        polygon: g.polygon, maskPolygon: null, catalogId: '', pathFetch: null,
+        polygon: g.polygon, maskPolygon: null, catalogId: '', pathFetch: null, opModel: null,
       };
     }
-    return { draftId: null, geometryId: 'new' as const, name: '', region: '', polygon: null, maskPolygon: null, catalogId: '', pathFetch: null };
+    return { draftId: null, geometryId: 'new' as const, name: '', region: '', polygon: null, maskPolygon: null, catalogId: '', pathFetch: null, opModel: null };
   }, [openGeometryId]);
   // Sprung verbraucht — App-State leeren, damit spaetere Navigation leer startet.
   useEffect(() => {
@@ -347,8 +347,11 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       name, reference: polygon, boundary: maskPolygon,
       net_unmasked: netUn, net_masked: netMa, catalog_id: overlayCatalogId || null,
       // Kompletter B1-Overpass-Fetch mitspeichern → beim Wiederöffnen kein
-      // erneuter Overpass-Abruf, Netz + A→B sofort verfügbar.
+      // erneuter Overpass-Abruf, OSM-Pool für Trassieren sofort verfügbar.
       path_fetch: pathResult,
+      // Editiertes OP-Netz (Trassierungen/Löschungen/Gates) = die Wahrheit des
+      // Netz-Edits; beim Öffnen wiederhergestellt, damit Edits nicht verloren gehen.
+      op_model: netModel,
     };
     try {
       if (activeDraftId) updateDraft(activeDraftId, patch);
@@ -363,7 +366,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   };
 
   // Jede Änderung am Zustand → dirty (B2 nicht mehr solid; muss neu gespeichert werden).
-  useEffect(() => { setSaved(false); }, [polygon, maskPolygon, masked, pathResult, overlayCatalogId, name]);
+  useEffect(() => { setSaved(false); }, [polygon, maskPolygon, masked, pathResult, netModel, overlayCatalogId, name]);
 
   // Allgemeiner Knopf „B2 aus B1": kopiert die Referenz-Boundary (B1) als Startform
   // in den finalen Slot (B2), die du dann netz-informiert verfeinerst.
@@ -548,8 +551,15 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       const pf = initial.pathFetch;
       setPathResult(pf);
       setPathStatus('done');
+      // OSM-Pool (Connector-Kandidaten) für Trassieren aus dem Fetch.
       setOsmPool(pf.edges.filter((e) => e.source !== 'primary').map((e) => ({ id: e.id, points: e.points, source: 'osm', asphalt: isAsphalt(e) })));
-      setNetModel({ edges: pf.edges.filter((e) => e.source === 'primary').map((e) => ({ id: e.id, points: e.points, source: 'osm', asphalt: isAsphalt(e) })), excluded: [], gates: [] });
+      // OP: gespeichertes Editier-Modell bevorzugen (Trassierungen/Löschungen/
+      // Gates bleiben erhalten); sonst frisch aus dem primären Netz seeden.
+      if (initial.opModel) {
+        setNetModel(initial.opModel);
+      } else {
+        setNetModel({ edges: pf.edges.filter((e) => e.source === 'primary').map((e) => ({ id: e.id, points: e.points, source: 'osm', asphalt: isAsphalt(e) })), excluded: [], gates: [] });
+      }
     }
 
     return () => {
