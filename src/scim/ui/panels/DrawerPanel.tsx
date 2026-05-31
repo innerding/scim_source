@@ -119,11 +119,9 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   // Maskierung/Crop (Umbauplan D): Ergebnis des Zuschnitts mit der Slot-2-Maske.
   const [cropResult, setCropResult] = useState<CropResult | null>(null);
 
-  // US3: Anwenden lebt jetzt im Tool-Header (rechts, unter Beschneiden). Dafür
-  // muss die Filter-Config eine Ebene hoch (currentCfg) und ein „dirty seit
-  // letztem Anwenden"-Signal (appliedCfgSig) → der Button pulst bei Bedarf.
+  // „Netz holen" lebt im Tool-Header. Dafür muss die Filter-Config eine Ebene
+  // hoch (currentCfg).
   const [currentCfg, setCurrentCfg] = useState<PathConfig | null>(null);
-  const [appliedCfgSig, setAppliedCfgSig] = useState<string | null>(null);
   // Längen-Summen fürs Footer-Feld. „Netz" = nur SCHWARZE Komponenten (≥ Schwelle),
   // darin Wanderweg + Asphalt; „rest" = grüne Komponenten (vom Netz exkludiert).
   const [netSummary, setNetSummary] = useState<{ net: number; wander: number; asphalt: number; rest: number; bytes: number; points: number } | null>(null);
@@ -1214,7 +1212,6 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   // anschliessend POI-Anker (ann_074) berechnen + zeichnen.
   const onApplyPath = async (cfg: PathConfig) => {
     lastCfgRef.current = cfg; // für T2-Anschluss-Toleranz beim manuellen Anwählen
-    setAppliedCfgSig(JSON.stringify(cfg)); // Stand „angewandt" → Puls aus
     setCurrentCfg(cfg);
     const map = mapRef.current;
     // Vorrang-Regel: das Netz wird aus der EIGENEN Boundary (B1) des Drafts abgeleitet.
@@ -1326,15 +1323,12 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   // `side` (left=Umriss · center=geteilt · right=Wegnetz) + `tabs`. Die Leiste
   // filtert nach aktivem Tab und ordnet nach Zone. Weitere Werkzeuge (US3) werden
   // einfach als weitere Einträge ergänzt — kein Umbau am Gerüst nötig.
-  // „Anwenden" (rechte Zone): pulst, solange es etwas anzuwenden gibt — Quelle
-  // vorhanden UND Netz veraltet (noch nie geladen oder Filter seit letztem
-  // Anwenden geändert). Während des Ladens kein Puls.
+  // „Netz holen" (rechte Zone): aktiv, sobald eine Quelle da ist (Boundary,
+  // Katalog oder Inspector-R).
   const canApplyNet =
     (!!polygon && polygon.length >= 3)
     || !!overlayCatalogId
     || !!(inspectorView?.geometry?.polygon && inspectorView.geometry.polygon.length >= 3);
-  const netStale = !pathResult || (!!currentCfg && JSON.stringify(currentCfg) !== appliedCfgSig);
-  const applyPulse = canApplyNet && netStale && pathStatus !== 'loading';
 
   const drawerTools: { id: string; side: 'left' | 'center' | 'right'; tabs: DrawerTab[]; node: ReactNode }[] = [
     {
@@ -1451,14 +1445,12 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       id: 'anwenden', side: 'right', tabs: ['wegnetz'],
       node: (
         <button
-          className={applyPulse ? 'tool-pulse' : undefined}
           onClick={() => { if (currentCfg) onApplyPath(currentCfg); }}
           disabled={!canApplyNet || pathStatus === 'loading' || !currentCfg}
           title={
             !canApplyNet ? 'Keine Quelle fürs Netz (Boundary/Katalog/Inspector)'
               : pathStatus === 'loading' ? 'lädt OSM …'
-              : netStale ? 'OSM holen + Filter anwenden (Einstellungen geändert)'
-              : 'Netz ist aktuell'
+              : 'Overpass fürs Gebiet holen → füllt OP (Netz) + OSM-Pool (Quelle zum Trassieren)'
           }
           style={{
             fontSize: 11, fontWeight: 700, padding: '3px 12px', borderRadius: 5,
@@ -1469,7 +1461,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
             cursor: (!canApplyNet || pathStatus === 'loading' || !currentCfg) ? 'not-allowed' : 'pointer',
           }}
         >
-          {pathStatus === 'loading' ? '… lädt' : '▷ Anwenden'}
+          {pathStatus === 'loading' ? '… lädt' : '⬇ Netz holen'}
         </button>
       ),
     },

@@ -61,6 +61,10 @@ html, body, #root {
 @keyframes poiScream { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 .poi-scream { animation: poiScream 0.9s ease-in-out infinite; }
 
+/* Unverbundener POI blinkt (Wegnetz-Editor, deriveNet → poi.connected=false) */
+@keyframes poiBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+.poi-blink { animation: poiBlink 0.8s ease-in-out infinite; }
+
 /* Feines Fadenkreuz beim Umriss-Zeichnen (aus v0.3-Prototyp: dünne Arme, Mitte-Gap,
    halbtransparent). Hotspot mittig (16 16). Überschreibt Geomans Draw-Cursor. */
 .scim-draw-cursor, .scim-draw-cursor * {
