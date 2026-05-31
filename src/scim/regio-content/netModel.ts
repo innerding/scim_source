@@ -27,7 +27,9 @@ export type LatLng = [number, number]; // [lat, lng]
 export interface ModelEdge {
   id: number;
   points: LatLng[];
-  source: 'osm' | 'drawn';
+  // 'osm' = Basisnetz · 'drawn' = trassiert (folgt OSM) · 'nosm' = freie Gerade
+  // (Kurzstrecke, existiert nicht in OSM — z. B. über einen Platz).
+  source: 'osm' | 'drawn' | 'nosm';
   asphalt: boolean;
 }
 // Platzierter POI / Registry-Eintrag. Ein POI an einer Sackgassen-Spitze
@@ -52,6 +54,7 @@ export type EdgeClass = 'net' | 'red' | 'lila';
 export interface DerivedEdge {
   key: string; wayId: number; seg: number;
   points: LatLng[]; klass: EdgeClass; asphalt: boolean; deadEnd: boolean;
+  nosm: boolean;   // freie Gerade (Kurzstrecke) — dashed darstellen, später optional
 }
 export interface BridgeMark { at: LatLng; overEdgeId: number; }
 export interface DerivedPoi { at: LatLng; connected: boolean; gate: boolean; tagline?: string; category?: string; }
@@ -255,7 +258,9 @@ export function deriveNet(model: NetModel, poiCoords: LatLng[] = []): DerivedNet
   const dead = deadArmKeys(graph, gateNodeIds);
 
   const asphaltOf = new Map(model.edges.map((e) => [e.id, e.asphalt]));
-  const drawnIds = new Set(model.edges.filter((e) => e.source === 'drawn').map((e) => e.id));
+  // „drawn" fürs lila-Bis-verschmolzen umfasst trassiert UND nosm (beide user-gesetzt).
+  const drawnIds = new Set(model.edges.filter((e) => e.source !== 'osm').map((e) => e.id));
+  const nosmIds = new Set(model.edges.filter((e) => e.source === 'nosm').map((e) => e.id));
 
   const edges: DerivedEdge[] = [];
   const redKeys: string[] = [];
@@ -277,7 +282,7 @@ export function deriveNet(model: NetModel, poiCoords: LatLng[] = []): DerivedNet
     if (inNet) netMeters += ge.meters;
     edges.push({
       key, wayId: ge.edgeId, seg: ge.seg, points: ge.points, klass,
-      asphalt: asphaltOf.get(ge.edgeId) ?? false, deadEnd,
+      asphalt: asphaltOf.get(ge.edgeId) ?? false, deadEnd, nosm: nosmIds.has(ge.edgeId),
     });
   }
 
@@ -321,9 +326,9 @@ export function setOsmEdges(model: NetModel, osm: ModelEdge[]): NetModel {
   return { ...model, edges: [...osm.map((e) => ({ ...e, source: 'osm' as const })), ...drawn] };
 }
 
-export function addDrawnEdge(model: NetModel, points: LatLng[], asphalt = false): NetModel {
+export function addDrawnEdge(model: NetModel, points: LatLng[], asphalt = false, nosm = false): NetModel {
   if (points.length < 2) return model;
-  return { ...model, edges: [...model.edges, { id: nextDrawnId(model), points, source: 'drawn', asphalt }] };
+  return { ...model, edges: [...model.edges, { id: nextDrawnId(model), points, source: nosm ? 'nosm' : 'drawn', asphalt }] };
 }
 
 export function deleteKeys(model: NetModel, keys: string[]): NetModel {

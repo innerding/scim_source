@@ -225,9 +225,9 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       } else {
         const a = pendingConnectRef.current;
         if (shortMode) {
-          // GERADE Verbindung, nicht über OSM — über einen Platz hinweg.
+          // GERADE Verbindung, nicht über OSM — über einen Platz hinweg → nosm.
           const b = snapNode(click);
-          setNetModel((prev) => { undoRef.current.push(prev); return addDrawnEdge(prev, [[a.lat, a.lng], b], false); });
+          setNetModel((prev) => { undoRef.current.push(prev); return addDrawnEdge(prev, [[a.lat, a.lng], b], false, true); });
         } else {
           const route = buildRoutePath(edgesRef.current, [a.lat, a.lng], [click[0], click[1]], hoverTrailRef.current);
           if (route && route.points.length >= 2) {
@@ -1030,11 +1030,14 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     if (masked && maskPolygon && maskPolygon.length >= 3) {
       const crop = cropNetToMask(netToPathEdges(derived), maskPolygon);
       drawNet(layer, {
-        edges: crop.edges.filter((e) => e.inNet).map((e, i) => ({ key: `${e.id}:c${i}`, wayId: e.id, seg: i, points: e.points, klass: 'net' as const, asphalt: e.source !== 'primary', deadEnd: false })),
-        bridges: [], pois: crop.gates.map((g) => ({ at: g.inner, connected: true, gate: true })), redKeys: [], netMeters: 0, deadEnds: [], nodes: [],
+        edges: crop.edges.filter((e) => e.inNet).map((e, i) => ({ key: `${e.id}:c${i}`, wayId: e.id, seg: i, points: e.points, klass: 'net' as const, asphalt: e.source !== 'primary', deadEnd: false, nosm: false })),
+        bridges: [], pois: [], redKeys: [], netMeters: 0, deadEnds: [], nodes: [],
       }, {});
+      // Translate-POI-Paar an jedem Maskenrand-Übertritt: inner (im Netz) + outer (Nachbar).
+      renderGates(crop.gates);
       return;
     }
+    renderGates(null);
 
     drawNet(layer, derived, {
       onSegmentClick: removeMode ? (k) => pushModel(deleteKeys(netModel, [k])) : undefined,

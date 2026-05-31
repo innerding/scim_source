@@ -83,7 +83,9 @@ export function drawNet(layer: L.LayerGroup, net: DerivedNet, opts: DrawNetOptio
     const color = e.klass === 'red' ? COLOR.red : e.klass === 'lila' ? COLOR.lila : COLOR.net;
     const pl = L.polyline(e.points, {
       color, weight: e.klass === 'net' ? 3 : 2.5, opacity: 0.95,
-      ...(e.klass === 'lila' ? { dashArray: '1 0' } : {}),
+      // nosm (freie Gerade über einen Platz) → gestrichelt, damit man sie später
+      // bewusst ein-/ausschließen kann.
+      ...(e.nosm ? { dashArray: '6 6' } : {}),
     });
     if (opts.onSegmentClick) {
       pl.on('click', (ev) => { L.DomEvent.stop(ev); opts.onSegmentClick!(e.key); });
