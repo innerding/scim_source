@@ -1,78 +1,99 @@
 import { describe, it, expect } from 'vitest';
 import {
-  deriveNet, addDrawnEdge, deleteAllRed, deleteKeys, emptyModel,
-  type NetModel, type ModelEdge,
+  deriveNet, addDrawnEdge, deleteAllRed, setGatePoi, emptyModel,
+  type NetModel, type ModelEdge, type LatLng,
 } from './netModel';
 
-const osm = (id: number, pts: [number, number][]): ModelEdge => ({ id, points: pts, source: 'osm', asphalt: false });
+const DRAWN = 1_000_000_000_000;
+const osm = (id: number, pts: LatLng[]): ModelEdge => ({ id, points: pts, source: 'osm', asphalt: false });
+const model = (edges: ModelEdge[], extra: Partial<NetModel> = {}): NetModel => ({ ...emptyModel(), edges, ...extra });
 
-// Dreieck (Schleife) — alle Knoten degree 2, Umfang ~620 m ≥ Schwelle → Netz.
-const X: [number, number] = [0, 0];
-const Y: [number, number] = [0, 0.0020];
-const Z: [number, number] = [0.0015, 0.0010];
-const triangle = (): ModelEdge[] => [
-  osm(1, [X, Y]), osm(2, [Y, Z]), osm(3, [Z, X]),
-];
-// Isolierter kurzer Stub, weit weg → eigene Komponente < Schwelle → nicht im Netz.
-const stub = osm(9, [[0.05, 0.05], [0.05, 0.0502]]);
+// Dreieck-Schleife: alle Knoten degree 2 → Netz, keine Sackgasse.
+const X: LatLng = [0, 0];
+const Y: LatLng = [0, 0.0020];
+const Z: LatLng = [0.0015, 0.0010];
+const triangle = (): ModelEdge[] => [osm(1, [X, Y]), osm(2, [Y, Z]), osm(3, [Z, X])];
 
-const model = (edges: ModelEdge[]): NetModel => ({ ...emptyModel(), edges });
-
-describe('netModel.deriveNet', () => {
-  it('Dreieck = Netz (schwarz), kein Rot', () => {
+describe('netModel — Netz = längste Komponente', () => {
+  it('alleinige Schleife ist Netz', () => {
     const d = deriveNet(model(triangle()));
     expect(d.edges.length).toBe(3);
     expect(d.edges.every((e) => e.klass === 'net')).toBe(true);
     expect(d.redKeys).toEqual([]);
-    expect(d.netMeters).toBeGreaterThan(300);
   });
 
-  it('isolierter Stub = rot (nicht im Netz), landet in redKeys', () => {
+  it('kleinere zweite Komponente ist rot (nicht die längste)', () => {
+    const stub = osm(9, [[0.05, 0.05], [0.05, 0.0505]]); // kurz, weit weg
     const d = deriveNet(model([...triangle(), stub]));
-    const stubEdges = d.edges.filter((e) => e.wayId === 9);
-    expect(stubEdges.length).toBeGreaterThan(0);
-    expect(stubEdges.every((e) => e.klass === 'red')).toBe(true);
-    for (const e of stubEdges) expect(d.redKeys).toContain(e.key);
-    // Das Dreieck bleibt Netz.
+    expect(d.edges.filter((e) => e.wayId === 9).every((e) => e.klass === 'red')).toBe(true);
     expect(d.edges.filter((e) => e.wayId !== 9).every((e) => e.klass === 'net')).toBe(true);
   });
 });
 
-describe('netModel.deleteAllRed', () => {
-  it('entfernt alle roten Teilstücke, lässt das Netz stehen', () => {
-    const m = deleteAllRed(model([...triangle(), stub]));
+describe('netModel — Sackgassen-Arm', () => {
+  const arm = osm(4, [X, [-0.0006, 0]]); // Arm aus Knoten X heraus, Spitze degree-1
+  it('Arm an verbundenem Netz ist rot (ganzer Arm)', () => {
+    const d = deriveNet(model([...triangle(), arm]));
+    const armEdges = d.edges.filter((e) => e.wayId === 4);
+    expect(armEdges.length).toBeGreaterThan(0);
+    expect(armEdges.every((e) => e.klass === 'red')).toBe(true);
+    // Dreieck-Kern bleibt Netz.
+    expect(d.edges.filter((e) => e.wayId <= 3).every((e) => e.klass === 'net')).toBe(true);
+  });
+
+  it('Gate-POI an der Spitze macht den Arm gültig (net)', () => {
+    const m = setGatePoi(model([...triangle(), arm]), [-0.0006, 0]);
     const d = deriveNet(m);
-    expect(d.redKeys).toEqual([]);
-    expect(d.edges.every((e) => e.klass === 'net')).toBe(true);
-    // Der Stub ist jetzt ausgeschlossen.
-    expect(d.edges.some((e) => e.wayId === 9)).toBe(false);
+    expect(d.edges.filter((e) => e.wayId === 4).every((e) => e.klass === 'net')).toBe(true);
+    expect(d.pois.find((p) => p.gate)).toBeTruthy();
   });
 });
 
-describe('netModel.addDrawnEdge — lila bis verschmolzen', () => {
+describe('netModel — deleteAllRed', () => {
+  it('entfernt rote Teilstücke, Netz bleibt', () => {
+    const stub = osm(9, [[0.05, 0.05], [0.05, 0.0505]]);
+    const d = deriveNet(deleteAllRed(model([...triangle(), stub])));
+    expect(d.redKeys).toEqual([]);
+    expect(d.edges.some((e) => e.wayId === 9)).toBe(false);
+    expect(d.edges.every((e) => e.klass === 'net')).toBe(true);
+  });
+});
+
+describe('netModel — Trassieren (lila / verschmelzen)', () => {
   it('isoliert gezeichnet = lila', () => {
-    const m = addDrawnEdge(model(triangle()), [[0.08, 0.08], [0.08, 0.0802]], false);
-    const d = deriveNet(m);
-    const drawn = d.edges.filter((e) => e.wayId >= 1_000_000_000_000);
+    const d = deriveNet(addDrawnEdge(model(triangle()), [[0.08, 0.08], [0.08, 0.0802]]));
+    const drawn = d.edges.filter((e) => e.wayId >= DRAWN);
     expect(drawn.length).toBeGreaterThan(0);
     expect(drawn.every((e) => e.klass === 'lila')).toBe(true);
   });
 
-  it('mit dem Netz verbunden gezeichnet = verschmolzen (net, nicht lila)', () => {
-    // Sehne X→Y: beide Endpunkte sind Dreieck-Knoten → kein Sackgassen-Ende.
-    const m = addDrawnEdge(model(triangle()), [X, Y], false);
-    const d = deriveNet(m);
-    const drawn = d.edges.filter((e) => e.wayId >= 1_000_000_000_000);
-    expect(drawn.length).toBeGreaterThan(0);
-    expect(drawn.every((e) => e.klass === 'net')).toBe(true);
+  it('Sehne zwischen zwei Dreieck-Knoten = verschmolzen (net)', () => {
+    const d = deriveNet(addDrawnEdge(model(triangle()), [X, Y]));
+    expect(d.edges.filter((e) => e.wayId >= DRAWN).every((e) => e.klass === 'net')).toBe(true);
   });
 });
 
-describe('netModel.deleteKeys', () => {
-  it('schließt ein Teilstück aus', () => {
-    const d0 = deriveNet(model(triangle()));
-    const key = d0.edges[0].key;
-    const d1 = deriveNet(deleteKeys(model(triangle()), [key]));
-    expect(d1.edges.some((e) => e.key === key)).toBe(false);
+describe('netModel — Endpunkt-auf-Linie-Noding', () => {
+  it('Trasse, die auf Linienmitten endet, verbindet (splittet die Linien)', () => {
+    const midXY: LatLng = [0, 0.0010];
+    const midYZ: LatLng = [0.00075, 0.0015];
+    const m = addDrawnEdge(model(triangle()), [midXY, midYZ]);
+    const d = deriveNet(m);
+    // Trasse ist verbunden → net, nicht lila.
+    expect(d.edges.filter((e) => e.wayId >= DRAWN).every((e) => e.klass === 'net')).toBe(true);
+    // X-Y (id 1) wurde am Mittelpunkt gesplittet → mehr als ein Teilstück.
+    expect(d.edges.filter((e) => e.wayId === 1).length).toBeGreaterThan(1);
+  });
+});
+
+describe('netModel — Fly-over (Brücke, keine Verbindung)', () => {
+  it('Trasse quer über eine Linie ohne dort zu enden → BridgeMark, bleibt getrennt', () => {
+    // X-Y liegt auf lat 0 (lng 0..0.0020). Trasse kreuzt bei (0, 0.0010), endet aber ±55 m entfernt.
+    const m = addDrawnEdge(model(triangle()), [[-0.0005, 0.0010], [0.0005, 0.0010]]);
+    const d = deriveNet(m);
+    expect(d.bridges.length).toBeGreaterThan(0);
+    expect(d.bridges.some((b) => Math.abs(b.at[0]) < 1e-6 && Math.abs(b.at[1] - 0.0010) < 1e-6)).toBe(true);
+    // Trasse hat keinen Knoten an der Kreuzung → eigene Komponente → lila.
+    expect(d.edges.filter((e) => e.wayId >= DRAWN).every((e) => e.klass === 'lila')).toBe(true);
   });
 });

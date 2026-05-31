@@ -1,93 +1,236 @@
 // netModel — die EINZIGE Wahrheit des Wegnetz-Editors.
 //
-// Kern des Drawer-Rückbaus (siehe memory project_drawer_rueckbau):
-//   - Ein gespeichertes Graph-Modell (Kanten + Ausschlüsse + Config) ist die
-//     Wahrheit. ALLES (Färbung, Sackgassen-Sicht, Netz, Summen, „rot") wird
-//     daraus per deriveNet() ABGELEITET — kein zweiter Zustand, kein Overlay.
-//   - Jede Aktion ist eine REINE Funktion Model -> Model (zeichnen, löschen,
-//     alles-Rote-löschen). Undo = Stapel von Modell-Schnappschüssen (in der UI).
-//   - Kein React, kein Leaflet, kein Geoman. Voll testbar.
+// Kern des Drawer-Rückbaus. Maßgebliche Spec: docs/wegnetz_drawer_spec.md.
+//   - OP { edges, excluded, gates } ist die Wahrheit. deriveNet() leitet ALLES
+//     ab (noden, 1 m-Verschweißen, Endpunkt-auf-Linie, Fly-over→Brücke,
+//     längste Komponente = Netz, Sackgassen-Arm rot, net/red/lila, POI-Status).
+//   - Aktionen sind reine Funktionen OP -> OP. Undo = Stapel von OP (in der UI).
+//   - Kein React/Leaflet/Geoman. Voll testbar.
 //
-// „rot" hat KEINE technische Sonderbehandlung: es ist die abgeleitete Klasse
-// „nicht im Netz oder Sackgasse". Die einzige Aktion dazu ist „alles Rote
-// löschen" (deleteAllRed). Sackgassen werden NICHT getrennt behandelt.
-// „lila" = gezeichnetes Segment, das noch nicht mit dem Netz verschmolzen ist.
+// Klassen:  net (schwarz, längste Komponente, kein Sackgassen-Arm) ·
+//           red (nicht im Netz ODER Sackgassen-Arm ohne Gate-POI) ·
+//           lila (gezeichnet, noch nicht im Netz).
+// „rot" hat KEINE Sonderbehandlung — nur Klasse + Aktion deleteAllRed.
 
-import {
-  graphCompose, bridgeGaps, filterEdges, netzComponents,
-} from './netGraph';
+import { graphCompose, bridgeGaps, filterEdges, type NetGraph } from './netGraph';
 import type { PathEdge } from './pathEngine';
 
-// Gezeichnete Kanten bekommen IDs ab diesem Offset — weit über OSM-Way-IDs,
-// und positiv (negative IDs sind in netGraph den Brücken vorbehalten).
-const DRAWN_ID_BASE = 1_000_000_000_000;
+// ─── Konstanten (zwei getrennte Toleranzen) ─────────────────────────────────────
+export const WELD_TOL_M = 1;    // fix: deckungsgleiche Enden / Endpunkt-auf-Linie / POI
+export const HIT_TOL_M = 12;    // großzügig: Treffer beim Klicken/Greifen
+const DRAWN_ID_BASE = 1_000_000_000_000; // gezeichnete IDs ab hier (positiv, ≠ OSM)
+const M_LAT = 110540;
+
+// ─── Typen ──────────────────────────────────────────────────────────────────────
+export type LatLng = [number, number]; // [lat, lng]
 
 export interface ModelEdge {
-  id: number;                  // OSM-Way-ID (osm) oder ≥ DRAWN_ID_BASE (drawn)
-  points: [number, number][];  // [lat, lng] entlang der Geometrie
+  id: number;
+  points: LatLng[];
   source: 'osm' | 'drawn';
   asphalt: boolean;
 }
-
-export interface NetModelConfig {
-  netLenThresh: number;        // Netz-Schwelle in Metern (Komponente ≥ → Netz)
-  gapTol: number;              // Verschmelz-Toleranz in Metern (bridgeGaps)
-}
-
+export interface GatePoi { at: LatLng; poiId?: string; }
 export interface NetModel {
   edges: ModelEdge[];
-  excluded: string[];          // gelöschte Teilstück-Keys `wayId:seg`
-  config: NetModelConfig;
+  excluded: string[];   // gelöschte Teilstück-Keys `wayId:seg`
+  gates: GatePoi[];     // legitimierte Sackgassen-Enden
 }
 
-// net  = im Netz (schwarz) · red = nicht im Netz ODER Sackgasse (Kontroll-Sicht)
-// lila = gezeichnet, noch nicht mit dem Netz verschmolzen
 export type EdgeClass = 'net' | 'red' | 'lila';
-
 export interface DerivedEdge {
-  key: string;                 // `wayId:seg` — stabiler Teilstück-Schlüssel
-  wayId: number;
-  seg: number;
-  points: [number, number][];
-  klass: EdgeClass;
-  asphalt: boolean;
-  deadEnd: boolean;            // degree-1 an mind. einem Ende
+  key: string; wayId: number; seg: number;
+  points: LatLng[]; klass: EdgeClass; asphalt: boolean; deadEnd: boolean;
 }
-
+export interface BridgeMark { at: LatLng; overEdgeId: number; }
+export interface DerivedPoi { at: LatLng; connected: boolean; gate: boolean; }
 export interface DerivedNet {
   edges: DerivedEdge[];
-  bridges: { points: [number, number][] }[];  // Verschmelz-Brücken (gapTol)
-  redKeys: string[];           // alle roten Teilstücke → „alles Rote löschen"
+  bridges: BridgeMark[];
+  pois: DerivedPoi[];
+  redKeys: string[];
   netMeters: number;
-  restMeters: number;          // alles, was nicht im Netz liegt
 }
 
-export const DEFAULT_CONFIG: NetModelConfig = { netLenThresh: 300, gapTol: 8 };
-
-export function emptyModel(config: NetModelConfig = DEFAULT_CONFIG): NetModel {
-  return { edges: [], excluded: [], config };
+export function emptyModel(): NetModel {
+  return { edges: [], excluded: [], gates: [] };
 }
 
-// Modell-Kanten → PathEdge[] für graphCompose. inNet=true: alle Modell-Kanten
-// gehören zum Kandidaten-Netz; was wirklich „Netz" ist, entscheidet die
-// Komponenten-Länge in deriveNet. source/highway/tags sind hier irrelevant
-// (graphCompose nutzt nur points + inNet); Asphalt führen wir separat.
+// ─── Planar-Geometrie (lokal, Meter) ────────────────────────────────────────────
+const mLngAt = (lat: number): number => 111320 * Math.cos((lat * Math.PI) / 180);
+const distM = (a: LatLng, b: LatLng): number => {
+  const mLng = mLngAt(a[0]);
+  return Math.hypot((b[1] - a[1]) * mLng, (b[0] - a[0]) * M_LAT);
+};
+
+// Schnittpunkt zweier Segmente (echt, inkl. Berührung an Endpunkten) oder null.
+function segCross(p1: LatLng, p2: LatLng, p3: LatLng, p4: LatLng): LatLng | null {
+  const mLng = mLngAt(p1[0]);
+  const x = (p: LatLng) => p[1] * mLng;
+  const y = (p: LatLng) => p[0] * M_LAT;
+  const x1 = x(p1), y1 = y(p1), x2 = x(p2), y2 = y(p2);
+  const x3 = x(p3), y3 = y(p3), x4 = x(p4), y4 = y(p4);
+  const den = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+  if (Math.abs(den) < 1e-9) return null; // parallel/kollinear
+  const t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / den;
+  const u = ((x1 - x3) * (y1 - y2) - (y1 - y3) * (x1 - x2)) / den;
+  if (t < 0 || t > 1 || u < 0 || u > 1) return null;
+  return [p1[0] + t * (p2[0] - p1[0]), p1[1] + t * (p2[1] - p1[1])];
+}
+
+// Projektion eines Punkts auf ein Segment → { point, dist, t }.
+function projOnSeg(p: LatLng, a: LatLng, b: LatLng): { point: LatLng; dist: number; t: number } {
+  const mLng = mLngAt(a[0]);
+  const ax = a[1] * mLng, ay = a[0] * M_LAT;
+  const bx = b[1] * mLng, by = b[0] * M_LAT;
+  const px = p[1] * mLng, py = p[0] * M_LAT;
+  const dx = bx - ax, dy = by - ay;
+  const len2 = dx * dx + dy * dy;
+  let t = len2 === 0 ? 0 : ((px - ax) * dx + (py - ay) * dy) / len2;
+  t = Math.max(0, Math.min(1, t));
+  const point: LatLng = [a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1])];
+  return { point, dist: distM(p, point), t };
+}
+
+// ─── Integration der gezeichneten Kanten (Noding-Vorstufe) ──────────────────────
+// Liefert: edges mit eingefügten Split-Punkten (für die Verbindung) + Brücken
+// (Fly-over). Regeln (siehe Spec):
+//   - Trasse ENDET auf fremder Linie (Endpunkt ≤ HIT, im Linieninneren) → fremde
+//     Linie dort splitten + Trassen-Endpunkt darauf einrasten → Verbindung.
+//   - Trasse läuft MITTEN über fremde Linie (Kreuzung nicht an Trassen-Endpunkt)
+//     → KEIN Knoten, BridgeMark.
+//   - OSM × OSM bleibt unberührt (nur gemeinsame Koordinaten verbinden → Brücken).
+function integrate(edges: ModelEdge[]): { edges: ModelEdge[]; bridges: BridgeMark[] } {
+  // Arbeitskopie der Punktlisten (wird durch Splits ergänzt).
+  const work: ModelEdge[] = edges.map((e) => ({ ...e, points: e.points.map((p) => [p[0], p[1]] as LatLng) }));
+  const byId = new Map(work.map((e) => [e.id, e]));
+  const bridges: BridgeMark[] = [];
+  // Einzufügende Split-Punkte je Ziel-Kante: { afterIndex, point }.
+  const splits = new Map<number, { afterIndex: number; point: LatLng }[]>();
+  const addSplit = (id: number, afterIndex: number, point: LatLng) => {
+    const arr = splits.get(id) ?? [];
+    arr.push({ afterIndex, point });
+    splits.set(id, arr);
+  };
+
+  for (const d of work) {
+    if (d.source !== 'drawn' || d.points.length < 2) continue;
+    const dEnds: LatLng[] = [d.points[0], d.points[d.points.length - 1]];
+    const isDrawnEnd = (p: LatLng) => dEnds.some((e) => distM(p, e) <= HIT_TOL_M);
+
+    for (const o of work) {
+      if (o.id === d.id || o.points.length < 2) continue;
+
+      // (1) Trassen-Endpunkt liegt auf dem Inneren von o → splitten + einrasten.
+      for (const end of dEnds) {
+        let best: { dist: number; afterIndex: number; point: LatLng } | null = null;
+        for (let i = 0; i + 1 < o.points.length; i++) {
+          const pr = projOnSeg(end, o.points[i], o.points[i + 1]);
+          if (pr.dist <= HIT_TOL_M && (!best || pr.dist < best.dist)) {
+            best = { dist: pr.dist, afterIndex: i, point: pr.point };
+          }
+        }
+        if (best) {
+          // Nur splitten, wenn der Treffer NICHT schon ein Stützpunkt von o ist.
+          const nearVertex = o.points.some((p) => distM(p, best!.point) <= WELD_TOL_M);
+          if (!nearVertex) addSplit(o.id, best.afterIndex, best.point);
+          // Trassen-Endpunkt exakt auf den Punkt setzen → gemeinsame Koordinate.
+          const which = distM(end, d.points[0]) <= distM(end, d.points[d.points.length - 1]) ? 0 : d.points.length - 1;
+          d.points[which] = best.point;
+        }
+      }
+
+      // (2) Echte Kreuzung Segment×Segment.
+      for (let j = 0; j + 1 < d.points.length; j++) {
+        for (let i = 0; i + 1 < o.points.length; i++) {
+          const P = segCross(d.points[j], d.points[j + 1], o.points[i], o.points[i + 1]);
+          if (!P) continue;
+          if (isDrawnEnd(P)) continue; // Kreuzung am Trassen-Endpunkt → von (1) als Knoten behandelt
+          // Mitten-Kreuzung → Fly-over (Brücke), kein Knoten.
+          bridges.push({ at: P, overEdgeId: d.id });
+        }
+      }
+    }
+  }
+
+  // Split-Punkte in die Ziel-Kanten einfügen (von hinten, Indizes stabil halten).
+  for (const [id, list] of splits) {
+    const e = byId.get(id);
+    if (!e) continue;
+    list.sort((a, b) => b.afterIndex - a.afterIndex);
+    for (const s of list) e.points.splice(s.afterIndex + 1, 0, s.point);
+  }
+  return { edges: work, bridges };
+}
+
+// ─── Ableitung ───────────────────────────────────────────────────────────────────
 function toPathEdges(edges: ModelEdge[]): PathEdge[] {
   return edges.map((e) => ({
     id: e.id, highway: '', source: 'primary', points: e.points, tags: {}, inNet: true,
   }));
 }
 
-// Die einzige Ableitung: Modell -> klassifizierter Graph. Hier passiert die
-// gesamte „Logik" (Noden, Verschmelzen, Ausschlüsse, Netz/Rest, rot/lila).
-export function deriveNet(model: NetModel): DerivedNet {
-  const composed = graphCompose(toPathEdges(model.edges));
-  const merged = bridgeGaps(composed, model.config.gapTol);
+// Längste Komponente nach Gesamt-Metern.
+function longestComponent(graph: NetGraph): number {
+  const meters = new Map<number, number>();
+  for (const e of graph.edges) {
+    const c = graph.nodes[e.from]?.component ?? -1;
+    meters.set(c, (meters.get(c) ?? 0) + e.meters);
+  }
+  let best = -1; let bestM = -1;
+  for (const [c, m] of meters) if (m > bestM) { bestM = m; best = c; }
+  return best;
+}
+
+// Sackgassen-Arme: von jedem degree-1-Ende (kein Gate) entlang degree-2-Ketten
+// zurück bis zum nächsten Knoten degree ≥ 3 — alle durchlaufenen Teilstücke rot.
+function deadArmKeys(graph: NetGraph, gateNodeIds: Set<number>): Set<string> {
+  const incident = new Map<number, number[]>(); // node -> edge-Indizes
+  const push = (n: number, idx: number): void => {
+    const arr = incident.get(n);
+    if (arr) arr.push(idx); else incident.set(n, [idx]);
+  };
+  graph.edges.forEach((e, idx) => { push(e.from, idx); push(e.to, idx); });
+
+  const keyOf = (i: number): string => `${graph.edges[i].edgeId}:${graph.edges[i].seg}`;
+  const dead = new Set<string>();
+  for (const tip of graph.nodes) {
+    if (tip.degree !== 1 || gateNodeIds.has(tip.id)) continue;
+    let node = tip.id;
+    let guard = 0;
+    let edgeIdx: number | undefined = incident.get(node)?.[0];
+    while (edgeIdx !== undefined && guard++ < graph.edges.length + 1) {
+      dead.add(keyOf(edgeIdx));
+      const e = graph.edges[edgeIdx];
+      const next: number = e.from === node ? e.to : e.from;
+      if ((graph.nodes[next]?.degree ?? 0) !== 2) break; // Kreuzung (≥3) oder anderes Ende
+      // entlang der degree-2-Kette weiter (das andere anliegende Teilstück).
+      const inc: number[] = incident.get(next) ?? [];
+      const here = edgeIdx;
+      edgeIdx = inc.find((k) => k !== here);
+      node = next;
+    }
+  }
+  return dead;
+}
+
+export function deriveNet(model: NetModel, poiCoords: LatLng[] = []): DerivedNet {
+  const integrated = integrate(model.edges);
+  const composed = graphCompose(toPathEdges(integrated.edges));
+  const merged = bridgeGaps(composed, WELD_TOL_M); // nur fast deckungsgleiche Enden
   const excludedSet = new Set(model.excluded);
   const graph = excludedSet.size > 0
     ? filterEdges(merged.graph, (e) => !excludedSet.has(`${e.edgeId}:${e.seg}`))
     : merged.graph;
-  const netzSet = netzComponents(graph, model.config.netLenThresh);
+
+  const NET = longestComponent(graph);
+  const gateNodeIds = new Set<number>();
+  for (const n of graph.nodes) {
+    if (n.degree === 1 && model.gates.some((g) => distM([n.lat, n.lng], g.at) <= HIT_TOL_M)) {
+      gateNodeIds.add(n.id);
+    }
+  }
+  const dead = deadArmKeys(graph, gateNodeIds);
 
   const asphaltOf = new Map(model.edges.map((e) => [e.id, e.asphalt]));
   const drawnIds = new Set(model.edges.filter((e) => e.source === 'drawn').map((e) => e.id));
@@ -95,62 +238,61 @@ export function deriveNet(model: NetModel): DerivedNet {
   const edges: DerivedEdge[] = [];
   const redKeys: string[] = [];
   let netMeters = 0;
-  let restMeters = 0;
-
   for (const ge of graph.edges) {
-    if (ge.edgeId < 0) continue; // Brücken separat (unten)
+    if (ge.edgeId < 0) continue; // Verschweiß-Brücken (negativ) nicht als Teilstück zeigen
     const key = `${ge.edgeId}:${ge.seg}`;
-    const inNet = netzSet.has(graph.nodes[ge.from].component);
-    const deadEnd = graph.nodes[ge.from].degree === 1 || graph.nodes[ge.to].degree === 1;
+    const inNet = graph.nodes[ge.from].component === NET;
     const drawn = drawnIds.has(ge.edgeId);
+    const isDeadArm = dead.has(key);
+    const deadEnd = graph.nodes[ge.from].degree === 1 || graph.nodes[ge.to].degree === 1;
 
     let klass: EdgeClass;
-    if (drawn && !inNet) klass = 'lila';        // gezeichnet, noch nicht verschmolzen
-    else if (!inNet || deadEnd) klass = 'red';  // nicht im Netz ODER Sackgasse
+    if (drawn && !inNet) klass = 'lila';
+    else if (!inNet || isDeadArm) klass = 'red';
     else klass = 'net';
 
     if (klass === 'red') redKeys.push(key);
-    if (inNet) netMeters += ge.meters; else restMeters += ge.meters;
-
+    if (inNet) netMeters += ge.meters;
     edges.push({
       key, wayId: ge.edgeId, seg: ge.seg, points: ge.points, klass,
       asphalt: asphaltOf.get(ge.edgeId) ?? false, deadEnd,
     });
   }
 
-  return {
-    edges,
-    bridges: merged.bridges.map((b) => ({ points: b.points })),
-    redKeys,
-    netMeters,
-    restMeters,
-  };
+  // POIs: Katalog-POIs (poiCoords) UND Gate-POIs (model.gates). Angebunden, wenn
+  // ≤ WELD an einem Netz-Knoten; gate, wenn als Gate gesetzt. Doppelte (Gate, das
+  // auch ein Katalog-POI ist) werden zusammengefasst.
+  const netNodes = graph.nodes.filter((n) => n.component === NET);
+  const allPoiCoords: LatLng[] = [...poiCoords];
+  for (const g of model.gates) {
+    if (!allPoiCoords.some((p) => distM(p, g.at) <= WELD_TOL_M)) allPoiCoords.push(g.at);
+  }
+  const pois: DerivedPoi[] = allPoiCoords.map((at) => ({
+    at,
+    connected: netNodes.some((n) => distM([n.lat, n.lng], at) <= WELD_TOL_M),
+    gate: model.gates.some((g) => distM(g.at, at) <= WELD_TOL_M),
+  }));
+
+  return { edges, bridges: integrated.bridges, pois, redKeys, netMeters };
 }
 
-// ─── Operationen (rein: Model -> Model) ─────────────────────────────────────────
-
+// ─── Aktionen (rein: NetModel -> NetModel) ──────────────────────────────────────
 function nextDrawnId(model: NetModel): number {
   let max = DRAWN_ID_BASE - 1;
   for (const e of model.edges) if (e.id > max) max = e.id;
   return max + 1;
 }
 
-/** Setzt das Basis-Netz (OSM-Fetch) — ersetzt die OSM-Kanten, behält gezeichnete. */
 export function setOsmEdges(model: NetModel, osm: ModelEdge[]): NetModel {
   const drawn = model.edges.filter((e) => e.source === 'drawn');
   return { ...model, edges: [...osm.map((e) => ({ ...e, source: 'osm' as const })), ...drawn] };
 }
 
-/** Fügt ein gezeichnetes Segment hinzu (lila, bis es mit dem Netz verschmilzt). */
-export function addDrawnEdge(
-  model: NetModel, points: [number, number][], asphalt = false,
-): NetModel {
+export function addDrawnEdge(model: NetModel, points: LatLng[], asphalt = false): NetModel {
   if (points.length < 2) return model;
-  const edge: ModelEdge = { id: nextDrawnId(model), points, source: 'drawn', asphalt };
-  return { ...model, edges: [...model.edges, edge] };
+  return { ...model, edges: [...model.edges, { id: nextDrawnId(model), points, source: 'drawn', asphalt }] };
 }
 
-/** Löscht Teilstücke (zwischen Kreuzungen / einzelne Arme) per Key. */
 export function deleteKeys(model: NetModel, keys: string[]): NetModel {
   if (keys.length === 0) return model;
   const next = new Set(model.excluded);
@@ -158,18 +300,16 @@ export function deleteKeys(model: NetModel, keys: string[]): NetModel {
   return { ...model, excluded: [...next] };
 }
 
-/** Holt ein gelöschtes Teilstück zurück. */
 export function restoreKeys(model: NetModel, keys: string[]): NetModel {
   if (keys.length === 0) return model;
   const drop = new Set(keys);
   return { ...model, excluded: model.excluded.filter((k) => !drop.has(k)) };
 }
 
-/** „Alles Rote löschen": entfernt alle nicht-im-Netz/Sackgassen-Teilstücke. */
 export function deleteAllRed(model: NetModel): NetModel {
   return deleteKeys(model, deriveNet(model).redKeys);
 }
 
-export function setConfig(model: NetModel, patch: Partial<NetModelConfig>): NetModel {
-  return { ...model, config: { ...model.config, ...patch } };
+export function setGatePoi(model: NetModel, at: LatLng, poiId?: string): NetModel {
+  return { ...model, gates: [...model.gates, { at, poiId }] };
 }
