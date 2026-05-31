@@ -1836,13 +1836,13 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
                 onChange={(e) => setCoordDecimals(Number(e.target.value))} style={{ width: 50, margin: 0 }} />
             </span>
           </div>
-          {/* Posteingang: im Drawer erfasste POIs (Registry). Export → Katalog folgt später. */}
+          {/* Postausgang: im Drawer erfasste POIs (Registry) → Export an den Katalog. */}
           {netModel.gates.length > 0 && (
             <div style={{
               display: 'flex', flexWrap: 'wrap', gap: '4px 8px', alignItems: 'center',
               padding: '5px 9px', borderRadius: 5, background: '#f0fff4', border: '1px solid #9ae6b4', color: '#22543d',
             }}>
-              <b style={{ fontSize: 11 }}>Posteingang ({netModel.gates.length})</b>
+              <b style={{ fontSize: 11 }}>Postausgang ({netModel.gates.length})</b>
               {netModel.gates.map((g) => (
                 <span key={g.id ?? `${g.at[0]},${g.at[1]}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, background: '#fff', border: '1px solid #c6f6d5', borderRadius: 4, padding: '1px 4px' }}>
                   {g.tagline || g.category || 'POI'}
