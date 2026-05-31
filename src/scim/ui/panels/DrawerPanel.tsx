@@ -570,6 +570,25 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     layer.setStyle({ color, weight: 2, opacity: o, fillOpacity: 0 });
   }, [boundaryVisible, boundaryOpacity, polygon, geometryId, tab, overlayCatalogId, masked]);
 
+  // Einmal ein rotes Schraffur-SVG-Pattern registrieren (für das maskierte
+  // Außen-Fill im Wegnetz-Tab → Schraffur statt Vollfläche).
+  useEffect(() => {
+    if (document.getElementById('scim-defs')) return;
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('id', 'scim-defs');
+    svg.setAttribute('width', '0'); svg.setAttribute('height', '0');
+    svg.style.position = 'absolute';
+    const defs = document.createElementNS(ns, 'defs');
+    const pat = document.createElementNS(ns, 'pattern');
+    pat.setAttribute('id', 'scim-hatch'); pat.setAttribute('width', '7'); pat.setAttribute('height', '7');
+    pat.setAttribute('patternUnits', 'userSpaceOnUse'); pat.setAttribute('patternTransform', 'rotate(45)');
+    const line = document.createElementNS(ns, 'line');
+    line.setAttribute('x1', '0'); line.setAttribute('y1', '0'); line.setAttribute('x2', '0'); line.setAttribute('y2', '7');
+    line.setAttribute('stroke', SLOT2_COLOR); line.setAttribute('stroke-width', '1.4'); line.setAttribute('opacity', '0.55');
+    pat.appendChild(line); defs.appendChild(pat); svg.appendChild(defs); document.body.appendChild(svg);
+  }, []);
+
   // F6b: invertiertes Fill als eigener Overlay-Layer neu aufbauen. Nur für Drafts
   // (geometryId === 'new'); außen in Reifefarbe getönt, innen klar.
   useEffect(() => {
@@ -596,6 +615,12 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       interactive: false,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any).addTo(map);
+    // Maskiert im Wegnetz-Tab (rotes Außen-Fill): Vollfläche durch rote Schraffur ersetzen.
+    if (masked && tab === 'wegnetz') {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const p = (inv as any)._path as SVGPathElement | undefined;
+      if (p) { p.setAttribute('fill', 'url(#scim-hatch)'); p.setAttribute('fill-opacity', '1'); }
+    }
     inv.bringToBack();
     tileLayerRef.current?.bringToBack();
     invFillLayerRef.current = inv;
