@@ -1107,6 +1107,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
           }
           style={{
             fontSize: 11, fontWeight: 700, padding: '3px 12px', borderRadius: 5,
+            minWidth: 104, textAlign: 'center',
             border: '1px solid #2b6cb0',
             background: (!canApplyNet || pathStatus === 'loading' || !currentCfg) ? '#edf2f7' : '#ebf8ff',
             color: (!canApplyNet || pathStatus === 'loading' || !currentCfg) ? '#a0aec0' : '#2b6cb0',
@@ -1345,11 +1346,6 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
             onCfgChange={setCurrentCfg}
             status={pathStatus}
             error={pathError}
-            result={pathResult}
-            anchor={anchorSummary}
-            crop={cropResult}
-            netLenThresh={netLenThresh}
-            sackgassenRot={sackgassenRot}
             includeCount={manualPieces.size}
             onClearInclude={() => setManualPieces(new Map())}
             cutCount={cutEdges.size}
@@ -1389,6 +1385,51 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
         </div>
       )}
 
+      {/* Footer-Leiste (Wegnetz): Summen-Infos aus dem alten Filter — grünes
+          Netz-Feld + gelbes Maskierung/POI-Anker-Feld. */}
+      {tab === 'wegnetz' && pathStatus === 'done' && pathResult && (
+        <div style={{
+          display: 'flex', gap: 8, padding: '5px 12px', fontSize: 11,
+          background: '#f7fafc', borderTop: '1px solid #e2e8f0',
+        }}>
+          {/* GRÜN — Netz-Zusammenfassung */}
+          <div style={{
+            flex: 1, display: 'flex', flexWrap: 'wrap', gap: '2px 14px', alignItems: 'center',
+            padding: '5px 9px', borderRadius: 5, background: '#f0fff4', border: '1px solid #9ae6b4', color: '#22543d',
+          }}>
+            <span><span style={{ display: 'inline-block', width: 14, borderTop: '3px solid #222a35', verticalAlign: 'middle' }} /> <b>Netz</b> (≥{netLenThresh} m)</span>
+            <span><span style={{ display: 'inline-block', width: 14, borderTop: '2px solid #1f9d8f', verticalAlign: 'middle' }} /> <b>Rest</b></span>
+            <span><span style={{ display: 'inline-block', width: 14, height: 5, background: '#fff', border: '1.5px solid #1a202c', verticalAlign: 'middle' }} /> <b>Asphalt</b> {Math.round(asphaltMeters(pathResult.edges))} m</span>
+            {sackgassenRot && <span><span style={{ display: 'inline-block', width: 14, borderTop: '3px solid #e53e3e', verticalAlign: 'middle' }} /> Sackgassen</span>}
+            {cutEdges.size > 0 && <span><span style={{ display: 'inline-block', width: 14, borderTop: '3px solid #3182ce', verticalAlign: 'middle' }} /> {cutEdges.size} abgeschnitten</span>}
+            <span style={{ color: '#718096' }}>{pathResult.primaryCount} primär · {pathResult.connectorCount} Konnekt. · {pathResult.rawWayCount} Ways</span>
+            {(() => {
+              const u = netStats(pathResult.edges.filter((e) => e.inNet));
+              const m = (masked && cropResult) ? netStats(cropResult.edges.filter((e) => e.inNet)) : null;
+              return (
+                <span style={{ fontFamily: 'monospace', color: '#2c5282' }}>
+                  Netz {u.edgeCount}K·{u.pointCount}P·{formatBytes(u.bytes)}{m && ` | mask ${m.edgeCount}K·${formatBytes(m.bytes)}`}
+                </span>
+              );
+            })()}
+          </div>
+          {/* GELB — Maskierung + POI-Anker */}
+          {((masked && cropResult) || anchorSummary) && (
+            <div style={{
+              display: 'flex', flexWrap: 'wrap', gap: '2px 14px', alignItems: 'center',
+              padding: '5px 9px', borderRadius: 5, background: '#fffaf0', border: '1px solid #fbd38d', color: '#7c2d12',
+            }}>
+              {masked && cropResult && (
+                <span><b>Maskierung:</b> {cropResult.keptCount} innen · {cropResult.clippedCount} gekappt · {cropResult.droppedCount} weg · {cropResult.gates.length} Gates</span>
+              )}
+              {anchorSummary && (
+                <span><b>POI-Anker:</b> <span style={{ color: '#dd6b20' }}>●</span>{anchorSummary.connected} <span style={{ color: '#2f855a' }}>●</span>{anchorSummary.onPath} <span style={{ color: '#a0aec0' }}>●</span>{anchorSummary.outside}</span>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
     </div>
   );
 }
@@ -1396,8 +1437,8 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
 // ─── Wegnetz-Filter-Menue (Phase 2: UI + localStorage, keine Wirkung) ─────────
 
 function PathFilterMenu({
-  gebiet, gebietLabel, canApply, onResized, onCfgChange, status, error, result, anchor,
-  crop, netLenThresh, sackgassenRot, includeCount, onClearInclude, cutCount, onClearCut,
+  gebiet, gebietLabel, canApply, onResized, onCfgChange, status, error,
+  includeCount, onClearInclude, cutCount, onClearCut,
 }: {
   gebiet: string;
   gebietLabel: string;
@@ -1406,11 +1447,6 @@ function PathFilterMenu({
   onCfgChange: (cfg: PathConfig) => void;
   status: 'idle' | 'loading' | 'done' | 'error';
   error: string;
-  result: import('../../regio-content/pathEngine').PathFetchResult | null;
-  anchor: AnchorSummary | null;
-  crop: CropResult | null;
-  netLenThresh: number;       // nur für die Legende (Steuerung lebt im Tool-Header)
-  sackgassenRot: boolean;     // nur für die Legende
   includeCount: number;
   onClearInclude: () => void;
   cutCount: number;
@@ -1638,26 +1674,8 @@ function PathFilterMenu({
         </div>
       </Section>
 
-      {/* Aktionen / Legende — „Anwenden" liegt jetzt im Tool-Header (rechts). */}
+      {/* Status (Fehler) — Summen-Infos (grün/gelb) liegen in der Footer-Leiste. */}
       <div style={{ padding: '10px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {/* F7.3: KEIN destruktiver Crop-Button mehr. Der Schnitt passiert unsichtbar
-            erst am Commit im Workspace. Die Maskierung unten ist eine reversible
-            Vorschau; das crop-Info-Feld zeigt nur die Vorschau-Wirkung. */}
-        {crop && (
-          <div style={{
-            fontSize: 11, lineHeight: 1.6, padding: '7px 9px', borderRadius: 5,
-            background: '#fffaf0', border: '1px solid #fbd38d', color: '#7c2d12',
-          }}>
-            <div style={{ fontWeight: 700, marginBottom: 2 }}>Maskierung</div>
-            <div>{crop.keptCount} ganz innen · {crop.clippedCount} gekappt · {crop.droppedCount} verworfen</div>
-            <div style={{ marginTop: 2 }}>
-              <span style={{ color: '#2f855a' }}>●</span> {crop.gates.length} Gate-Knoten (inner/outer)
-            </div>
-          </div>
-        )}
-        {/* „Beschneiden" liegt jetzt in der EBENEN-Zeile oben (tab-unabhängig). */}
-
-        {/* Status / Legende */}
         {status === 'error' && (
           <div style={{
             fontSize: 11, lineHeight: 1.5, padding: '7px 9px', borderRadius: 5,
@@ -1666,72 +1684,6 @@ function PathFilterMenu({
             ✗ {error}
           </div>
         )}
-        {status === 'done' && result && (
-          <div style={{
-            fontSize: 11, lineHeight: 1.6, padding: '7px 9px', borderRadius: 5,
-            background: '#f0fff4', border: '1px solid #9ae6b4', color: '#22543d',
-          }}>
-            {/* E2b: Färbung nach Konnektivität (nicht mehr nach Herkunft). */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ display: 'inline-block', width: 14, height: 0, borderTop: '3px solid #222a35' }} />
-              <span><b>Netz</b> (Länge ≥ {netLenThresh} m)</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
-              <span style={{ display: 'inline-block', width: 14, height: 0, borderTop: '2px solid #1f9d8f' }} />
-              <span><b>Rest</b> (kürzere Komponenten)</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
-              <span style={{ display: 'inline-block', width: 14, height: 5, background: '#fff', border: '1.5px solid #1a202c' }} />
-              <span><b>Asphalt</b> · {Math.round(asphaltMeters(result.edges))} m im Netz</span>
-            </div>
-            {sackgassenRot && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
-                <span style={{ display: 'inline-block', width: 14, height: 0, borderTop: '3px solid #e53e3e' }} />
-                <span><b>Sackgassen</b> (degree-1)</span>
-              </div>
-            )}
-            {cutCount > 0 && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
-                <span style={{ display: 'inline-block', width: 14, height: 0, borderTop: '3px solid #3182ce' }} />
-                <span><b>{cutCount} abgeschnitten</b> (blau, Datenrand)</span>
-              </div>
-            )}
-            <div style={{ color: '#718096', marginTop: 2 }}>
-              {result.primaryCount} primär · {result.connectorCount} Konnektoren · {result.rawWayCount} OSM-Ways
-            </div>
-            {/* F7: Netz-Datengröße (stabil, später fürs Auslieferungs-Budget). */}
-            {(() => {
-              const u = netStats(result.edges.filter((e) => e.inNet));
-              const m = crop ? netStats(crop.edges.filter((e) => e.inNet)) : null;
-              return (
-                <div style={{ marginTop: 4, paddingTop: 4, borderTop: '1px dashed #9ae6b4', fontFamily: 'monospace', fontSize: 10, color: '#2c5282' }}>
-                  Netz unmaskiert: {u.edgeCount} Kanten · {u.pointCount} Punkte · <strong>{formatBytes(u.bytes)}</strong>
-                  {m && (
-                    <div style={{ marginTop: 1 }}>
-                      Netz maskiert: {m.edgeCount} Kanten · {m.pointCount} Punkte · <strong>{formatBytes(m.bytes)}</strong>
-                    </div>
-                  )}
-                </div>
-              );
-            })()}
-          </div>
-        )}
-        {status === 'done' && anchor && (
-          <div style={{
-            fontSize: 11, lineHeight: 1.7, padding: '7px 9px', borderRadius: 5,
-            background: '#fffaf0', border: '1px solid #fbd38d', color: '#7c2d12',
-          }}>
-            <div style={{ fontWeight: 700, marginBottom: 2 }}>POI-Anker</div>
-            <div><span style={{ color: '#dd6b20' }}>●</span> {anchor.connected} connected (Stich)</div>
-            <div><span style={{ color: '#2f855a' }}>●</span> {anchor.onPath} auf dem Pfad</div>
-            <div><span style={{ color: '#a0aec0' }}>●</span> {anchor.outside} außerhalb der Boundary</div>
-          </div>
-        )}
-        <div style={{ fontSize: 10, color: '#a0aec0', lineHeight: 1.5 }}>
-          „Anwenden" lädt OSM (Overpass) für die Region-Boundary, verschweißt das
-          Netz und färbt nach Konnektivität: schwarz = Netz, grün = Rest. Die
-          Netz-Schwelle trennt beide; Sackgassen lassen sich rot einblenden.
-        </div>
       </div>
           </>
         ) : proBody}
