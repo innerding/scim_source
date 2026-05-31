@@ -136,6 +136,12 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   // Maskierung/Crop (Umbauplan D): Ergebnis des Zuschnitts mit der Slot-2-Maske.
   const [cropResult, setCropResult] = useState<CropResult | null>(null);
 
+  // US3: Anwenden lebt jetzt im Tool-Header (rechts, unter Beschneiden). Dafür
+  // muss die Filter-Config eine Ebene hoch (currentCfg) und ein „dirty seit
+  // letztem Anwenden"-Signal (appliedCfgSig) → der Button pulst bei Bedarf.
+  const [currentCfg, setCurrentCfg] = useState<PathConfig | null>(null);
+  const [appliedCfgSig, setAppliedCfgSig] = useState<string | null>(null);
+
   // E2b — Konnektivitätsfärbung: Komponenten ≥ netLenThresh (m) gelten als „Netz"
   // (schwarz), kürzere als „Rest" (grün). sackgassenRot legt rot über alle
   // degree-1-Enden (Default: Grundfarbe der Komponente). Reiner Render-Zustand.
@@ -924,6 +930,8 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   // anschliessend POI-Anker (ann_074) berechnen + zeichnen.
   const onApplyPath = async (cfg: PathConfig) => {
     lastCfgRef.current = cfg; // für T2-Anschluss-Toleranz beim manuellen Anwählen
+    setAppliedCfgSig(JSON.stringify(cfg)); // Stand „angewandt" → Puls aus
+    setCurrentCfg(cfg);
     const map = mapRef.current;
     // Vorrang-Regel: das Netz wird aus der EIGENEN Boundary (B1) des Drafts abgeleitet.
     // Nur wenn der Drawer noch keine eigene Boundary hat, leiht der Inspector seine —
@@ -1034,6 +1042,16 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   // `side` (left=Umriss · center=geteilt · right=Wegnetz) + `tabs`. Die Leiste
   // filtert nach aktivem Tab und ordnet nach Zone. Weitere Werkzeuge (US3) werden
   // einfach als weitere Einträge ergänzt — kein Umbau am Gerüst nötig.
+  // „Anwenden" (rechte Zone): pulst, solange es etwas anzuwenden gibt — Quelle
+  // vorhanden UND Netz veraltet (noch nie geladen oder Filter seit letztem
+  // Anwenden geändert). Während des Ladens kein Puls.
+  const canApplyNet =
+    (!!polygon && polygon.length >= 3)
+    || !!overlayCatalogId
+    || !!(inspectorView?.geometry?.polygon && inspectorView.geometry.polygon.length >= 3);
+  const netStale = !pathResult || (!!currentCfg && JSON.stringify(currentCfg) !== appliedCfgSig);
+  const applyPulse = canApplyNet && netStale && pathStatus !== 'loading';
+
   const drawerTools: { id: string; side: 'left' | 'center' | 'right'; tabs: DrawerTab[]; node: ReactNode }[] = [
     {
       id: 'snap', side: 'center', tabs: ['umriss', 'wegnetz'],
@@ -1044,6 +1062,31 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
           label="⊹ Snap"
           title="Einrasten beim Zeichnen/Editieren auf nahe Punkte und Kanten (beide Tabs)"
         />
+      ),
+    },
+    {
+      id: 'anwenden', side: 'right', tabs: ['wegnetz'],
+      node: (
+        <button
+          className={applyPulse ? 'tool-pulse' : undefined}
+          onClick={() => { if (currentCfg) onApplyPath(currentCfg); }}
+          disabled={!canApplyNet || pathStatus === 'loading' || !currentCfg}
+          title={
+            !canApplyNet ? 'Keine Quelle fürs Netz (Boundary/Katalog/Inspector)'
+              : pathStatus === 'loading' ? 'lädt OSM …'
+              : netStale ? 'OSM holen + Filter anwenden (Einstellungen geändert)'
+              : 'Netz ist aktuell'
+          }
+          style={{
+            fontSize: 11, fontWeight: 700, padding: '3px 12px', borderRadius: 5,
+            border: '1px solid #2b6cb0',
+            background: (!canApplyNet || pathStatus === 'loading' || !currentCfg) ? '#edf2f7' : '#ebf8ff',
+            color: (!canApplyNet || pathStatus === 'loading' || !currentCfg) ? '#a0aec0' : '#2b6cb0',
+            cursor: (!canApplyNet || pathStatus === 'loading' || !currentCfg) ? 'not-allowed' : 'pointer',
+          }}
+        >
+          {pathStatus === 'loading' ? '… lädt' : '▷ Anwenden'}
+        </button>
       ),
     },
   ];
@@ -1274,7 +1317,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
               || !!(inspectorView?.geometry?.polygon && inspectorView.geometry.polygon.length >= 3)
             }
             onResized={() => setTimeout(() => mapRef.current?.invalidateSize(), 60)}
-            onApply={onApplyPath}
+            onCfgChange={setCurrentCfg}
             status={pathStatus}
             error={pathError}
             result={pathResult}
@@ -1337,7 +1380,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
 // ─── Wegnetz-Filter-Menue (Phase 2: UI + localStorage, keine Wirkung) ─────────
 
 function PathFilterMenu({
-  gebiet, gebietLabel, canApply, onResized, onApply, status, error, result, anchor,
+  gebiet, gebietLabel, canApply, onResized, onCfgChange, status, error, result, anchor,
   crop, netLenThresh, onNetLenThresh, sackgassenRot, onSackgassenRot,
   gapTol, onGapTol, bridgeCount, mergeOn, onMergeOn,
   pickMode, onPickMode, includeCount, onClearInclude, cutCount, onClearCut,
@@ -1346,7 +1389,7 @@ function PathFilterMenu({
   gebietLabel: string;
   canApply: boolean;
   onResized: () => void;
-  onApply: (cfg: PathConfig) => void;
+  onCfgChange: (cfg: PathConfig) => void;
   status: 'idle' | 'loading' | 'done' | 'error';
   error: string;
   result: import('../../regio-content/pathEngine').PathFetchResult | null;
@@ -1381,6 +1424,9 @@ function PathFilterMenu({
     if (!gebiet) return;
     savePathConfig({ ...cfg, gebiet });
   }, [cfg, gebiet]);
+
+  // Config nach oben spiegeln (US3): der Anwenden-Knopf im Tool-Header braucht sie.
+  useEffect(() => { onCfgChange(cfg); }, [cfg]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const update = (fn: (c: PathConfig) => PathConfig) => setCfg((c) => fn(c));
 
@@ -1455,7 +1501,6 @@ function PathFilterMenu({
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '8px 10px', borderBottom: '1px solid #e2e8f0', background: '#edf2f7', flexShrink: 0,
       }}>
-        <span style={{ fontWeight: 700, color: '#1a365d' }}>{isFilter ? 'Wegnetz-Filter' : 'Profi'}</span>
         <button
           onClick={() => { setPanelOpen(null); onResized(); }}
           title="Einklappen"
@@ -1466,6 +1511,7 @@ function PathFilterMenu({
         >
           ◂
         </button>
+        <span style={{ fontWeight: 700, color: '#1a365d' }}>{isFilter ? 'Wegnetz-Filter' : 'Profi'}</span>
       </div>
 
       {/* Scrollbarer Inhalt des offenen Panels */}
@@ -1638,26 +1684,8 @@ function PathFilterMenu({
         </div>
       </Section>
 
-      {/* Aktionen */}
+      {/* Aktionen / Legende — „Anwenden" liegt jetzt im Tool-Header (rechts). */}
       <div style={{ padding: '10px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <button
-          onClick={() => {
-            savePathConfig({ ...cfg, gebiet });
-            onApply(cfg);
-          }}
-          disabled={!canApply || status === 'loading'}
-          style={{
-            fontSize: 12, padding: '7px 12px', fontWeight: 600,
-            border: '1px solid #2b6cb0', borderRadius: 5,
-            background: status === 'loading' ? '#bee3f8' : '#ebf8ff',
-            color: '#2b6cb0',
-            cursor: (!canApply || status === 'loading') ? 'not-allowed' : 'pointer',
-            opacity: canApply ? 1 : 0.5,
-          }}
-        >
-          {status === 'loading' ? '… lade OSM' : 'Anwenden'}
-        </button>
-
         {/* F7.3: KEIN destruktiver Crop-Button mehr. Der Schnitt passiert unsichtbar
             erst am Commit im Workspace. Die Maskierung unten ist eine reversible
             Vorschau; das crop-Info-Feld zeigt nur die Vorschau-Wirkung. */}
@@ -1780,7 +1808,7 @@ function ReopenTab({ label, onClick }: { label: string; onClick: () => void }) {
       onClick={onClick}
       title={`${label} ausklappen`}
       style={{
-        width: 28, flex: 1, cursor: 'pointer',
+        width: 28, flexShrink: 0, cursor: 'pointer',
         background: '#edf2f7', border: 'none', borderRight: '1px solid #cbd5e0', borderBottom: '1px solid #cbd5e0',
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
         padding: '10px 0', color: '#2b6cb0',
