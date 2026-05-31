@@ -56,7 +56,7 @@ const POI_CATEGORIES: { value: string; label: string }[] = [
   { value: 'Help_emergency', label: 'Help · Notfall' },
 ];
 
-interface PoiDraft { at: LatLng; category: string; tagline: string; note: string; icon: string; iconNote: string; }
+interface PoiDraft { at: LatLng; category: string; tagline: string; note: string; icon: string; editId?: string; }
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import gruenbergMd from '../../../../data/gruenberg_pois_plan.md?raw';
@@ -272,18 +272,33 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     const map = mapRef.current;
     if (!map || !poiMode) return undefined;
     const onClick = (ev: L.LeafletMouseEvent) => {
-      let at: LatLng = [ev.latlng.lat, ev.latlng.lng];
+      const click: LatLng = [ev.latlng.lat, ev.latlng.lng];
+      const m = netModelRef.current;
+      // Bestehendes POI in der Nähe? → dessen Modal zum Bearbeiten öffnen.
+      let editHit: GatePoi | null = null; let editBest = Infinity;
+      for (const g of m.gates) {
+        const mLng = 111320 * Math.cos((g.at[0] * Math.PI) / 180);
+        const dist = Math.hypot((click[1] - g.at[1]) * mLng, (click[0] - g.at[0]) * 110540);
+        if (dist < editBest) { editBest = dist; editHit = g; }
+      }
+      if (editHit && editBest <= 12) {
+        const id = editHit.id ?? `poi-${poiIdRef.current++}`;
+        setPoiDraft({ at: editHit.at, category: editHit.category ?? 'gate', tagline: editHit.tagline ?? '', note: editHit.note ?? '', icon: editHit.icon ?? '', editId: id });
+        return;
+      }
+      // Sonst neu: frei platzieren, bei Snap auf den nächsten Knoten einrasten.
+      let at: LatLng = click;
       if (snapEnabledRef.current) {
-        const nodes = deriveNet(netModelRef.current).nodes;
+        const nodes = deriveNet(m).nodes;
         let best = Infinity; let pick: LatLng | null = null;
         for (const c of nodes) {
           const mLng = 111320 * Math.cos((c[0] * Math.PI) / 180);
           const dist = Math.hypot((at[1] - c[1]) * mLng, (at[0] - c[0]) * 110540);
           if (dist < best) { best = dist; pick = c; }
         }
-        if (pick && best <= 12) at = pick; // auf den Knoten einrasten
+        if (pick && best <= 12) at = pick;
       }
-      setPoiDraft({ at, category: 'gate', tagline: '', note: '', icon: '', iconNote: '' });
+      setPoiDraft({ at, category: 'gate', tagline: '', note: '', icon: '' });
     };
     map.on('click', onClick);
     return () => { map.off('click', onClick); };
@@ -291,16 +306,20 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
 
   const commitPoiDraft = (): void => {
     if (!poiDraft) return;
+    const editId = poiDraft.editId;
     const poi: GatePoi = {
       at: poiDraft.at,
       category: poiDraft.category,
       tagline: poiDraft.tagline.trim() || undefined,
       note: poiDraft.note.trim() || undefined,
       icon: poiDraft.icon || undefined,
-      iconNote: poiDraft.iconNote.trim() || undefined,
-      id: `poi-${poiIdRef.current++}`,
+      id: editId ?? `poi-${poiIdRef.current++}`,
     };
-    setNetModel((prev) => { undoRef.current.push(prev); return addPoi(prev, poi); });
+    setNetModel((prev) => {
+      undoRef.current.push(prev);
+      if (editId) return { ...prev, gates: prev.gates.map((g) => (g.id === editId ? poi : g)) };
+      return addPoi(prev, poi);
+    });
     setPoiDraft(null);
   };
 
@@ -1628,7 +1647,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
             onClick={(e) => e.stopPropagation()}
             style={{ background: '#fff', borderRadius: 8, padding: 16, width: 360, boxShadow: '0 8px 30px rgba(0,0,0,0.3)', fontFamily: 'system-ui, sans-serif' }}
           >
-            <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 10, color: '#1a365d' }}>POI ablegen</div>
+            <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 10, color: '#1a365d' }}>{poiDraft.editId ? 'POI bearbeiten' : 'POI ablegen'}</div>
             <label style={{ display: 'block', fontSize: 11, color: '#4a5568', marginBottom: 8 }}>Kategorie
               <select value={poiDraft.category} onChange={(e) => setPoiDraft({ ...poiDraft, category: e.target.value })}
                 style={{ display: 'block', width: '100%', fontSize: 12, padding: '5px 6px', marginTop: 2, borderRadius: 5, border: '1px solid #cbd5e0' }}>
@@ -1639,27 +1658,21 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
               <input value={poiDraft.tagline} onChange={(e) => setPoiDraft({ ...poiDraft, tagline: e.target.value })} placeholder="z. B. Busstation Gmunden"
                 style={{ display: 'block', width: '100%', fontSize: 12, padding: '5px 6px', marginTop: 2, borderRadius: 5, border: '1px solid #cbd5e0', boxSizing: 'border-box' }} />
             </label>
-            <label style={{ display: 'block', fontSize: 11, color: '#4a5568', marginBottom: 8 }}>Notiz (ein Satz)
-              <input value={poiDraft.note} onChange={(e) => setPoiDraft({ ...poiDraft, note: e.target.value })} placeholder="kurz — landet grau in der Description"
-                style={{ display: 'block', width: '100%', fontSize: 12, padding: '5px 6px', marginTop: 2, borderRadius: 5, border: '1px solid #cbd5e0', boxSizing: 'border-box' }} />
-            </label>
             <label style={{ display: 'block', fontSize: 11, color: '#4a5568', marginBottom: 8 }}>Icon
               <select value={poiDraft.icon} onChange={(e) => setPoiDraft({ ...poiDraft, icon: e.target.value })}
                 style={{ display: 'block', width: '100%', fontSize: 12, padding: '5px 6px', marginTop: 2, borderRadius: 5, border: '1px solid #cbd5e0' }}>
-                <option value="">— kein Icon (stattdessen beschreiben) —</option>
+                <option value="">— kein Icon (stattdessen unten beschreiben) —</option>
                 {ICON_REGISTRY.map((i) => <option key={i.id} value={i.id}>{i.file_name}</option>)}
               </select>
             </label>
-            {!poiDraft.icon && (
-              <label style={{ display: 'block', fontSize: 11, color: '#4a5568', marginBottom: 8 }}>Icon-Notiz
-                <input value={poiDraft.iconNote} onChange={(e) => setPoiDraft({ ...poiDraft, iconNote: e.target.value })} placeholder="wie soll das Icon aussehen?"
-                  style={{ display: 'block', width: '100%', fontSize: 12, padding: '5px 6px', marginTop: 2, borderRadius: 5, border: '1px solid #cbd5e0', boxSizing: 'border-box' }} />
-              </label>
-            )}
+            <label style={{ display: 'block', fontSize: 11, color: '#4a5568', marginBottom: 8 }}>Beschreibung (ein Satz, grau)
+              <input value={poiDraft.note} onChange={(e) => setPoiDraft({ ...poiDraft, note: e.target.value })} placeholder="kurz — z. B. Icon-Hinweis; landet grau in der Description"
+                style={{ display: 'block', width: '100%', fontSize: 12, padding: '5px 6px', marginTop: 2, borderRadius: 5, border: '1px solid #cbd5e0', boxSizing: 'border-box' }} />
+            </label>
             <div style={{ fontSize: 10, color: '#a0aec0', margin: '8px 0' }}>Token wird beim Export vergeben · Coord erfasst</div>
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
               <button onClick={() => setPoiDraft(null)} style={{ fontSize: 12, padding: '5px 12px', borderRadius: 5, border: '1px solid #e2e8f0', background: '#fff', color: '#718096', cursor: 'pointer' }}>Abbrechen</button>
-              <button onClick={commitPoiDraft} style={{ fontSize: 12, fontWeight: 700, padding: '5px 14px', borderRadius: 5, border: '1px solid #276749', background: '#276749', color: '#fff', cursor: 'pointer' }}>Ablegen</button>
+              <button onClick={commitPoiDraft} style={{ fontSize: 12, fontWeight: 700, padding: '5px 14px', borderRadius: 5, border: '1px solid #276749', background: '#276749', color: '#fff', cursor: 'pointer' }}>{poiDraft.editId ? 'Speichern' : 'Ablegen'}</button>
             </div>
           </div>
         </div>
