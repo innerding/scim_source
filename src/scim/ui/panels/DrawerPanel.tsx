@@ -28,7 +28,7 @@ import {
   loadPathConfig, savePathConfig, type PathConfig, type BridlewayMode,
 } from '../../regio-content/pathConfig';
 import {
-  deriveWanderwegnetz, anchorPois, cropNetToMask, netStats, formatBytes, isAsphalt, asphaltMeters, connectorPieceAt,
+  deriveWanderwegnetz, anchorPois, cropNetToMask, netStats, formatBytes, isAsphalt, asphaltMeters, netMeters, connectorPieceAt,
   type PathFetchResult, type AnchorSummary, type PoiInput, type CropResult,
   type PathEdge, type GateNode,
 } from '../../regio-content/pathEngine';
@@ -1397,9 +1397,21 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
             flex: 1, display: 'flex', flexWrap: 'wrap', gap: '2px 14px', alignItems: 'center',
             padding: '5px 9px', borderRadius: 5, background: '#f0fff4', border: '1px solid #9ae6b4', color: '#22543d',
           }}>
+            {(() => {
+              const src = (masked && cropResult) ? cropResult.edges : pathResult.edges;
+              const total = netMeters(src);
+              const asph = asphaltMeters(src);
+              const wander = Math.max(0, total - asph);
+              return (
+                <span style={{ fontWeight: 700 }}>
+                  Σ Netz {Math.round(total)} m
+                  <span style={{ fontWeight: 400, color: '#2f6f4f' }}> ( Wanderweg {Math.round(wander)} m · <span style={{ color: '#1a202c' }}>Asphalt {Math.round(asph)} m</span> )</span>
+                </span>
+              );
+            })()}
             <span><span style={{ display: 'inline-block', width: 14, borderTop: '3px solid #222a35', verticalAlign: 'middle' }} /> <b>Netz</b> (≥{netLenThresh} m)</span>
             <span><span style={{ display: 'inline-block', width: 14, borderTop: '2px solid #1f9d8f', verticalAlign: 'middle' }} /> <b>Rest</b></span>
-            <span><span style={{ display: 'inline-block', width: 14, height: 5, background: '#fff', border: '1.5px solid #1a202c', verticalAlign: 'middle' }} /> <b>Asphalt</b> {Math.round(asphaltMeters(pathResult.edges))} m</span>
+            <span><span style={{ display: 'inline-block', width: 14, height: 5, background: '#fff', border: '1.5px solid #1a202c', verticalAlign: 'middle' }} /> <b>Asphalt</b></span>
             {sackgassenRot && <span><span style={{ display: 'inline-block', width: 14, borderTop: '3px solid #e53e3e', verticalAlign: 'middle' }} /> Sackgassen</span>}
             {cutEdges.size > 0 && <span><span style={{ display: 'inline-block', width: 14, borderTop: '3px solid #3182ce', verticalAlign: 'middle' }} /> {cutEdges.size} abgeschnitten</span>}
             <span style={{ color: '#718096' }}>{pathResult.primaryCount} primär · {pathResult.connectorCount} Konnekt. · {pathResult.rawWayCount} Ways</span>
@@ -1543,8 +1555,8 @@ function PathFilterMenu({
         padding: '8px 10px', borderBottom: '1px solid #e2e8f0', background: '#edf2f7', flexShrink: 0,
       }}>
         <button
-          onClick={() => { setPanelOpen(null); onResized(); }}
-          title="Einklappen"
+          onClick={() => { setPanelOpen(isFilter ? 'pro' : null); onResized(); }}
+          title={isFilter ? 'Weiter zu Profi (nochmal: einklappen)' : 'Einklappen'}
           style={{
             fontSize: 12, padding: '2px 8px', cursor: 'pointer',
             border: '1px solid #cbd5e0', borderRadius: 4, background: 'white', color: '#718096',

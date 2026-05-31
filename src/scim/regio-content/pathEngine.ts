@@ -185,6 +185,18 @@ function distMeters(aLat: number, aLng: number, bLat: number, bLng: number): num
   return 2 * R * Math.asin(Math.min(1, Math.sqrt(s)));
 }
 
+// Gesamtlänge des Netzes in Metern (alle inNet-Kanten). Wanderweg = netMeters − asphaltMeters.
+export function netMeters(edges: PathEdge[]): number {
+  let m = 0;
+  for (const e of edges) {
+    if (!e.inNet) continue;
+    for (let i = 1; i < e.points.length; i++) {
+      m += distMeters(e.points[i - 1][0], e.points[i - 1][1], e.points[i][0], e.points[i][1]);
+    }
+  }
+  return m;
+}
+
 // Asphalt-Länge eines Netzes in Metern (nur inNet-Kanten) — Basis fürs spätere
 // „Route führt über X m Asphalt" + Mindestlänge-Schwelle.
 export function asphaltMeters(edges: PathEdge[]): number {
