@@ -152,51 +152,26 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   const routeModelEdgesRef = useRef<ModelEdge[]>([]); // dito als ModelEdge — für Asphalt-Lookup
   useEffect(() => { pendingConnectRef.current = pendingConnect; }, [pendingConnect]);
 
-  // Trassieren = echte Drag-Geste: mousedown = A, ziehen = Spur (steuert die
-  // Verzweigung), mouseup = B → Route ablegen (lila, verschmilzt). Solange
-  // Trassieren an ist, wird das Karten-Schieben deaktiviert — sonst pant Leaflet
-  // die Geste weg. Gezeigt wird die VORSCHAU der finalen Route, nicht die Spur.
+  // Trassieren = klick-basiert: Klick A, dann Klick B. Das Karten-Schieben
+  // bleibt NORMAL — nur ZWISCHEN A und B wird es deaktiviert, damit das
+  // Abfahren der Strecke nicht pant. Vor A und nach B: normaler Verschub.
+  // Gezeigt wird die VORSCHAU der finalen Route (nicht die Spur).
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !pickMode) return undefined;
-    map.dragging.disable();
 
-    const onDown = (ev: L.LeafletMouseEvent) => {
+    const onClick = (ev: L.LeafletMouseEvent) => {
       const { lat, lng } = ev.latlng;
-      pendingConnectRef.current = { lat, lng };
-      setPendingConnect({ lat, lng });
-      hoverTrailRef.current = [[lat, lng]];
-      pickPreviewRef.current?.clearLayers();
-    };
-    const onMove = (ev: L.LeafletMouseEvent) => {
-      const a = pendingConnectRef.current;
-      if (!a) return;
-      const { lat, lng } = ev.latlng;
-      const trail = hoverTrailRef.current;
-      const last = trail[trail.length - 1];
-      if (last) {
-        const mLng = 111320 * Math.cos((lat * Math.PI) / 180);
-        const d = Math.hypot((lng - last[1]) * mLng, (lat - last[0]) * 110540);
-        if (d < 4) return; // nur merkliche Bewegung (~4 m) — auch Recompute-Drossel
-      }
-      trail.push([lat, lng]);
-      if (!pickPreviewRef.current) pickPreviewRef.current = L.layerGroup().addTo(map);
-      pickPreviewRef.current.clearLayers();
-      const preview = buildRoutePath(edgesRef.current, [a.lat, a.lng], [lat, lng], trail);
-      if (preview && preview.points.length >= 2) {
-        L.polyline(preview.points, {
-          color: '#9333ea', weight: 3, opacity: 0.75,
-          ...(preview.mode === 'straight' ? { dashArray: '4 5' } : {}),
-        }).addTo(pickPreviewRef.current);
-      }
-    };
-    const onUp = (ev: L.LeafletMouseEvent) => {
-      const a = pendingConnectRef.current;
-      pendingConnectRef.current = null;
-      setPendingConnect(null);
-      pickPreviewRef.current?.clearLayers();
-      if (a) {
-        const { lat, lng } = ev.latlng;
+      if (!pendingConnectRef.current) {
+        // Klick A → Schieben aus, Strecke abfahren.
+        pendingConnectRef.current = { lat, lng };
+        setPendingConnect({ lat, lng });
+        hoverTrailRef.current = [[lat, lng]];
+        pickPreviewRef.current?.clearLayers();
+        map.dragging.disable();
+      } else {
+        // Klick B → Route ablegen, Schieben wieder an.
+        const a = pendingConnectRef.current;
         const route = buildRoutePath(edgesRef.current, [a.lat, a.lng], [lat, lng], hoverTrailRef.current);
         if (route && route.points.length >= 2) {
           const mid = route.points[Math.floor(route.points.length / 2)];
@@ -210,17 +185,43 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
           const straight = route.mode === 'straight';
           setNetModel((prev) => { undoRef.current.push(prev); return addDrawnEdge(prev, route.points, straight ? false : asph); });
         }
+        pendingConnectRef.current = null;
+        setPendingConnect(null);
+        hoverTrailRef.current = [];
+        pickPreviewRef.current?.clearLayers();
+        map.dragging.enable();
       }
-      hoverTrailRef.current = [];
     };
-    map.on('mousedown', onDown);
+    const onMove = (ev: L.LeafletMouseEvent) => {
+      const a = pendingConnectRef.current;
+      if (!a) return; // nur zwischen A und B
+      const { lat, lng } = ev.latlng;
+      const trail = hoverTrailRef.current;
+      const last = trail[trail.length - 1];
+      if (last) {
+        const mLng = 111320 * Math.cos((lat * Math.PI) / 180);
+        const d = Math.hypot((lng - last[1]) * mLng, (lat - last[0]) * 110540);
+        if (d < 4) return; // ~4 m Drossel
+      }
+      trail.push([lat, lng]);
+      if (!pickPreviewRef.current) pickPreviewRef.current = L.layerGroup().addTo(map);
+      pickPreviewRef.current.clearLayers();
+      const preview = buildRoutePath(edgesRef.current, [a.lat, a.lng], [lat, lng], trail);
+      if (preview && preview.points.length >= 2) {
+        L.polyline(preview.points, {
+          color: '#9333ea', weight: 3, opacity: 0.75,
+          ...(preview.mode === 'straight' ? { dashArray: '4 5' } : {}),
+        }).addTo(pickPreviewRef.current);
+      }
+    };
+    map.on('click', onClick);
     map.on('mousemove', onMove);
-    map.on('mouseup', onUp);
     return () => {
-      map.off('mousedown', onDown);
+      map.off('click', onClick);
       map.off('mousemove', onMove);
-      map.off('mouseup', onUp);
-      map.dragging.enable();
+      map.dragging.enable(); // beim Verlassen sicher wieder an
+      pendingConnectRef.current = null;
+      hoverTrailRef.current = [];
       pickPreviewRef.current?.clearLayers();
     };
   }, [pickMode]);
