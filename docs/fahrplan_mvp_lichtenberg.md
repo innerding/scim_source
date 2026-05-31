@@ -30,10 +30,12 @@ geometrie-verankerte Segment-ids** → Mesh-Artefakt. Ausgelöst aus einem
 **Represent-Build-Schritt** (nach dem Workspace).
 **Ergebnis:** Mesh-Geometrie (Segmente + ids) der Lichtenberg-Representation.
 
-## P3 — Telco-Sim → Load-Array  *(P06)*
-**Ausbau:** `P06SimulationForm` / `telco-load` liefert schon `TelcoLoadState`
-(`normalized_load_score`). Neues **Mapping**: Sim-Werte auf die **Segment-ids** legen
-→ Load-Array (id → Wert), **volatil**, getrennt von der Geometrie.
+## P3 — Telco-Sim → Load-Array  *(Transmitter = P06)*
+**Ausbau:** Die Telco-Simulation sitzt im **Transmitter (P06)** — `P06SimulationForm`
+(Szenarien → `TelcoLoadState` / `normalized_load_score`). (`telco-load` ist nur die
+Datenform; **P04** = Real-Telco-Eingang, nicht die Sim.) Neues **Mapping**: die
+Sim-Werte auf die **Segment-ids** legen → Load-Array (id → Wert), **volatil**,
+getrennt von der Geometrie.
 **Ergebnis:** simuliertes Telco-Load-Array für das Lichtenberg-Mesh.
 
 ## P4 — Inspector auf echt umstellen  *(= M2 validiert)*
