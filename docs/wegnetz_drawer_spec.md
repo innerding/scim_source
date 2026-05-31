@@ -102,7 +102,9 @@ Verhaltens-Deploy), dann EIN kontrollierter Cutover, dann toten Code löschen.
 - ③ CUTOVER: Wegnetz-Tab auf model-getriebenen Kern umstellen — ein draw(deriveNet),
   Aktionen (Trassieren/Löschen/AllesRote/Gate/Undo). Ersetzt renderPath + Overlay-
   States + Modi. EINZIGER verhaltensändernder Deploy; danach testen.
-- ④ Boundary-Cursor-Editor (Geoman raus) — separat.
+- ④ Boundary B1 BLEIBT auf Geoman — KEIN Eigenbau. Nur Cursor-Kosmetik (echter
+  Cursor, kein Fill im Cursorpunkt, Strichlinie nicht bis zum Cursor-Zentrum);
+  großteils schon erledigt.
 - ⑤ Speicherung = Modell serialisieren.
 - Aufräumen: toten Code (alte States/Effekte/Geoman-Netz) erst nach bestätigtem Cutover löschen.
 ```
