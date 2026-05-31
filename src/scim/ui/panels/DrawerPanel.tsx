@@ -196,12 +196,12 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   const [tileVisible, setTileVisible] = useState(true);
   const [tileOpacity, setTileOpacity] = useState(0.75);
   const [boundaryVisible, setBoundaryVisible] = useState(true);
-  const [boundaryOpacity, setBoundaryOpacity] = useState(1);
+  const [boundaryOpacity, setBoundaryOpacity] = useState(0.6);
   const [inspectorOpacity, setInspectorOpacity] = useState(0.85);
 
   // Slot 2 (Umbauplan B): Masken-Boundary. Eigene Sichtbarkeit/Opacity.
   const [maskVisible, setMaskVisible] = useState(true);
-  const [maskOpacity, setMaskOpacity] = useState(1);
+  const [maskOpacity, setMaskOpacity] = useState(0.6);
 
   // Katalog-Platzhalter-POIs: Sichtbarkeit + Größe (statt Dimmen → Marker
   // vergrößern/verkleinern). EBENEN-Control.
@@ -554,7 +554,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       : (overlayCatalogId ? DRAFT_STROKE_ORANGE : DRAFT_STROKE_GELB);
     // Innen klar (kein Fill an der editierbaren Boundary) — das Fill trägt der
     // invertierte Overlay-Layer (F6b).
-    layer.setStyle({ color, opacity: o, fillOpacity: 0 });
+    layer.setStyle({ color, weight: 2, opacity: o, fillOpacity: 0 });
   }, [boundaryVisible, boundaryOpacity, polygon, geometryId, tab, overlayCatalogId, masked]);
 
   // F6b: invertiertes Fill als eigener Overlay-Layer neu aufbauen. Nur für Drafts
@@ -619,7 +619,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     const o = (masked || maskVisible) ? maskOpacity : 0;
     const color = (masked && tab === 'umriss') ? SLOT1_COLOR : SLOT2_COLOR;
     // Kein Innen-Fill — alle Fills sind außen (Invert-Overlay).
-    layer.setStyle({ color, dashArray: SLOT2_DASH, opacity: o, fillOpacity: 0 });
+    layer.setStyle({ color, dashArray: SLOT2_DASH, weight: 2, opacity: o, fillOpacity: 0 });
   }, [maskVisible, maskOpacity, maskPolygon, geometryId, tab, masked]);
 
   // Geometry-Wechsel laedt neue Daten in die Map
