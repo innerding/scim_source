@@ -23,6 +23,7 @@ import { formatBytes } from '../../regio-content/pathEngine';
 // Datengröße eines Objekts als JSON (UTF-8-Bytes) — fürs Auslieferungs-Budget.
 const bytesOf = (obj: unknown): number => new TextEncoder().encode(JSON.stringify(obj)).length;
 import { commitToRepo } from '../../../runtime/commitBridge';
+import { useRepresentationContext } from '../../../runtime/repContext';
 import type { BoundaryGeometryFile, WegnetzFile, RepresentationFile } from '../../workspace/workspace.types';
 import type { Position } from 'geojson';
 import {
@@ -183,6 +184,8 @@ function ListItem({
 
 export default function WorkspacePanel({ onJumpTo }: Props) {
   const [showWizard, setShowWizard] = useState(false);
+  // 👁 Inspector-Sicht: welche Representation der rechte Inspector zeigt.
+  const { inspectorView, setInspectorView } = useRepresentationContext();
 
   // F4 — Draft-Pipeline: benannte Workspace-Objekte (ersetzt den stillen Autospeicher).
   const [drafts, setDrafts] = useState<Draft[]>(() => listDrafts());
@@ -528,6 +531,7 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
           <EmptyHint text="Noch keine Representations. Wave 2b baut den Wizard: Geometry + Katalog + Name → Representation. Erst dann werden SystemAdjust-Settings, Regio-Content und QR-Code für diese Representation aktiv." />
         ) : (
           REPRESENTATIONS.map((r) => {
+            const shown = inspectorView?.representation.id === r.id;
             return (
               <ListItem
                 key={r.id}
@@ -535,6 +539,20 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
                 primary={r.name}
                 badge={r.id}
                 secondary={`Geometry: ${r.geometry_id}${r.catalog_id ? ` · Katalog: ${r.catalog_id}` : ' · kein Katalog'}${r.wegnetz_id ? ` · Wegnetz: ${r.wegnetz_id}` : ''} · ${formatBytes(bytesOf(r))}`}
+                trailing={(
+                  <button
+                    onClick={() => setInspectorView(shown ? null : r.id)}
+                    title={shown ? 'Inspector zeigt diese Representation — Klick: aus' : 'Diese Representation im Inspector zeigen'}
+                    style={{
+                      fontSize: 15, lineHeight: 1, cursor: 'pointer', padding: '4px 8px',
+                      borderRadius: 4, border: `1px solid ${shown ? '#2b6cb0' : '#cbd5e0'}`,
+                      background: shown ? '#ebf8ff' : '#fff',
+                      filter: shown ? 'none' : 'grayscale(1) opacity(0.55)',
+                    }}
+                  >
+                    👁
+                  </button>
+                )}
               />
             );
           })

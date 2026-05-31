@@ -1233,6 +1233,14 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
         />
       ),
     },
+    {
+      id: 'umriss-delete-hint', side: 'left', tabs: ['umriss'],
+      node: (
+        <span style={{ fontSize: 10, color: '#a0aec0', fontStyle: 'italic' }}>
+          Rechtsklick = Punkt löschen
+        </span>
+      ),
+    },
     // UÖ6: B1-Bearbeiten-Toggle — nur sichtbar, wenn bearbeitet wird UND B2 existiert
     // (sonst ist B2 default; B1 ist gesperrt = nur Snap-Quelle).
     ...(umrissEdit && maskPolygon && maskPolygon.length >= 3 ? [{
