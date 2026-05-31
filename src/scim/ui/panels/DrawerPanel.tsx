@@ -28,7 +28,7 @@ import {
   loadPathConfig, savePathConfig, type PathConfig, type BridlewayMode,
 } from '../../regio-content/pathConfig';
 import {
-  deriveWanderwegnetz, anchorPois, cropNetToMask, netStats, formatBytes, isAsphalt, asphaltMeters, netMeters, connectorPieceAt,
+  deriveWanderwegnetz, anchorPois, cropNetToMask, netStats, formatBytes, isAsphalt, connectorPieceAt,
   type PathFetchResult, type AnchorSummary, type PoiInput, type CropResult,
   type PathEdge, type GateNode,
 } from '../../regio-content/pathEngine';
@@ -141,6 +141,9 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   // letztem Anwenden"-Signal (appliedCfgSig) → der Button pulst bei Bedarf.
   const [currentCfg, setCurrentCfg] = useState<PathConfig | null>(null);
   const [appliedCfgSig, setAppliedCfgSig] = useState<string | null>(null);
+  // Längen-Summen fürs Footer-Feld. „Netz" = nur SCHWARZE Komponenten (≥ Schwelle),
+  // darin Wanderweg + Asphalt; „rest" = grüne Komponenten (vom Netz exkludiert).
+  const [netSummary, setNetSummary] = useState<{ net: number; wander: number; asphalt: number; rest: number } | null>(null);
 
   // E2b — Konnektivitätsfärbung: Komponenten ≥ netLenThresh (m) gelten als „Netz"
   // (schwarz), kürzere als „Rest" (grün). sackgassenRot legt rot über alle
@@ -748,6 +751,17 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       else if (sackgassenRot && isSack) { color = SACK_COLOR; kind = 'red'; }
       styled.push({ ge, key, color, weight, kind, clickable: isSack, asphalt });
     }
+
+    // Längen-Summen: „Netz" = nur SCHWARZE Komponenten (≥ Schwelle), darin
+    // Wanderweg + Asphalt; „rest" = grüne Komponenten (vom Netz exkludiert).
+    let sNet = 0; let sAsph = 0; let sWander = 0; let sRest = 0;
+    for (const ge of graph.edges) {
+      const isNetz = netzSet.has(graph.nodes[ge.from].component);
+      const asph = ge.edgeId >= 0 && (asphaltByEdgeId.get(ge.edgeId) ?? false);
+      if (isNetz) { sNet += ge.meters; if (asph) sAsph += ge.meters; else sWander += ge.meters; }
+      else sRest += ge.meters;
+    }
+    setNetSummary({ net: sNet, wander: sWander, asphalt: sAsph, rest: sRest });
 
     // Sackgassen-Teilstücke sind anklickbar: Klick → blau (abgeschnitten) ↔ zurück.
     const attach = (pl: L.Polyline, s: typeof styled[number]) => {
@@ -1397,20 +1411,14 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
             flex: 1, display: 'flex', flexWrap: 'wrap', gap: '2px 14px', alignItems: 'center',
             padding: '5px 9px', borderRadius: 5, background: '#f0fff4', border: '1px solid #9ae6b4', color: '#22543d',
           }}>
-            {(() => {
-              const src = (masked && cropResult) ? cropResult.edges : pathResult.edges;
-              const total = netMeters(src);
-              const asph = asphaltMeters(src);
-              const wander = Math.max(0, total - asph);
-              return (
-                <span style={{ fontWeight: 700 }}>
-                  Σ Netz {Math.round(total)} m
-                  <span style={{ fontWeight: 400, color: '#2f6f4f' }}> ( Wanderweg {Math.round(wander)} m · <span style={{ color: '#1a202c' }}>Asphalt {Math.round(asph)} m</span> )</span>
-                </span>
-              );
-            })()}
-            <span><span style={{ display: 'inline-block', width: 14, borderTop: '3px solid #222a35', verticalAlign: 'middle' }} /> <b>Netz</b> (≥{netLenThresh} m)</span>
-            <span><span style={{ display: 'inline-block', width: 14, borderTop: '2px solid #1f9d8f', verticalAlign: 'middle' }} /> <b>Rest</b></span>
+            {netSummary && (
+              <span style={{ fontWeight: 700 }}>
+                Σ Netz {Math.round(netSummary.net)} m
+                <span style={{ fontWeight: 400, color: '#2f6f4f' }}> ( Wanderweg {Math.round(netSummary.wander)} m · <span style={{ color: '#1a202c' }}>Asphalt {Math.round(netSummary.asphalt)} m</span> )</span>
+              </span>
+            )}
+            <span><span style={{ display: 'inline-block', width: 14, borderTop: '3px solid #222a35', verticalAlign: 'middle' }} /> <b>Netz</b> (schwarz, ≥{netLenThresh} m)</span>
+            <span><span style={{ display: 'inline-block', width: 14, borderTop: '2px solid #1f9d8f', verticalAlign: 'middle' }} /> <b>Rest</b>{netSummary && <span style={{ color: '#718096' }}> (∉ {Math.round(netSummary.rest)} m)</span>}</span>
             <span><span style={{ display: 'inline-block', width: 14, height: 5, background: '#fff', border: '1.5px solid #1a202c', verticalAlign: 'middle' }} /> <b>Asphalt</b></span>
             {sackgassenRot && <span><span style={{ display: 'inline-block', width: 14, borderTop: '3px solid #e53e3e', verticalAlign: 'middle' }} /> Sackgassen</span>}
             {cutEdges.size > 0 && <span><span style={{ display: 'inline-block', width: 14, borderTop: '3px solid #3182ce', verticalAlign: 'middle' }} /> {cutEdges.size} abgeschnitten</span>}
@@ -1486,24 +1494,6 @@ function PathFilterMenu({
   // Profi-Panel-Inhalt (selten gebrauchte Defaults).
   const proBody = (
     <>
-      <Section title="Ausschlüsse">
-        <Check
-          label="foot=no"
-          checked={cfg.ausschluesse.foot_no}
-          onChange={(v) => update((c) => ({ ...c, ausschluesse: { ...c.ausschluesse, foot_no: v } }))}
-        />
-        <Check
-          label="access=private"
-          checked={cfg.ausschluesse.access_private}
-          onChange={(v) => update((c) => ({ ...c, ausschluesse: { ...c.ausschluesse, access_private: v } }))}
-        />
-        <Check
-          label="access=no"
-          checked={cfg.ausschluesse.access_no}
-          onChange={(v) => update((c) => ({ ...c, ausschluesse: { ...c.ausschluesse, access_no: v } }))}
-        />
-      </Section>
-
       <Section title="Diagnose">
         <Check
           label="Lücken markieren"
@@ -1650,6 +1640,28 @@ function PathFilterMenu({
           Abstand, bis zu dem ein grünes Wegende als auf der Straße liegend gilt
           (Verschweißen). Größer = mehr Gabeln verbinden, aber Risiko fremder Anschlüsse.
         </div>
+      </Section>
+
+      <Section title="Ausschlüsse">
+        <div style={{ padding: '0 10px 4px', fontSize: 10, color: '#a0aec0', lineHeight: 1.5 }}>
+          Wirft Wege mit diesen OSM-Zugangs-Tags raus — Wege, die laut Daten nicht
+          (zu Fuß) begehbar oder privat/gesperrt sind.
+        </div>
+        <Check
+          label="foot=no (nicht für Fußverkehr)"
+          checked={cfg.ausschluesse.foot_no}
+          onChange={(v) => update((c) => ({ ...c, ausschluesse: { ...c.ausschluesse, foot_no: v } }))}
+        />
+        <Check
+          label="access=private"
+          checked={cfg.ausschluesse.access_private}
+          onChange={(v) => update((c) => ({ ...c, ausschluesse: { ...c.ausschluesse, access_private: v } }))}
+        />
+        <Check
+          label="access=no (gesperrt)"
+          checked={cfg.ausschluesse.access_no}
+          onChange={(v) => update((c) => ({ ...c, ausschluesse: { ...c.ausschluesse, access_no: v } }))}
+        />
       </Section>
 
       <Section title="Sackgassen & Anwahl">
