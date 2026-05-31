@@ -406,56 +406,6 @@ function gateConnectors(edges: PathEdge[], cfg: PathConfig): PathEdge[] {
   return bridges;
 }
 
-// T2 (manuelles Anwählen): liefert für eine angeklickte Connector-Straße NUR das
-// Teilstück zwischen den nächsten Wanderweg-Anschlusspunkten um den Klick herum.
-// Anschlusspunkte = primäre Wegendpunkte, auf die Straße projiziert (≤ tol).
-// Fehlt auf einer Seite ein Knoten, endet das Stück am Klickpunkt (= Gate-POI
-// mitten auf der Straße). Ohne jeden Anschluss → ganze Straße (bewusste Auswahl).
-export function connectorPieceAt(
-  road: PathEdge,
-  clickLat: number,
-  clickLng: number,
-  primaryEndpoints: [number, number][],
-  tolMeters: number,
-): [number, number][] {
-  if (road.points.length < 2) return road.points;
-  const mLng = 111320 * Math.cos((road.points[0][0] * Math.PI) / 180);
-  const sClick = projectToPolyline(clickLat, clickLng, road.points, mLng).s;
-
-  const conn: number[] = [];
-  for (const [eLat, eLng] of primaryEndpoints) {
-    const { s, dist } = projectToPolyline(eLat, eLng, road.points, mLng);
-    if (dist <= tolMeters) conn.push(s);
-  }
-  if (conn.length === 0) return road.points; // kein Anschluss erkannt → ganze Straße
-
-  let lo = -Infinity; let hi = Infinity;
-  for (const s of conn) {
-    if (s <= sClick && s > lo) lo = s;       // nächster Anschluss VOR dem Klick
-    if (s >= sClick && s < hi) hi = s;       // nächster Anschluss NACH dem Klick
-  }
-  if (lo === -Infinity) lo = sClick;         // kein Knoten davor → bis Klick (Gate-POI)
-  if (hi === Infinity) hi = sClick;          // kein Knoten danach → bis Klick (Gate-POI)
-  if (hi - lo < 1) return road.points;       // entartet → Fallback ganze Straße
-  return cropPolyline(road.points, lo, hi, mLng);
-}
-
-// T2 Zwei-Punkt: das Straßen-Teilstück ZWISCHEN zwei Klickpunkten (auf die Straße
-// projiziert). Der User bestimmt die Spanne A→B selbst → keine Ministrecken.
-export function connectorPieceBetween(
-  road: PathEdge,
-  aLat: number, aLng: number,
-  bLat: number, bLng: number,
-): [number, number][] {
-  if (road.points.length < 2) return [];
-  const mLng = 111320 * Math.cos((road.points[0][0] * Math.PI) / 180);
-  const sA = projectToPolyline(aLat, aLng, road.points, mLng).s;
-  const sB = projectToPolyline(bLat, bLng, road.points, mLng).s;
-  const lo = Math.min(sA, sB); const hi = Math.max(sA, sB);
-  if (hi - lo < 1) return [];
-  return cropPolyline(road.points, lo, hi, mLng);
-}
-
 // ─── A→B Graph-Routing (manuelles Lückenfüllen über mehrere Ways) ──────────────
 // Der Ursprungsfehler von connectorPieceBetween: es schneidet EIN einzelnes Way.
 // An Kreuzungen ist eine Straße in mehrere Ways zerlegt → A und B auf
