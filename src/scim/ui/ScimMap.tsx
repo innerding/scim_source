@@ -19,7 +19,7 @@ import { loadIncludedTypes } from '../regio-content/edgeTypeConfig';
 import { parseCatalogById, CATALOG_REGISTRY } from '../poi-catalog/catalogRegistry';
 import { GEOMETRIES, REPRESENTATIONS, wegnetzById } from '../workspace/workspace.registry';
 import type { BoundaryGeometry, Representation, WegnetzFile } from '../workspace/workspace.types';
-import { ICON_REGISTRY, iconById } from '../poi-catalog/iconRegistry';
+import { poiCompositeSvg } from '../poi-catalog/poiCatalog.composite';
 
 interface OsmEdge {
   edge_id: string;
@@ -59,30 +59,6 @@ const DEFAULT_VISIBILITY: LayerVisibility = {
   mapBase: true,
   darkBase: true,
 };
-
-// Bucket → Kategoriefarbe (parallel zu netDraw.categoryColor; hier auf den
-// Catalog-Bucket statt der Netz-Kategorie). Platzhalter-Punkt und Icon-Rahmen.
-function bucketColor(bucket?: string): string {
-  if (!bucket) return '#1a365d';
-  if (bucket.startsWith('Transport')) return '#2b6cb0';
-  if (bucket.startsWith('Service')) return '#dd6b20';
-  if (bucket.startsWith('Regenerate')) return '#319795';
-  if (bucket.startsWith('Points')) return '#805ad5';
-  if (bucket.startsWith('Square')) return '#4a5568';
-  if (bucket.startsWith('Help')) return '#e53e3e';
-  if (bucket.startsWith('Cluster')) return '#2f855a';
-  return '#1a365d';
-}
-
-// Icon-Eintrag zu einem CatalogPoi.icon-Feld finden — exakt, sonst normalisiert
-// (Case + Sonderzeichen weg), damit Alt-Werte wie 'aussichtspunkt+' noch greifen.
-function findIcon(iconField?: string) {
-  if (!iconField) return undefined;
-  const exact = iconById(iconField);
-  if (exact) return exact;
-  const norm = iconField.toLowerCase().replace(/[^a-z0-9]/g, '');
-  return ICON_REGISTRY.find((e) => e.id.toLowerCase().replace(/[^a-z0-9]/g, '') === norm);
-}
 
 // Polygon (outer ring) -> [minLon, minLat, maxLon, maxLat].
 function polygonBbox(polygon: ReadonlyArray<readonly [number, number] | ReadonlyArray<number>>): [number, number, number, number] | null {
@@ -451,42 +427,25 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
     // Render-Schleife mit leichterem Stil — kein Load-Class-Mapping,
     // weil der Catalog selbst keine Live-Last fuehrt.
     if (availLayers.pois && vis.pois && activeRep && repCatalogPois.length > 0) {
+      const POI_SIZE = 30;
       for (const poi of repCatalogPois) {
         const [lon, lat] = poi.coord;
-        const col = bucketColor(poi.bucket);
         const tooltip =
           `<strong>${poi.text}</strong><br/>` +
           `<span style="color:#718096">${poi.subcategory}</span>` +
           (poi.cluster ? `<br/><em>Cluster: ${poi.cluster}</em>` : '');
-        const entry = vis.poiIcons ? findIcon(poi.icon) : undefined;
-        if (entry?.svg_cleaned) {
-          // Echtes Icon in einem runden Chip (auf hell wie dunkel sichtbar),
-          // Rahmen in Kategoriefarbe. SVG auf 100% gezogen, fuellt den Chip.
-          const svg = entry.svg_cleaned
-            .replace(/width="[^"]*"/, 'width="100%"')
-            .replace(/height="[^"]*"/, 'height="100%"');
-          const html =
-            `<div style="width:30px;height:30px;border-radius:50%;background:#fff;` +
-            `border:2px solid ${col};box-shadow:0 1px 3px rgba(0,0,0,.45);` +
-            `display:flex;align-items:center;justify-content:center;">` +
-            `<div style="width:21px;height:21px;line-height:0;">${svg}</div></div>`;
-          L.marker([lat, lon], {
-            icon: L.divIcon({ html, className: '', iconSize: [30, 30], iconAnchor: [15, 15] }),
-          })
-            .bindTooltip(tooltip)
-            .addTo(layerGroup);
-        } else {
-          // Platzhalter-Punkt in Kategoriefarbe (kein Icon gewaehlt / Toggle aus).
-          L.circleMarker([lat, lon], {
-            radius: 7,
-            color: '#fff',
-            weight: 1.5,
-            fillColor: col,
-            fillOpacity: 0.95,
-          })
-            .bindTooltip(tooltip)
-            .addTo(layerGroup);
-        }
+        // Exakt das realisierte Katalog-Composite: Container-Geometrie +
+        // Kategoriefarbe + Icon + Deco. Toggle aus → leeres Icon, d.h. nur der
+        // farbige Container als Platzhalter (gleiche Geometrie/Farbe wie echt).
+        const svg = poiCompositeSvg(vis.poiIcons ? poi.icon : '', poi.text, poi.subcategory, POI_SIZE);
+        if (!svg) continue; // unbekannte Subkategorie
+        const html = `<div style="width:${POI_SIZE}px;height:${POI_SIZE}px;line-height:0;` +
+          `filter:drop-shadow(0 1px 2px rgba(0,0,0,.55));">${svg}</div>`;
+        L.marker([lat, lon], {
+          icon: L.divIcon({ html, className: '', iconSize: [POI_SIZE, POI_SIZE], iconAnchor: [POI_SIZE / 2, POI_SIZE / 2] }),
+        })
+          .bindTooltip(tooltip)
+          .addTo(layerGroup);
       }
     }
 

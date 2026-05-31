@@ -2,13 +2,12 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRole } from '../RoleContext';
 import { parsePoiCatalog } from '../../poi-catalog/poiCatalog.parser';
 import { CONTAINER_SYSTEM, containerOf, geometryOf } from '../../poi-catalog/poiCatalog.containerSystem';
+import { buildPoiComposite, resolveIcon } from '../../poi-catalog/poiCatalog.composite';
 import { ICON_REGISTRY, findIcons, iconById } from '../../poi-catalog/iconRegistry';
 import type { IconRegistryEntry } from '../../poi-catalog/iconRegistry';
-import { DIGIT_GLYPHS, GLYPHS, digitGlyph, glyphsForNumber, glyphById } from '../../poi-catalog/digitGlyphs';
+import { DIGIT_GLYPHS, GLYPHS, glyphsForNumber } from '../../poi-catalog/digitGlyphs';
 import RepresentBuildTetrahedron from '../RepresentBuildTetrahedron';
-import { extractDecoration, extractElevation, iconMeta } from '../../poi-catalog/decorations';
-import type { DecorationMatch } from '../../poi-catalog/decorations';
-import type { Geometry } from '../../poi-catalog/poiCatalog.types';
+import { extractElevation } from '../../poi-catalog/decorations';
 import {
   addNewPoi, clearEditState, deletePoi, hasEdits, loadEditState,
   mergeEdits, patchPoi, reconcileEdits, resetPoi, saveEditState, undeletePoi,
@@ -78,158 +77,6 @@ const STATUS_OPTIONS: CoordStatus[] = ['exact', 'estimated', 'missing'];
 // im umgebenden Container der Subkategorie das Icon mittig zeigt — und bei
 // Summit-Icons (ann_044) zusätzlich die Höhe als Ziffernreihe darunter.
 // Wird per dangerouslySetInnerHTML in einen div eingehängt.
-
-function extractIconInner(svg: string): string {
-  return svg
-    .replace(/<\?xml[^>]*\?>/g, '')
-    .replace(/<!--[^>]*-->/g, '')
-    .replace(/<svg[^>]*>/, '')
-    .replace(/<\/svg>/, '')
-    .trim();
-}
-
-function buildContainerSvgString(geo: Geometry, color: string): string {
-  const isStroke = geo.fill_role === 'stroke';
-  const fill = isStroke ? 'none' : color;
-  const stroke = isStroke ? color : '#000';
-  const strokeWidth = isStroke ? 3 : 1;
-  const common = `fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linejoin="round"`;
-  const s = geo.shape;
-  switch (s.kind) {
-    case 'circle':
-      return `<circle cx="${s.cx}" cy="${s.cy}" r="${s.r}" ${common}/>`;
-    case 'rect':
-      return `<rect x="${s.x}" y="${s.y}" width="${s.width}" height="${s.height}"${s.rx != null ? ` rx="${s.rx}"` : ''} ${common}/>`;
-    case 'polygon':
-      return `<polygon points="${s.points.map((p) => p.join(',')).join(' ')}" ${common}/>`;
-    case 'path':
-      return `<path d="${s.d}" ${common}/>`;
-  }
-}
-
-// Generische Glyph-Reihe fuer eine Decoration: optionales Einheits-Glyph
-// links, dann Ziffern, dann optionales Einheits-Glyph rechts. Jeder Glyph
-// ist 4 viewBox-Einheiten breit, 5 hoch. Stars-Decoration: Stern-Glyph
-// wird (value)-mal wiederholt, keine Ziffern.
-function buildGlyphRowSvgString(deco: DecorationMatch): { inner: string; widthUnits: number } {
-  const parts: string[] = [];
-  let x = 0;
-  const placeGlyph = (svgRaw: string) => {
-    parts.push(`<svg x="${x}" y="0" width="4" height="5" viewBox="0 0 4 5">${extractIconInner(svgRaw)}</svg>`);
-    x += 4;
-  };
-
-  if (deco.kind === 'stars') {
-    // Sterne werden wiederholt, keine Ziffern dazu
-    const star = deco.unit_glyph ? glyphById(deco.unit_glyph) : undefined;
-    if (star) {
-      const n = Math.max(1, Math.min(5, deco.value));
-      for (let i = 0; i < n; i++) placeGlyph(star.svg_raw);
-    }
-    return { inner: parts.join(''), widthUnits: x };
-  }
-
-  if (deco.unit_glyph && deco.unit_position === 'left') {
-    const u = glyphById(deco.unit_glyph);
-    if (u) placeGlyph(u.svg_raw);
-  }
-  for (const ch of deco.digits) {
-    const g = digitGlyph(parseInt(ch, 10));
-    if (g) placeGlyph(g.svg_raw);
-  }
-  if (deco.unit_glyph && deco.unit_position === 'right') {
-    const u = glyphById(deco.unit_glyph);
-    if (u) placeGlyph(u.svg_raw);
-  }
-  return { inner: parts.join(''), widthUnits: x };
-}
-
-// Auflösung des Icon-Referenz-Strings aus dem Plan:
-//   - Exakter Treffer in der Registry → unverändert verwenden, Meta optional
-//   - Trailing "+" (z.B. "Fernglas+") → fallback auf Basis-Icon ("Fernglas"),
-//     Elevation-Decoration wird erzwungen (Konvention: "+" = Summit-Variante)
-function resolveIcon(name: string): { iconId: string; forceElevation: boolean } {
-  if (iconById(name)) return { iconId: name, forceElevation: false };
-  if (name.endsWith('+')) {
-    const base = name.slice(0, -1);
-    if (iconById(base)) return { iconId: base, forceElevation: true };
-  }
-  return { iconId: name, forceElevation: false };  // nichts gefunden — Composite zeichnet nur Container
-}
-
-function buildPoiComposite(
-  iconId: string,
-  text: string,
-  containerColor: string,
-  geo: Geometry,
-  size: number,
-): string {
-  const container = buildContainerSvgString(geo, containerColor);
-  const { iconId: resolvedId, forceElevation } = resolveIcon(iconId);
-  const iconEntry = iconById(resolvedId);
-  const iconInner = iconEntry ? extractIconInner(iconEntry.svg_cleaned) : '';
-
-  const meta = iconMeta(resolvedId);
-  const decoAllowed = (forceElevation || meta.decoration_below) && iconEntry;
-  const deco = decoAllowed ? extractDecoration(text) : null;
-
-  if (deco == null) {
-    // Standard-Composite: Container füllt 48×48, Icon liegt darüber.
-    // icon_offset_y verschiebt das Icon im Container nach unten (Droplet, Triangle).
-    const offsetY = geo.icon_offset_y ?? 0;
-    const iconPart = !iconInner
-      ? ''
-      : offsetY === 0
-        ? iconInner
-        : `<g transform="translate(0,${offsetY})">${iconInner}</g>`;
-    return `<svg viewBox="0 0 48 48" width="${size}" height="${size}">${container}${iconPart}</svg>`;
-  }
-
-  // Summit-Composite mit Zifferncontainer (Frame):
-  // - Glyph-Reihe (optional Einheit links / Ziffern / optional Einheit rechts)
-  //   wird in den Frame eingebettet
-  // - Frame hat weisses Fill, deckt unteren Icon-Bereich ab — Icon muss daher
-  //   nur minimal nach oben geschoben werden (3 px)
-  // - Frame skaliert horizontal mit Inhalt (Way A — preserveAspectRatio="none").
-  //   Stroke bleibt dank vector-effect="non-scaling-stroke" gleichmaessig.
-  // - Universeller Anker am Viewport-Boden (kein per-Geometrie-Sondermass mehr):
-  //   FRAME_ANCHOR_Y = 47 (1 px ueber Viewport-Bottom).
-  const { inner: glyphRow, widthUnits: contentUnits } = buildGlyphRowSvgString(deco);
-  // Frame-viewBox ist 8x9 fuer 1 Glyph (Padding 2 horiz + 2 vert je Seite).
-  // Hier mehr horizontale Basisbreite: 4 viewBox-Einheiten Padding je Seite
-  // (= 8 mehr als der Inhalt). Vertikal bleibt Padding 2 oben+unten.
-  const FRAME_PADDING_X = 4;       // viewBox-Einheiten je Seite
-  const FRAME_PADDING_Y = 2;
-  const frameUnitsW = contentUnits + 2 * FRAME_PADDING_X;
-  const frameUnitsH = 5 + 2 * FRAME_PADDING_Y;
-  const UNIT_SCALE = 1.2;          // outer-px je viewBox-Einheit
-  const frameW = frameUnitsW * UNIT_SCALE;
-  const frameH = frameUnitsH * UNIT_SCALE;
-  const frameX = 24 - frameW / 2;
-  const FRAME_ANCHOR_Y = 45;       // Frame-Boden 3 px ueber Viewport-Bottom (Sichtpruefung)
-  const frameY = FRAME_ANCHOR_Y - frameH;
-  // Content (Ziffern + Einheit) wird um Faktor 0.9 geschrumpft (User-Wunsch),
-  // im Frame-Inneren zentriert. Stroke darf mitschrumpfen.
-  const DECO_TEXT_SCALE = 0.9;
-  const contentW = contentUnits * UNIT_SCALE * DECO_TEXT_SCALE;
-  const contentH = 5 * UNIT_SCALE * DECO_TEXT_SCALE;
-  const contentX = frameX + (frameW - contentW) / 2;
-  const contentY = frameY + (frameH - contentH) / 2;
-  const summitIconShift = 1;
-  const iconPart = `<g transform="translate(0,${-summitIconShift})">${iconInner}</g>`;
-  // Frame-SVG so einbetten, dass der Pfad-Stroke nicht mitskaliert (non-scaling-stroke).
-  // Wir ziehen den Frame-Pfad-Inhalt heraus und fuegen das Attribut hinzu.
-  const frameEntry = glyphById('frame');
-  const frameInner = frameEntry
-    ? extractIconInner(frameEntry.svg_raw).replace('<path ', '<path vector-effect="non-scaling-stroke" ')
-    : '';
-  return `<svg viewBox="0 0 48 48" width="${size}" height="${size}">` +
-    container +
-    iconPart +
-    `<svg x="${frameX}" y="${frameY}" width="${frameW}" height="${frameH}" viewBox="0 0 8 9" preserveAspectRatio="none">${frameInner}</svg>` +
-    `<svg x="${contentX}" y="${contentY}" width="${contentW}" height="${contentH}" viewBox="0 0 ${contentUnits} 5">${glyphRow}</svg>` +
-    `</svg>`;
-}
 
 function PoiComposite({
   iconId, text, subcategory, size = 32, onClick, title,
