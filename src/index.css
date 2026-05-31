@@ -60,3 +60,9 @@ html, body, #root {
 /* POI „schreit": Verbindungs-Kandidat (0,5–2 m), bis er bestätigt/abgelehnt ist */
 @keyframes poiScream { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 .poi-scream { animation: poiScream 0.9s ease-in-out infinite; }
+
+/* Feines Fadenkreuz beim Umriss-Zeichnen (aus v0.3-Prototyp: dünne Arme, Mitte-Gap,
+   halbtransparent). Hotspot mittig (16 16). Überschreibt Geomans Draw-Cursor. */
+.scim-draw-cursor, .scim-draw-cursor * {
+  cursor: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='32'%20height='32'%3E%3Cg%20stroke='%232b6cb0'%20stroke-width='1'%20opacity='0.8'%3E%3Cline%20x1='2'%20y1='16'%20x2='13'%20y2='16'/%3E%3Cline%20x1='19'%20y1='16'%20x2='30'%20y2='16'/%3E%3Cline%20x1='16'%20y1='2'%20x2='16'%20y2='13'/%3E%3Cline%20x1='16'%20y1='19'%20x2='16'%20y2='30'/%3E%3C/g%3E%3C/svg%3E") 16 16, crosshair !important;
+}

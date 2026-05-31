@@ -522,6 +522,8 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     const b2 = maskLayerRef.current as any;
     if (umrissEdit) { b1?.pm?.enable?.({ allowSelfIntersection: false }); b2?.pm?.enable?.({ allowSelfIntersection: false }); }
     else { b1?.pm?.disable?.(); b2?.pm?.disable?.(); }
+    // Feines Fadenkreuz nur im Zeichnen-Modus.
+    mapContainerRef.current?.classList.toggle('scim-draw-cursor', tab === 'umriss' && !masked && umrissDraw);
   }, [umrissDraw, umrissEdit, tab, masked]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Karte neu vermessen + auf die Inspector-R zoomen — NUR bei echtem Tab-Wechsel,
