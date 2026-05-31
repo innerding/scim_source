@@ -441,11 +441,30 @@ function composeRoutingGraph(edges: PathEdge[]): RoutingGraph {
       usage.set(k, (usage.get(k) ?? 0) + 1);
     }
   }
+  // Knoten-Registry mit Toleranz: exakt gleiche Koordinaten teilen sofort einen
+  // Knoten; zusätzlich werden Punkte, die nur WENIGE METER auseinanderliegen,
+  // zum selben Knoten verschmolzen. Grund: OSM-Strecken sind an „Knien" nicht
+  // immer exakt genodet — der Endpunkt der Verbindungsstrecke liegt dann ein
+  // paar Meter neben dem Knie und wäre sonst ein isolierter Sackgassen-Knoten,
+  // den das Routing nie erreicht. (Wie bridgeGaps fürs Netz, hier fürs Routing.)
+  const MERGE_TOL_M = 3;
   const nodeOf = new Map<string, number>();
+  const nodeCoords: [number, number][] = [];
   const getNode = (lat: number, lng: number): number => {
     const k = ROUTE_KEY(lat, lng);
-    let id = nodeOf.get(k);
-    if (id === undefined) { id = nodeOf.size; nodeOf.set(k, id); }
+    const exact = nodeOf.get(k);
+    if (exact !== undefined) return exact;
+    const mLng = 111320 * Math.cos((lat * Math.PI) / 180);
+    for (let j = 0; j < nodeCoords.length; j++) {
+      const [nlat, nlng] = nodeCoords[j];
+      if (Math.hypot((lng - nlng) * mLng, (lat - nlat) * M_LAT) <= MERGE_TOL_M) {
+        nodeOf.set(k, j);
+        return j;
+      }
+    }
+    const id = nodeCoords.length;
+    nodeCoords.push([lat, lng]);
+    nodeOf.set(k, id);
     return id;
   };
   const segs: RouteSeg[] = [];
@@ -467,7 +486,7 @@ function composeRoutingGraph(edges: PathEdge[]): RoutingGraph {
       }
     }
   }
-  return { segs, nodeCount: nodeOf.size };
+  return { segs, nodeCount: nodeCoords.length };
 }
 
 // Mittlere Distanz Segment→Hover-Spur (Meter), gemittelt über die MITTEN der

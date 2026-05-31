@@ -44,6 +44,22 @@ describe('buildRoutePath — A→B über mehrere Ways', () => {
     expect(r).not.toBeNull();
   });
 
+  it('verbindet zwei Knie über eine OSM-Strecke, die nicht exakt genodet ist', () => {
+    // wayA endet am Knie (0, 0.0010); wayB beginnt am Knie (0, 0.0020).
+    // Die Verbindungsstrecke liegt ~2.2 m versetzt (0.00002 lat) — in OSM nicht
+    // exakt am Knie genodet. Ohne Toleranz-Merge wäre sie isoliert und A→B
+    // würde sie überspringen (gerade Linie). Mit Merge wird sie geroutet.
+    const wayA = edge(20, 'connector_candidate', [[0, 0], [0, 0.0010]]);
+    const stretch = edge(21, 'connector_candidate', [[0.00002, 0.0010], [0.00002, 0.0020]]);
+    const wayB = edge(22, 'connector_candidate', [[0, 0.0020], [0, 0.0030]]);
+    const knees = [wayA, stretch, wayB];
+    const r = buildRoutePath(knees, [0, 0.0002], [0, 0.0028], []);
+    expect(r).not.toBeNull();
+    expect(r!.mode).toBe('routed'); // nicht 'straight' — die Strecke wird erreicht
+    // Die Route muss durch die versetzte Strecke laufen (lat ~ 0.00002).
+    expect(Math.max(...r!.points.map((p) => p[0]))).toBeGreaterThan(0.000015);
+  });
+
   it('Hover-Spur lenkt an einer echten Verzweigung auf den oberen Bogen', () => {
     // Diamant: A→X, dann X→Y direkt (unten, kurz) ODER X→U→Y (oben, länger),
     // dann Y→B. A und B liegen auf den Stummeln, die Verzweigung ist bei X/Y.

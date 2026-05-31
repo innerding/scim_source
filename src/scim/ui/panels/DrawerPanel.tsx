@@ -875,11 +875,6 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     n.set((pieceNidRef.current += 1), { roadId, points: pts, key, ...meta });
     return n;
   });
-  const removePiece = (nid: number) => setManualPieces((prev) => {
-    const n = new Map(prev);
-    n.delete(nid);
-    return n;
-  });
   const toggleExclude = (key: string) => setExcludedKeys((prev) => {
     const n = new Set(prev);
     if (n.has(key)) n.delete(key); else n.add(key);
@@ -1093,32 +1088,19 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
           radius: 5, color: PICK_COLOR, weight: 3, fillColor: '#fff', fillOpacity: 1,
         }).bindTooltip('Punkt A — jetzt B setzen; fahre die gewünschte Strecke mit dem Cursor ab', { direction: 'top', offset: [0, -8], opacity: 0.9 }).addTo(layer);
       }
-      // Aufgenommene Teilstücke obenauf: Asphalt = weiß mit lila Einfassung,
-      // andere Sorten = lila. Klick entfernt sie wieder — ABER nur, wenn gerade
-      // KEIN A→B läuft (selecting). Sonst würde der B-Klick, der auf einem
-      // bestehenden Stück landet (z.B. an derselben Kreuzung), dieses Stück
-      // löschen statt B zu setzen. Während der Auswahl daher nicht-interaktiv,
-      // damit der Klick zur darunterliegenden Straße durchfällt.
-      const selecting = !!pendingConnect;
-      for (const [nid, p] of manualPieces) {
+      // Aufgenommene Teilstücke obenauf, NUR Anzeige: Asphalt = weiß mit lila
+      // Einfassung, andere Sorten = lila. Kein Klick-Löschen mehr im A→B-Modus
+      // (verwirrte + traf beim B-Setzen versehentlich); Zurücksetzen über den
+      // Sammel-Button im Filter-Menü. Durchweg nicht-interaktiv, damit Klicks
+      // zur darunterliegenden Straße durchfallen.
+      for (const p of manualPieces.values()) {
         const src = byId.get(p.roadId);
         const asph = p.asphalt ?? (src ? isAsphalt(src) : true);
-        const tip = 'aufgenommenes Teilstück — Klick: wieder raus';
         if (asph) {
           L.polyline(p.points, { color: PICK_COLOR, weight: 5, opacity: 0.95, interactive: false }).addTo(layer);
-          const top = L.polyline(p.points, { color: '#ffffff', weight: 2, opacity: 1, interactive: !selecting });
-          if (!selecting) {
-            top.bindTooltip(tip, { sticky: true, opacity: 0.9, direction: 'right', offset: [12, 0] });
-            top.on('click', (ev) => { L.DomEvent.stop(ev); removePiece(nid); });
-          }
-          top.addTo(layer);
+          L.polyline(p.points, { color: '#ffffff', weight: 2, opacity: 1, interactive: false }).addTo(layer);
         } else {
-          const pl = L.polyline(p.points, { color: PICK_COLOR, weight: 3, opacity: 0.95, interactive: !selecting });
-          if (!selecting) {
-            pl.bindTooltip(tip, { sticky: true, opacity: 0.9, direction: 'right', offset: [12, 0] });
-            pl.on('click', (ev) => { L.DomEvent.stop(ev); removePiece(nid); });
-          }
-          pl.addTo(layer);
+          L.polyline(p.points, { color: PICK_COLOR, weight: 3, opacity: 0.95, interactive: false }).addTo(layer);
         }
       }
     }
