@@ -28,7 +28,7 @@ import {
   loadPathConfig, savePathConfig, type PathConfig, type BridlewayMode,
 } from '../../regio-content/pathConfig';
 import {
-  deriveWanderwegnetz, anchorPois, cropNetToMask, netStats, formatBytes, isAsphalt, connectorPieceBetween, roundPolyline,
+  deriveWanderwegnetz, anchorPois, cropNetToMask, netStats, formatBytes, isAsphalt, connectorPieceBetween, roundPolyline, simplifyNet,
   type PathFetchResult, type AnchorSummary, type PoiInput, type CropResult,
   type PathEdge, type GateNode,
 } from '../../regio-content/pathEngine';
@@ -145,8 +145,9 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   // Längen-Summen fürs Footer-Feld. „Netz" = nur SCHWARZE Komponenten (≥ Schwelle),
   // darin Wanderweg + Asphalt; „rest" = grüne Komponenten (vom Netz exkludiert).
   const [netSummary, setNetSummary] = useState<{ net: number; wander: number; asphalt: number; rest: number; bytes: number; points: number } | null>(null);
-  // Koord-Reduktion über Nachkommastellen (7 = voll/keine Reduktion). 6 ≈ 0,11 m,
-  // 5 ≈ 1,1 m. Kürzere Zahlen → kleineres Netz-JSON.
+  // Datengröße-Reduktion (Footer): DP-Korridor (Punkte entfernen, ±eps garantiert)
+  // + Nachkommastellen (Ziffern kürzen). Toleranzen addieren sich → unter 0,33 m.
+  const [dpEps, setDpEps] = useState(0);
   const [coordDecimals, setCoordDecimals] = useState(7);
 
   // E2b — Konnektivitätsfärbung: Komponenten ≥ netLenThresh (m) gelten als „Netz"
@@ -782,7 +783,9 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       }
     }
     let effEdges = pieceEdges.length ? [...res.edges, ...pieceEdges] : res.edges;
-    // Koord-Reduktion: Koordinaten auf N Stellen runden (kürzeres JSON, topologie-sicher).
+    // Datengröße-Reduktion: erst Punkte ausdünnen (DP, ±eps-Korridor, topologie-sicher),
+    // dann Koordinaten auf N Stellen runden. Beides senkt das Netz-JSON.
+    if (dpEps > 0) effEdges = simplifyNet(effEdges, dpEps);
     if (coordDecimals < 7) effEdges = effEdges.map((e) => ({ ...e, points: roundPolyline(e.points, coordDecimals) }));
 
     // E3: erst NODEN (graphCompose splittet an Kreuzungen), dann Lücken < gapTol
@@ -1046,7 +1049,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     if (!pathResult) return;
     if (masked && cropResult) renderPath({ ...pathResult, edges: cropResult.edges });
     else renderPath(pathResult);
-  }, [netLenThresh, sackgassenRot, gapTol, cutEdges, pickMode, manualPieces, removeMode, excludedKeys, pendingConnect, coordDecimals, poiConnectMode]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [netLenThresh, sackgassenRot, gapTol, cutEdges, pickMode, manualPieces, removeMode, excludedKeys, pendingConnect, dpEps, coordDecimals, poiConnectMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // F7-Neufassung: Die Handoff-Brücke entfällt. Der Drawer schreibt direkt in den
   // Workspace-Draft (onSave); der Commit lebt im Workspace.
@@ -1243,23 +1246,6 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
           label="🔗 POI-Connect"
           title="POIs 0,5–2 m vom Netz verbinden (jeder einzeln per Klick); >2 m nicht verbindbar"
         />
-      ),
-    },
-    {
-      id: 'coordreduce', side: 'right', tabs: ['wegnetz'],
-      node: (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 1, minWidth: 130 }}>
-          <span style={{ fontSize: 9, fontWeight: 700, color: '#4a5568', textAlign: 'center', whiteSpace: 'nowrap' }}>
-            Koord-Stellen <span style={{ fontFamily: 'monospace', color: '#2b6cb0' }}>{coordDecimals} (~{(111320 / Math.pow(10, coordDecimals)).toFixed(2)} m)</span>
-            {netSummary && <span style={{ color: '#718096' }}> · {formatBytes(netSummary.bytes)}</span>}
-          </span>
-          <input
-            type="range" min={5} max={7} step={1} value={coordDecimals}
-            onChange={(e) => setCoordDecimals(Number(e.target.value))}
-            title="Nachkommastellen der Koordinaten — weniger = kleineres JSON (7≈1cm · 6≈0,11m · 5≈1,1m)"
-            style={{ width: '100%', margin: 0 }}
-          />
-        </div>
       ),
     },
     {
@@ -1584,9 +1570,20 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
             <span style={{ color: '#718096' }}>{pathResult.primaryCount} primär · {pathResult.connectorCount} Konnekt. · {pathResult.rawWayCount} Ways</span>
             {netSummary && (
               <span style={{ fontFamily: 'monospace', color: '#2c5282' }}>
-                {netSummary.points} Punkte · {formatBytes(netSummary.bytes)}{coordDecimals < 7 && ` (${coordDecimals} Stellen)`}
+                {netSummary.points} Punkte · <b>{formatBytes(netSummary.bytes)}</b>
               </span>
             )}
+            {/* Datengröße-Reduktion (Auslieferungs-Budget): DP-Korridor + Stellen. */}
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#4a5568' }} title="Punkt-Reduktion (Douglas-Peucker): garantierter ±-Korridor, Kurven bleiben drin, Kreuzungen erhalten">
+              DP <span style={{ fontFamily: 'monospace', color: '#2b6cb0' }}>{dpEps.toFixed(2)} m</span>
+              <input type="range" min={0} max={0.3} step={0.03} value={dpEps}
+                onChange={(e) => setDpEps(Number(e.target.value))} style={{ width: 70, margin: 0 }} />
+            </span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#4a5568' }} title="Nachkommastellen runden (kleiner Zusatz-Hebel, ~5%); 7≈1cm · 6≈0,11m · 5≈1,1m">
+              Stellen <span style={{ fontFamily: 'monospace', color: '#2b6cb0' }}>{coordDecimals}</span>
+              <input type="range" min={5} max={7} step={1} value={coordDecimals}
+                onChange={(e) => setCoordDecimals(Number(e.target.value))} style={{ width: 50, margin: 0 }} />
+            </span>
           </div>
           {/* GELB — Maskierung + POI-Anker */}
           {((masked && cropResult) || anchorSummary) && (

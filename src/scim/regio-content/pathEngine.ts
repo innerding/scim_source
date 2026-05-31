@@ -194,6 +194,71 @@ export function roundPolyline(points: [number, number][], decimals: number): [nu
   return points.map(([lat, lng]) => [Math.round(lat * f) / f, Math.round(lng * f) / f] as [number, number]);
 }
 
+// Senkrecht-Abstand (Meter, lokal-planar) eines Punkts zur Geraden a–b.
+function perpDistMeters(p: [number, number], a: [number, number], b: [number, number]): number {
+  const mLng = 111320 * Math.cos((p[0] * Math.PI) / 180);
+  const px = p[1] * mLng, py = p[0] * M_LAT;
+  const ax = a[1] * mLng, ay = a[0] * M_LAT;
+  const bx = b[1] * mLng, by = b[0] * M_LAT;
+  const dx = bx - ax, dy = by - ay;
+  const len2 = dx * dx + dy * dy;
+  if (len2 === 0) return Math.hypot(px - ax, py - ay);
+  const cross = Math.abs(dx * (ay - py) - (ax - px) * dy);
+  return cross / Math.sqrt(len2);
+}
+
+// Douglas-Peucker: behält nur Punkte, ohne die ein Originalpunkt weiter als eps
+// (Meter) von der vereinfachten Linie abwiche → garantierter ±eps-Korridor (auch
+// in Kurven; enge Kurven behalten ihre Punkte, Geraden kollabieren).
+function douglasPeucker(points: [number, number][], eps: number): [number, number][] {
+  if (points.length < 3) return points;
+  let maxD = -1; let idx = -1;
+  const a = points[0]; const b = points[points.length - 1];
+  for (let i = 1; i < points.length - 1; i++) {
+    const d = perpDistMeters(points[i], a, b);
+    if (d > maxD) { maxD = d; idx = i; }
+  }
+  if (maxD <= eps) return [a, b];
+  const left = douglasPeucker(points.slice(0, idx + 1), eps);
+  const right = douglasPeucker(points.slice(idx), eps);
+  return [...left.slice(0, -1), ...right];
+}
+
+// Topologie-sicheres DP fürs ganze Netz: jeder Way wird zuerst an seinen
+// Kreuzungs-Stützpunkten (geteilte Koordinaten + Endpunkte) zerlegt, dann läuft DP
+// nur INNERHALB der Stücke. So bleiben Kreuzungsknoten exakt erhalten (keine
+// brechenden T-Kreuzungen), und jeder Punkt bleibt im ±eps-Korridor.
+export function simplifyNet(edges: PathEdge[], eps: number): PathEdge[] {
+  if (eps <= 0) return edges;
+  const key = (lat: number, lng: number) => `${lat.toFixed(7)},${lng.toFixed(7)}`;
+  const usage = new Map<string, number>();
+  for (const e of edges) {
+    if (!e.inNet) continue;
+    const seen = new Set<string>();
+    for (const p of e.points) {
+      const k = key(p[0], p[1]);
+      if (seen.has(k)) continue;
+      seen.add(k);
+      usage.set(k, (usage.get(k) ?? 0) + 1);
+    }
+  }
+  return edges.map((e) => {
+    if (!e.inNet || e.points.length <= 2) return e;
+    const pts = e.points;
+    const out: [number, number][] = [];
+    let runStart = 0;
+    for (let i = 1; i < pts.length; i++) {
+      const shared = (usage.get(key(pts[i][0], pts[i][1])) ?? 0) >= 2;
+      if (i === pts.length - 1 || shared) {
+        const simp = douglasPeucker(pts.slice(runStart, i + 1), eps);
+        for (let j = out.length ? 1 : 0; j < simp.length; j++) out.push(simp[j]);
+        runStart = i;
+      }
+    }
+    return { ...e, points: out };
+  });
+}
+
 // Gesamtlänge des Netzes in Metern (alle inNet-Kanten). Wanderweg = netMeters − asphaltMeters.
 export function netMeters(edges: PathEdge[]): number {
   let m = 0;
