@@ -28,7 +28,7 @@ import {
   loadPathConfig, savePathConfig, type PathConfig, type BridlewayMode,
 } from '../../regio-content/pathConfig';
 import {
-  deriveWanderwegnetz, anchorPois, cropNetToMask, netStats, formatBytes, isAsphalt, connectorPieceAt,
+  deriveWanderwegnetz, anchorPois, cropNetToMask, netStats, formatBytes, isAsphalt, connectorPieceBetween,
   type PathFetchResult, type AnchorSummary, type PoiInput, type CropResult,
   type PathEdge, type GateNode,
 } from '../../regio-content/pathEngine';
@@ -163,6 +163,9 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   const [pickMode, setPickMode] = useState(false);
   const [manualPieces, setManualPieces] = useState<Map<number, { roadId: number; points: [number, number][]; key: string }>>(new Map());
   const pieceNidRef = useRef(1_000_000_000_000); // über OSM-Way-ids, kollidiert nicht
+  // Zwei-Punkt-Anwahl: erster Klick A merken, zweiter Klick B auf derselben Straße
+  // füllt den Asphalt dazwischen.
+  const [pendingConnect, setPendingConnect] = useState<{ roadId: number; lat: number; lng: number } | null>(null);
 
   // Entfernen: Ausschluss-Menge von Graph-Teilstücken (Schlüssel edgeId:seg). Im
   // Entfernen-Modus Klick auf ein Segment → raus (vor der Klassifizierung), nochmal
@@ -891,28 +894,39 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       }
     }
 
-    // T2: Anwähl-Modus — Connector-Straßen als klickbares Overlay. Grau gestrichelt
-    // = nicht aufgenommen (Klick → nur das Teilstück zwischen den nächsten
-    // Anschlusspunkten rein); orange = aufgenommenes Teilstück (Klick → wieder raus).
+    // T2: Anwähl-Modus — Zwei-Punkt. Graue Straße: erster Klick = A, zweiter Klick
+    // = B auf DERSELBEN Straße → der Asphalt dazwischen wird aufgenommen (du
+    // bestimmst die Spanne → keine Ministrecken). Orange = aufgenommen (Klick raus).
     if (pickMode) {
-      const primaryEndpoints: [number, number][] = [];
-      for (const e of res.edges) {
-        if (e.source === 'primary' && e.points.length >= 2) {
-          primaryEndpoints.push(e.points[0], e.points[e.points.length - 1]);
-        }
-      }
-      const tol = lastCfgRef.current?.konnektoren.anschluss_toleranz_meter ?? 30;
-      // Graue Straßen: immer klickbar → fügt ein weiteres Teilstück hinzu.
       for (const e of res.edges) {
         if (e.source === 'primary' || e.inNet) continue; // nur Straßen-Kandidaten
-        const pl = L.polyline(e.points, { color: CAND_COLOR, weight: 2, opacity: 0.9, dashArray: '5 5' });
-        pl.bindTooltip('OSM-Straße — Klick: Teilstück bis zum nächsten Wanderweg-Anschluss aufnehmen (mehrfach möglich)', { sticky: true, opacity: 0.9, offset: [-6, 0] });
+        const armed = pendingConnect?.roadId === e.id;
+        const pl = L.polyline(e.points, {
+          color: armed ? PICK_COLOR : CAND_COLOR, weight: armed ? 3 : 2, opacity: 0.9, dashArray: '5 5',
+        });
+        pl.bindTooltip(
+          armed ? 'zweiten Punkt B auf dieser Straße klicken → Asphalt A–B aufnehmen'
+            : (pendingConnect ? 'erst Punkt B auf der angefangenen Straße setzen'
+              : 'OSM-Straße — Punkt A klicken, dann Punkt B → Asphalt dazwischen'),
+          { sticky: true, opacity: 0.9, offset: [-6, 0] },
+        );
         pl.on('click', (ev) => {
           L.DomEvent.stop(ev);
           const ll = (ev as L.LeafletMouseEvent).latlng;
-          addPiece(e.id, connectorPieceAt(e, ll.lat, ll.lng, primaryEndpoints, tol));
+          if (pendingConnect && pendingConnect.roadId === e.id) {
+            addPiece(e.id, connectorPieceBetween(e, pendingConnect.lat, pendingConnect.lng, ll.lat, ll.lng));
+            setPendingConnect(null);
+          } else {
+            setPendingConnect({ roadId: e.id, lat: ll.lat, lng: ll.lng });
+          }
         });
         pl.addTo(layer);
+      }
+      // Marker für den gesetzten ersten Punkt A.
+      if (pendingConnect) {
+        L.circleMarker([pendingConnect.lat, pendingConnect.lng], {
+          radius: 5, color: PICK_COLOR, weight: 3, fillColor: '#fff', fillOpacity: 1,
+        }).bindTooltip('Punkt A — jetzt B auf derselben Straße', { direction: 'top', offset: [0, -8], opacity: 0.9 }).addTo(layer);
       }
       // Aufgenommene Teilstücke obenauf (nur im Anwählmodus): Asphalt = weiß mit
       // lila Einfassung, andere Sorten = lila. Jedes per Klick wieder entfernbar.
@@ -1024,7 +1038,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     if (!pathResult) return;
     if (masked && cropResult) renderPath({ ...pathResult, edges: cropResult.edges });
     else renderPath(pathResult);
-  }, [netLenThresh, sackgassenRot, gapTol, cutEdges, pickMode, manualPieces, removeMode, excludedKeys]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [netLenThresh, sackgassenRot, gapTol, cutEdges, pickMode, manualPieces, removeMode, excludedKeys, pendingConnect]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // F7-Neufassung: Die Handoff-Brücke entfällt. Der Drawer schreibt direkt in den
   // Workspace-Draft (onSave); der Commit lebt im Workspace.
@@ -1195,9 +1209,9 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       node: (
         <ToolToggle
           active={pickMode}
-          onClick={() => setPickMode((v) => !v)}
+          onClick={() => { setPickMode((v) => !v); setPendingConnect(null); }}
           label="⊟ OSM-Wege"
-          title="OSM-Straßen gestrichelt zeigen + Teilstücke anwählen"
+          title="OSM-Straßen zeigen; Punkt A → Punkt B auf derselben Straße füllt den Asphalt dazwischen"
         />
       ),
     },

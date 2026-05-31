@@ -366,6 +366,22 @@ export function connectorPieceAt(
   return cropPolyline(road.points, lo, hi, mLng);
 }
 
+// T2 Zwei-Punkt: das Straßen-Teilstück ZWISCHEN zwei Klickpunkten (auf die Straße
+// projiziert). Der User bestimmt die Spanne A→B selbst → keine Ministrecken.
+export function connectorPieceBetween(
+  road: PathEdge,
+  aLat: number, aLng: number,
+  bLat: number, bLng: number,
+): [number, number][] {
+  if (road.points.length < 2) return [];
+  const mLng = 111320 * Math.cos((road.points[0][0] * Math.PI) / 180);
+  const sA = projectToPolyline(aLat, aLng, road.points, mLng).s;
+  const sB = projectToPolyline(bLat, bLng, road.points, mLng).s;
+  const lo = Math.min(sA, sB); const hi = Math.max(sA, sB);
+  if (hi - lo < 1) return [];
+  return cropPolyline(road.points, lo, hi, mLng);
+}
+
 // ─── Oeffentlicher Einstieg ────────────────────────────────────────────────────
 
 export async function deriveWanderwegnetz(
