@@ -191,6 +191,11 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   const [maskVisible, setMaskVisible] = useState(true);
   const [maskOpacity, setMaskOpacity] = useState(1);
 
+  // Katalog-Platzhalter-POIs: Sichtbarkeit + Größe (statt Dimmen → Marker
+  // vergrößern/verkleinern). EBENEN-Control.
+  const [catalogPoiVisible, setCatalogPoiVisible] = useState(true);
+  const [catalogPoiSize, setCatalogPoiSize] = useState(1);
+
   // Was wird beim Öffnen geladen (F5)?
   //   - openGeometryId 'draft-…'  → genau diesen Workspace-Draft laden + binden.
   //   - openGeometryId committed  → die Geometry als Referenz laden (kein Draft).
@@ -628,7 +633,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     const layer = poiLayerRef.current;
     if (!map || !layer) return;
     layer.clearLayers();
-    if (!overlayCatalogId) return;
+    if (!overlayCatalogId || !catalogPoiVisible) return;
     const cat = CATALOGS.find((c) => c.id === overlayCatalogId);
     if (!cat) return;
     const parsed = parsePoiCatalog(cat.md, {
@@ -636,10 +641,11 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       region_name: cat.name,
       source_path: `data/${cat.id}_pois_plan.md`,
     });
+    const radius = Math.max(1, 4 * catalogPoiSize);
     for (const p of parsed.pois) {
       if (!p.coord || (p.coord[0] === 0 && p.coord[1] === 0)) continue;
       const marker = L.circleMarker([p.coord[1], p.coord[0]], {
-        radius: 4,
+        radius,
         color: '#c8389b',
         weight: 2,
         fillColor: '#fff',
@@ -648,7 +654,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       marker.bindTooltip(p.text, { direction: 'top', offset: [0, -8], opacity: 0.9 });
       marker.addTo(layer);
     }
-  }, [overlayCatalogId]);
+  }, [overlayCatalogId, catalogPoiVisible, catalogPoiSize]);
 
   // Wegnetz auf den Map-Layer zeichnen — E2b: Färbung nach KONNEKTIVITÄT
   // (nicht mehr nach Herkunft). Der Graph wird verschweißt (graphCompose),
@@ -1082,12 +1088,6 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
         <span style={{ flex: 1, textAlign: 'center', fontSize: 10, fontFamily: 'monospace', color: '#718096', marginBottom: 6 }}>
           Browser Cache {(localStorageBytes() / 1048576).toFixed(2)}/10 MB
         </span>
-        {/* F7-Diagnose: an welchen Draft bindet der Drawer? */}
-        {geometryId === 'new' && (
-          <span style={{ fontSize: 9, fontFamily: 'monospace', color: '#718096', marginBottom: 6, marginRight: 8, whiteSpace: 'nowrap' }}>
-            {activeDraftId ? `→ ${activeDraftId}` : '→ NEU'} · B1 {polygon?.length ?? 0} · B2 {maskPolygon?.length ?? 0} · Netz {pathResult ? 'ja' : '–'}
-          </span>
-        )}
         {/* F7-Neufassung: expliziter Speichern-Button (tab-unabhängig). Speichert
             den Draft in den Workspace; maskiert gespeichert = roter, committbarer Draft. */}
         {geometryId === 'new' && (
@@ -1163,28 +1163,6 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
         >
           ▢→▣ B2 aus B1
         </button>
-        {/* Beschneiden-Toggle (aus dem Wegnetz-Tab hierher geholt) — reversible
-            Vorschau: maskiertes Netz erzeugen/verwerfen. Braucht B2. */}
-        <button
-          onClick={onToggleMask}
-          disabled={!maskPolygon || maskPolygon.length < 3}
-          title={
-            (!maskPolygon || maskPolygon.length < 3) ? 'Erst B2 (finale Boundary) zeichnen'
-              : masked ? 'Zurück — maskiertes Netz verwerfen, unmaskiertes zeigen'
-              : 'Beschneiden: maskiertes Netz (Vorschau) erzeugen'
-          }
-          style={{
-            fontSize: 10, padding: '3px 8px', marginBottom: 4, alignSelf: 'flex-start',
-            border: `1px solid ${(!maskPolygon || maskPolygon.length < 3) ? '#cbd5e0' : masked ? '#2b6cb0' : '#c05621'}`,
-            borderRadius: 4,
-            background: (!maskPolygon || maskPolygon.length < 3) ? '#edf2f7' : masked ? '#ebf8ff' : '#fff5f5',
-            color: (!maskPolygon || maskPolygon.length < 3) ? '#a0aec0' : masked ? '#2b6cb0' : '#c05621',
-            cursor: (!maskPolygon || maskPolygon.length < 3) ? 'not-allowed' : 'pointer',
-            fontWeight: 700,
-          }}
-        >
-          {masked ? '↩ zurück' : '▦ Beschneiden'}
-        </button>
         <LayerDimmer
           label="Vorlage (Inspector-R)" color="#8b3fbf"
           on={showInspectorRef} opacity={inspectorOpacity}
@@ -1219,6 +1197,38 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
             ⊹ einrasten
           </span>
         </label>
+        {/* Katalog-Platzhalter-POIs: wie ein Ebenen-Control, aber der Regler ändert
+            die GRÖSSE der Platzhalter (nicht die Dimmung). */}
+        <LayerSizer
+          label="Katalog-POIs" color="#c8389b"
+          on={catalogPoiVisible} size={catalogPoiSize}
+          onToggle={setCatalogPoiVisible} onSize={setCatalogPoiSize}
+          disabled={!overlayCatalogId}
+          disabledHint="Kein Katalog gebunden — Platzhalter-POIs nur bei katalog-gebundenem Draft"
+        />
+        {/* Beschneiden — rechtsbündig (unter Speichern), nur im Wegnetz-Tab. */}
+        {tab === 'wegnetz' && (
+          <button
+            onClick={onToggleMask}
+            disabled={!maskPolygon || maskPolygon.length < 3}
+            title={
+              (!maskPolygon || maskPolygon.length < 3) ? 'Erst B2 (finale Boundary) zeichnen'
+                : masked ? 'Zurück — maskiertes Netz verwerfen, unmaskiertes zeigen'
+                : 'Beschneiden: maskiertes Netz (Vorschau) erzeugen'
+            }
+            style={{
+              marginLeft: 'auto', fontSize: 10, padding: '3px 8px', marginBottom: 4, alignSelf: 'flex-start',
+              border: `1px solid ${(!maskPolygon || maskPolygon.length < 3) ? '#cbd5e0' : masked ? '#2b6cb0' : '#c05621'}`,
+              borderRadius: 4,
+              background: (!maskPolygon || maskPolygon.length < 3) ? '#edf2f7' : masked ? '#ebf8ff' : '#fff5f5',
+              color: (!maskPolygon || maskPolygon.length < 3) ? '#a0aec0' : masked ? '#2b6cb0' : '#c05621',
+              cursor: (!maskPolygon || maskPolygon.length < 3) ? 'not-allowed' : 'pointer',
+              fontWeight: 700,
+            }}
+          >
+            {masked ? '↩ zurück' : '▦ Beschneiden'}
+          </button>
+        )}
       </div>
 
 
@@ -1763,6 +1773,41 @@ function ToolToggle({
     >
       {label}
     </button>
+  );
+}
+
+// Katalog-POI-Control: wie LayerDimmer, aber der Regler ändert die Marker-GRÖSSE
+// (0,5×–3×) statt der Opacity.
+function LayerSizer({
+  label, color, on, size, onToggle, onSize, disabled, disabledHint,
+}: {
+  label: string; color: string; on: boolean; size: number;
+  onToggle: (v: boolean) => void; onSize: (v: number) => void;
+  disabled?: boolean; disabledHint?: string;
+}) {
+  return (
+    <div
+      title={disabled ? disabledHint : `${label} — ein-/ausblenden + Platzhalter vergrößern/verkleinern`}
+      style={{ display: 'flex', alignItems: 'center', gap: 6, opacity: disabled ? 0.45 : 1 }}
+    >
+      <label style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: disabled ? 'not-allowed' : 'pointer' }}>
+        <input
+          type="checkbox"
+          checked={on}
+          disabled={disabled}
+          onChange={(e) => onToggle(e.target.checked)}
+          style={{ cursor: disabled ? 'not-allowed' : 'pointer' }}
+        />
+        <span style={{ fontSize: 11, color: on && !disabled ? color : '#718096', fontWeight: 600 }}>{label}</span>
+      </label>
+      <input
+        type="range" min={0.5} max={3} step={0.25} value={size}
+        disabled={disabled || !on}
+        onChange={(e) => onSize(Number(e.target.value))}
+        title="Größe der Platzhalter-POIs"
+        style={{ width: 64, cursor: (disabled || !on) ? 'not-allowed' : 'pointer' }}
+      />
+    </div>
   );
 }
 
