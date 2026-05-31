@@ -460,6 +460,12 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       const mask = L.polygon(latlngs, { color: SLOT2_COLOR, dashArray: SLOT2_DASH }).addTo(map);
       maskLayerRef.current = mask;
     }
+    // Initialer Fokus OHNE eigene Boundary: gleich auf den gebundenen Katalog zoomen
+    // (synchron beim Öffnen) statt erst auf Default-Gmunden und dann per Timeout zu
+    // springen — kein Flash, keine Wartezeit.
+    if ((!polygon || polygon.length < 3) && overlayCatalogId) {
+      fitToCatalog(overlayCatalogId);
+    }
 
     return () => {
       map.remove();
