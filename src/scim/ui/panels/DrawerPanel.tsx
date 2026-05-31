@@ -515,7 +515,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const pm = (map as any).pm;
     if (tab !== 'umriss' || masked) return;
-    if (umrissDraw) pm?.enableDraw?.('Polygon'); else pm?.disableDraw?.();
+    if (umrissDraw) pm?.enableDraw?.('Polygon', { tooltips: false, cursorMarker: false }); else pm?.disableDraw?.();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const b1 = polygonLayerRef.current as any;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
