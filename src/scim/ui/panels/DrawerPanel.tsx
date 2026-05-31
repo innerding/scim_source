@@ -584,6 +584,32 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     } else { b1?.pm?.disable?.(); b2?.pm?.disable?.(); }
     // Feines Fadenkreuz nur im Zeichnen-Modus.
     mapContainerRef.current?.classList.toggle('scim-draw-cursor', tab === 'umriss' && !masked && umrissDraw);
+
+    // Fill folgt dem Vertex-Drag LIVE. Diese Geoman-Events feuern NUR auf dem
+    // Layer (nicht auf der Map — map.on griff deshalb nie). Daher direkt an B1/B2
+    // hängen: bei jeder Marker-Bewegung das invertierte Außen-Fill aus dem
+    // AKTUELLEN Layer-Ring nachführen (Loch = sichtbare Boundary).
+    if (!umrissEdit) return undefined;
+    const worldRing: L.LatLngExpression[] = [[-90, -180], [-90, 180], [90, 180], [90, -180]];
+    const syncFill = () => {
+      const inv = invFillLayerRef.current;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const activeLayer = (masked ? maskLayerRef.current : polygonLayerRef.current) as any;
+      if (!inv || !activeLayer?.getLatLngs) return;
+      const rings = activeLayer.getLatLngs();
+      const ring = Array.isArray(rings[0]) ? rings[0] : rings;
+      if (!Array.isArray(ring) || ring.length < 3) return;
+      inv.setLatLngs([worldRing, ring]);
+    };
+    const evts = ['pm:markerdrag', 'pm:markerdragend', 'pm:vertexadded', 'pm:vertexremoved'];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const attached: any[] = [];
+    for (const lyr of [b1, b2]) {
+      if (!lyr?.on) continue;
+      for (const ev of evts) lyr.on(ev, syncFill);
+      attached.push(lyr);
+    }
+    return () => { for (const lyr of attached) for (const ev of evts) lyr.off?.(ev, syncFill); };
   }, [umrissDraw, umrissEdit, editB1, maskPolygon, tab, masked]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Karte neu vermessen + auf die Inspector-R zoomen — NUR bei echtem Tab-Wechsel,
@@ -653,41 +679,6 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     invFillLayerRef.current = inv;
   }, [polygon, maskPolygon, geometryId, overlayCatalogId, boundaryVisible, boundaryOpacity, tab, masked, umrissEdit]);
 
-  // Fill folgt dem Vertex-Drag LIVE: während des Bearbeitens das invertierte
-  // Overlay bei jeder Marker-Bewegung aus dem AKTUELLEN Layer-Ring nachführen,
-  // damit das Loch (= sichtbare Boundary) mit den Punkten mitgeht statt erst beim
-  // Loslassen (State-Update) nachzuspringen.
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !umrissEdit) return undefined;
-    const worldRing: L.LatLngExpression[] = [[-90, -180], [-90, 180], [90, 180], [90, -180]];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const sync = (e: any) => {
-      const inv = invFillLayerRef.current;
-      if (!inv) return;
-      // Nur den Layer nachführen, den das Fill repräsentiert (aktive Boundary):
-      // unmaskiert B1 (polygon), maskiert B2 (maskPolygon).
-      const activeLayer = masked ? maskLayerRef.current : polygonLayerRef.current;
-      const layer = e?.layer ?? e?.target ?? activeLayer;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if (layer !== activeLayer || !(layer as any)?.getLatLngs) return;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const rings = (layer as any).getLatLngs();
-      const ring = Array.isArray(rings[0]) ? rings[0] : rings;
-      if (!Array.isArray(ring) || ring.length < 3) return;
-      inv.setLatLngs([worldRing, ring]);
-    };
-    map.on('pm:markerdrag', sync);
-    map.on('pm:markerdragend', sync);
-    map.on('pm:vertexadded', sync);
-    map.on('pm:vertexremoved', sync);
-    return () => {
-      map.off('pm:markerdrag', sync);
-      map.off('pm:markerdragend', sync);
-      map.off('pm:vertexadded', sync);
-      map.off('pm:vertexremoved', sync);
-    };
-  }, [umrissEdit, masked]);
 
   // Ebenen-Steuerleiste (A): Inspector-R-Vorlage dimmen.
   useEffect(() => {
