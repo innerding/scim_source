@@ -1,9 +1,11 @@
 # Lichtenberg POI-Plan v1
-**Stand:** 2026-05-30  ·  **12 POIs**  ·  ✓ 11 · ≈ 0 · ❓ 0
+**Stand:** 2026-05-31  ·  **24 POIs**  ·  ✓ 23 · ≈ 0 · ❓ 0
 **Token-Präfix:** boeh · lichtenberg
 
 Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 **✓** aus OSM/bestätigt · **≈** abgeleitet/geschätzt · **❓** fehlt
+
+---
 
 ---
 
@@ -21,6 +23,7 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 |---|---|---|---|---|---|---|
 | boeh-lichtenberg-tewu | bildstock | Schönangerer | Marterl am Wegrand beim Schönangerer-Hof | 14.24776, 48.40144 | — | ✓ |
 | boeh-lichtenberg-shu4 | bildstock+ | Rotes Kreuz seit 1973 | Hölzernes Wegkreuz im Wald-Sattel | 14.24486, 48.38024 | — | ✓ |
+| boeh-lichtenberg-948h | bildstock | Blutschüsselkapelle | Wolfgangkapelle | 14.24601, 48.41397 | — | ✓ |
 
 ### Points_others
 
@@ -34,6 +37,8 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 |---|---|---|---|---|---|---|
 | boeh-lichtenberg-pcck | aussichtswarte+ | Giselawarte 927 m | Steinblock-Aussichtswarte von 1857, 17,5 m hoch | 14.25445, 48.38515 | Lichtenberg *(Cluster-Icon)* | ✓ |
 | boeh-lichtenberg-e6e8 | aussichtspunkt | Kogl | Blick über die Koglerau ins Donautal und auf das Alpenpanorama | 14.23873, 48.38005 | — | ✓ |
+| boeh-lichtenberg-puxy | aussichtspunkt+ | Gipfel Lichtenberg 927m |  | 14.25434, 48.38534 | — | ✓ |
+| boeh-lichtenberg-vwjr | aussichtspunkt | Steinfelsen Gipfel |  | 14.24210, 48.41206 | — | ✓ |
 
 ### Regenerate_Substanze
 
@@ -47,6 +52,20 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 | Code | Icon | Tagline | Description | Coord | Cluster | Status |
 |---|---|---|---|---|---|---|
 | boeh-lichtenberg-2cvm | gewaesser | Pollack-Quelle | Trinkwasserquelle am Berg | 14.25879, 48.38264 | Lichtenberg | ✓ |
+| boeh-lichtenberg-93at | gewaesser | Teich |  | 14.24516, 48.41028 | — | ✓ |
+
+### Transport_Vehicle
+
+| Code | Icon | Tagline | Description | Coord | Cluster | Status |
+|---|---|---|---|---|---|---|
+| boeh-lichtenberg-e6r6 |  | Eidenberger Reiter |  | 14.22941, 48.38387 | — | ✓ |
+| boeh-lichtenberg-83z7 |  | Lichtenberg |  | 14.25713, 48.36053 | — | ✓ |
+| boeh-lichtenberg-84jx |  | Neulichtenberg Köppelmayr |  | 14.22889, 48.36653 | — | ✓ |
+| boeh-lichtenberg-sd53 |  | Neulichtenberg Ort |  | 14.24072, 48.36203 | — | ✓ |
+| boeh-lichtenberg-7eg2 |  | Eidenberg Ort |  | 14.23276, 48.39449 | — | ✓ |
+| boeh-lichtenberg-nruw |  | Eidenberg Haslinger |  | 14.22748, 48.40133 | — | ✓ |
+| boeh-lichtenberg-7mff |  | Rohrbach |  | 14.26726, 48.40699 | — | ✓ |
+| boeh-lichtenberg-yff6 |  | Kirchschlag bei Linz |  | 14.27647, 48.41290 | — | ✓ |
 
 ### Transport_Parking/(Charging)
 
@@ -119,6 +138,8 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 - Service: Sub-Differenzierung allein durch das Innensymbol
 - Cluster: keine Sub (magenta einheitlich)
 - Hexagon-Ring: transparent als unsichtbarer Cluster-Ring · opaque als vereinigtes Cluster-POI beim Herauszoomen
+
+---
 
 ---
 
