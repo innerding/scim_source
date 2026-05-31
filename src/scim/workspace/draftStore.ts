@@ -16,6 +16,7 @@
 
 import type { Position } from 'geojson';
 import type { HandoffNet } from './draftHandoff';
+import type { PathFetchResult } from '../regio-content/pathEngine';
 
 export const DRAFTS_KEY = 'scim3:drafts';
 const LEGACY_DRAFT_KEY = 'scim3_geometry_draft';
@@ -38,6 +39,10 @@ export interface Draft {
   // am Commit; net_masked (zugeschnitten) wird committet. net_masked vorhanden = rot.
   net_unmasked: HandoffNet | null;
   net_masked: HandoffNet | null;
+  // Kompletter B1-Overpass-Fetch (ALLE Kanten inkl. Connector-Kandidaten + bbox +
+  // Zähler). Damit der Drawer beim Wiederöffnen das Netz zeigt und A→B routen kann,
+  // OHNE Overpass erneut abzufragen. Roh/Arbeits-Schicht — stirbt am Commit.
+  path_fetch?: PathFetchResult | null;
   catalog_id: string | null;       // gebundener Katalog → orange
   created_at: string;
   updated_at: string;
@@ -182,6 +187,7 @@ export function createDraft(name: string, opts: Partial<Draft> = {}): Draft {
     boundary: opts.boundary ?? null,
     net_unmasked: opts.net_unmasked ?? null,
     net_masked: opts.net_masked ?? null,
+    path_fetch: opts.path_fetch ?? null,
     catalog_id: opts.catalog_id ?? null,
     created_at: ts,
     updated_at: ts,

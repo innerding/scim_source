@@ -270,17 +270,17 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       if (d) return {
         draftId: d.id, geometryId: 'new' as const, name: d.name, region: '',
         polygon: d.reference ?? null, maskPolygon: d.boundary ?? null,
-        catalogId: d.catalog_id ?? '',
+        catalogId: d.catalog_id ?? '', pathFetch: d.path_fetch ?? null,
       };
     }
     if (openGeometryId) {
       const g = GEOMETRIES.find((x) => x.id === openGeometryId);
       if (g) return {
         draftId: null, geometryId: g.id, name: g.name, region: g.region ?? '',
-        polygon: g.polygon, maskPolygon: null, catalogId: '',
+        polygon: g.polygon, maskPolygon: null, catalogId: '', pathFetch: null,
       };
     }
-    return { draftId: null, geometryId: 'new' as const, name: '', region: '', polygon: null, maskPolygon: null, catalogId: '' };
+    return { draftId: null, geometryId: 'new' as const, name: '', region: '', polygon: null, maskPolygon: null, catalogId: '', pathFetch: null };
   }, [openGeometryId]);
   // Sprung verbraucht — App-State leeren, damit spaetere Navigation leer startet.
   useEffect(() => {
@@ -322,6 +322,9 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     const patch = {
       name, reference: polygon, boundary: maskPolygon,
       net_unmasked: netUn, net_masked: netMa, catalog_id: overlayCatalogId || null,
+      // Kompletter B1-Overpass-Fetch mitspeichern → beim Wiederöffnen kein
+      // erneuter Overpass-Abruf, Netz + A→B sofort verfügbar.
+      path_fetch: pathResult,
     };
     try {
       if (activeDraftId) updateDraft(activeDraftId, patch);
@@ -512,6 +515,14 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     // springen — kein Flash, keine Wartezeit.
     if ((!polygon || polygon.length < 3) && overlayCatalogId) {
       fitToCatalog(overlayCatalogId);
+    }
+
+    // B1-Overpass aus dem Draft wiederherstellen — kein erneuter Overpass-Abruf.
+    // Netz sofort sichtbar, A→B-Routing-Basis (edgesRef) gesetzt.
+    if (initial.pathFetch) {
+      setPathResult(initial.pathFetch);
+      setPathStatus('done');
+      renderPath(initial.pathFetch);
     }
 
     return () => {
