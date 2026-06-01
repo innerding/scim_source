@@ -26,6 +26,8 @@ import WorkspacePanel from './panels/WorkspacePanel';
 import DrawerPanel from './panels/DrawerPanel';
 import { poiCompositeSvg } from '../poi-catalog/poiCatalog.composite';
 import { CONTAINER_SYSTEM } from '../poi-catalog/poiCatalog.containerSystem';
+import { REPRESENTATIONS } from '../workspace/workspace.registry';
+import { buildOriginPackage } from '../sensus/originPackage';
 
 interface Props {
   activeId: string;
@@ -330,7 +332,14 @@ const DEPLOY_ORDER: string[] = [
   '5 · origin-rest     — asset-set → poi-set → pixel-charges (Pixel zuletzt)',
 ];
 
+const fmtBytes = (n: number) =>
+  n < 1024 ? `${n} B` : n < 1024 * 1024 ? `${(n / 1024).toFixed(1)} kB` : `${(n / 1048576).toFixed(2)} MB`;
+
 function SensusCorePackages() {
+  // Erster echter Resolver: die Origin-particles der Lichtenberg-Representation
+  // live auflösen (reale Byte-Größen). Shell/Anthem bleiben vorerst Platzhalter.
+  const demoRep = REPRESENTATIONS.find((r) => /lichtenberg/i.test(r.id) || /lichtenberg/i.test(r.name)) ?? REPRESENTATIONS[0];
+  const origin = demoRep ? buildOriginPackage(demoRep) : null;
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif' }}>
       <div style={{
@@ -345,16 +354,29 @@ function SensusCorePackages() {
         <strong> Shell · Origin · Anthem</strong> zusammen. <strong>Origin erbt die Version der Representation.</strong>
       </p>
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-        {SCS_PACKAGES.map((pkg) => (
+        {SCS_PACKAGES.map((pkg) => {
+          const live = pkg.name === 'Origin' && origin ? origin : null;
+          return (
           <div key={pkg.name} style={{ flex: '1 1 220px', border: '1px solid #e2e8f0', borderRadius: 8, padding: '10px 12px', minWidth: 200 }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: '#1a365d' }}>{pkg.name} <span style={{ fontSize: 10, fontWeight: 400, color: '#a0aec0' }}>({pkg.horizon})</span></div>
-            <div style={{ fontSize: 10, color: '#718096', fontFamily: 'monospace', margin: '2px 0 6px' }}>version: {pkg.version}</div>
+            <div style={{ fontSize: 10, color: '#718096', fontFamily: 'monospace', margin: '2px 0 6px' }}>
+              version: {live ? `${live.version} · Σ ${fmtBytes(live.totalBytes)}` : pkg.version}
+            </div>
             <ul style={{ margin: 0, paddingLeft: 16, fontSize: 12, color: '#2d3748', lineHeight: 1.5 }}>
-              {pkg.particles.map((p) => <li key={p}>{p}</li>)}
+              {live
+                ? live.particles.map((p) => (
+                    <li key={p.id}>{p.label} <span style={{ color: '#a0aec0', fontSize: 11 }}>· {p.detail} · {fmtBytes(p.bytes)}</span></li>
+                  ))
+                : pkg.particles.map((p) => <li key={p}>{p}</li>)}
             </ul>
           </div>
-        ))}
+        );})}
       </div>
+      {origin && (
+        <p style={{ fontSize: 10.5, color: '#a0aec0', margin: '6px 0 0' }}>
+          Origin-Zahlen live aufgelöst aus „{origin.repName}" v{origin.version} (buildOriginPackage) — reale UTF-8-Größen.
+        </p>
+      )}
       <p style={{ fontSize: 11.5, color: '#718096', lineHeight: 1.55, margin: '12px 0 0' }}>
         <strong>Anthem = Zwei-Wege-Atem (alle 5 Min).</strong> Einatmen: <strong>presence-origin</strong> (anonym — nur <em>welche origin-boundary</em>; das <em>Gate</em>, das origin erst auswählt) ·
         Ausatmen: <strong>load-values</strong> (Segment-Farbe fürs Colour-Mesh). Echtes Telco später; <strong>MVP simuliert</strong> bereits den 5-Min-Ping „ich bin in der Region".
