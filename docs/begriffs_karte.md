@@ -34,7 +34,7 @@ weiterhin `geometry_editor` — Label neu, ID stabil, nichts brach.
 | `P09` | Engine-Prep-Build | `epb` | bereitet POI/Last/Mask/Move für die Ziel-App (R06/R07) vor (vorher: „Engine (4 Modelle)"). Sichel rechts |
 | `P11` | Sensus Core Service | `scs` (Face) | verpackt die Adjust-Ausgaben der Threshold-Panels für die Ziel-App-Engines (vorher: „Package"; Face-Kürzel scb→scs) |
 
-**Drawer (geometry_editor)** hat einen 3. internen Tab **Icon** (neben Umriss/Wegnetz): vorerst nur Baukonzeptnotiz (regelbasierter SW-Icon-Editor; 48×48 Viewport / 24×24 Fläche; fill/stroke-Layer; max 60 Nodes/Icon, Ø~36-40/Set; später Inspector zeigt Icon im Container-Umfeld + Animationen). Kein Karte; Overlay über dem Canvas. Ist-Stand Katalog-Set: Ø 39 Nodes, max 142.
+**Drawer (geometry_editor)** hat einen 3. internen Tab **Icon** (neben Umriss/Wegnetz): vorerst nur Baukonzeptnotiz (regelbasierter SW-Icon-Editor; 48×48 Viewport / 24×24 Fläche; fill/stroke-Layer; max 60 Nodes/Icon, Ø~36-40/Set; später Inspector zeigt Icon im Container-Umfeld + Animationen). Kein Karte; Overlay über dem Canvas. Ist-Stand Katalog-Set: Ø ~38 Nodes, max 96 (boots-hafen vereinfacht).
 
 **Zeit-Horizonte (Threshold-Panels):** Load=kurzfristig · Region=mittelfristig · System=langfristig → drei Pakete, organisiert vom **Sensus Core Service (P11)**. Nicht redundant, sondern drei Geltungsbereiche. (Code-Rest: P01/P02 teilen noch dieselben Slider-Feldnamen — späterer Angleich.)
 

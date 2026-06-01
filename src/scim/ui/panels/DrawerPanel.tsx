@@ -179,7 +179,7 @@ function IconBuildNotiz() {
       <ul style={{ margin: 0, paddingLeft: 18 }}>
         <li style={LI}>max. <strong>60 Nodes</strong> pro Einzel-Icon (harte Obergrenze).</li>
         <li style={LI}>Ø pro Set (z.B. 12 Icons): <strong>~36 Nodes</strong> angestrebt (Set bleibt einfach).</li>
-        <li style={LI}><em>Ist-Stand des Katalog-Sets (37 Icons): Ø 39, max 142 — 4 Icons über 60. → Ø-Ziel ggf. ~40, Ausreißer vereinfachen.</em></li>
+        <li style={LI}><em>Ist-Stand des Katalog-Sets (37 Icons): Ø ~38, max 96 — 4 Icons über 60. → Ø-Ziel ggf. ~40, Ausreißer vereinfachen.</em></li>
       </ul>
 
       <div style={H}>Inspector-Kopplung (später)</div>
