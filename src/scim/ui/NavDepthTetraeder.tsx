@@ -263,21 +263,30 @@ export default function NavDepthTetraeder({ openSections, onToggleSection, size 
 
   return (
     <div
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
       style={{
-        display: 'inline-block', lineHeight: 0, pointerEvents: 'auto',
+        display: 'inline-block', lineHeight: 0, pointerEvents: 'none',
         // Klicks duerfen keinen Text-Selection-Range in benachbarte Spans
         // ziehen (sonst wird "Cosmo-Controls" blau hinterlegt).
         userSelect: 'none', WebkitUserSelect: 'none',
       }}
     >
+    {/* Das SVG liegt (per Wrapper-zIndex:3) ueber dem oberen Tetraeder und malt
+        dessen untere Haelfte zu (Bipyramiden-Verdeckung). Es ist selbst
+        treffer-frei (pointerEvents:none); Hover/Lock uebernimmt der untere
+        Faenger, die loa-Zone oben bleibt dadurch klickbar. onMouseEnter/Leave
+        am SVG feuern, sobald der Zeiger einen treffer-aktiven Nachkommen
+        (Faenger / Lock-Region) betritt bzw. verlaesst. */}
     <svg
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
       width={size}
       height={size}
       viewBox="-50 -15 100 75"
-      style={{ display: 'block', overflow: 'visible' }}
+      style={{ display: 'block', overflow: 'visible', pointerEvents: 'none' }}
     >
+      {/* Treffer-Faenger fuer Hover/Lock: unterer Bereich (y >= 0), laesst die
+          obere Ueberlappungs-Zone (loa-Arc des oberen Tetraeders) frei. */}
+      <rect x={-50} y={0} width={100} height={60} fill="transparent" style={{ pointerEvents: 'all' }} />
       {/* Wireframe: 4 3D-Faces in Tiefen-Reihenfolge. Keine Section-Faerbung,
           das uebernimmt die Region-Schicht (siehe unten). */}
       {sorted.map((f) => (

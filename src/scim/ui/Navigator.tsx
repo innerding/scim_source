@@ -637,9 +637,9 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
       <div style={{ height: 46, flexShrink: 0 }} />
 
       {/* ── Represent Build — zentrales Tetraeder-Control ──────────────────── */}
-      {/* position:relative + zIndex stapeln den oberen Tetraeder UEBER den
-          (spaeter im DOM, hochgezogenen) Substrat-Tetraeder, damit Klicks auf
-          den loa-Bogen/das loa-Kuerzel nicht auf dessen Flaechen durchfallen. */}
+      {/* zIndex:2 hebt den oberen Tetraeder ueber den Hintergrund. Das Substrat
+          liegt mit zIndex:3 DARUEBER (Bipyramiden-Verdeckung der unteren Haelfte);
+          der loa-Klick faellt durch eine treffer-freie Zone im Substrat-SVG. */}
       <div style={{
         padding: '14px 12px 24px', display: 'flex', flexDirection: 'column',
         alignItems: 'center', gap: 6, flexShrink: 0,
@@ -681,9 +681,11 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
         padding: '22px 12px 22px', display: 'flex', flexDirection: 'column',
         alignItems: 'center', flexShrink: 0,
         marginTop: -68,   // zieht Depth-T und alles Folgende 68 px nach oben
-        // pointerEvents:none -> Wrapper-Padding deckt sonst den loa-Arc
-        // des Upper-Tetraeders zu (negative margin schiebt ihn drueber).
-        // Die NavDepthTetraeder-Komponente setzt ihre eigenen Pointer-Events.
+        // zIndex:3 -> Substrat-Drahtgitter malt UEBER den oberen Tetraeder
+        // (Verdeckung der unteren Haelfte / Bipyramide). pointerEvents:none am
+        // Wrapper; das SVG ist selbst treffer-frei und nur ein Faenger im unteren
+        // Bereich nimmt Hover/Lock, sodass der loa-Arc oben klickbar bleibt.
+        position: 'relative', zIndex: 3,
         pointerEvents: 'none',
         // nur den Substrat-Tetraeder 6px nach unten (Transform → Layout/Folgendes unberührt).
         transform: 'translateY(6px)',
