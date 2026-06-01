@@ -273,11 +273,12 @@ function TetraGlyph({ id, x, y, color }: { id: string; x: number; y: number; col
   const off: Record<string, [number, number]> = {
     system_adjust: [-3.2, 0],
     regio_content: [1.5, 0],
-    load_thresholds: [0, 1.5],
+    load_thresholds: [0, 2.2],            // blitz+load-Block 1px tiefer
+    represent_organisation: [0, 0.8],     // Büroklammer 1px tiefer
   };
   const [dx, dy] = off[id] ?? [0, 0];
   // Basis-Scale 1.08; einzelne Glyphs zusätzlich vergrößert.
-  const mul: Record<string, number> = { wegnetz_sampling: 1.3, geometry_draw: 1.2, engine_prep: 1.2 };
+  const mul: Record<string, number> = { wegnetz_sampling: 1.3, geometry_draw: 1.2, engine_prep: 1.2, represent_organisation: 1.3 };
   const sc = (1.08 * (mul[id] ?? 1)).toFixed(3);
   return <g transform={`translate(${x + dx},${y + dy}) scale(${sc})`} style={{ pointerEvents: 'none' }}>{body}</g>;
 }
