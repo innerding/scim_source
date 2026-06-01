@@ -637,9 +637,13 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
       <div style={{ height: 46, flexShrink: 0 }} />
 
       {/* ── Represent Build — zentrales Tetraeder-Control ──────────────────── */}
+      {/* position:relative + zIndex stapeln den oberen Tetraeder UEBER den
+          (spaeter im DOM, hochgezogenen) Substrat-Tetraeder, damit Klicks auf
+          den loa-Bogen/das loa-Kuerzel nicht auf dessen Flaechen durchfallen. */}
       <div style={{
         padding: '14px 12px 24px', display: 'flex', flexDirection: 'column',
         alignItems: 'center', gap: 6, flexShrink: 0,
+        position: 'relative', zIndex: 2,
       }}>
         <RepresentBuildTetrahedron
           activeFace={faceFromActive(activeId)}

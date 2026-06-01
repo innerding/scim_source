@@ -59,6 +59,11 @@ const H = (S * Math.sqrt(3)) / 2;      // Hoehe eines gleichseitigen Dreiecks
 const R = (4 * H) / 3;                 // Radius des umschriebenen Kreises (~46.2)
 const ARC_THICKNESS = 9;               // Dicke der Bogensegmente
 const ARC_GAP_DEG = 6;                 // Luecke zwischen Segmenten in Grad
+// Bogen-Gruppe als Ganzes vom Zentrum heraus vergroessert, damit die Boegen
+// klar AUSSERHALB der Sicheln liegen (Sichel-Aussenrand = R; Bogen-Innenrand
+// skaliert = (R-ARC_THICKNESS/2)*ARC_SCALE > R). Sicheln drehen/skalieren NICHT
+// mit — sie sind eine eigene Gruppe.
+const ARC_SCALE = 1.16;
 
 // Zentriere das Tetraeder-Netz auf (0,0): die drei Aussen-Vertices liegen
 // auf dem Kreis vom Radius R um den Ursprung.
@@ -268,7 +273,7 @@ export default function RepresentBuildTetrahedron({
         style={{
           transformBox: 'view-box',
           transformOrigin: '0 0',
-          transform: `rotate(${transmissionMode === 'input' ? 60 : 0}deg)`,
+          transform: `rotate(${transmissionMode === 'input' ? 60 : 0}deg) scale(${ARC_SCALE})`,
           transition: 'transform 480ms cubic-bezier(0.45, 0, 0.55, 1)',
         }}
       >
@@ -297,19 +302,25 @@ export default function RepresentBuildTetrahedron({
               <title>{a.longLabel}</title>
             </path>
             {showLabels && (
-              <text
-                x={lx}
-                y={ly}
-                fontSize={5}
-                fontFamily="system-ui, sans-serif"
-                fontWeight={isActive ? 700 : 500}
-                fill={labelColor}
-                textAnchor="middle"
-                dominantBaseline="middle"
-                style={{ pointerEvents: 'none' }}
-              >
-                {a.shortLabel}
-              </text>
+              <>
+                {/* transparente Hitbox hinter dem Kuerzel: der Klick aufs Label
+                    trifft so den Bogen (onClick des umgebenden <g>) statt
+                    durch das pointerEvents:none-Label durchzufallen. */}
+                {clickable && <rect x={lx - 9} y={ly - 5} width={18} height={10} fill="transparent" />}
+                <text
+                  x={lx}
+                  y={ly}
+                  fontSize={5}
+                  fontFamily="system-ui, sans-serif"
+                  fontWeight={isActive ? 700 : 500}
+                  fill={labelColor}
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  style={{ pointerEvents: 'none' }}
+                >
+                  {a.shortLabel}
+                </text>
+              </>
             )}
           </g>
         );
