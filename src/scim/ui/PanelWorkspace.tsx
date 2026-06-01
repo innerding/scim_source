@@ -178,42 +178,95 @@ function BaukonzeptNotiz({ id, title, lines }: { id: string; title: string; line
   );
 }
 
-// P09-„POI" ist die Heimat der POI-Darstellung: dieser Tab rendert die echte
-// Container-System-Galerie via poiCatalog.composite (poiCompositeSvg) — genau
-// das Modul, das der Inspector (System-Build-Mirror) für seine Katalog-/
-// Representation-POI-Ansicht borgt. Eine Wahrheit, hier sichtbar verankert.
-function P09PoiAppearance() {
+// P09 = vier auto-compute-Artefakte, alle gleich beschrieben (Sichtbarmachung
+// der Rechen-Module). Build-seitige Vorbereitung; die Engine läuft lokal in der
+// Ziel-App (App-Shell), nicht in SCIM. Jedes Artefakt wird bei Ausspielung als
+// versionierte, selbst-enthaltende Kapsel via Sensus Core Service geborgt.
+interface P09Descriptor {
+  tabId: TabId; no: number; name: string; actions: string; source: string;
+  dependsMid: string; dependsShort: string; fn: string; rescueFrom: string; gallery?: boolean;
+}
+const P09_DESCRIPTORS: P09Descriptor[] = [
+  {
+    tabId: 't1', no: 1, name: 'poi-dompteur', actions: 'category-composit + sequenzer', source: 'poi-katalog',
+    dependsMid: 'representation(xy) poi-asset (die Icons)',
+    dependsShort: 'telco-load → poi-translate · size = f(load): hohe Last → kleinere Größe + Last-Farbe',
+    fn: 'size, colour = F(load, …)', rescueFrom: 'poiCatalog.composite', gallery: true,
+  },
+  {
+    tabId: 't2', no: 2, name: 'load-colorist', actions: 'segment-gradient', source: 'gesampeltes Wegnetz (Segment-ids)',
+    dependsMid: 'gesampeltes Netz (P08): Segment-Geometrie + id',
+    dependsShort: 'telco-load je Segment',
+    fn: 'colour = G(load_segment)', rescueFrom: 'colourMesh (heatColor)',
+  },
+  {
+    tabId: 't3', no: 3, name: 'comfort-masker', actions: 'segment-filter (BCK)', source: 'gesampeltes Wegnetz + User-Comfort',
+    dependsMid: 'gesampeltes Netz',
+    dependsShort: 'User-Comfort-Einstellung (Farbschwelle)',
+    fn: 'visible = (segment_colour ≤ comfort_colour)', rescueFrom: 'mask-logik (folgt)',
+  },
+  {
+    tabId: 't4', no: 4, name: 'bak-router', actions: 'route-build + rest-detect (BAK)', source: 'gesampeltes Wegnetz + POI-Auswahl + Dauer',
+    dependsMid: 'gesampeltes Netz + POIs',
+    dependsShort: 'User-Auswahl (POIs · Farbe · Dauer)',
+    fn: 'route = BAK(net, pois, comfort, duration) · rest-detect', rescueFrom: 'routing-logik (folgt)',
+  },
+];
+
+function P09Row({ k, v }: { k: string; v: ReactNode }) {
   return (
-    <div style={{ fontFamily: 'system-ui, sans-serif' }}>
-      <div style={{
-        display: 'inline-block', padding: '2px 8px', marginBottom: 10,
-        fontSize: 10, fontFamily: 'monospace', color: '#2b6cb0',
-        background: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: 4,
-      }}>
-        POI-Appearancy · P09 · Erklär- + Rescue-Seite
-      </div>
-      <p style={{ fontSize: 12.5, color: '#4a5568', lineHeight: 1.55, margin: '2px 0 14px' }}>
-        SCIM-interne Vorschau der POI-Darstellung via <code>poiCatalog.composite</code>
-        (Operator-Anzeige; auch der Inspector nutzt sie). Die <strong>Ziel-App rendert
-        eigenständig/lokal</strong>, ohne SCIM. Bei einer Ausspielung birgt P09-POI diese
-        Function als <strong>versionierte, selbst-enthaltende Kapsel</strong> (Inhalts-Hash/Diff)
-        → Sensus Core Service → App-Shell-Paket (long-horizon, Teil MVP-Lichtenberg).
-      </p>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
+    <div style={{ display: 'flex', gap: 10, fontSize: 12.5, lineHeight: 1.45, padding: '4px 0', borderBottom: '1px solid #edf2f7' }}>
+      <div style={{ width: 118, flexShrink: 0, color: '#718096', fontFamily: 'monospace', fontSize: 11 }}>{k}</div>
+      <div style={{ color: '#2d3748' }}>{v}</div>
+    </div>
+  );
+}
+
+function P09PoiGallery() {
+  return (
+    <div style={{ marginTop: 14 }}>
+      <div style={{ fontSize: 11, color: '#718096', marginBottom: 8 }}>category-composit · SCIM-Vorschau (auch der Inspector nutzt diesen Renderer; die Ziel-App rendert eigenständig):</div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14 }}>
         {CONTAINER_SYSTEM.map((spec) => {
-          const svg = poiCompositeSvg('', spec.color_label, spec.subcategory, 42);
+          const svg = poiCompositeSvg('', spec.color_label, spec.subcategory, 38);
           return (
-            <div key={spec.subcategory} style={{ width: 96, textAlign: 'center' }}>
-              <div
-                style={{ width: 42, height: 42, margin: '0 auto' }}
-                dangerouslySetInnerHTML={{ __html: svg ?? '' }}
-              />
-              <div style={{ fontSize: 10, color: '#4a5568', marginTop: 4, wordBreak: 'break-word' }}>{spec.subcategory}</div>
-              <div style={{ fontSize: 9, color: '#a0aec0' }}>{spec.color_label}</div>
+            <div key={spec.subcategory} style={{ width: 88, textAlign: 'center' }}>
+              <div style={{ width: 38, height: 38, margin: '0 auto' }} dangerouslySetInnerHTML={{ __html: svg ?? '' }} />
+              <div style={{ fontSize: 9.5, color: '#4a5568', marginTop: 3, wordBreak: 'break-word' }}>{spec.subcategory}</div>
             </div>
           );
         })}
       </div>
+    </div>
+  );
+}
+
+function P09Artifact({ d }: { d: P09Descriptor }) {
+  return (
+    <div style={{ fontFamily: 'system-ui, sans-serif' }}>
+      {/* Gemeinsamer Header — gilt für alle vier P09-Tabs. */}
+      <div style={{
+        display: 'inline-block', padding: '2px 8px', marginBottom: 8,
+        fontSize: 10, fontFamily: 'monospace', color: '#2b6cb0',
+        background: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: 4,
+      }}>
+        P09 · Engine-Prep-Build · auto-compute-Artefakt
+      </div>
+      <p style={{ fontSize: 12, color: '#718096', lineHeight: 1.5, margin: '2px 0 14px' }}>
+        Build-seitige Vorbereitung. Die Engine läuft <strong>lokal in der Ziel-App (App-Shell)</strong>,
+        nicht in SCIM. Bei Ausspielung wird das Artefakt als <strong>versionierte, selbst-enthaltende
+        Kapsel</strong> (Inhalts-Hash/Diff) via <strong>Sensus Core Service</strong> ins App-Shell-Paket
+        geborgt — Teil MVP-Lichtenberg (lokal, ohne Telco).
+      </p>
+      <P09Row k="artifact" v={<><strong>{d.name}</strong> · #{d.no}</>} />
+      <P09Row k="actions" v={d.actions} />
+      <P09Row k="source" v={d.source} />
+      <P09Row k="long-horizon" v="App-Shell-Deploy" />
+      <P09Row k="depends · mid" v={d.dependsMid} />
+      <P09Row k="depends · short" v={d.dependsShort} />
+      <P09Row k="function" v={<code>{d.fn}</code>} />
+      <P09Row k="rescue-kette" v={<>Berge <code>{d.rescueFrom}</code> → Kapsel (Hash/Diff) → SCS → App-Shell</>} />
+      {d.gallery && <P09PoiGallery />}
     </div>
   );
 }
@@ -264,8 +317,11 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
   const panel = PANEL_REGISTRY.find((p) => p.id === activeId);
   if (!panel) return <div style={{ padding: 20, color: '#e53e3e' }}>Panel nicht gefunden: {activeId}</div>;
 
-  // P09-„POI"-Tab: echte POI-Darstellung via poiCatalog.composite (die Heimat).
-  if (panel.id === 'P09' && activeTab === 't1') return <P09PoiAppearance />;
+  // P09: vier uniform beschriebene auto-compute-Artefakte (POI/Last/Mask/Move).
+  if (panel.id === 'P09') {
+    const d = P09_DESCRIPTORS.find((x) => x.tabId === activeTab);
+    if (d) return <P09Artifact d={d} />;
+  }
 
   // Tab mit body → text-first Konzept-Kasten (z.B. Signal Intake / Analysis).
   const tabDesc = panel.tabs.find((t) => t.id === activeTab);
