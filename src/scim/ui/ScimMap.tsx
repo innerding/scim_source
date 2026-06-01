@@ -23,6 +23,8 @@ import { poiCompositeSvg } from '../poi-catalog/poiCatalog.composite';
 import { renderClusterPois } from './clusterOverlay';
 import { drawNet } from './netDraw';
 import { resampleNet, type ResampledNet } from '../wegnetz/netResample';
+import { simSegmentLoads, loadColour } from '../sensus/anthemSim';
+import { MVP_RESAMPLE_TARGET_METERS } from '../sensus/originPackage';
 import type { DerivedNet, LatLng } from '../regio-content/netModel';
 import type { CatalogPoi } from '../poi-catalog/poiCatalog.types';
 
@@ -56,6 +58,7 @@ interface LayerVisibility {
   resample3: boolean;  // P08-Resample-Vorschau @3 m
   resample10: boolean; // @10 m
   resample25: boolean; // @25 m
+  simLoad: boolean;    // Last (sim): resampeltes @MVP-Netz nach Sim-Last eingefärbt
 }
 
 const DEFAULT_VISIBILITY: LayerVisibility = {
@@ -69,6 +72,7 @@ const DEFAULT_VISIBILITY: LayerVisibility = {
   resample3: false,
   resample10: false,
   resample25: false,
+  simLoad: false,
 };
 
 // Polygon (outer ring) -> [minLon, minLat, maxLon, maxLat].
@@ -464,6 +468,24 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
       }
     }
 
+    // Last (sim): das resampelte @MVP-Netz nach simulierter Last eingefärbt
+    // (Sim-Telco · loadColour = colour = G(load)). Erster Anthem-Link: die
+    // Einfärbung auf dem echten Netz, indexiert über die Segment-Reihenfolge.
+    if (vis.simLoad && activeRep && repWegnetz) {
+      const sub = L.layerGroup();
+      const rnet = resampleNet(repWegnetz.edges, { targetMeters: MVP_RESAMPLE_TARGET_METERS });
+      const loads = simSegmentLoads(rnet);
+      let idx = 0;
+      for (const s of rnet.stretches) {
+        for (let i = 1; i < s.points.length; i++) {
+          L.polyline([s.points[i - 1], s.points[i]], {
+            color: loadColour(loads[idx++] ?? 0), weight: 4, opacity: 0.9,
+          }).addTo(sub);
+        }
+      }
+      sub.addTo(layerGroup);
+    }
+
     // POI Load class lookup
     const poiLoadClass = new Map<string, string>();
     if (poiModel?.evaluated_pois) {
@@ -708,6 +730,7 @@ function Header({
           {avail.resample && <LayerToggle label="Resample 3 m" checked={vis.resample3} onChange={(v) => setVis({ ...vis, resample3: v })} />}
           {avail.resample && <LayerToggle label="Resample 10 m" checked={vis.resample10} onChange={(v) => setVis({ ...vis, resample10: v })} />}
           {avail.resample && <LayerToggle label="Resample 25 m" checked={vis.resample25} onChange={(v) => setVis({ ...vis, resample25: v })} />}
+          {avail.resample && <LayerToggle label="Last (sim)" checked={vis.simLoad} onChange={(v) => setVis({ ...vis, simLoad: v })} />}
           <div style={{ borderTop: '1px solid #2d4a6a', margin: '6px 0 4px' }} />
           <LayerToggle label="Karte" checked={vis.mapBase} onChange={(v) => setVis({ ...vis, mapBase: v })} />
           {vis.mapBase && <LayerToggle label="↳ dunkel" checked={vis.darkBase} onChange={(v) => setVis({ ...vis, darkBase: v })} indent />}

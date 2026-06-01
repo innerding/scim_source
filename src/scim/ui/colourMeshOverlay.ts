@@ -7,36 +7,8 @@
 // Spaeter (Phase 2): echte Telco-Load.
 
 import L from 'leaflet';
-
-// ─── Farbpalette: heat-pipe, kein gelber Sumpf ───────────────────────────────
-
-const HEAT_STOPS: Array<{ at: number; color: [number, number, number] }> = [
-  { at: 0.00, color: [30, 58, 95]    },  // #1e3a5f — deep navy
-  { at: 0.25, color: [0, 153, 255]   },  // #0099ff — electric blue
-  { at: 0.50, color: [0, 212, 170]   },  // #00d4aa — cyan-teal
-  { at: 0.75, color: [192, 132, 252] },  // #c084fc — lavender
-  { at: 1.00, color: [236, 72, 153]  },  // #ec4899 — magenta
-];
-
-function lerp(a: number, b: number, t: number): number {
-  return a + (b - a) * t;
-}
-
-function heatColor(t: number): string {
-  const u = Math.max(0, Math.min(1, t));
-  for (let i = 0; i < HEAT_STOPS.length - 1; i++) {
-    const a = HEAT_STOPS[i], b = HEAT_STOPS[i + 1];
-    if (u <= b.at) {
-      const f = (u - a.at) / (b.at - a.at || 1);
-      const r = Math.round(lerp(a.color[0], b.color[0], f));
-      const g = Math.round(lerp(a.color[1], b.color[1], f));
-      const bl = Math.round(lerp(a.color[2], b.color[2], f));
-      return `rgb(${r},${g},${bl})`;
-    }
-  }
-  const last = HEAT_STOPS[HEAT_STOPS.length - 1].color;
-  return `rgb(${last[0]},${last[1]},${last[2]})`;
-}
+// Eine Farbwahrheit (rein, ohne Leaflet) — geteilt mit dem Inspector-Last-Layer.
+import { heatColor } from '../sensus/loadColour';
 
 // ─── Pseudo-Random ───────────────────────────────────────────────────────────
 
