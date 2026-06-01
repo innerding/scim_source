@@ -356,8 +356,8 @@ function SensusCorePackages() {
         ))}
       </div>
       <p style={{ fontSize: 11.5, color: '#718096', lineHeight: 1.55, margin: '12px 0 0' }}>
-        <strong>Anthem = Zwei-Wege-Atem.</strong> Einatmen: <strong>presence-origin</strong> (anonym — nur <em>welche origin-boundary</em>; das <em>Gate</em>, das origin erst auswählt) ·
-        Ausatmen: <strong>load-values</strong> (Segment-Farbe fürs Colour-Mesh). Nicht MVP (kein Telco) — der Slot wird vorbereitet.
+        <strong>Anthem = Zwei-Wege-Atem (alle 5 Min).</strong> Einatmen: <strong>presence-origin</strong> (anonym — nur <em>welche origin-boundary</em>; das <em>Gate</em>, das origin erst auswählt) ·
+        Ausatmen: <strong>load-values</strong> (Segment-Farbe fürs Colour-Mesh). Echtes Telco später; <strong>MVP simuliert</strong> bereits den 5-Min-Ping „ich bin in der Region".
       </p>
       <div style={{ marginTop: 16 }}>
         <div style={{ fontSize: 11, color: '#718096', marginBottom: 6 }}>

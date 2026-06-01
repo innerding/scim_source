@@ -303,8 +303,8 @@ export const PANEL_REGISTRY: PanelDescriptor[] = [
     contextKey: 'sensus_core_package',
     tabs: STANDARD_TABS,
     bauKonzept: [
-      'Eine Representation im Workspace ist ein Originpackage. P07/P08/P09 schnüren es — im Auftrag von Sensus Core und bedingt auf Referenz zur Representation — auf und portionieren es in die drei Horizonte.',
-      'Horizonte: Shell = langfristig (Korb, Engine-Suite) · Origin = mittelfristig (Apfel, die origin-particles) · Anthem = kurzfristig (der Atem; MVP: Sim-Telco).',
+      'Sensus Core ordert von P07/P08/P09 die atomaren particles einer committeten Representation und schnürt daraus die drei Horizonte (Bezug zur Representation bleibt erhalten) → origin.',
+      'Horizonte: Shell = langfristig (Engine-Suite) · Origin = mittelfristig (die origin-particles) · Anthem = kurzfristig (der Atem: alle 5 Min presence-origin ↔ load; MVP: Sim-Telco).',
     ],
   },
   {
