@@ -716,6 +716,11 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           padding: '0 14px', marginBottom: 6, flexShrink: 0,
           marginTop: -68,
+          // Diese Zeile (Cosmo-Controls + Reader-Diode) liegt durch marginTop:-68
+          // im Bereich des Substrats (zIndex:3). Ohne eigenes zIndex deckt der
+          // Substrat-Treffer-Faenger sie zu → Row-Hover/Diode tot. zIndex:4 hebt
+          // sie wieder ueber das Substrat.
+          position: 'relative', zIndex: 4,
         }}>
         {/* Manual-Icon entfernt — Reader-Dot allein traegt die Geste. */}
         <span aria-hidden style={{ width: 14, flexShrink: 0 }} />
