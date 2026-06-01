@@ -268,8 +268,8 @@ function P09Artifact({ d }: { d: P09Descriptor }) {
       <p style={{ fontSize: 12, color: '#718096', lineHeight: 1.5, margin: '2px 0 14px' }}>
         Build-seitige Vorbereitung. Die Engine läuft <strong>lokal in der Ziel-App</strong>, nicht in
         SCIM. Bei Ausspielung wird das Artefakt als <strong>versionierte, selbst-enthaltende Kapsel</strong>
-        (Inhalts-Hash/Diff) via <strong>Sensus Core Service</strong> ins <strong>jeweilige Paket je nach
-        Horizont</strong> geborgt (App-Shell / Representation / Atem(load)) — Teil MVP-Lichtenberg (lokal, ohne Telco).
+        (Inhalts-Hash/Diff) via <strong>Sensus Core Services</strong> ins <strong>jeweilige Paket je nach
+        Horizont</strong> geborgt (Shell / Origin / Anthem) — Teil MVP-Lichtenberg (lokal, ohne Telco).
       </p>
       <P09Row k="artifact" v={<><strong>{d.name}</strong> · #{d.no}</>} />
       <P09Row k="actions" v={d.actions} />
@@ -338,7 +338,7 @@ function SensusCorePackages() {
         fontSize: 10, fontFamily: 'monospace', color: '#2b6cb0',
         background: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: 4,
       }}>
-        Sensus Core Service · Originpackage → Shell · Origin · Anthem
+        Sensus Core Services · Originpackage → Shell · Origin · Anthem
       </div>
       <p style={{ fontSize: 12.5, color: '#4a5568', lineHeight: 1.55, margin: '2px 0 14px' }}>
         Sensus Core ordert die atomaren particles von <strong>P07/P08/P09</strong> und stellt daraus

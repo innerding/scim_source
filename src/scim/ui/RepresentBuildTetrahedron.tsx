@@ -90,7 +90,7 @@ const FACES: Array<{
   {
     id: 'sensus_core_build',
     shortLabel: 'scs',
-    longLabel: 'Sensus Core Service',
+    longLabel: 'Sensus Core Services',
     points: `${-S / 2},${-H / 3} ${S / 2},${-H / 3} 0,${-R}`,
     labelX: 0,
     labelY: (-H / 3 + -H / 3 + -R) / 3,

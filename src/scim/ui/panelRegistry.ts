@@ -236,7 +236,7 @@ export const PANEL_REGISTRY: PanelDescriptor[] = [
         'Mindestsegmentlänge 3 m; pro Strecke gleiche Teilung (kein Kreuzungs-Stub); zu kurze Strecke (< ~4,5 m) bleibt ein Segment.',
       ] },
       { id: 't3', label: 'Mesh-Output', icon: '▦', body: [
-        'Produkt: gesampeltes Netz (Geometrie, 1×) + id/Code je Segment → P11 Sensus Core Service.',
+        'Produkt: gesampeltes Netz (Geometrie, 1×) + id/Code je Segment → P11 Sensus Core Services.',
       ] },
     ],
   },
@@ -291,12 +291,12 @@ export const PANEL_REGISTRY: PanelDescriptor[] = [
   // ── Gruppe 4: Paketierung und Release ──────────────────────────────────────
   {
     id: 'P11',
-    label: 'Sensus Core Service',
+    label: 'Sensus Core Services',
     group: 4,
     order: 11,
     icon: '▣',
-    shortDescription: 'Sensus Core Paket-Dienst · verpackt die Adjust-Ausgaben für die Ziel-App-Engines',
-    helpText: 'Bündelt alle berechneten Daten in das standardisierte Sensus Core Format.',
+    shortDescription: 'ordert die atomaren particles von P07/P08/P09 · schnürt Shell · Origin · Anthem (+ Version + Deploy-Reihenfolge)',
+    helpText: 'Sortiert die portionierten origin-particles nach Horizont in die drei Pakete und deklariert die Auslieferungs-Reihenfolge (Scheduling später: Transmitter).',
     dependsOn: ['P10'],
     inputMode: 'auto_computed',
     isBlocking: true,
@@ -304,7 +304,7 @@ export const PANEL_REGISTRY: PanelDescriptor[] = [
     tabs: STANDARD_TABS,
     bauKonzept: [
       'Eine Representation im Workspace ist ein Originpackage. P07/P08/P09 schnüren es — im Auftrag von Sensus Core und bedingt auf Referenz zur Representation — auf und portionieren es in die drei Horizonte.',
-      'Horizonte: App-Shell = langfristig (Korb) · Representation = mittelfristig (Apfel) · Atem/Load = kurzfristig (essen; MVP: Sim-Telco).',
+      'Horizonte: Shell = langfristig (Korb, Engine-Suite) · Origin = mittelfristig (Apfel, die origin-particles) · Anthem = kurzfristig (der Atem; MVP: Sim-Telco).',
     ],
   },
   {
