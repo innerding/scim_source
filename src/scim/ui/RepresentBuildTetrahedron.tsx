@@ -89,8 +89,8 @@ const FACES: Array<{
   // Top-Position: scb (Sensus Core Build) — feuert ueber den Apex zum Mond.
   {
     id: 'sensus_core_build',
-    shortLabel: 'scb',
-    longLabel: 'Sensus Core Build',
+    shortLabel: 'scs',
+    longLabel: 'Sensus Core Service',
     points: `${-S / 2},${-H / 3} ${S / 2},${-H / 3} 0,${-R}`,
     labelX: 0,
     labelY: (-H / 3 + -H / 3 + -R) / 3,

@@ -104,7 +104,7 @@ const DRAFT_STROKE_GELB = '#ecc94b';
 const DRAFT_STROKE_ORANGE = '#ed8936';
 const SLOT2_DASH = '6 4';
 
-type DrawerTab = 'umriss' | 'wegnetz';
+type DrawerTab = 'umriss' | 'wegnetz' | 'icon';
 
 // UÖ1: KEINE Geoman-Default-Toolbar mehr. Zeichnen/Bearbeiten werden über eigene
 // Umriss-Werkzeuge (Tool-Header links) per pm.enableDraw('Polygon') bzw.
@@ -130,6 +130,62 @@ interface Props {
   // Beim Oeffnen aus dem Workspace: diese Boundary-Geometry laden statt des Drafts.
   openGeometryId?: string | null;
   onGeometryConsumed?: () => void;
+}
+
+// Drawer-Tab „Icon" (Icon-Build) — vorerst nur Baukonzeptnotiz, kein Editor.
+// Overlay ueber dem Map-Canvas (Karte bleibt darunter gemountet). Kein Karte
+// noetig. Spaeter: regelbasierter SW-Icon-Editor; der Inspector kann das Icon
+// im Umfeld der verschiedenen Icon-Container zeigen (inkl. Animationen).
+function IconBuildNotiz() {
+  const H: React.CSSProperties = { fontSize: 12, fontWeight: 700, color: '#7a4d00', margin: '12px 0 4px' };
+  const P: React.CSSProperties = { fontSize: 12.5, color: '#4a5568', lineHeight: 1.55, margin: '2px 0' };
+  const LI: React.CSSProperties = { fontSize: 12.5, color: '#4a5568', lineHeight: 1.5 };
+  return (
+    <div style={{
+      position: 'absolute', inset: 0, zIndex: 10, overflowY: 'auto',
+      background: '#fffaf0', padding: '18px 22px', fontFamily: 'system-ui, sans-serif',
+    }}>
+      <div style={{
+        display: 'inline-block', padding: '2px 8px', marginBottom: 10,
+        fontSize: 10, fontFamily: 'monospace', color: '#9c6a00',
+        background: '#fff0d6', border: '1px solid #f6c177', borderRadius: 4,
+      }}>
+        Baukonzeptnotiz · Drawer-Tab „Icon" (Icon-Build)
+      </div>
+      <p style={P}><strong>Zweck:</strong> regelbasierter, reduzierter Schwarz-Weiß-Icon-Editor mit optionaler Fill-/Stroke-Trennung. Erzeugt tabfähige Icons. <em>Dieser Tab braucht keine Karte.</em></p>
+
+      <div style={H}>Ausgabegröße</div>
+      <p style={P}>Viewport 48×48 px · Zeichenfläche 24×24 px (zentriert/skaliert im Viewport).</p>
+
+      <div style={H}>Raster &amp; Snap</div>
+      <ul style={{ margin: 0, paddingLeft: 18 }}>
+        <li style={LI}>Raster wählbar: 1×1 px oder 0.5×0.5 px, sichtbar als amber dots.</li>
+        <li style={LI}>Snap: to grid · to nodes · optional both.</li>
+      </ul>
+
+      <div style={H}>Layer (zwei, sperrbar)</div>
+      <ul style={{ margin: 0, paddingLeft: 18 }}>
+        <li style={LI}><strong>fill</strong> (unten): verbundene weiße Flächen, initial aus einer Kopie der Stroke-Ebene abgeleitet → Flächenkörper.</li>
+        <li style={LI}><strong>stroke</strong> (oben): schwarzer Stroke, 1 px, ggf. mehrere verbundene Elemente → konstruktive Linienstruktur.</li>
+      </ul>
+
+      <div style={H}>Layer-Gruppe</div>
+      <p style={P}>Eigener, sprechender Name (editorisch, darf vom Dateinamen abweichen). Bsp.: „umriss mit knotenstruktur", „verzweigtes wegnetz", „fläche mit schnittlinie".</p>
+
+      <div style={H}>Viewportname = Dateiname</div>
+      <p style={P}>alles klein · keine Umlaute · keine Leerzeichen · Wörter mit Bindestrich. Vermittelt den symbolischen Gehalt. Bsp.: outline · path-network · mesh-resample · closed-shape · node-grid · split-area · stroke-fill · connected-paths.</p>
+
+      <div style={H}>Node-Budget</div>
+      <ul style={{ margin: 0, paddingLeft: 18 }}>
+        <li style={LI}>max. <strong>60 Nodes</strong> pro Einzel-Icon (harte Obergrenze).</li>
+        <li style={LI}>Ø pro Set (z.B. 12 Icons): <strong>~36 Nodes</strong> angestrebt (Set bleibt einfach).</li>
+        <li style={LI}><em>Ist-Stand des Katalog-Sets (37 Icons): Ø 39, max 142 — 4 Icons über 60. → Ø-Ziel ggf. ~40, Ausreißer vereinfachen.</em></li>
+      </ul>
+
+      <div style={H}>Inspector-Kopplung (später)</div>
+      <p style={P}>Der Inspector zeigt im Icon-Build das Icon im Umfeld der verschiedenen Icon-Container sichtbar — und, sobald vorhanden, deren Animationen.</p>
+    </div>
+  );
 }
 
 export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsumed }: Props) {
@@ -1508,6 +1564,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
         {([
           { id: 'umriss', label: '◇ Umriss' },
           { id: 'wegnetz', label: '⋔ Wegnetz' },
+          { id: 'icon', label: '✎ Icon' },
         ] as { id: DrawerTab; label: string }[]).map((t) => (
           <button
             key={t.id}
@@ -1697,8 +1754,11 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
         </div>
       </div>
 
-      {/* Inhaltszeile: optionales Wegnetz-Filtermenue + gemeinsamer Map-Canvas */}
-      <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
+      {/* Inhaltszeile: optionales Wegnetz-Filtermenue + gemeinsamer Map-Canvas.
+          position:relative, damit das Icon-Tab als Overlay drueber liegen kann,
+          ohne den Leaflet-Canvas zu unmounten. */}
+      <div style={{ display: 'flex', flex: 1, minHeight: 0, position: 'relative' }}>
+        {tab === 'icon' && <IconBuildNotiz />}
         {tab === 'wegnetz' && (
           <PathFilterMenu
             gebiet={inspectorView?.geometry.id ?? ''}
