@@ -117,6 +117,10 @@ export const PANEL_REGISTRY: PanelDescriptor[] = [
     isBlocking: true,
     contextKey: 'system_adjust',
     tabs: THRESHOLD_TABS,
+    bauKonzept: [
+      'Signal-Intake (System) nimmt auch das presence-origin-Signal an — der anonyme 5-Min-Heartbeat der App „ich bin in origin-boundary X".',
+      'Weitergabe an Sensus Core: presence-origin ist das Gate, das das auszuspielende origin auswählt (Anthem-Einatmen). Echtes Telco später; MVP simuliert den 5-Min-Ping.',
+    ],
   },
   {
     id: 'P02',
