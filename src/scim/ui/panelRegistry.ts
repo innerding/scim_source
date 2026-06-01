@@ -8,7 +8,10 @@ export type TabId =
   // Threshold-Panels (Empfangsschirm-Fluss): empfangen → deuten → anpassen
   | 'signal_intake' | 'analysis' | 'adjust'
   // Drawer: oberer Tab neben „Karte"
-  | 'icon';
+  | 'icon'
+  // generische, stabile Tab-Handles (id fix, Label trägt die Bedeutung) für
+  // panel-eigene Tab-Gliederungen (P07/P08/P09)
+  | 't1' | 't2' | 't3' | 't4';
 
 export interface TabDescriptor {
   id: TabId;
@@ -202,10 +205,13 @@ export const PANEL_REGISTRY: PanelDescriptor[] = [
     inputMode: 'auto_computed',
     isBlocking: true,
     contextKey: 'boundary',
-    tabs: STANDARD_TABS,
-    bauKonzept: [
-      'Boundary-Appearancy & Regio-/Representation Animation',
-      'Rep-Junction (Future-Function: Darstellung des Grenzbereichs einer benachbarten Representation / Anschlussfähigkeit der Gate-POIs inner-/outer-translate)',
+    tabs: [
+      { id: 't1', label: 'Boundary-Darstellung', icon: '▢', body: [
+        'Boundary-Appearancy & Regio-/Representation-Animation (Platzhalter — Funktion folgt).',
+      ] },
+      { id: 't2', label: 'Rep-Junction', icon: '⇄', body: [
+        'Rep-Junction (Future-Function): Darstellung des Grenzbereichs einer benachbarten Representation / Anschlussfähigkeit der Gate-POIs inner-/outer-translate.',
+      ] },
     ],
   },
   {
@@ -221,12 +227,17 @@ export const PANEL_REGISTRY: PanelDescriptor[] = [
     inputMode: 'auto_computed',
     isBlocking: true,
     contextKey: 'graph',
-    tabs: STANDARD_TABS,
-    bauKonzept: [
-      'Wegnetz-Sampling: merge → Douglas-Peucker → Bogenlängen-Resampling → regelmäßiges Knoten-Netz.',
-      'Mindestsegmentlänge 3 m; pro Strecke gleiche Teilung (kein Kreuzungs-Stub); zu kurze Strecke (< ~4,5 m) bleibt ein Segment.',
-      'Produkt: gesampeltes Netz (Geometrie, 1×) + id/Code je Segment.',
-      'Läuft nach Workspace-Binding, vor P09; konsumiert die committete Representation (Konvergenz).',
+    tabs: [
+      { id: 't1', label: 'Quell-Netz', icon: '⌗', body: [
+        'Das committete Netz der Representation kommt herein (Quelle, Konvergenz). Läuft nach Workspace-Binding, vor P09.',
+      ] },
+      { id: 't2', label: 'Sampling', icon: '⋔', body: [
+        'Wegnetz-Sampling: merge → Douglas-Peucker → Bogenlängen-Resampling → regelmäßiges Knoten-Netz.',
+        'Mindestsegmentlänge 3 m; pro Strecke gleiche Teilung (kein Kreuzungs-Stub); zu kurze Strecke (< ~4,5 m) bleibt ein Segment.',
+      ] },
+      { id: 't3', label: 'Mesh-Output', icon: '▦', body: [
+        'Produkt: gesampeltes Netz (Geometrie, 1×) + id/Code je Segment → P11 Sensus Core Service.',
+      ] },
     ],
   },
 
@@ -244,12 +255,21 @@ export const PANEL_REGISTRY: PanelDescriptor[] = [
     inputMode: 'auto_computed',
     isBlocking: true,
     contextKey: 'poi_model',
-    tabs: STANDARD_TABS,
-    bauKonzept: [
-      'POI-Appearancy: Cluster, Ghosts + Animations.',
-      'Last-Appearancy: gradient-Colorization je Segment-id + Farbe.',
-      'Mask-BCK: Segment-Einschränkung nach User-Comfort-Einstellung — bereitet R06 (BCK / Maskierung = Comfort) vor.',
-      'Move/Rest-BAK: bereitet R07 (Bewegung = Routen-Move / POIs-Rest, BAK-Path/-Rest) für Karte & Guidance vor.',
+    tabs: [
+      { id: 't1', label: 'POI', icon: '⊙', body: [
+        'POI-Appearancy: Cluster, Ghosts + Animations.',
+        'Heimat des Composite-Moduls (poiCatalog.composite / poiCompositeSvg) — rendert die Icons so, wie sie auf der Ziel-App erscheinen; der Inspector borgt es bereits.',
+      ] },
+      { id: 't2', label: 'Last', icon: '≋', body: [
+        'Last-Appearancy: gradient-Colorization je Segment-id + Farbe (Colour-Mesh auf der Ziel-App).',
+        'P09 = Build-Prep der vier Engine-Anteile; die echten Laufzeit-Engines liegen auf der Ziel-App: R06 BCK/BAK, R07 Karte & Guidance.',
+      ] },
+      { id: 't3', label: 'Mask', icon: '⛉', body: [
+        'Mask-BCK: Segment-Einschränkung nach User-Comfort-Einstellung — bereitet R06 (BCK / Maskierung = Comfort) vor.',
+      ] },
+      { id: 't4', label: 'Move', icon: '↝', body: [
+        'Move/Rest-BAK: Routen-Move / POIs-Rest (BAK-Path/-Rest) — bereitet R07 (Karte & Guidance) vor.',
+      ] },
     ],
   },
   {

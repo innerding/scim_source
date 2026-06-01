@@ -64,6 +64,11 @@ dreifach (P01/P02/P08) — Entwirren ist ein eigener späterer Schritt.
   Titel **und** Panel-Header dimmen automatisch (eine Regel: `dimmed =
   KOSMOLOGIE_IDS.has(id)` — grau = hat Cosmo-Heimat, schwarz = keine).
 
+## Cosmo-Controls & Panel-Tabs (Stand)
+- **Inspector** = „Inspector System-Build-Mirror" (Header + Navigator-Trapez-Hover).
+- **Tetraeder-Glyphs** statt 3-Letter-Codes: geo=Stift · org=Kettenglied · cat=Bild · scs=Paket (scb→scs); Sicheln bou=4-Knoten-Polygon · wns=Sampling · epb=Zahnrad; Bögen sys/reg/loa = Blitz + Slider/Schild/Load.
+- **Panel-Tabs** (text-first, Baukonzept jeweils im 2.): P07 = Boundary-Darstellung · Rep-Junction. P08 = Quell-Netz · Sampling · Mesh-Output. P09 = POI · Last · Mask · Move. (generische Tab-Handles t1–t4: id fix, Label trägt Bedeutung.)
+- **Code-Zuordnung:** `poiCatalog.composite.ts` (poiCompositeSvg) hat seine Heimat im **P09-„POI"-Tab** — rendert Icons wie auf der Ziel-App; der Inspector borgt es.
+
 ## Noch offen
-- Phase 2: bespoke Tabs mit echtem Inhalt (Tab-System für panel-eigene Tabs).
-- Phase 4: echte Funktion in den P07/P08/P09-Tabs.
+- Phase 4: echte Funktion in den P07/P08/P09-Tabs + P08-Resampler.

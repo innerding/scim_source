@@ -224,6 +224,50 @@ const SICKLES: Array<{
   ];
 })();
 
+// Minimalistische Glyphs statt der 3-Letter-Labels. Entworfen in einer ±5-Box,
+// zentriert auf der Label-Position, leicht skaliert. Farbe = Label-Farbe.
+function TetraGlyph({ id, x, y, color }: { id: string; x: number; y: number; color: string }) {
+  const s = { fill: 'none', stroke: color, strokeWidth: 0.8, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
+  const f = { fill: color, stroke: 'none' };
+  const bolt = <path d="M-1.6 -4 L-3.8 0.4 L-2.2 0.4 L-3 4 L-0.2 -1 L-1.8 -1 Z" {...f} />;
+  let body: JSX.Element | null = null;
+  switch (id) {
+    case 'geometry_draw': // Stift
+      body = <><line x1={-3.6} y1={3.6} x2={2.4} y2={-2.4} {...s} /><path d="M2.4 -2.4 L4 -2 M2.4 -2.4 L2 -4" {...s} /><circle cx={-3.6} cy={3.6} r={0.7} {...f} /></>;
+      break;
+    case 'represent_organisation': // Kettenglied
+      body = <><ellipse cx={-1.6} cy={0} rx={2.7} ry={1.6} {...s} /><ellipse cx={1.6} cy={0} rx={2.7} ry={1.6} {...s} /></>;
+      break;
+    case 'catalog_magazination': // Bild/Icon
+      body = <><rect x={-4} y={-4} width={8} height={8} rx={1} {...s} /><circle cx={-1.4} cy={-1.4} r={1} {...s} /><path d="M-3.5 3.2 L-1 0.2 L0.6 1.8 L2 0.4 L3.5 3" {...s} /></>;
+      break;
+    case 'sensus_core_build': // Paket
+      body = <><rect x={-3.8} y={-3.4} width={7.6} height={7.4} rx={0.6} {...s} /><line x1={0} y1={-3.4} x2={0} y2={4} {...s} /><line x1={-3.8} y1={0.3} x2={3.8} y2={0.3} {...s} /></>;
+      break;
+    case 'engine_prep': // Zahnrad
+      body = <><circle cx={0} cy={0} r={2.4} {...s} /><path d="M0 -3.4 L0 -2.2 M0 3.4 L0 2.2 M-3.4 0 L-2.2 0 M3.4 0 L2.2 0 M-2.4 -2.4 L-1.55 -1.55 M2.4 -2.4 L1.55 -1.55 M-2.4 2.4 L-1.55 1.55 M2.4 2.4 L1.55 1.55" {...s} /><circle cx={0} cy={0} r={0.8} {...f} /></>;
+      break;
+    case 'wegnetz_sampling': // Sampling
+      body = <><line x1={-4} y1={1} x2={4} y2={-1} {...s} />{([[-4, 1], [-2, 0.5], [0, 0], [2, -0.5], [4, -1]] as [number, number][]).map(([cx, cy], i) => <circle key={i} cx={cx} cy={cy} r={0.7} {...f} />)}</>;
+      break;
+    case 'boundary': // unregelm. Polygon, 4 Knoten
+      body = <><polygon points="-3.4,-2.6 3.6,-3.6 3,3.4 -3.8,2.2" {...s} />{([[-3.4, -2.6], [3.6, -3.6], [3, 3.4], [-3.8, 2.2]] as [number, number][]).map(([cx, cy], i) => <circle key={i} cx={cx} cy={cy} r={0.8} {...f} />)}</>;
+      break;
+    case 'system_adjust': // Blitz + Slider
+      body = <>{bolt}<line x1={0.8} y1={-2.2} x2={4} y2={-2.2} {...s} /><circle cx={2.6} cy={-2.2} r={0.7} {...f} /><line x1={0.8} y1={0} x2={4} y2={0} {...s} /><circle cx={1.7} cy={0} r={0.7} {...f} /><line x1={0.8} y1={2.2} x2={4} y2={2.2} {...s} /><circle cx={3.1} cy={2.2} r={0.7} {...f} /></>;
+      break;
+    case 'load_thresholds': // Blitz + Load
+      body = <>{bolt}<path d="M2.4 -2.8 L2.4 1.4 M0.9 -0.1 L2.4 1.7 L3.9 -0.1" {...s} /><path d="M0.7 2.6 L0.7 3.6 L4.1 3.6 L4.1 2.6" {...s} /></>;
+      break;
+    case 'regio_content': // Blitz + Schild
+      body = <>{bolt}<path d="M2.4 -3.2 L4.2 -2.4 L4.2 0.6 C4.2 2.4 2.4 3.6 2.4 3.6 C2.4 3.6 0.6 2.4 0.6 0.6 L0.6 -2.4 Z" {...s} /></>;
+      break;
+    default:
+      body = null;
+  }
+  return <g transform={`translate(${x},${y}) scale(0.9)`} style={{ pointerEvents: 'none' }}>{body}</g>;
+}
+
 // ─── Hauptkomponente ────────────────────────────────────────────────────────
 
 export default function RepresentBuildTetrahedron({
@@ -307,19 +351,7 @@ export default function RepresentBuildTetrahedron({
                     trifft so den Bogen (onClick des umgebenden <g>) statt
                     durch das pointerEvents:none-Label durchzufallen. */}
                 {clickable && <rect x={lx - 9} y={ly - 5} width={18} height={10} fill="transparent" />}
-                <text
-                  x={lx}
-                  y={ly}
-                  fontSize={5}
-                  fontFamily="system-ui, sans-serif"
-                  fontWeight={isActive ? 700 : 500}
-                  fill={labelColor}
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                  style={{ pointerEvents: 'none' }}
-                >
-                  {a.shortLabel}
-                </text>
+                <TetraGlyph id={a.id} x={lx} y={ly} color={labelColor} />
               </>
             )}
           </g>
@@ -352,19 +384,7 @@ export default function RepresentBuildTetrahedron({
               <title>{s.longLabel}</title>
             </path>
             {showLabels && (
-              <text
-                x={s.labelX}
-                y={s.labelY}
-                fontSize={5}
-                fontFamily="system-ui, sans-serif"
-                fontWeight={isActive ? 700 : 500}
-                fill={isActive ? triangleLabelActive : triangleLabelInactive}
-                textAnchor="middle"
-                dominantBaseline="middle"
-                style={{ pointerEvents: 'none' }}
-              >
-                {s.shortLabel}
-              </text>
+              <TetraGlyph id={s.id} x={s.labelX} y={s.labelY} color={isActive ? triangleLabelActive : triangleLabelInactive} />
             )}
           </g>
         );
@@ -396,19 +416,7 @@ export default function RepresentBuildTetrahedron({
               <title>{f.longLabel}</title>
             </polygon>
             {showLabels && (
-              <text
-                x={f.labelX}
-                y={f.labelY}
-                fontSize={5.5}
-                fontFamily="system-ui, sans-serif"
-                fontWeight={isActive ? 700 : 500}
-                fill={isActive ? triangleLabelActive : triangleLabelInactive}
-                textAnchor="middle"
-                dominantBaseline="middle"
-                style={{ pointerEvents: 'none' }}
-              >
-                {f.shortLabel}
-              </text>
+              <TetraGlyph id={f.id} x={f.labelX} y={f.labelY} color={isActive ? triangleLabelActive : triangleLabelInactive} />
             )}
           </g>
         );

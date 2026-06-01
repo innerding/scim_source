@@ -37,7 +37,7 @@ interface Props {
   onCatalogConsumed?: () => void;
 }
 
-const TAB_ORDER: TabId[] = ['catalog', 'signal_intake', 'analysis', 'adjust', 'input', 'icon', 'simulation', 'result', 'validation', 'leistungsblatt', 'raw'];
+const TAB_ORDER: TabId[] = ['catalog', 't1', 't2', 't3', 't4', 'signal_intake', 'analysis', 'adjust', 'input', 'icon', 'simulation', 'result', 'validation', 'leistungsblatt', 'raw'];
 
 function TabBar({
   tabs, active, onSelect,

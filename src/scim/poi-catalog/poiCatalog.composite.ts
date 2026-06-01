@@ -1,3 +1,7 @@
+// Konzeptionelle Heimat: P09 „POI" (POI-Appearancy / epb). Dieses Modul rendert
+// die Icons so, wie sie auf der Ziel-App erscheinen; der Inspector (System-Build-
+// Mirror) borgt es als Vorgriff auf die Ziel-App-Darstellung.
+//
 // Composite-Renderer: Container (Geometrie + Kategoriefarbe) + Icon + optionale
 // Decoration (Hoehe/Anno/Sterne …). Eine SVG-Wahrheit, die sowohl das
 // Katalog-Panel als auch der Karten-Inspector verwenden — damit ein POI ueberall
