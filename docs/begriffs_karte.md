@@ -32,6 +32,11 @@ weiterhin `geometry_editor` — Label neu, ID stabil, nichts brach.
 | `P07` | Boundary | `bou` | Boundary-Darstellung + Rep-Junction (Extraction entfällt — POIs aus Katalog). Sichel links |
 | `P08` | Wegnetz-Sampling | `wns` | merge → DP → resample → regelmäßiges Netz + Segment-id (vorher: „Graph + BasisLayer"). Sichel unten |
 | `P09` | Engine-Prep-Build | `epb` | bereitet POI/Last/Mask/Move für die Ziel-App (R06/R07) vor (vorher: „Engine (4 Modelle)"). Sichel rechts |
+| `P11` | Sensus Core Service | `scb` (Face) | verpackt die Adjust-Ausgaben der Threshold-Panels für die Ziel-App-Engines (vorher: „Package") |
+
+**Zeit-Horizonte (Threshold-Panels):** Load=kurzfristig · Region=mittelfristig · System=langfristig → drei Pakete, organisiert vom **Sensus Core Service (P11)**. Nicht redundant, sondern drei Geltungsbereiche. (Code-Rest: P01/P02 teilen noch dieselben Slider-Feldnamen — späterer Angleich.)
+
+**Threshold-Panels (P01/P02/P04) haben je 3 Tabs (Empfangsschirm-Fluss):** Signal Intake (text-first) → Analysis/Hypothesis (text-first) → **Adjust** (echte Schwellen-Slider; SCS verpackt sie). Tab-System dafür um panel-eigene Tabs mit optionalem `body`-Text geöffnet.
 
 Bögen = Empfangsschirme: Schwellen sind Paket-Variablen, die die Runtime-Daten direkt
 verändern (unabhängig von Versionierung); die User-App-Signale „erzählen" auf den Schirmen

@@ -37,7 +37,7 @@ interface Props {
   onCatalogConsumed?: () => void;
 }
 
-const TAB_ORDER: TabId[] = ['catalog', 'input', 'simulation', 'result', 'validation', 'leistungsblatt', 'raw'];
+const TAB_ORDER: TabId[] = ['catalog', 'signal_intake', 'analysis', 'adjust', 'input', 'simulation', 'result', 'validation', 'leistungsblatt', 'raw'];
 
 function TabBar({
   tabs, active, onSelect,
@@ -222,21 +222,29 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
   const panel = PANEL_REGISTRY.find((p) => p.id === activeId);
   if (!panel) return <div style={{ padding: 20, color: '#e53e3e' }}>Panel nicht gefunden: {activeId}</div>;
 
+  // Tab mit body → text-first Konzept-Kasten (z.B. Signal Intake / Analysis).
+  const tabDesc = panel.tabs.find((t) => t.id === activeTab);
   let tabContent: ReactNode = null;
-  switch (activeTab) {
-    case 'input':      tabContent = <PanelInputForm panel={panel} result={result} />; break;
-    case 'simulation': {
-      // Heute nur fuer P06 implementiert (Pattern-Klassifikator-Sandbox, ann_064).
-      if (panel.id === 'P06') {
-        const ctx = result.success ? (result.context as unknown as Record<string, unknown>) : null;
-        tabContent = <P06SimulationForm state={ctx?.telco_load as TelcoLoadState | undefined} />;
+  if (tabDesc?.body && tabDesc.body.length > 0) {
+    tabContent = <BaukonzeptNotiz id={panel.id} title={tabDesc.label} lines={tabDesc.body} />;
+  } else {
+    switch (activeTab) {
+      // 'adjust' (Threshold-Panels) rendert die echten Schwellen-Slider.
+      case 'input':
+      case 'adjust':     tabContent = <PanelInputForm panel={panel} result={result} />; break;
+      case 'simulation': {
+        // Heute nur fuer P06 implementiert (Pattern-Klassifikator-Sandbox, ann_064).
+        if (panel.id === 'P06') {
+          const ctx = result.success ? (result.context as unknown as Record<string, unknown>) : null;
+          tabContent = <P06SimulationForm state={ctx?.telco_load as TelcoLoadState | undefined} />;
+        }
+        break;
       }
-      break;
+      case 'result':     tabContent = <PanelResult panel={panel} result={result} />; break;
+      case 'validation': tabContent = <PanelValidation panel={panel} result={result} />; break;
+      case 'raw':        tabContent = <PanelRaw panel={panel} result={result} />; break;
+      default:           tabContent = null;
     }
-    case 'result':     tabContent = <PanelResult panel={panel} result={result} />; break;
-    case 'validation': tabContent = <PanelValidation panel={panel} result={result} />; break;
-    case 'raw':        tabContent = <PanelRaw panel={panel} result={result} />; break;
-    default:           tabContent = null;
   }
 
   // Bau-Konzeptnotiz (falls gesetzt) ueber dem regulaeren Panel-Inhalt zeigen.
@@ -278,6 +286,9 @@ export default function PanelWorkspace({ activeId, activeTab, onTabChange, resul
     if (t.id === 'catalog' && role !== 'operator') return false;
     return true;
   });
+  // Aktiver Tab wird beim Panelwechsel auf 'input' gesetzt; Panels mit eigenen
+  // Tabs (z.B. Threshold-Panels) haben kein 'input' → auf den ersten Tab fallen.
+  const safeTab: TabId = tabs.some((t) => t.id === activeTab) ? activeTab : (tabs[0]?.id ?? activeTab);
   const subtitle =
     'shortDescription' in entry ? (entry as { shortDescription: string }).shortDescription : '';
 
@@ -291,15 +302,15 @@ export default function PanelWorkspace({ activeId, activeTab, onTabChange, resul
       minWidth: 0,
     }}>
       <PanelHeader id={entry.id} title={entry.label} subtitle={subtitle} dimmed={KOSMOLOGIE_IDS.has(activeId)} />
-      <TabBar tabs={tabs} active={activeTab} onSelect={onTabChange} />
+      <TabBar tabs={tabs} active={safeTab} onSelect={onTabChange} />
       {/* Geometry-Editor braucht volle Hoehe ohne Padding */}
       {activeId === DRAWER_DESCRIPTOR.id ? (
         <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
-          <PanelContent activeId={activeId} activeTab={activeTab} result={result} onJumpTo={onJumpTo} openGeometryId={openGeometryId} onGeometryConsumed={onGeometryConsumed} openCatalogId={openCatalogId} onCatalogConsumed={onCatalogConsumed} />
+          <PanelContent activeId={activeId} activeTab={safeTab} result={result} onJumpTo={onJumpTo} openGeometryId={openGeometryId} onGeometryConsumed={onGeometryConsumed} openCatalogId={openCatalogId} onCatalogConsumed={onCatalogConsumed} />
         </div>
       ) : (
         <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
-          <PanelContent activeId={activeId} activeTab={activeTab} result={result} onJumpTo={onJumpTo} openGeometryId={openGeometryId} onGeometryConsumed={onGeometryConsumed} openCatalogId={openCatalogId} onCatalogConsumed={onCatalogConsumed} />
+          <PanelContent activeId={activeId} activeTab={safeTab} result={result} onJumpTo={onJumpTo} openGeometryId={openGeometryId} onGeometryConsumed={onGeometryConsumed} openCatalogId={openCatalogId} onCatalogConsumed={onCatalogConsumed} />
         </div>
       )}
     </div>

@@ -3,12 +3,18 @@
 
 export type InputMode = 'user_form' | 'auto_computed' | 'semi_auto' | 'optional';
 
-export type TabId = 'catalog' | 'input' | 'result' | 'validation' | 'raw' | 'leistungsblatt' | 'simulation';
+export type TabId =
+  | 'catalog' | 'input' | 'result' | 'validation' | 'raw' | 'leistungsblatt' | 'simulation'
+  // Threshold-Panels (Empfangsschirm-Fluss): empfangen → deuten → anpassen
+  | 'signal_intake' | 'analysis' | 'adjust';
 
 export interface TabDescriptor {
   id: TabId;
   label: string;
   icon: string;
+  // Optionaler Konzept-Text (text-first): wird statt eines echten Inhalts als
+  // Kasten gezeigt, solange der Tab noch nicht funktional befuellt ist.
+  body?: string[];
 }
 
 export interface PanelDescriptor {
@@ -64,7 +70,31 @@ const P06_TABS: TabDescriptor[] = [
   { id: 'raw',        label: 'Rohdaten',    icon: '{}' },
 ];
 
-// (Katalog ist seit Umbau ein eigenes Panel — siehe CATALOG_DESCRIPTOR.)
+// Threshold-Panels (System/Region/Load): Empfangsschirm-Fluss in drei Tabs.
+// Signal Intake + Analysis sind vorerst text-first (body); Adjust rendert die
+// echten Schwellen-Slider (PanelInputForm) — das ist die eigentliche Anpassung,
+// die der Sensus Core Service danach verpackt.
+const THRESHOLD_TABS: TabDescriptor[] = [
+  {
+    id: 'signal_intake', label: 'Signal Intake', icon: '📡',
+    body: [
+      'Empfangsschirm: hier kommen die Signale aus der User-App an.',
+      'Roh-Eingang für diesen Zeit-Horizont (Load = kurzfristig · Region = mittelfristig · System = langfristig).',
+    ],
+  },
+  {
+    id: 'analysis', label: 'Analysis', icon: '🔬',
+    body: [
+      'Die Signale erzählen ihre Geschichte → Analyse & Hypothese.',
+      'Begründet, welche Schwelle sich wie ändern sollte (noch nicht funktional).',
+    ],
+  },
+  {
+    id: 'adjust', label: 'Adjust', icon: '🎚',
+    // kein body → rendert die echten Schwellen-Slider (PanelInputForm);
+    // diese Anpassung verpackt anschliessend der Sensus Core Service.
+  },
+];
 
 export const PANEL_REGISTRY: PanelDescriptor[] = [
   // ── Gruppe 1: Benutzereingaben ─────────────────────────────────────────────
@@ -81,7 +111,7 @@ export const PANEL_REGISTRY: PanelDescriptor[] = [
     inputMode: 'user_form',
     isBlocking: true,
     contextKey: 'system_adjust',
-    tabs: STANDARD_TABS,
+    tabs: THRESHOLD_TABS,
   },
   {
     id: 'P02',
@@ -96,7 +126,7 @@ export const PANEL_REGISTRY: PanelDescriptor[] = [
     inputMode: 'user_form',
     isBlocking: true,
     contextKey: 'regio_content',
-    tabs: STANDARD_TABS,
+    tabs: THRESHOLD_TABS,
   },
   {
     id: 'P03',
@@ -125,7 +155,7 @@ export const PANEL_REGISTRY: PanelDescriptor[] = [
     inputMode: 'user_form',
     isBlocking: true,
     contextKey: 'telco_load',
-    tabs: STANDARD_TABS,
+    tabs: THRESHOLD_TABS,
   },
   {
     id: 'P05',
@@ -239,17 +269,21 @@ export const PANEL_REGISTRY: PanelDescriptor[] = [
   // ── Gruppe 4: Paketierung und Release ──────────────────────────────────────
   {
     id: 'P11',
-    label: 'Package',
+    label: 'Sensus Core Service',
     group: 4,
     order: 11,
     icon: '▣',
-    shortDescription: 'Sensus Core Paket',
+    shortDescription: 'Sensus Core Paket-Dienst · verpackt die Adjust-Ausgaben für die Ziel-App-Engines',
     helpText: 'Bündelt alle berechneten Daten in das standardisierte Sensus Core Format.',
     dependsOn: ['P10'],
     inputMode: 'auto_computed',
     isBlocking: true,
     contextKey: 'sensus_core_package',
     tabs: STANDARD_TABS,
+    bauKonzept: [
+      'Load = kurzfristige Laufzeit · Regio = mittelfristig · System = langfristig — drei verschiedene Pakete.',
+      'Der Sensus Core Service (SCS) organisiert/verpackt die Adjust-Ausgaben der Threshold-Panels, damit die Engines in der Ziel-App runder laufen.',
+    ],
   },
   {
     id: 'P12',
