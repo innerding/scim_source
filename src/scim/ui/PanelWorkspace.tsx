@@ -26,8 +26,9 @@ import WorkspacePanel from './panels/WorkspacePanel';
 import DrawerPanel from './panels/DrawerPanel';
 import { poiCompositeSvg } from '../poi-catalog/poiCatalog.composite';
 import { CONTAINER_SYSTEM } from '../poi-catalog/poiCatalog.containerSystem';
-import { REPRESENTATIONS } from '../workspace/workspace.registry';
+import { REPRESENTATIONS, wegnetzById } from '../workspace/workspace.registry';
 import { buildOriginPackage } from '../sensus/originPackage';
+import { resampleNet } from '../wegnetz/netResample';
 
 interface Props {
   activeId: string;
@@ -340,6 +341,11 @@ function SensusCorePackages() {
   // live auflösen (reale Byte-Größen). Shell/Anthem bleiben vorerst Platzhalter.
   const demoRep = REPRESENTATIONS.find((r) => /lichtenberg/i.test(r.id) || /lichtenberg/i.test(r.name)) ?? REPRESENTATIONS[0];
   const origin = demoRep ? buildOriginPackage(demoRep) : null;
+  // Resample-Trade-off: dasselbe Netz bei verschiedenen Zielsegmentlängen.
+  const demoNet = demoRep?.wegnetz_id ? wegnetzById(demoRep.wegnetz_id) : undefined;
+  const resampleVariants = demoNet
+    ? [3, 10, 25].map((t) => ({ t, r: resampleNet(demoNet.edges, { targetMeters: t }) }))
+    : [];
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif' }}>
       <div style={{
@@ -376,6 +382,36 @@ function SensusCorePackages() {
         <p style={{ fontSize: 10.5, color: '#a0aec0', margin: '6px 0 0' }}>
           Origin-Zahlen live aufgelöst aus „{origin.repName}" v{origin.version} (buildOriginPackage) — reale UTF-8-Größen.
         </p>
+      )}
+      {resampleVariants.length > 0 && (
+        <div style={{ marginTop: 14 }}>
+          <div style={{ fontSize: 11, color: '#718096', marginBottom: 6 }}>
+            origin-net Resample-Trade-off (Netz {Math.round(resampleVariants[0].r.totalMeters)} m) — Zielsegmentlänge ist der Hebel:
+          </div>
+          <table style={{ fontSize: 11.5, borderCollapse: 'collapse', fontFamily: 'ui-monospace, Menlo, monospace' }}>
+            <thead>
+              <tr style={{ color: '#a0aec0' }}>
+                <th style={{ textAlign: 'left', padding: '2px 14px 2px 0' }}>Ziel</th>
+                <th style={{ textAlign: 'right', padding: '2px 14px 2px 0' }}>Segmente</th>
+                <th style={{ textAlign: 'right', padding: '2px 14px 2px 0' }}>Geometrie (1×)</th>
+                <th style={{ textAlign: 'right', padding: '2px 0' }}>Load/5min</th>
+              </tr>
+            </thead>
+            <tbody>
+              {resampleVariants.map(({ t, r }) => (
+                <tr key={t} style={{ color: '#2d3748' }}>
+                  <td style={{ padding: '2px 14px 2px 0' }}>{t} m</td>
+                  <td style={{ textAlign: 'right', padding: '2px 14px 2px 0' }}>{r.segmentCount}</td>
+                  <td style={{ textAlign: 'right', padding: '2px 14px 2px 0' }}>{fmtBytes(r.geometryBytes)}</td>
+                  <td style={{ textAlign: 'right', padding: '2px 0' }}>{fmtBytes(r.loadArrayBytes)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p style={{ fontSize: 10.5, color: '#a0aec0', margin: '6px 0 0' }}>
+            Roh-origin-net = {origin ? fmtBytes(origin.particles.find((p) => p.id === 'origin-net')?.bytes ?? 0) : '—'} · feines Resampling kann die statische Geometrie vergrößern (Mindestsegment 3 m).
+          </p>
+        </div>
       )}
       <p style={{ fontSize: 11.5, color: '#718096', lineHeight: 1.55, margin: '12px 0 0' }}>
         <strong>Anthem = Zwei-Wege-Atem (alle 5 Min).</strong> Einatmen: <strong>presence-origin</strong> (anonym — nur <em>welche origin-boundary</em>; das <em>Gate</em>, das origin erst auswählt) ·

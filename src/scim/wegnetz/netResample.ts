@@ -99,3 +99,98 @@ export function resamplePolyline(points: LatLng[], opts: ResampleOptions): Resam
 
   return { points: out, segmentCount: n, segmentMeters: segMeters, totalMeters: total };
 }
+
+// ─── Netz-weites Resampling ───────────────────────────────────────────────────
+// Jede inNet-Kante wird an ihren Kreuzungspunkten (von ≥2 Kanten geteilte
+// Koordinaten) in Strecken zerlegt; jede Strecke wird einzeln resampelt (so
+// bleiben Kreuzungen exakt erhalten, kein Stub). Liefert die resampelten
+// Strecken-Polylines + Segment-/Größen-Kennzahlen (für das Colour-Mesh-Budget).
+
+import type { PathEdge } from '../regio-content/pathEngine';
+
+export interface NetResampleOptions {
+  targetMeters: number;
+  minMeters?: number;
+  decimals?: number;     // Nachkommastellen-Rundung (Default 6 ≈ 0,11 m)
+}
+
+export interface ResampledStretchOut {
+  id: string;            // '<edgeId>.<piece>'
+  points: LatLng[];      // resampelte, gerundete Strecken-Punkte
+}
+
+export interface ResampledNet {
+  stretches: ResampledStretchOut[];
+  stretchCount: number;
+  segmentCount: number;  // Σ (points − 1) über alle Strecken
+  pointCount: number;
+  geometryBytes: number; // JSON-Größe der gerundeten Strecken-Punkte (statisch, 1×)
+  loadArrayBytes: number;// 1 Byte je Segment (volatil, alle 5 Min)
+  totalMeters: number;
+}
+
+function roundPt([lat, lng]: LatLng, f: number): LatLng {
+  return [Math.round(lat * f) / f, Math.round(lng * f) / f];
+}
+
+export function resampleNet(edges: PathEdge[], opts: NetResampleOptions): ResampledNet {
+  const decimals = opts.decimals ?? 6;
+  const f = Math.pow(10, decimals);
+  const key = (p: LatLng) => `${p[0].toFixed(7)},${p[1].toFixed(7)}`;
+
+  // Punkt-Nutzung über alle inNet-Kanten (je Kante einmal gezählt).
+  const usage = new Map<string, number>();
+  for (const e of edges) {
+    if (!e.inNet) continue;
+    const seen = new Set<string>();
+    for (const p of e.points) {
+      const k = key(p);
+      if (seen.has(k)) continue;
+      seen.add(k);
+      usage.set(k, (usage.get(k) ?? 0) + 1);
+    }
+  }
+
+  const stretches: ResampledStretchOut[] = [];
+  for (const e of edges) {
+    if (!e.inNet || e.points.length < 2) continue;
+    const pts = e.points;
+    // An Kreuzungs-Innenpunkten (usage ≥ 2) in Stücke zerlegen.
+    let runStart = 0;
+    let piece = 0;
+    for (let i = 1; i < pts.length; i++) {
+      const sharedInterior = i < pts.length - 1 && (usage.get(key(pts[i])) ?? 0) >= 2;
+      if (i === pts.length - 1 || sharedInterior) {
+        const seg = pts.slice(runStart, i + 1);
+        const r = resamplePolyline(seg, opts);
+        if (r.points.length >= 2) {
+          stretches.push({ id: `${e.id}.${piece}`, points: r.points.map((p) => roundPt(p, f)) });
+        }
+        runStart = i;
+        piece++;
+      }
+    }
+  }
+
+  let segmentCount = 0;
+  let pointCount = 0;
+  let totalMeters = 0;
+  for (const s of stretches) {
+    segmentCount += s.points.length - 1;
+    pointCount += s.points.length;
+    totalMeters += polylineMeters(s.points);
+  }
+  const geometryBytes = new TextEncoder().encode(
+    JSON.stringify(stretches.map((s) => s.points)),
+  ).length;
+
+  return {
+    stretches,
+    stretchCount: stretches.length,
+    segmentCount,
+    pointCount,
+    geometryBytes,
+    loadArrayBytes: segmentCount, // 1 B / Segment
+    totalMeters,
+  };
+}

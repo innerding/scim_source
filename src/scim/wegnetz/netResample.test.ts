@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { resamplePolyline, distMeters, polylineMeters, type LatLng } from './netResample';
+import { resamplePolyline, resampleNet, distMeters, polylineMeters, type LatLng } from './netResample';
+import type { PathEdge } from '../regio-content/pathEngine';
 
 // Reiner Nord-Süd-Verlauf (lng konstant): 1 m ≈ 1/111194.9° Breitengrad,
 // unabhängig vom Breitengrad → exakte Längenkontrolle für die Tests.
@@ -65,5 +66,42 @@ describe('netResample – resamplePolyline', () => {
     const dup = resamplePolyline([at(0), at(0)], { targetMeters: 3 });
     expect(dup.segmentCount).toBe(1);
     expect(dup.totalMeters).toBe(0);
+  });
+});
+
+describe('netResample – resampleNet (Kreuzungs-Split)', () => {
+  const mLat = 1 / 111194.9;
+  const mLng = 1 / 74485; // ~1 m in Längengrad bei lat 48
+  const X: LatLng = [48.0, 14.0]; // gemeinsamer Kreuzungspunkt (identische Koords!)
+  const edge = (id: number, points: LatLng[]): PathEdge => ({
+    id, highway: 'path', source: 'primary', points, tags: {}, inNet: true,
+  });
+
+  // edgeA verläuft N–S DURCH X (X ist Innenpunkt); edgeB geht von X nach Osten.
+  const edgeA = edge(1, [[48.0 - 10 * mLat, 14.0], X, [48.0 + 10 * mLat, 14.0]]);
+  const edgeB = edge(2, [X, [48.0, 14.0 + 8 * mLng]]);
+
+  it('splittet an der Kreuzung → 3 Strecken, ids korrekt', () => {
+    const net = resampleNet([edgeA, edgeB], { targetMeters: 3 });
+    expect(net.stretchCount).toBe(3);
+    const ids = net.stretches.map((s) => s.id).sort();
+    expect(ids).toEqual(['1.0', '1.1', '2.0']);
+  });
+
+  it('Kreuzung bleibt exakt erhalten (Endpunkt beider edgeA-Stücke)', () => {
+    const net = resampleNet([edgeA, edgeB], { targetMeters: 3 });
+    const p0 = net.stretches.find((s) => s.id === '1.0')!;
+    const p1 = net.stretches.find((s) => s.id === '1.1')!;
+    expect(p0.points[p0.points.length - 1][0]).toBeCloseTo(48.0, 5);
+    expect(p0.points[p0.points.length - 1][1]).toBeCloseTo(14.0, 5);
+    expect(p1.points[0][0]).toBeCloseTo(48.0, 5);
+    expect(p1.points[0][1]).toBeCloseTo(14.0, 5);
+  });
+
+  it('Kennzahlen: loadArrayBytes = segmentCount, geometryBytes > 0', () => {
+    const net = resampleNet([edgeA, edgeB], { targetMeters: 3 });
+    expect(net.segmentCount).toBeGreaterThan(0);
+    expect(net.loadArrayBytes).toBe(net.segmentCount);
+    expect(net.geometryBytes).toBeGreaterThan(0);
   });
 });
