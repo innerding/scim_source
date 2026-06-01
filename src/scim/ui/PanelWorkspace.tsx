@@ -192,36 +192,36 @@ const P09_DESCRIPTORS: P09Descriptor[] = [
     tabId: 't1', no: 1, name: 'poi-dompteur', actions: 'category-composit + sequenzer',
     source: 'representation <xy> v.<x> · poi-katalog',
     horizon: 'long', pkg: 'Shell',
-    produces: ['poi-dompteur (engine) → Shell · long', 'origin-asset-set → Origin · mid', 'origin-poi-set → Origin · mid', 'poi-translate (size=f(load)) → Anthem · short'],
+    produces: ['poi-dompteur (engine) → Shell · long', 'origin-asset-set → Origin · mid', 'origin-poi-set → Origin · mid'],
     dependsMid: 'representation(xy) poi-asset (die Icons)',
     dependsShort: 'telco-load → poi-translate · size = f(load): hohe Last → kleinere Größe + Last-Farbe',
     fn: 'size, colour = F(load, …)', rescueFrom: 'poiCatalog.composite', gallery: true,
   },
   {
     tabId: 't2', no: 2, name: 'load-colorist', actions: 'segment-gradient',
-    source: 'representation <xy> v.<x> · gesampeltes Wegnetz (Segment-ids)',
-    horizon: 'short', pkg: 'Anthem',
+    source: 'representation <xy> v.<x> · origin-net (Segment-ids)',
+    horizon: 'long', pkg: 'Shell',
     produces: ['load-colorist (engine) → Shell · long', 'load-values (je Segment) → Anthem · short'],
-    dependsMid: 'gesampeltes Netz (P08): Segment-Geometrie + id',
-    dependsShort: 'telco-load je Segment',
+    dependsMid: 'origin-net (P08): Segment-Geometrie + id',
+    dependsShort: 'telco-load je Segment · origin-presence (welche origin-boundary)',
     fn: 'colour = G(load_segment)', rescueFrom: 'colourMesh (heatColor)',
   },
   {
     tabId: 't3', no: 3, name: 'comfort-masker', actions: 'segment-filter (BCK)',
-    source: 'representation <xy> v.<x> · gesampeltes Wegnetz + User-Comfort',
-    horizon: 'short', pkg: 'Anthem',
-    produces: ['comfort-masker (engine) → Shell · long', 'comfort-setting → Anthem · short'],
-    dependsMid: 'gesampeltes Netz',
-    dependsShort: 'User-Comfort-Einstellung (Farbschwelle)',
+    source: 'representation <xy> v.<x> · origin-net + User-Comfort',
+    horizon: 'long', pkg: 'Shell',
+    produces: ['comfort-masker / BCK (engine) → Shell · long'],
+    dependsMid: 'origin-net',
+    dependsShort: 'User-Comfort-Einstellung (Farbschwelle) — Laufzeit, kein Anthem-Particle',
     fn: 'visible = (segment_colour ≤ comfort_colour)', rescueFrom: 'mask-logik (folgt)',
   },
   {
     tabId: 't4', no: 4, name: 'bak-router', actions: 'route-build + rest-detect (BAK)',
-    source: 'representation <xy> v.<x> · gesampeltes Wegnetz + POI-Auswahl + Dauer',
-    horizon: 'short', pkg: 'Anthem',
-    produces: ['bak-router (engine) → Shell · long', 'route-selection → Anthem · short'],
-    dependsMid: 'gesampeltes Netz + POIs',
-    dependsShort: 'User-Auswahl (POIs · Farbe · Dauer)',
+    source: 'representation <xy> v.<x> · origin-net + origin-poi-set + User-Auswahl',
+    horizon: 'long', pkg: 'Shell',
+    produces: ['bak-router / BAK (engine) → Shell · long'],
+    dependsMid: 'origin-net + origin-poi-set',
+    dependsShort: 'User-Auswahl (POIs · Farbe · Dauer) — Laufzeit, kein Anthem-Particle',
     fn: 'route = BAK(net, pois, comfort, duration) · rest-detect', rescueFrom: 'routing-logik (folgt)',
   },
 ];
@@ -312,9 +312,9 @@ function P09Artifact({ d }: { d: P09Descriptor }) {
 // P07/P08/P09 in atomare particles portioniert; SCS sortiert sie nach Horizont
 // in die drei Pakete. Statische Modell-Sicht.
 const SCS_PACKAGES: { name: string; horizon: string; version: string; particles: string[] }[] = [
-  { name: 'Shell', horizon: 'long-term', version: 'eigene App-Shell-Version', particles: ['dompteur', 'colorist', 'masker', 'router (engines)', 'container-system'] },
+  { name: 'Shell', horizon: 'long-term', version: 'eigene App-Shell-Version', particles: ['dompteur', 'colorist', 'BCK (comfort)', 'BAK (route)', 'container-system'] },
   { name: 'Origin', horizon: 'mid-term', version: '= Representation-Version', particles: ['origin-boundary', 'origin-net (wegnetz-sample)', 'origin-asset-set', 'origin-poi-set', 'origin-pixel-images'] },
-  { name: 'Anthem', horizon: 'short-term', version: 'Load-Zyklus (flüchtig)', particles: ['load-values', 'comfort-setting', 'route-selection'] },
+  { name: 'Anthem', horizon: 'short-term', version: 'Load-Zyklus (flüchtig)', particles: ['origin-presence (Einatmen)', 'load-values (Ausatmen)'] },
 ];
 const ORIGIN_PUSH: string[] = [
   'push1   · origin-net (wegnetz-sample)',
@@ -349,6 +349,10 @@ function SensusCorePackages() {
           </div>
         ))}
       </div>
+      <p style={{ fontSize: 11.5, color: '#718096', lineHeight: 1.55, margin: '12px 0 0' }}>
+        <strong>Anthem = Zwei-Wege-Atem.</strong> Einatmen: <strong>origin-presence</strong> (anonym — nur <em>welche origin-boundary</em>) ·
+        Ausatmen: <strong>load-values</strong> (Segment-Farbe fürs Colour-Mesh). Nicht MVP (kein Telco) — der Slot wird vorbereitet.
+      </p>
       <div style={{ marginTop: 16 }}>
         <div style={{ fontSize: 11, color: '#718096', marginBottom: 6 }}>Origin push-sequence — mid darf in Etappen, Pixel zuletzt:</div>
         <pre style={{
