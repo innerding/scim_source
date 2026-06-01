@@ -191,7 +191,7 @@ interface P09Descriptor {
 const P09_DESCRIPTORS: P09Descriptor[] = [
   {
     tabId: 't1', no: 1, name: 'poi-dompteur', actions: 'category-composit + sequenzer', source: 'poi-katalog',
-    horizon: 'mid', pkg: 'Representation-Paket',
+    horizon: 'long', pkg: 'App-Shell-Paket',
     dependsMid: 'representation(xy) poi-asset (die Icons)',
     dependsShort: 'telco-load → poi-translate · size = f(load): hohe Last → kleinere Größe + Last-Farbe',
     fn: 'size, colour = F(load, …)', rescueFrom: 'poiCatalog.composite', gallery: true,
