@@ -32,11 +32,13 @@ weiterhin `geometry_editor` — Label neu, ID stabil, nichts brach.
 | `P07` | Boundary | `bou` | Boundary-Darstellung + Rep-Junction (Extraction entfällt — POIs aus Katalog). Sichel links |
 | `P08` | Wegnetz-Sampling | `wns` | merge → DP → resample → regelmäßiges Netz + Segment-id (vorher: „Graph + BasisLayer"). Sichel unten |
 | `P09` | Engine-Prep-Build | `epb` | bereitet POI/Last/Mask/Move für die Ziel-App (R06/R07) vor (vorher: „Engine (4 Modelle)"). Sichel rechts |
-| `P11` | Sensus Core Service | `scs` (Face) | verpackt die Adjust-Ausgaben der Threshold-Panels für die Ziel-App-Engines (vorher: „Package"; Face-Kürzel scb→scs) |
+| `P11` | Sensus Core Services | `scs` (Face) | ordert die atomaren particles von P07/P08/P09 und schnürt **Shell · Origin · Anthem** (+ Version + Deploy-Reihenfolge); Scheduling später: Transmitter (vorher: „Package"/„Service"; Face-Kürzel scb→scs) |
 
 **Drawer (geometry_editor)** Tab-Struktur: obere Ebene (globale TabBar) **Karte | Icon**; **Umriss/Wegnetz** sind interne Sub-Tabs *unter* Karte. **Icon** (oberer Tab) zeigt vorerst nur Baukonzeptnotiz (Pro-Editor-Konzept: 48/24, fill/stroke-Layer (auch bare stroke ohne Gruppe), Raster+Snap, Werkzeuge: variable Stroke-Breiten 0.20er, Stroke→Fill, Boolean Subtract/Union → Node-Explosion → DP-Node-Begrenzer; Import drag+drop (Raster=Pausschicht, .svg+live-Node-Zahl), Cleaner erweitert svg_cleaned (Illustrator/Tabler), Export+Provenienz (Quell-SVG metadata, Build-Cleaner streift ab); max 60/Icon, Ø~40/Set) (regelbasierter SW-Icon-Editor; 48×48 Viewport / 24×24 Fläche; fill/stroke-Layer; max 60 Nodes/Icon, Ø~36-40/Set; später Inspector zeigt Icon im Container-Umfeld + Animationen). Kein Karte; Overlay über dem Canvas. Ist-Stand Katalog-Set: Ø ~38 Nodes, max 96 (boots-hafen vereinfacht).
 
-**Zeit-Horizonte (Threshold-Panels):** Load=kurzfristig · Region=mittelfristig · System=langfristig → drei Pakete, organisiert vom **Sensus Core Service (P11)**. Nicht redundant, sondern drei Geltungsbereiche. (Code-Rest: P01/P02 teilen noch dieselben Slider-Feldnamen — späterer Angleich.)
+**Zeit-Horizonte (Threshold-Panels):** Load=kurzfristig · Region=mittelfristig · System=langfristig → drei Pakete, organisiert von den **Sensus Core Services (P11)**. Nicht redundant, sondern drei Geltungsbereiche. (Code-Rest: P01/P02 teilen noch dieselben Slider-Feldnamen — späterer Angleich.)
+
+**Sensus-Core-Paket-Trio (Stand 2026-06):** **Shell** (long; Engine-Suite dompteur/colorist/BCK/BAK + container) · **Origin** (mid; origin-particles, erbt Representation-Version) · **Anthem** (short; Zwei-Wege-Atem: Einatmen `presence-origin` als Gate → Ausatmen `load-values`). Deploy-Reihenfolge: 1 Shell · 2 presence-origin (Gate) · 3 origin-wegnetz · 4 load · 5 origin-rest; MVP (origin via URL): 1 → 3 → 5. `presence-origin` = Uplink-Selektor (App→System), kein origin-Partikel.
 
 **Threshold-Panels (P01/P02/P04) haben je 3 Tabs (Empfangsschirm-Fluss):** Signal Intake (text-first) → Analysis/Hypothesis (text-first) → **Adjust** (echte Schwellen-Slider; SCS verpackt sie). Tab-System dafür um panel-eigene Tabs mit optionalem `body`-Text geöffnet.
 
@@ -69,7 +71,7 @@ dreifach (P01/P02/P08) — Entwirren ist ein eigener späterer Schritt.
 - **Inspector** = „Inspector System-Build-Mirror" (Header + Navigator-Trapez-Hover).
 - **Tetraeder-Glyphs** statt 3-Letter-Codes: geo=Stift · org=Kettenglied · cat=Bild · scs=Paket (scb→scs); Sicheln bou=4-Knoten-Polygon · wns=Sampling · epb=Zahnrad; Bögen sys/reg/loa = Blitz + Slider/Schild/Load.
 - **Panel-Tabs** (text-first, Baukonzept jeweils im 2.): P07 = Boundary-Darstellung · Rep-Junction. P08 = Quell-Netz · Sampling · Mesh-Output. P09 = POI · Last · Mask · Move. (generische Tab-Handles t1–t4: id fix, Label trägt Bedeutung.)
-- **`poiCatalog.composite`** = **SCIM-interner** Renderer (Katalog + Inspector, Operator-Anzeige). **NICHT** das Ziel-App-Rendering — die Ziel-App läuft **lokal, ohne SCIM**, und rendert eigenständig. **P09-POI** = Erklär- + **Rescue-Seite**: birgt bei Ausspielung die Function als **versionierte, selbst-enthaltende Kapsel** (Inhalts-Hash/Diff: geändert vs. zuletzt ausgespielt) → **Sensus Core Service** → App-Shell-Paket (long-horizon, **Teil MVP-Lichtenberg**). SCIM, P09-POI und Ziel-App sind drei getrennte Laufzeiten/Rollen.
+- **`poiCatalog.composite`** = **SCIM-interner** Renderer (Katalog + Inspector, Operator-Anzeige). **NICHT** das Ziel-App-Rendering — die Ziel-App läuft **lokal, ohne SCIM**, und rendert eigenständig. **P09-POI** = Erklär- + **Rescue-Seite**: birgt bei Ausspielung die Function als **versionierte, selbst-enthaltende Kapsel** (Inhalts-Hash/Diff: geändert vs. zuletzt ausgespielt) → **Sensus Core Services** → App-Shell-Paket (long-horizon, **Teil MVP-Lichtenberg**). SCIM, P09-POI und Ziel-App sind drei getrennte Laufzeiten/Rollen.
 
 ## Noch offen
 - Phase 4: echte Funktion in den P07/P08/P09-Tabs + P08-Resampler.
