@@ -26,9 +26,17 @@ weiterhin `geometry_editor` — Label neu, ID stabil, nichts brach.
 
 | id (fix) | label | kurzLabel | konzept/rolle |
 |---|---|---|---|
-| `P07` | Boundary | `bou` | Boundary-Darstellung + Rep-Junction (Extraction entfällt — POIs aus Katalog) |
-| `P08` | Wegnetz-Sampling | `wns` | merge → DP → resample → regelmäßiges Netz + Segment-id (vorher: „Graph + BasisLayer") |
-| `P09` | Engine-Prep-Build | `epb` | bereitet POI/Last/Mask/Move für die Ziel-App (R06/R07) vor (vorher: „Engine (4 Modelle)") |
+| `P01` | System Thresholds | `sys` | System-Belastungsdaten/Schwellen · Grundparameter der SCIM-Instanz (Mock-state). Bogen `sys` |
+| `P02` | Region Thresholds | `reg` | Regio-/Representations-Belastungsdaten/Schwellen · Grundparameter der Regio-Instanz (Mock-state). Bogen `reg` (vorher `rou`/„Route") |
+| `P04` | Load Thresholds | `loa` | Load-Belastungsdaten/Schwellen · Grundparameter der Telco-Quelle (Mock-state). Bogen `loa` |
+| `P07` | Boundary | `bou` | Boundary-Darstellung + Rep-Junction (Extraction entfällt — POIs aus Katalog). Sichel links |
+| `P08` | Wegnetz-Sampling | `wns` | merge → DP → resample → regelmäßiges Netz + Segment-id (vorher: „Graph + BasisLayer"). Sichel unten |
+| `P09` | Engine-Prep-Build | `epb` | bereitet POI/Last/Mask/Move für die Ziel-App (R06/R07) vor (vorher: „Engine (4 Modelle)"). Sichel rechts |
+
+Bögen = Empfangsschirme: Schwellen sind Paket-Variablen, die die Runtime-Daten direkt
+verändern (unabhängig von Versionierung); die User-App-Signale „erzählen" auf den Schirmen
+ihre Geschichte und begründen Schwellen-Änderungen. Schwellen-Slider liegen real noch
+dreifach (P01/P02/P08) — Entwirren ist ein eigener späterer Schritt.
 
 ## Verabredete Struktur-Entscheidungen
 

@@ -137,8 +137,8 @@ const ARCS: Array<{
   // Top (-90°) → Bottom-Right (30°): zwischen Geometry und Inspection
   {
     id: 'regio_content',
-    shortLabel: 'rou',
-    longLabel: 'Route Thresholds',
+    shortLabel: 'reg',
+    longLabel: 'Region Thresholds',
     startDeg: -90,
     endDeg: 30,
     labelAngleDeg: -30,
