@@ -27,7 +27,7 @@ import DrawerPanel from './panels/DrawerPanel';
 import { poiCompositeSvg } from '../poi-catalog/poiCatalog.composite';
 import { CONTAINER_SYSTEM } from '../poi-catalog/poiCatalog.containerSystem';
 import { REPRESENTATIONS, wegnetzById } from '../workspace/workspace.registry';
-import { buildOriginPackage } from '../sensus/originPackage';
+import { buildOriginPackage, MVP_RESAMPLE_TARGET_METERS } from '../sensus/originPackage';
 import { resampleNet } from '../wegnetz/netResample';
 
 interface Props {
@@ -399,8 +399,8 @@ function SensusCorePackages() {
             </thead>
             <tbody>
               {resampleVariants.map(({ t, r }) => (
-                <tr key={t} style={{ color: '#2d3748' }}>
-                  <td style={{ padding: '2px 14px 2px 0' }}>{t} m</td>
+                <tr key={t} style={{ color: t === MVP_RESAMPLE_TARGET_METERS ? '#1a365d' : '#2d3748', fontWeight: t === MVP_RESAMPLE_TARGET_METERS ? 700 : 400 }}>
+                  <td style={{ padding: '2px 14px 2px 0' }}>{t} m{t === MVP_RESAMPLE_TARGET_METERS ? ' · MVP' : ''}</td>
                   <td style={{ textAlign: 'right', padding: '2px 14px 2px 0' }}>{r.segmentCount}</td>
                   <td style={{ textAlign: 'right', padding: '2px 14px 2px 0' }}>{fmtBytes(r.geometryBytes)}</td>
                   <td style={{ textAlign: 'right', padding: '2px 0' }}>{fmtBytes(r.loadArrayBytes)}</td>
@@ -409,7 +409,7 @@ function SensusCorePackages() {
             </tbody>
           </table>
           <p style={{ fontSize: 10.5, color: '#a0aec0', margin: '6px 0 0' }}>
-            Roh-origin-net = {origin ? fmtBytes(origin.particles.find((p) => p.id === 'origin-net')?.bytes ?? 0) : '—'} · feines Resampling kann die statische Geometrie vergrößern (Mindestsegment 3 m).
+            origin-net wird als <strong>@{MVP_RESAMPLE_TARGET_METERS} m-Resample</strong> ausgespielt (s. Origin-Karte) — die Tabelle zeigt den Zielsegmentlängen-Trade-off (3 m = Detail-Untergrenze, Geometrie explodiert).
           </p>
         </div>
       )}

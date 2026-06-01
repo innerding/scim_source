@@ -14,6 +14,12 @@ import { geometryById, wegnetzById } from '../workspace/workspace.registry';
 import { parseCatalogById } from '../poi-catalog/catalogRegistry';
 import { iconById } from '../poi-catalog/iconRegistry';
 import { resolveIcon } from '../poi-catalog/poiCatalog.composite';
+import { resampleNet, type ResampledNet } from '../wegnetz/netResample';
+
+// MVP-Zielsegmentlänge fürs origin-net (Beschluss): 10 m — Geometrie ≈ roh,
+// Atem (Load-Array) ~6 kB / 5 Min. 3 m wäre Detail-Untergrenze (Geometrie
+// explodiert), 25 m gröber/kleiner. Ein Knopf, falls wir's später drehen.
+export const MVP_RESAMPLE_TARGET_METERS = 10;
 
 export interface OriginParticle {
   id: string;        // 'origin-boundary' …
@@ -28,6 +34,7 @@ export interface OriginPackage {
   version: number;
   particles: OriginParticle[];   // die Origin-(mid-)particles
   totalBytes: number;
+  originNet?: ResampledNet;       // das resampelte Netz (Geometrie + Segment-ids)
 }
 
 function utf8Bytes(s: string): number {
@@ -49,13 +56,17 @@ export function buildOriginPackage(rep: Representation): OriginPackage {
     });
   }
 
-  // origin-net — das gespeicherte Wegnetz (Kanten + Gates)
+  // origin-net — das RESAMPELTE Netz (gleich lange Segmente @MVP-Target). Das
+  // ausgespielte Netz ist die gesampelte Geometrie, nicht der Drawer-Rohstand;
+  // die Segment-ids sind der Index, den das Anthem-Load-Array adressiert.
   const net = rep.wegnetz_id ? wegnetzById(rep.wegnetz_id) : undefined;
+  let originNet: ResampledNet | undefined;
   if (net) {
-    const edgeCount = Array.isArray(net.edges) ? net.edges.length : 0;
+    originNet = resampleNet(net.edges, { targetMeters: MVP_RESAMPLE_TARGET_METERS });
     particles.push({
-      id: 'origin-net', label: 'origin-net (wegnetz-sample)',
-      bytes: utf8Bytes(JSON.stringify(net)), detail: `${edgeCount} Kanten`,
+      id: 'origin-net', label: `origin-net (resampled @${MVP_RESAMPLE_TARGET_METERS} m)`,
+      bytes: originNet.geometryBytes,
+      detail: `${originNet.segmentCount} Segmente · ${originNet.stretchCount} Strecken`,
     });
   }
 
@@ -91,5 +102,6 @@ export function buildOriginPackage(rep: Representation): OriginPackage {
     version: rep.version ?? 1,
     particles,
     totalBytes: particles.reduce((s, p) => s + p.bytes, 0),
+    originNet,
   };
 }
