@@ -539,7 +539,7 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
         width: '100%', height: '100%', display: 'flex', flexDirection: 'column',
         background: '#1a1a1a', color: '#ff4136', fontFamily: 'monospace', fontSize: 13,
       }}>
-        <Header label="Pipeline-Kontrolle" detail="Fehler" vis={vis} setVis={setVis} avail={ALL_LAYERS} onNavigate={onNavigate} onCollapseToggle={onCollapseToggle} disabled repCtx={repCtx} />
+        <Header label="Inspector System-Build-Mirror" detail="Fehler" vis={vis} setVis={setVis} avail={ALL_LAYERS} onNavigate={onNavigate} onCollapseToggle={onCollapseToggle} disabled repCtx={repCtx} />
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           Pipeline failed at: {result.failed_at_step ?? 'unknown'}
         </div>
@@ -571,7 +571,7 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
 
   return (
     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Header label="Pipeline-Kontrolle" detail={detail} vis={vis} setVis={setVis} avail={availLayers} onNavigate={onNavigate} onCollapseToggle={onCollapseToggle} repCtx={repCtx} />
+      <Header label="Inspector System-Build-Mirror" detail={detail} vis={vis} setVis={setVis} avail={availLayers} onNavigate={onNavigate} onCollapseToggle={onCollapseToggle} repCtx={repCtx} />
       <div ref={containerRef} style={{ flex: 1, minHeight: 0 }} />
     </div>
   );

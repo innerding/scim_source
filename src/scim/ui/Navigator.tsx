@@ -426,7 +426,7 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
             cursor: 'pointer', zIndex: 5,
           }}
         >
-          <title>Inspector — Sicht oeffnen/schliessen</title>
+          <title>Inspector System-Build-Mirror</title>
           {/* Polygon-Remount per Key-Wechsel triggert die Flash-Animation neu.
               Default-Stil ist Pergament-12%; die Animation zuckt kurz nach
               weiss durch. Aktiv-Stand (ScimMap offen) erhoeht fillOpacity
@@ -462,7 +462,7 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
               stroke="none"
               style={{ transition: 'fill-opacity 400ms ease-in-out' }}
             >
-              <title>Layer-Monitor: {slice.label}</title>
+              <title>Inspector System-Build-Mirror</title>
             </polygon>
           ))}
         </svg>
