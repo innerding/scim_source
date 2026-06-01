@@ -251,8 +251,8 @@ function TetraGlyph({ id, x, y, color }: { id: string; x: number; y: number; col
     case 'engine_prep': // Zahnrad
       body = <><circle cx={0} cy={0} r={2.4} {...s} /><path d="M0 -3.4 L0 -2.2 M0 3.4 L0 2.2 M-3.4 0 L-2.2 0 M3.4 0 L2.2 0 M-2.4 -2.4 L-1.55 -1.55 M2.4 -2.4 L1.55 -1.55 M-2.4 2.4 L-1.55 1.55 M2.4 2.4 L1.55 1.55" {...s} /><circle cx={0} cy={0} r={0.8} {...f} /></>;
       break;
-    case 'wegnetz_sampling': // Sampling — Kurve mit gleichmäßigen Stützpunkten DARAUF
-      body = <><path d="M-4 1.6 Q0 -2.6 4 1.6" {...s} />{([[-4, 1.6], [-2, 0], [0, -0.55], [2, 0], [4, 1.6]] as [number, number][]).map(([cx, cy], i) => <circle key={i} cx={cx} cy={cy} r={0.7} {...f} />)}</>;
+    case 'wegnetz_sampling': // Sampling — Kurve mit 3 Stützpunkten DARAUF
+      body = <><path d="M-4 1.6 Q0 -2.6 4 1.6" {...s} />{([[-4, 1.6], [0, -0.5], [4, 1.6]] as [number, number][]).map(([cx, cy], i) => <circle key={i} cx={cx} cy={cy} r={0.7} {...f} />)}</>;
       break;
     case 'boundary': // unregelm. Polygon, 4 Knoten
       body = <><polygon points="-3.4,-2.6 3.6,-3.6 3,3.4 -3.8,2.2" {...s} />{([[-3.4, -2.6], [3.6, -3.6], [3, 3.4], [-3.8, 2.2]] as [number, number][]).map(([cx, cy], i) => <circle key={i} cx={cx} cy={cy} r={0.8} {...f} />)}</>;
@@ -276,7 +276,10 @@ function TetraGlyph({ id, x, y, color }: { id: string; x: number; y: number; col
     load_thresholds: [0, 1.5],
   };
   const [dx, dy] = off[id] ?? [0, 0];
-  return <g transform={`translate(${x + dx},${y + dy}) scale(1.08)`} style={{ pointerEvents: 'none' }}>{body}</g>;
+  // Basis-Scale 1.08; einzelne Glyphs zusätzlich vergrößert.
+  const mul: Record<string, number> = { wegnetz_sampling: 1.3, geometry_draw: 1.2, engine_prep: 1.2 };
+  const sc = (1.08 * (mul[id] ?? 1)).toFixed(3);
+  return <g transform={`translate(${x + dx},${y + dy}) scale(${sc})`} style={{ pointerEvents: 'none' }}>{body}</g>;
 }
 
 // ─── Hauptkomponente ────────────────────────────────────────────────────────
