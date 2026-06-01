@@ -229,7 +229,7 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
     window.dispatchEvent(new CustomEvent('scim:layers:state', { detail: vis }));
   }, [vis]);
   const [osmEdges, setOsmEdges] = useState<OsmEdge[]>([]);
-  const [osmStatus, setOsmStatus] = useState<'idle' | 'loading' | 'ok' | 'failed'>('idle');
+  const [, setOsmStatus] = useState<'idle' | 'loading' | 'ok' | 'failed'>('idle');
 
   // Init Leaflet map once (guard against StrictMode double-invoke).
   useEffect(() => {
@@ -539,7 +539,7 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
         width: '100%', height: '100%', display: 'flex', flexDirection: 'column',
         background: '#1a1a1a', color: '#ff4136', fontFamily: 'monospace', fontSize: 13,
       }}>
-        <Header label="Inspector System-Build-Mirror" detail="Fehler" vis={vis} setVis={setVis} avail={ALL_LAYERS} onNavigate={onNavigate} onCollapseToggle={onCollapseToggle} disabled repCtx={repCtx} />
+        <Header label="Inspector" detail="System-Build-Mirror" vis={vis} setVis={setVis} avail={ALL_LAYERS} onNavigate={onNavigate} onCollapseToggle={onCollapseToggle} disabled repCtx={repCtx} />
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           Pipeline failed at: {result.failed_at_step ?? 'unknown'}
         </div>
@@ -547,31 +547,11 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
     );
   }
 
-  const ctx = result.context;
-  const boundary = ctx.boundary as unknown as BoundaryState | undefined;
-  const extraction = ctx.extracted_data as unknown as ExtractionState | undefined;
-  const routeLayerModel = ctx.route_layer_model as unknown as RouteLayerModelState | undefined;
-
-  const activeLabels: string[] = [];
-  if (availLayers.boundary && vis.boundary && (repPolygonLatLng || boundary?.computed_boundary.bbox)) activeLabels.push('Boundary');
-  if (availLayers.colourmesh && vis.colourmesh) {
-    if (osmStatus === 'loading') activeLabels.push('Colour-Mesh (OSM laedt…)');
-    else if (osmStatus === 'ok') activeLabels.push(`Colour-Mesh · ${osmEdges.length} OSM-Wege`);
-    else if (osmStatus === 'failed') activeLabels.push('Colour-Mesh (synthetisch · OSM-Fehler)');
-    else activeLabels.push('Colour-Mesh');
-  }
-  if (availLayers.routes && vis.routes && activeRep && repWegnetz?.edges?.length) activeLabels.push(`${repWegnetz.edges.length} Edges`);
-  else if (availLayers.routes && vis.routes && !activeRep && routeLayerModel?.segments?.length) activeLabels.push(`${routeLayerModel.segments.length} Routen`);
-  // POIs: bei gewaehltem Asset die Katalog-POIs zaehlen, sonst die Pipeline-POIs.
-  if (availLayers.pois && vis.pois && activeRep && repCatalog.all.length) activeLabels.push(`${repCatalog.all.length} POIs`);
-  else if (availLayers.pois && vis.pois && !activeRep && extraction?.extracted_pois?.length) activeLabels.push(`${extraction.extracted_pois.length} POIs`);
-  const assetName = assetSel ? (activeRep?.representation.name ?? assetSel.id) : null;
-  const body = activeLabels.length > 0 ? activeLabels.join(' · ') : '— alle Layer ausgeblendet —';
-  const detail = assetName ? `${assetName}: ${body}` : body;
-
+  // Header ist statisch: Label „Inspector", Subline „System-Build-Mirror".
+  // Die fruehere dynamische Layer-/Asset-Zeile wurde entfernt (Userwunsch).
   return (
     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Header label="Inspector System-Build-Mirror" detail={detail} vis={vis} setVis={setVis} avail={availLayers} onNavigate={onNavigate} onCollapseToggle={onCollapseToggle} repCtx={repCtx} />
+      <Header label="Inspector" detail="System-Build-Mirror" vis={vis} setVis={setVis} avail={availLayers} onNavigate={onNavigate} onCollapseToggle={onCollapseToggle} repCtx={repCtx} />
       <div ref={containerRef} style={{ flex: 1, minHeight: 0 }} />
     </div>
   );

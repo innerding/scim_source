@@ -235,8 +235,8 @@ function TetraGlyph({ id, x, y, color }: { id: string; x: number; y: number; col
     case 'geometry_draw': // Stift
       body = <><line x1={-3.6} y1={3.6} x2={2.4} y2={-2.4} {...s} /><path d="M2.4 -2.4 L4 -2 M2.4 -2.4 L2 -4" {...s} /><circle cx={-3.6} cy={3.6} r={0.7} {...f} /></>;
       break;
-    case 'represent_organisation': // Kettenglied
-      body = <><ellipse cx={-1.6} cy={0} rx={2.7} ry={1.6} {...s} /><ellipse cx={1.6} cy={0} rx={2.7} ry={1.6} {...s} /></>;
+    case 'represent_organisation': // Kettenglied — aufrechte, nicht gestretchte Ovale
+      body = <><ellipse cx={-1.3} cy={0} rx={1.5} ry={2.0} {...s} /><ellipse cx={1.3} cy={0} rx={1.5} ry={2.0} {...s} /></>;
       break;
     case 'catalog_magazination': // Bild/Icon
       body = <><rect x={-4} y={-4} width={8} height={8} rx={1} {...s} /><circle cx={-1.4} cy={-1.4} r={1} {...s} /><path d="M-3.5 3.2 L-1 0.2 L0.6 1.8 L2 0.4 L3.5 3" {...s} /></>;
@@ -256,16 +256,23 @@ function TetraGlyph({ id, x, y, color }: { id: string; x: number; y: number; col
     case 'system_adjust': // Blitz + Slider
       body = <>{bolt}<line x1={0.8} y1={-2.2} x2={4} y2={-2.2} {...s} /><circle cx={2.6} cy={-2.2} r={0.7} {...f} /><line x1={0.8} y1={0} x2={4} y2={0} {...s} /><circle cx={1.7} cy={0} r={0.7} {...f} /><line x1={0.8} y1={2.2} x2={4} y2={2.2} {...s} /><circle cx={3.1} cy={2.2} r={0.7} {...f} /></>;
       break;
-    case 'load_thresholds': // Blitz + Load
-      body = <>{bolt}<path d="M2.4 -2.8 L2.4 1.4 M0.9 -0.1 L2.4 1.7 L3.9 -0.1" {...s} /><path d="M0.7 2.6 L0.7 3.6 L4.1 3.6 L4.1 2.6" {...s} /></>;
+    case 'load_thresholds': // Blitz + Load (Load-Symbol über die horizontale Achse gespiegelt)
+      body = <>{bolt}<g transform="scale(1,-1)"><path d="M2.4 -2.8 L2.4 1.4 M0.9 -0.1 L2.4 1.7 L3.9 -0.1" {...s} /><path d="M0.7 2.6 L0.7 3.6 L4.1 3.6 L4.1 2.6" {...s} /></g></>;
       break;
-    case 'regio_content': // Blitz + Schild
-      body = <>{bolt}<path d="M2.4 -3.2 L4.2 -2.4 L4.2 0.6 C4.2 2.4 2.4 3.6 2.4 3.6 C2.4 3.6 0.6 2.4 0.6 0.6 L0.6 -2.4 Z" {...s} /></>;
+    case 'regio_content': // Blitz + Schild (ausgewogenere Proportion)
+      body = <>{bolt}<path d="M0.6 -2.8 L4.4 -2.8 L4.4 0.6 C4.4 2.3 2.5 3.4 2.5 3.4 C2.5 3.4 0.6 2.3 0.6 0.6 Z" {...s} /></>;
       break;
     default:
       body = null;
   }
-  return <g transform={`translate(${x},${y}) scale(0.9)`} style={{ pointerEvents: 'none' }}>{body}</g>;
+  // Threshold-Bögen leicht von der Bahn absetzen (sys links, reg rechts, load runter).
+  const off: Record<string, [number, number]> = {
+    system_adjust: [-2.5, 0],
+    regio_content: [1.5, 0],
+    load_thresholds: [0, 1.5],
+  };
+  const [dx, dy] = off[id] ?? [0, 0];
+  return <g transform={`translate(${x + dx},${y + dy}) scale(1.08)`} style={{ pointerEvents: 'none' }}>{body}</g>;
 }
 
 // ─── Hauptkomponente ────────────────────────────────────────────────────────

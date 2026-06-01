@@ -685,6 +685,8 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
         // des Upper-Tetraeders zu (negative margin schiebt ihn drueber).
         // Die NavDepthTetraeder-Komponente setzt ihre eigenen Pointer-Events.
         pointerEvents: 'none',
+        // nur den Substrat-Tetraeder 6px nach unten (Transform → Layout/Folgendes unberührt).
+        transform: 'translateY(6px)',
       }}>
         <NavDepthTetraeder
           size={208}
