@@ -203,7 +203,7 @@ const P09_DESCRIPTORS: P09Descriptor[] = [
     horizon: 'long', pkg: 'Shell',
     produces: ['load-colorist (engine) → Shell · long', 'load-values (je Segment) → Anthem · short'],
     dependsMid: 'origin-net (P08): Segment-Geometrie + id',
-    dependsShort: 'telco-load je Segment · origin-presence (welche origin-boundary)',
+    dependsShort: 'telco-load je Segment · presence-origin (Gate: welche origin-boundary)',
     fn: 'colour = G(load_segment)', rescueFrom: 'colourMesh (heatColor)',
   },
   {
@@ -314,17 +314,20 @@ function P09Artifact({ d }: { d: P09Descriptor }) {
 const SCS_PACKAGES: { name: string; horizon: string; version: string; particles: string[] }[] = [
   { name: 'Shell', horizon: 'long-term', version: 'eigene App-Shell-Version', particles: ['dompteur', 'colorist', 'BCK (comfort)', 'BAK (route)', 'container-system'] },
   { name: 'Origin', horizon: 'mid-term', version: '= Representation-Version', particles: ['origin-boundary', 'origin-net (wegnetz-sample)', 'origin-asset-set', 'origin-poi-set', 'origin-pixel-images'] },
-  { name: 'Anthem', horizon: 'short-term', version: 'Load-Zyklus (flüchtig)', particles: ['origin-presence (Einatmen)', 'load-values (Ausatmen)'] },
+  { name: 'Anthem', horizon: 'short-term', version: 'Load-Zyklus (flüchtig)', particles: ['presence-origin (Einatmen · Gate)', 'load-values (Ausatmen)'] },
 ];
-// Deploy-Reihenfolge: quer über die Pakete (nicht Paket-für-Paket). Karte + Netz
-// + Last leben sofort; POIs/Pixel reichern danach an. „Sobald Load lieferbar" —
-// MVP ohne Telco fährt 1 → 2 → 4. Scheduling gehört später dem Transmitter
-// (SCS-nachgelagert); SCS deklariert die Reihenfolge hier.
+// Deploy-Reihenfolge: quer über die Pakete (nicht Paket-für-Paket). presence-origin
+// ist das Gate nach Shell — ohne zu wissen, in welcher origin-boundary der User
+// ist, kann kein origin ausgespielt werden. Danach Netz, dann load (braucht das
+// Netz), dann der Origin-Rest. MVP (origin via URL): kein Gate, kein Load → 1 → 3
+// → 5. Scheduling gehört später dem Transmitter (SCS-nachgelagert); SCS deklariert
+// die Reihenfolge hier.
 const DEPLOY_ORDER: string[] = [
   '1 · Shell           — Engine-Suite (die App lebt)',
-  '2 · origin-wegnetz  — das Netz (Segmente zum Einfärben)',
-  '3 · Anthem          — presence ↔ load (Atem auf dem Netz)   [entfällt im MVP]',
-  '4 · origin-rest     — asset-set → poi-set → pixel-charges (Pixel zuletzt)',
+  '2 · presence-origin — Einatmen · Gate: welche boundary → welches origin   [entfällt im MVP]',
+  '3 · origin-wegnetz  — das Netz (Segmente zum Einfärben)',
+  '4 · load-values     — Ausatmen · Atem aufs Netz   [entfällt im MVP]',
+  '5 · origin-rest     — asset-set → poi-set → pixel-charges (Pixel zuletzt)',
 ];
 
 function SensusCorePackages() {
@@ -353,12 +356,12 @@ function SensusCorePackages() {
         ))}
       </div>
       <p style={{ fontSize: 11.5, color: '#718096', lineHeight: 1.55, margin: '12px 0 0' }}>
-        <strong>Anthem = Zwei-Wege-Atem.</strong> Einatmen: <strong>origin-presence</strong> (anonym — nur <em>welche origin-boundary</em>) ·
+        <strong>Anthem = Zwei-Wege-Atem.</strong> Einatmen: <strong>presence-origin</strong> (anonym — nur <em>welche origin-boundary</em>; das <em>Gate</em>, das origin erst auswählt) ·
         Ausatmen: <strong>load-values</strong> (Segment-Farbe fürs Colour-Mesh). Nicht MVP (kein Telco) — der Slot wird vorbereitet.
       </p>
       <div style={{ marginTop: 16 }}>
         <div style={{ fontSize: 11, color: '#718096', marginBottom: 6 }}>
-          Deploy-Reihenfolge — quer über die Pakete, sobald Load lieferbar (MVP ohne Load: 1 → 2 → 4):
+          Deploy-Reihenfolge — quer über die Pakete, sobald Load lieferbar (MVP, origin via URL: 1 → 3 → 5):
         </div>
         <pre style={{
           background: '#0d1117', color: '#7ee787', padding: '12px 14px', borderRadius: 6,
