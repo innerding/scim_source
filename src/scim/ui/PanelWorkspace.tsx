@@ -190,13 +190,14 @@ function P09PoiAppearance() {
         fontSize: 10, fontFamily: 'monospace', color: '#2b6cb0',
         background: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: 4,
       }}>
-        POI-Appearancy · P09 · Heimat von poiCatalog.composite
+        POI-Appearancy · P09 · Erklär- + Rescue-Seite
       </div>
       <p style={{ fontSize: 12.5, color: '#4a5568', lineHeight: 1.55, margin: '2px 0 14px' }}>
-        Rendert die POIs in ihren Kategorie-Containern, so wie sie auf der Ziel-App
-        erscheinen (Cluster, Ghosts, Animationen folgen). Der <strong>Inspector
-        (System-Build-Mirror)</strong> borgt genau dieses Modul für seine POI-Ansicht
-        eines Katalogs bzw. einer Representation mit Katalog.
+        SCIM-interne Vorschau der POI-Darstellung via <code>poiCatalog.composite</code>
+        (Operator-Anzeige; auch der Inspector nutzt sie). Die <strong>Ziel-App rendert
+        eigenständig/lokal</strong>, ohne SCIM. Bei einer Ausspielung birgt P09-POI diese
+        Function als <strong>versionierte, selbst-enthaltende Kapsel</strong> (Inhalts-Hash/Diff)
+        → Sensus Core Service → App-Shell-Paket (long-horizon, Teil MVP-Lichtenberg).
       </p>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
         {CONTAINER_SYSTEM.map((spec) => {

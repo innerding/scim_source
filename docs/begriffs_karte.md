@@ -51,8 +51,9 @@ dreifach (P01/P02/P08) — Entwirren ist ein eigener späterer Schritt.
   Representation*, nicht Mock — eine Welt.
 - **P09-Spaltung:** P09 bereitet build-seitig vor; die echten Laufzeit-Engines
   (Last / Maskierung=BCK / Bewegung=BAK) liegen auf der Ziel-App in `R06`/`R07`.
-- **Inspector:** kein Panel/Tab, sondern die Karten-Spalte; reiner Spiegel der
-  Lieferartefakte (Vorgriff auf die Ziel-App-Darstellung).
+- **Inspector:** kein Panel/Tab, sondern die Karten-Spalte; **SCIM-interner**
+  Spiegel der Build-/Lieferartefakte (System-Build-Mirror). NICHT die Ziel-App —
+  die rendert lokal/eigenständig; der Inspector führt deren Engine nicht aus.
 
 ## Phase 3 — Cosmo-Control-Sicheln (GEBAUT)
 
@@ -68,7 +69,7 @@ dreifach (P01/P02/P08) — Entwirren ist ein eigener späterer Schritt.
 - **Inspector** = „Inspector System-Build-Mirror" (Header + Navigator-Trapez-Hover).
 - **Tetraeder-Glyphs** statt 3-Letter-Codes: geo=Stift · org=Kettenglied · cat=Bild · scs=Paket (scb→scs); Sicheln bou=4-Knoten-Polygon · wns=Sampling · epb=Zahnrad; Bögen sys/reg/loa = Blitz + Slider/Schild/Load.
 - **Panel-Tabs** (text-first, Baukonzept jeweils im 2.): P07 = Boundary-Darstellung · Rep-Junction. P08 = Quell-Netz · Sampling · Mesh-Output. P09 = POI · Last · Mask · Move. (generische Tab-Handles t1–t4: id fix, Label trägt Bedeutung.)
-- **Code-Zuordnung:** `poiCatalog.composite.ts` (poiCompositeSvg) hat seine Heimat im **P09-„POI"-Tab** — rendert Icons wie auf der Ziel-App; der Inspector borgt es.
+- **`poiCatalog.composite`** = **SCIM-interner** Renderer (Katalog + Inspector, Operator-Anzeige). **NICHT** das Ziel-App-Rendering — die Ziel-App läuft **lokal, ohne SCIM**, und rendert eigenständig. **P09-POI** = Erklär- + **Rescue-Seite**: birgt bei Ausspielung die Function als **versionierte, selbst-enthaltende Kapsel** (Inhalts-Hash/Diff: geändert vs. zuletzt ausgespielt) → **Sensus Core Service** → App-Shell-Paket (long-horizon, **Teil MVP-Lichtenberg**). SCIM, P09-POI und Ziel-App sind drei getrennte Laufzeiten/Rollen.
 
 ## Noch offen
 - Phase 4: echte Funktion in den P07/P08/P09-Tabs + P08-Resampler.

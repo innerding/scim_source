@@ -1,6 +1,8 @@
-// Konzeptionelle Heimat: P09 „POI" (POI-Appearancy / epb). Dieses Modul rendert
-// die Icons so, wie sie auf der Ziel-App erscheinen; der Inspector (System-Build-
-// Mirror) borgt es als Vorgriff auf die Ziel-App-Darstellung.
+// SCIM-INTERNER Renderer (Operator-Anzeige): Katalog-Tab + Inspector. Das ist
+// NICHT das Ziel-App-Rendering — die Ziel-App läuft lokal, ohne SCIM, und
+// rendert eigenständig. Bei einer Ausspielung birgt P09-POI diese Function als
+// versionierte, selbst-enthaltende KOPIE (Kapsel, mit Inhalts-Hash/Diff) →
+// Sensus Core Service → App-Shell-Paket (long-horizon, Teil MVP-Lichtenberg).
 //
 // Composite-Renderer: Container (Geometrie + Kategoriefarbe) + Icon + optionale
 // Decoration (Hoehe/Anno/Sterne …). Eine SVG-Wahrheit, die sowohl das
