@@ -173,6 +173,7 @@ function IconBuildNotiz() {
       <ul style={{ margin: 0, paddingLeft: 18 }}>
         <li style={LI}><strong>fill</strong> (unten): verbundene weiße Flächen, initial aus einer Kopie der Stroke-Ebene abgeleitet → Flächenkörper.</li>
         <li style={LI}><strong>stroke</strong> (oben): schwarzer Stroke, 1 px, ggf. mehrere verbundene Elemente → konstruktive Linienstruktur.</li>
+        <li style={LI}>Robust: kommt auch mit einem <strong>einzelnen Stroke ohne Gruppenlayer</strong> zurecht (bare &lt;path&gt;, kein &lt;g&gt;).</li>
       </ul>
 
       <div style={H}>Layer-Gruppe</div>
@@ -181,11 +182,35 @@ function IconBuildNotiz() {
       <div style={H}>Viewportname = Dateiname</div>
       <p style={P}>alles klein · keine Umlaute · keine Leerzeichen · Wörter mit Bindestrich. Vermittelt den symbolischen Gehalt. Bsp.: outline · path-network · mesh-resample · closed-shape · node-grid · split-area · stroke-fill · connected-paths.</p>
 
-      <div style={H}>Node-Budget</div>
+      <div style={H}>Werkzeug-Repertoire (Profi)</div>
       <ul style={{ margin: 0, paddingLeft: 18 }}>
-        <li style={LI}>max. <strong>60 Nodes</strong> pro Einzel-Icon (harte Obergrenze).</li>
-        <li style={LI}>Ø pro Set (z.B. 12 Icons): <strong>~36 Nodes</strong> angestrebt (Set bleibt einfach).</li>
-        <li style={LI}><em>Ist-Stand des Katalog-Sets (37 Icons): Ø ~38, max 96 — 4 Icons über 60. → Ø-Ziel ggf. ~40, Ausreißer vereinfachen.</em></li>
+        <li style={LI}>variable Stroke-Breiten in <strong>0.20er-Schritten</strong>.</li>
+        <li style={LI}><strong>Stroke → Fill</strong> umwandeln (Linie zu Fläche outlinen).</li>
+        <li style={LI}><strong>Boolean</strong>: Form aus Form ausschneiden (Subtract) · zwei Fills verschmelzen (Union) · u.ä.</li>
+        <li style={LI}><em>Achtung Node-Explosion:</em> v.a. Stroke→Fill und Boolean erzeugen schnell Hunderte Nodes → danach der Node-Begrenzer (s.u.).</li>
+      </ul>
+
+      <div style={H}>Import (drag+drop)</div>
+      <ul style={{ margin: 0, paddingLeft: 18 }}>
+        <li style={LI}><strong>Rasterbild</strong>: gedimmte Referenz-/Pausschicht (kein Auto-Vektor — würde das Budget sprengen); Stroke manuell drüberziehen.</li>
+        <li style={LI}><strong>.svg</strong>: Pfade in fill/stroke parsen; <strong>prominente, live Node-Zahl</strong> (farbcodiert grün&lt;36 · amber&lt;60 · rot&gt;60).</li>
+      </ul>
+
+      <div style={H}>Cleaner (Fremd-SVGs)</div>
+      <p style={P}>Erweitert den bestehenden Registry-Cleaner (svg_cleaned). Illustrator: defs/ids/data-name raus, Transforms einbacken, Stellen runden, auf 48/24 + fill #fff / stroke #000 normalisieren. Tabler (auch verändert): currentColor→#000, stroke-basiert auf die Konvention heben.</p>
+
+      <div style={H}>Node-Budget &amp; Begrenzer</div>
+      <ul style={{ margin: 0, paddingLeft: 18 }}>
+        <li style={LI}>max. <strong>60 Nodes</strong> pro Einzel-Icon (hart) · Ø pro Set ~<strong>40</strong>.</li>
+        <li style={LI}><strong>Node-Begrenzer = DP-Vereinfachung</strong> (gleiche Technik wie der Netz-Resampler), v.a. NACH Stroke→Fill/Boolean; auch als „Kopieren + auf ≤ N reduzieren".</li>
+        <li style={LI}><em>Ist-Stand Katalog (37 Icons): Ø ~38, max 96 — 4 über 60.</em></li>
+      </ul>
+
+      <div style={H}>Export &amp; Provenienz</div>
+      <ul style={{ margin: 0, paddingLeft: 18 }}>
+        <li style={LI}>robust per <strong>Download / Commit nach data/icons</strong> (Datei-Drag-out ist auf Safari unzuverlässig).</li>
+        <li style={LI}>Provenienz (Ersteller · Rechte-Hinweis · Datum · SCIM3 · diesenpark.com), einmal in Settings befüllt, auto in die <strong>Quell-SVG</strong> (&lt;metadata&gt;).</li>
+        <li style={LI}>Build-Cleaner <strong>streift die Metadaten fürs Runtime-Glyph wieder ab</strong> (Quelle = mit Provenienz, ausgeliefert = winzig).</li>
       </ul>
 
       <div style={H}>Inspector-Kopplung (später)</div>
