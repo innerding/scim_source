@@ -22,6 +22,7 @@ import type { BoundaryGeometry, Representation, WegnetzFile } from '../workspace
 import { poiCompositeSvg } from '../poi-catalog/poiCatalog.composite';
 import { renderClusterPois } from './clusterOverlay';
 import { drawNet } from './netDraw';
+import { resampleNet, type ResampledNet } from '../wegnetz/netResample';
 import type { DerivedNet, LatLng } from '../regio-content/netModel';
 import type { CatalogPoi } from '../poi-catalog/poiCatalog.types';
 
@@ -52,6 +53,9 @@ interface LayerVisibility {
   colourmesh: boolean;
   mapBase: boolean;    // Basemap-Tiles ueberhaupt anzeigen
   darkBase: boolean;   // dunkle Tiles (true) vs. helles OSM (false)
+  resample3: boolean;  // P08-Resample-Vorschau @3 m
+  resample10: boolean; // @10 m
+  resample25: boolean; // @25 m
 }
 
 const DEFAULT_VISIBILITY: LayerVisibility = {
@@ -62,6 +66,9 @@ const DEFAULT_VISIBILITY: LayerVisibility = {
   colourmesh: true,
   mapBase: true,
   darkBase: true,
+  resample3: false,
+  resample10: false,
+  resample25: false,
 };
 
 // Polygon (outer ring) -> [minLon, minLat, maxLon, maxLat].
@@ -90,14 +97,43 @@ interface InspectedTarget {
 // Welche Layer ein Asset-Typ ueberhaupt enthaelt — der Inspector zeigt und
 // bietet nur diese an. Katalog: nur POIs. Boundary: nur Umriss. Representation
 // (oder kein Asset erzwungen): alles. Karte/Dark-Base ist immer verfuegbar.
-interface LayerAvailability { boundary: boolean; pois: boolean; colourmesh: boolean; routes: boolean; }
-const ALL_LAYERS: LayerAvailability = { boundary: true, pois: true, colourmesh: true, routes: true };
+interface LayerAvailability { boundary: boolean; pois: boolean; colourmesh: boolean; routes: boolean; resample: boolean; }
+const ALL_LAYERS: LayerAvailability = { boundary: true, pois: true, colourmesh: true, routes: true, resample: true };
 
 function layersForAsset(asset: InspectorAsset | null): LayerAvailability {
   if (!asset) return ALL_LAYERS;
-  if (asset.kind === 'catalog') return { boundary: false, pois: true, colourmesh: false, routes: false };
-  if (asset.kind === 'geometry') return { boundary: true, pois: false, colourmesh: false, routes: false };
+  if (asset.kind === 'catalog') return { boundary: false, pois: true, colourmesh: false, routes: false, resample: false };
+  if (asset.kind === 'geometry') return { boundary: true, pois: false, colourmesh: false, routes: false, resample: false };
   return ALL_LAYERS; // representation
+}
+
+// Resample-Vorschau (P08): rot = Kreuzung (≥2 Strecken treffen sich), schwarz =
+// resampelter Stützpunkt, Segmente abwechselnd blau/gelb (die Teilung). Macht
+// Knotendichte + erhaltene Topologie sichtbar.
+function drawResampledNet(layer: L.LayerGroup, net: ResampledNet): void {
+  const BLUE = '#2b6cb0', YELLOW = '#d69e2e', RED = '#e53e3e', BLACK = '#1a202c';
+  const k = (p: [number, number]) => `${p[0].toFixed(6)},${p[1].toFixed(6)}`;
+  const endCount = new Map<string, number>();
+  for (const s of net.stretches) {
+    if (s.points.length < 1) continue;
+    for (const end of [s.points[0], s.points[s.points.length - 1]]) {
+      endCount.set(k(end), (endCount.get(k(end)) ?? 0) + 1);
+    }
+  }
+  for (const s of net.stretches) {
+    for (let i = 1; i < s.points.length; i++) {
+      L.polyline([s.points[i - 1], s.points[i]], {
+        color: (i - 1) % 2 === 0 ? BLUE : YELLOW, weight: 3, opacity: 0.9,
+      }).addTo(layer);
+    }
+    for (const p of s.points) {
+      const isX = (endCount.get(k(p)) ?? 0) >= 2;
+      L.circleMarker(p, {
+        radius: isX ? 4 : 2.2, color: isX ? RED : BLACK,
+        fillColor: isX ? RED : BLACK, fillOpacity: 1, weight: 0,
+      }).addTo(layer);
+    }
+  }
 }
 
 // Loest ein gewaehltes Asset in eine Inspector-Sicht auf. Synthetische
@@ -414,6 +450,20 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
       netLayer.addTo(layerGroup);
     }
 
+    // Resample-Vorschau (P08-Sampling): je aktiviertem Target eine eigene
+    // Schicht. rot=Kreuzung · schwarz=Punkt · Segmente blau/gelb.
+    if (activeRep && repWegnetz) {
+      const targets: [boolean, number][] = [
+        [vis.resample3, 3], [vis.resample10, 10], [vis.resample25, 25],
+      ];
+      for (const [on, t] of targets) {
+        if (!on) continue;
+        const sub = L.layerGroup();
+        drawResampledNet(sub, resampleNet(repWegnetz.edges, { targetMeters: t }));
+        sub.addTo(layerGroup);
+      }
+    }
+
     // POI Load class lookup
     const poiLoadClass = new Map<string, string>();
     if (poiModel?.evaluated_pois) {
@@ -655,6 +705,9 @@ function Header({
           {avail.pois && vis.pois && <LayerToggle label="↳ echte Icons" checked={vis.poiIcons} onChange={(v) => setVis({ ...vis, poiIcons: v })} indent />}
           {avail.colourmesh && <LayerToggle label="Colour-Mesh" checked={vis.colourmesh} onChange={(v) => setVis({ ...vis, colourmesh: v })} />}
           {avail.routes && <LayerToggle label="Routen / Edges" checked={vis.routes} onChange={(v) => setVis({ ...vis, routes: v })} />}
+          {avail.resample && <LayerToggle label="Resample 3 m" checked={vis.resample3} onChange={(v) => setVis({ ...vis, resample3: v })} />}
+          {avail.resample && <LayerToggle label="Resample 10 m" checked={vis.resample10} onChange={(v) => setVis({ ...vis, resample10: v })} />}
+          {avail.resample && <LayerToggle label="Resample 25 m" checked={vis.resample25} onChange={(v) => setVis({ ...vis, resample25: v })} />}
           <div style={{ borderTop: '1px solid #2d4a6a', margin: '6px 0 4px' }} />
           <LayerToggle label="Karte" checked={vis.mapBase} onChange={(v) => setVis({ ...vis, mapBase: v })} />
           {vis.mapBase && <LayerToggle label="↳ dunkel" checked={vis.darkBase} onChange={(v) => setVis({ ...vis, darkBase: v })} indent />}
