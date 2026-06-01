@@ -35,7 +35,7 @@ export const mockTelcoLoadState: TelcoLoadState = {
       signal_group_id: 'sg_001',
       signal_type: 'runtime_load',
       aggregation_unit: 'area_bucket',
-      approximate_center: { type: 'Point', coordinates: [15.214, 47.642] },
+      approximate_center: { type: 'Point', coordinates: [14.256, 48.385] },
       time_window: {
         start_at: '2026-05-21T09:00:00.000Z',
         end_at: '2026-05-21T09:05:00.000Z',
@@ -87,7 +87,7 @@ export const mockTelcoLoadState: TelcoLoadState = {
       signal_group_id: 'sg_002',
       signal_type: 'stillness_indicator',
       aggregation_unit: 'poi_radius_candidate',
-      approximate_center: { type: 'Point', coordinates: [15.225, 47.651] },
+      approximate_center: { type: 'Point', coordinates: [14.257, 48.386] },
       time_window: {
         start_at: '2026-05-21T09:00:00.000Z',
         end_at: '2026-05-21T09:05:00.000Z',
