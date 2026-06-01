@@ -10,7 +10,7 @@ import logoBaseNaked from '../../assets/logo-base-naked.svg';
 import logoHexNaked from '../../assets/logo-hex-naked.svg';
 import { useRole } from './RoleContext';
 import RepresentBuildTetrahedron from './RepresentBuildTetrahedron';
-import type { RepresentBuildFace, RepresentBuildArc } from './RepresentBuildTetrahedron';
+import type { RepresentBuildFace, RepresentBuildArc, RepresentBuildSickle } from './RepresentBuildTetrahedron';
 import type { TabId } from './panelRegistry';
 import NavTransmissionField from './NavTransmissionField';
 import NavDepthTetraeder from './NavDepthTetraeder';
@@ -221,11 +221,19 @@ function faceFromActive(activeId: string): RepresentBuildFace | undefined {
   return undefined;
 }
 
-// Arc-Highlight: sys = P01, rou = P02, loa = P09 (Engine, wo Load lebt).
+// Arc-Highlight: sys = P01, rou = P02, loa = P04 (Load/TelcoLoad).
 function arcFromActive(activeId: string): RepresentBuildArc | undefined {
   if (activeId === 'P02') return 'regio_content';
   if (activeId === 'P01') return 'system_adjust';
-  if (activeId === 'P09') return 'load_thresholds';
+  if (activeId === 'P04') return 'load_thresholds';
+  return undefined;
+}
+
+// Sichel-Highlight: bou = P07, wns = P08, epb = P09.
+function sickleFromActive(activeId: string): RepresentBuildSickle | undefined {
+  if (activeId === 'P07') return 'boundary';
+  if (activeId === 'P08') return 'wegnetz_sampling';
+  if (activeId === 'P09') return 'engine_prep';
   return undefined;
 }
 
@@ -636,6 +644,7 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
         <RepresentBuildTetrahedron
           activeFace={faceFromActive(activeId)}
           activeArc={arcFromActive(activeId)}
+          activeSickle={sickleFromActive(activeId)}
           variant="dark"
           size={171}
           showLabels
@@ -649,7 +658,12 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
           onArcClick={(a) => {
             if (a === 'system_adjust') go('P01');
             else if (a === 'regio_content') go('P02', 'input');
-            else if (a === 'load_thresholds') go('P09');
+            else if (a === 'load_thresholds') go('P04');
+          }}
+          onSickleClick={(s) => {
+            if (s === 'boundary') go('P07');
+            else if (s === 'wegnetz_sampling') go('P08');
+            else if (s === 'engine_prep') go('P09');
           }}
         />
       </div>

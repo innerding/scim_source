@@ -39,11 +39,16 @@ weiterhin `geometry_editor` — Label neu, ID stabil, nichts brach.
 - **Inspector:** kein Panel/Tab, sondern die Karten-Spalte; reiner Spiegel der
   Lieferartefakte (Vorgriff auf die Ziel-App-Darstellung).
 
-## Offen (Phase 3 — Cosmo-Control-Sicheln)
+## Phase 3 — Cosmo-Control-Sicheln (GEBAUT)
 
-- 3 Sichel-Hitboxen (Kreissegmente) bauen: `bou`/links→P07, `epb`/rechts→P09,
-  `wns`/unten→P08. Aktivstellung wie die Faces.
-- Bögen haben eine **Drehmechanik** (60°-Transmissions-Schwenk) — die **Sicheln
-  dürfen nicht mitdrehen** (eigene, nicht-rotierende Gruppe).
-- `loa`-Bogen öffnet heute P09 — dieser Klick-Draht wird abgesteckt; offen, wohin
-  `loa` danach routet (Load-Thresholds).
+- 3 Sichel-Hitboxen (Kreissegmente) im Tetraeder: `bou`/links→P07,
+  `wns`/unten→P08, `epb`/rechts→P09. Aktivstellung wie die Faces. In eigener,
+  **nicht-rotierender** Gruppe (Bögen schwenken 60°, Sicheln nicht).
+- `loa`-Klick: war P09 → jetzt **P04** (Load/TelcoLoad — ursprüngliche Intention).
+- `KOSMOLOGIE_IDS`: P04 (Arc), P07/P08/P09 (Sicheln) eingetragen → Navigations-
+  Titel **und** Panel-Header dimmen automatisch (eine Regel: `dimmed =
+  KOSMOLOGIE_IDS.has(id)` — grau = hat Cosmo-Heimat, schwarz = keine).
+
+## Noch offen
+- Phase 2: bespoke Tabs mit echtem Inhalt (Tab-System für panel-eigene Tabs).
+- Phase 4: echte Funktion in den P07/P08/P09-Tabs.

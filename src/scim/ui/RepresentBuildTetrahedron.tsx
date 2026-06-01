@@ -26,11 +26,21 @@ export type RepresentBuildArc =
   | 'regio_content'
   | 'load_thresholds';
 
+// Sicheln: drei Kreissegmente zwischen den Aussenkanten des Dreiecksnetzes und
+// dem umschriebenen Kreis. Eigene, NICHT-rotierende Gruppe (die Boegen drehen,
+// die Sicheln nicht). bou=links (P07), wns=unten (P08), epb=rechts (P09).
+export type RepresentBuildSickle =
+  | 'boundary'
+  | 'wegnetz_sampling'
+  | 'engine_prep';
+
 interface Props {
   activeFace?: RepresentBuildFace;     // hervorgehobene Triangle (optional)
   activeArc?: RepresentBuildArc;       // hervorgehobenes Bogen-Segment (optional)
+  activeSickle?: RepresentBuildSickle; // hervorgehobene Sichel (optional)
   onFaceClick?: (face: RepresentBuildFace) => void;
   onArcClick?: (arc: RepresentBuildArc) => void;
+  onSickleClick?: (sickle: RepresentBuildSickle) => void;
   size?: number;
   variant?: 'dark' | 'light';
   showLabels?: boolean;
@@ -173,13 +183,51 @@ function describeArcSegment(startDeg: number, endDeg: number, gapDeg: number): s
   ].join(' ');
 }
 
+// Sicheln: Kreissegment zwischen je zwei Aussen-Vertices (Bogen) und dem
+// inneren Netz-Vertex dazwischen. Beschriftung im Schwerpunkt des Segments.
+const SICKLES: Array<{
+  id: RepresentBuildSickle;
+  shortLabel: string;
+  longLabel: string;
+  path: string;
+  labelX: number;
+  labelY: number;
+}> = (() => {
+  const lr = R * 0.72;  // Label-Radius (innerhalb der Sichel)
+  const [lxL, lyL] = polarToCartesian(210, lr);
+  const [lxB, lyB] = polarToCartesian(90, lr);
+  const [lxR, lyR] = polarToCartesian(-30, lr);
+  return [
+    {
+      id: 'boundary', shortLabel: 'bou', longLabel: 'Boundary',
+      // Bottom-Left (150°) → Top (270°), innerer Vertex top-left
+      path: `M ${-S} ${2 * H / 3} A ${R} ${R} 0 0 1 0 ${-R} L ${-S / 2} ${-H / 3} Z`,
+      labelX: lxL, labelY: lyL,
+    },
+    {
+      id: 'wegnetz_sampling', shortLabel: 'wns', longLabel: 'Wegnetz-Sampling',
+      // Bottom-Right (30°) → Bottom-Left (150°), innerer Vertex bottom
+      path: `M ${S} ${2 * H / 3} A ${R} ${R} 0 0 1 ${-S} ${2 * H / 3} L 0 ${2 * H / 3} Z`,
+      labelX: lxB, labelY: lyB,
+    },
+    {
+      id: 'engine_prep', shortLabel: 'epb', longLabel: 'Engine-Prep-Build',
+      // Top (270°/-90°) → Bottom-Right (30°), innerer Vertex top-right
+      path: `M 0 ${-R} A ${R} ${R} 0 0 1 ${S} ${2 * H / 3} L ${S / 2} ${-H / 3} Z`,
+      labelX: lxR, labelY: lyR,
+    },
+  ];
+})();
+
 // ─── Hauptkomponente ────────────────────────────────────────────────────────
 
 export default function RepresentBuildTetrahedron({
   activeFace,
   activeArc,
+  activeSickle,
   onFaceClick,
   onArcClick,
+  onSickleClick,
   size = 100,
   variant = 'dark',
   showLabels = false,
@@ -267,6 +315,49 @@ export default function RepresentBuildTetrahedron({
         );
       })}
       </g>
+
+      {/* Sicheln — bewusst AUSSERHALB der rotierenden Bogen-Gruppe: sie drehen
+          beim Transmissions-Schwenk NICHT mit. Kreissegmente, klickbar. */}
+      {SICKLES.map((s) => {
+        const isActive = s.id === activeSickle;
+        const clickable = !isActive && !!onSickleClick;
+        const fill = isActive ? triangleActiveFill : 'transparent';
+        const stroke = isActive ? triangleActiveStroke : triangleInactiveStroke;
+        return (
+          <g
+            key={s.id}
+            style={{ cursor: clickable ? 'pointer' : 'default' }}
+            onClick={clickable && onSickleClick ? () => onSickleClick(s.id) : undefined}
+          >
+            <path
+              d={s.path}
+              fill={fill}
+              stroke={stroke}
+              strokeWidth={isActive ? 1.0 : 0.9}
+              strokeLinejoin="round"
+              opacity={isActive ? 1 : 0.85}
+              className={isActive ? 'rb-active-tile' : undefined}
+            >
+              <title>{s.longLabel}</title>
+            </path>
+            {showLabels && (
+              <text
+                x={s.labelX}
+                y={s.labelY}
+                fontSize={5}
+                fontFamily="system-ui, sans-serif"
+                fontWeight={isActive ? 700 : 500}
+                fill={isActive ? triangleLabelActive : triangleLabelInactive}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                style={{ pointerEvents: 'none' }}
+              >
+                {s.shortLabel}
+              </text>
+            )}
+          </g>
+        );
+      })}
 
       {/* Triangles */}
       {FACES.map((f) => {

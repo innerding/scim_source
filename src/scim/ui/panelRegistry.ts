@@ -477,8 +477,10 @@ export type StatusColor = 'green' | 'orange' | 'red' | 'grey' | 'blue';
 // und Panel-Titel werden auf 60 % opacity gedimmt, weil die Kosmologie sie
 // schon prominent zeigt — kein Doppel-Schrei. Siehe ann_051.
 export const KOSMOLOGIE_IDS: ReadonlySet<string> = new Set([
-  // Tetraeder-Spheres (Schwellen-Arcs)
-  'P01', 'P02', 'P09',
+  // Tetraeder-Spheres (Schwellen-Arcs): sys=P01, rou=P02, loa=P04 (Load)
+  'P01', 'P02', 'P04',
+  // Tetraeder-Sicheln: bou=P07, wns=P08, epb=P09
+  'P07', 'P08', 'P09',
   // Tetraeder-Apex
   'P11',
   // Tetraeder-Faces
