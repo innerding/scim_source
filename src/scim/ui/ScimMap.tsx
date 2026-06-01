@@ -111,30 +111,14 @@ function layersForAsset(asset: InspectorAsset | null): LayerAvailability {
   return ALL_LAYERS; // representation
 }
 
-// Resample-Vorschau (P08): rot = Kreuzung (≥2 Strecken treffen sich), schwarz =
-// resampelter Stützpunkt, Segmente abwechselnd blau/gelb (die Teilung). Macht
-// Knotendichte + erhaltene Topologie sichtbar.
+// Resample-Vorschau (P08): Segmente abwechselnd blau/gelb (zeigt die Teilung).
+// Ohne Stützpunkt-Dots — die störten die Ansicht (User-Feedback).
 function drawResampledNet(layer: L.LayerGroup, net: ResampledNet): void {
-  const BLUE = '#2b6cb0', YELLOW = '#d69e2e', RED = '#e53e3e', BLACK = '#1a202c';
-  const k = (p: [number, number]) => `${p[0].toFixed(6)},${p[1].toFixed(6)}`;
-  const endCount = new Map<string, number>();
-  for (const s of net.stretches) {
-    if (s.points.length < 1) continue;
-    for (const end of [s.points[0], s.points[s.points.length - 1]]) {
-      endCount.set(k(end), (endCount.get(k(end)) ?? 0) + 1);
-    }
-  }
+  const BLUE = '#2b6cb0', YELLOW = '#d69e2e';
   for (const s of net.stretches) {
     for (let i = 1; i < s.points.length; i++) {
       L.polyline([s.points[i - 1], s.points[i]], {
         color: (i - 1) % 2 === 0 ? BLUE : YELLOW, weight: 3, opacity: 0.9,
-      }).addTo(layer);
-    }
-    for (const p of s.points) {
-      const isX = (endCount.get(k(p)) ?? 0) >= 2;
-      L.circleMarker(p, {
-        radius: isX ? 4 : 2.2, color: isX ? RED : BLACK,
-        fillColor: isX ? RED : BLACK, fillOpacity: 1, weight: 0,
       }).addTo(layer);
     }
   }
