@@ -184,29 +184,35 @@ function BaukonzeptNotiz({ id, title, lines }: { id: string; title: string; line
 // versionierte, selbst-enthaltende Kapsel via Sensus Core Service geborgt.
 interface P09Descriptor {
   tabId: TabId; no: number; name: string; actions: string; source: string;
+  horizon: string; pkg: string;
   dependsMid: string; dependsShort: string; fn: string; rescueFrom: string; gallery?: boolean;
 }
+// Vorschlag-Mapping Artefakt → Horizont → Zielpaket (bitte bestätigen):
 const P09_DESCRIPTORS: P09Descriptor[] = [
   {
     tabId: 't1', no: 1, name: 'poi-dompteur', actions: 'category-composit + sequenzer', source: 'poi-katalog',
+    horizon: 'mid', pkg: 'Representation-Paket',
     dependsMid: 'representation(xy) poi-asset (die Icons)',
     dependsShort: 'telco-load → poi-translate · size = f(load): hohe Last → kleinere Größe + Last-Farbe',
     fn: 'size, colour = F(load, …)', rescueFrom: 'poiCatalog.composite', gallery: true,
   },
   {
     tabId: 't2', no: 2, name: 'load-colorist', actions: 'segment-gradient', source: 'gesampeltes Wegnetz (Segment-ids)',
+    horizon: 'short', pkg: 'Atem(load)-Paket',
     dependsMid: 'gesampeltes Netz (P08): Segment-Geometrie + id',
     dependsShort: 'telco-load je Segment',
     fn: 'colour = G(load_segment)', rescueFrom: 'colourMesh (heatColor)',
   },
   {
     tabId: 't3', no: 3, name: 'comfort-masker', actions: 'segment-filter (BCK)', source: 'gesampeltes Wegnetz + User-Comfort',
+    horizon: 'short', pkg: 'Atem(load)-Paket',
     dependsMid: 'gesampeltes Netz',
     dependsShort: 'User-Comfort-Einstellung (Farbschwelle)',
     fn: 'visible = (segment_colour ≤ comfort_colour)', rescueFrom: 'mask-logik (folgt)',
   },
   {
     tabId: 't4', no: 4, name: 'bak-router', actions: 'route-build + rest-detect (BAK)', source: 'gesampeltes Wegnetz + POI-Auswahl + Dauer',
+    horizon: 'short', pkg: 'Atem(load)-Paket',
     dependsMid: 'gesampeltes Netz + POIs',
     dependsShort: 'User-Auswahl (POIs · Farbe · Dauer)',
     fn: 'route = BAK(net, pois, comfort, duration) · rest-detect', rescueFrom: 'routing-logik (folgt)',
@@ -253,20 +259,43 @@ function P09Artifact({ d }: { d: P09Descriptor }) {
         P09 · Engine-Prep-Build · auto-compute-Artefakt
       </div>
       <p style={{ fontSize: 12, color: '#718096', lineHeight: 1.5, margin: '2px 0 14px' }}>
-        Build-seitige Vorbereitung. Die Engine läuft <strong>lokal in der Ziel-App (App-Shell)</strong>,
-        nicht in SCIM. Bei Ausspielung wird das Artefakt als <strong>versionierte, selbst-enthaltende
-        Kapsel</strong> (Inhalts-Hash/Diff) via <strong>Sensus Core Service</strong> ins App-Shell-Paket
-        geborgt — Teil MVP-Lichtenberg (lokal, ohne Telco).
+        Build-seitige Vorbereitung. Die Engine läuft <strong>lokal in der Ziel-App</strong>, nicht in
+        SCIM. Bei Ausspielung wird das Artefakt als <strong>versionierte, selbst-enthaltende Kapsel</strong>
+        (Inhalts-Hash/Diff) via <strong>Sensus Core Service</strong> ins <strong>jeweilige Paket je nach
+        Horizont</strong> geborgt (App-Shell / Representation / Atem(load)) — Teil MVP-Lichtenberg (lokal, ohne Telco).
       </p>
       <P09Row k="artifact" v={<><strong>{d.name}</strong> · #{d.no}</>} />
       <P09Row k="actions" v={d.actions} />
       <P09Row k="source" v={d.source} />
-      <P09Row k="long-horizon" v="App-Shell-Deploy" />
+      <P09Row k="horizon · paket" v={<><strong>{d.horizon}</strong> → {d.pkg}</>} />
       <P09Row k="depends · mid" v={d.dependsMid} />
       <P09Row k="depends · short" v={d.dependsShort} />
       <P09Row k="function" v={<code>{d.fn}</code>} />
-      <P09Row k="rescue-kette" v={<>Berge <code>{d.rescueFrom}</code> → Kapsel (Hash/Diff) → SCS → App-Shell</>} />
+      <P09Row k="rescue-kette" v={<>Berge <code>{d.rescueFrom}</code> → Kapsel (Hash/Diff) → SCS → {d.pkg}</>} />
       {d.gallery && <P09PoiGallery />}
+
+      {/* Code-Fenster (schwarz): die Kapsel-Quelle. */}
+      <div style={{ marginTop: 18 }}>
+        <div style={{ fontSize: 11, color: '#718096', marginBottom: 6 }}>code · Kapsel-Quelle:</div>
+        <pre style={{
+          background: '#0d1117', color: '#7ee787', padding: '12px 14px', borderRadius: 6,
+          fontSize: 11.5, lineHeight: 1.55, overflowX: 'auto', margin: 0,
+          fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+        }}>{`// capsule: ${d.name}  ·  rescue from: ${d.rescueFrom}\n// target package: ${d.pkg}  (horizon ${d.horizon})\nfunction ${d.name.replace(/-/g, '_')}(load /* + deps */) {\n  return ${d.fn};\n}`}</pre>
+      </div>
+
+      {/* Aktualisierungsdaten in eigener Aufmachung. */}
+      <div style={{ marginTop: 14 }}>
+        <div style={{ fontSize: 11, color: '#718096', marginBottom: 6 }}>Aktualisierung:</div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', border: '1px solid #e2e8f0', borderRadius: 6, overflow: 'hidden' }}>
+          {([['version', '—'], ['hash', '—'], ['zuletzt ausgespielt', '—'], ['status', '— (kein Build)']] as [string, string][]).map(([k, v], i) => (
+            <div key={i} style={{ padding: '8px 12px', borderRight: '1px solid #e2e8f0', minWidth: 130 }}>
+              <div style={{ fontSize: 9, color: '#a0aec0', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{k}</div>
+              <div style={{ fontSize: 12, color: '#2d3748', marginTop: 2 }}>{v}</div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
