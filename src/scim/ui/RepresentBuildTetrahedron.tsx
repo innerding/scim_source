@@ -239,8 +239,8 @@ function TetraGlyph({ id, x, y, color }: { id: string; x: number; y: number; col
         <line x1={1.1} y1={-1.05} x2={1.1} y2={1.05} {...s} />
       </g>;
       break;
-    case 'represent_organisation': // Kettenglied — zwei ineinandergreifende, geneigte Ringe
-      body = <><ellipse cx={-1.2} cy={0} rx={1.3} ry={2.3} transform="rotate(32 -1.2 0)" {...s} /><ellipse cx={1.2} cy={0} rx={1.3} ry={2.3} transform="rotate(-32 1.2 0)" {...s} /></>;
+    case 'represent_organisation': // Büroklammer (durchgehender Draht), leicht geneigt
+      body = <g transform="rotate(-22)"><path d="M0.8 -3 L0.8 2.6 C0.8 3.8 -1.2 3.8 -1.2 2.6 L-1.2 -3.4 C-1.2 -4.6 1.6 -4.6 1.6 -3.4 L1.6 1.8" {...s} /></g>;
       break;
     case 'catalog_magazination': // Bild/Icon
       body = <><rect x={-4} y={-4} width={8} height={8} rx={1} {...s} /><circle cx={-1.4} cy={-1.4} r={1} {...s} /><path d="M-3.5 3.2 L-1 0.2 L0.6 1.8 L2 0.4 L3.5 3" {...s} /></>;
