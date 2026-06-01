@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { TabId } from './panelRegistry';
 import {
   KOSMOLOGIE_IDS,
@@ -150,6 +151,31 @@ function StubPanel({ id, description }: { id: string; description: string }) {
   );
 }
 
+// Temporaere Bau-Konzeptnotiz: zeigt die Detailsaetze direkt im Panel an,
+// solange es noch nicht mit echter Funktion befuellt ist (entfernbar, sobald
+// gebaut). Quelle: PanelDescriptor.bauKonzept.
+function BaukonzeptNotiz({ id, title, lines }: { id: string; title: string; lines: string[] }) {
+  return (
+    <div style={{
+      margin: '0 0 18px', padding: '14px 16px',
+      border: '1px solid #f6c177', background: '#fffaf0', borderRadius: 8,
+      fontFamily: 'system-ui, sans-serif',
+    }}>
+      <div style={{
+        display: 'inline-block', padding: '2px 8px', marginBottom: 10,
+        fontSize: 10, fontFamily: 'monospace', color: '#9c6a00',
+        background: '#fff0d6', border: '1px solid #f6c177', borderRadius: 4,
+      }}>
+        Baukonzeptnotiz · {id}
+      </div>
+      <div style={{ fontSize: 13, fontWeight: 600, color: '#7a4d00', marginBottom: 6 }}>{title}</div>
+      <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12.5, color: '#5a4a2a', lineHeight: 1.6 }}>
+        {lines.map((l, i) => <li key={i}>{l}</li>)}
+      </ul>
+    </div>
+  );
+}
+
 function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, onGeometryConsumed, openCatalogId, onCatalogConsumed }: {
   activeId: string;
   activeTab: TabId;
@@ -196,19 +222,33 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
   const panel = PANEL_REGISTRY.find((p) => p.id === activeId);
   if (!panel) return <div style={{ padding: 20, color: '#e53e3e' }}>Panel nicht gefunden: {activeId}</div>;
 
+  let tabContent: ReactNode = null;
   switch (activeTab) {
-    case 'input':      return <PanelInputForm panel={panel} result={result} />;
+    case 'input':      tabContent = <PanelInputForm panel={panel} result={result} />; break;
     case 'simulation': {
       // Heute nur fuer P06 implementiert (Pattern-Klassifikator-Sandbox, ann_064).
-      if (panel.id !== 'P06') return null;
-      const ctx = result.success ? (result.context as unknown as Record<string, unknown>) : null;
-      return <P06SimulationForm state={ctx?.telco_load as TelcoLoadState | undefined} />;
+      if (panel.id === 'P06') {
+        const ctx = result.success ? (result.context as unknown as Record<string, unknown>) : null;
+        tabContent = <P06SimulationForm state={ctx?.telco_load as TelcoLoadState | undefined} />;
+      }
+      break;
     }
-    case 'result':     return <PanelResult panel={panel} result={result} />;
-    case 'validation': return <PanelValidation panel={panel} result={result} />;
-    case 'raw':        return <PanelRaw panel={panel} result={result} />;
-    default:           return null;
+    case 'result':     tabContent = <PanelResult panel={panel} result={result} />; break;
+    case 'validation': tabContent = <PanelValidation panel={panel} result={result} />; break;
+    case 'raw':        tabContent = <PanelRaw panel={panel} result={result} />; break;
+    default:           tabContent = null;
   }
+
+  // Bau-Konzeptnotiz (falls gesetzt) ueber dem regulaeren Panel-Inhalt zeigen.
+  if (panel.bauKonzept && panel.bauKonzept.length > 0) {
+    return (
+      <>
+        <BaukonzeptNotiz id={panel.id} title={panel.label} lines={panel.bauKonzept} />
+        {tabContent}
+      </>
+    );
+  }
+  return tabContent;
 }
 
 export default function PanelWorkspace({ activeId, activeTab, onTabChange, result, onJumpTo, openGeometryId, onGeometryConsumed, openCatalogId, onCatalogConsumed }: Props) {

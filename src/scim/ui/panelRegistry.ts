@@ -14,6 +14,7 @@ export interface TabDescriptor {
 export interface PanelDescriptor {
   id: string;
   label: string;
+  kurzLabel?: string;   // 3-Letter-Kuerzel fuer Cosmo-Controls (z.B. bou/wns/epb)
   group: 1 | 2 | 3 | 4;  // navigator group (dividers between groups)
   order: number;
   icon: string;
@@ -25,6 +26,9 @@ export interface PanelDescriptor {
   contextKey: string;
   tabs: TabDescriptor[];
   editableFields?: string[];  // for semi_auto
+  // Temporaere Bau-Konzeptnotiz: wird im Panel als Kasten angezeigt, solange
+  // das Panel noch nicht mit echter Funktion befuellt ist. Spaeter entfernbar.
+  bauKonzept?: string[];
 }
 
 export interface SystemDescriptor {
@@ -152,47 +156,66 @@ export const PANEL_REGISTRY: PanelDescriptor[] = [
   // ── Gruppe 2: Räumliche Grundlage ─────────────────────────────────────────
   {
     id: 'P07',
-    label: 'Boundary + Extraction',
+    label: 'Boundary',
+    kurzLabel: 'bou',
     group: 2,
     order: 7,
     icon: '⬡',
-    shortDescription: 'Analysegebiet und POI-Extraktion',
-    helpText: 'Berechnet den Analyse-Boundary aus den Grundparametern und extrahiert relevante POIs.',
+    shortDescription: 'Boundary-Darstellung + Rep-Junction',
+    helpText: 'Darstellung des Analyse-Boundary und Anschlussfähigkeit zu benachbarten Representations. POI-Extraktion entfällt — POIs kommen aus dem Katalog.',
     dependsOn: ['P01', 'P02', 'P03'],
     inputMode: 'auto_computed',
     isBlocking: true,
     contextKey: 'boundary',
     tabs: STANDARD_TABS,
+    bauKonzept: [
+      'Boundary-Appearancy & Regio-/Representation Animation',
+      'Rep-Junction (Future-Function: Darstellung des Grenzbereichs einer benachbarten Representation / Anschlussfähigkeit der Gate-POIs inner-/outer-translate)',
+    ],
   },
   {
     id: 'P08',
-    label: 'Graph + BasisLayer',
+    label: 'Wegnetz-Sampling',
+    kurzLabel: 'wns',
     group: 2,
     order: 8,
     icon: '⌗',
-    shortDescription: 'Wegenetz und Basisschicht',
-    helpText: 'Baut den topologischen Graphen des Wegenetzes und berechnet die räumliche Basisschicht.',
+    shortDescription: 'Netz harmonisieren: merge → DP → resample',
+    helpText: 'Macht aus dem committeten Netz ein regelmäßiges Knoten-Netz mit Segment-ids — als reproduzierbare Ableitung nach dem Commit.',
     dependsOn: ['P07'],
     inputMode: 'auto_computed',
     isBlocking: true,
     contextKey: 'graph',
     tabs: STANDARD_TABS,
+    bauKonzept: [
+      'Wegnetz-Sampling: merge → Douglas-Peucker → Bogenlängen-Resampling → regelmäßiges Knoten-Netz.',
+      'Mindestsegmentlänge 3 m; pro Strecke gleiche Teilung (kein Kreuzungs-Stub); zu kurze Strecke (< ~4,5 m) bleibt ein Segment.',
+      'Produkt: gesampeltes Netz (Geometrie, 1×) + id/Code je Segment.',
+      'Läuft nach Workspace-Binding, vor P09; konsumiert die committete Representation (Konvergenz).',
+    ],
   },
 
   // ── Gruppe 3: Engine (4 Modelle) ───────────────────────────────────────────
   {
     id: 'P09',
-    label: 'Engine (4 Modelle)',
+    label: 'Engine-Prep-Build',
+    kurzLabel: 'epb',
     group: 3,
     order: 9,
     icon: '↯',
-    shortDescription: 'POI-Modell · Last · Bewegung · Maskierung',
-    helpText: 'Führt die vier Kern-Modelle aus: POI-Bewertung, Lastprojektion, Bewegungsmodell, Datenschutz-Maskierung.',
+    shortDescription: 'Bereitet POI/Last/Mask/Move für die Ziel-App vor',
+    helpText: 'Build-seitige Vorbereitung der vier Engine-Anteile. Die Laufzeit-Engines selbst liegen auf der Ziel-App (R06 BCK/BAK, R07 Karte & Guidance).',
     dependsOn: ['P08', 'P06'],
     inputMode: 'auto_computed',
     isBlocking: true,
     contextKey: 'poi_model',
     tabs: STANDARD_TABS,
+    bauKonzept: [
+      'POI-Appearancy: Cluster, Ghosts + Animations.',
+      'Last-Appearancy: gradient-Colorization je Segment-id + Farbe.',
+      'Mask-BCK: Segment-Einschränkung nach User-Comfort-Einstellung — bereitet R06 (BCK / Maskierung = Comfort) vor.',
+      'Move/Rest-BAK: bereitet R07 (Bewegung = Routen-Move / POIs-Rest, BAK-Path/-Rest) für Karte & Guidance vor.',
+    ],
   },
   {
     id: 'P10',
