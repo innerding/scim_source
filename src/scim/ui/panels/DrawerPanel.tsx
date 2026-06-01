@@ -104,7 +104,7 @@ const DRAFT_STROKE_GELB = '#ecc94b';
 const DRAFT_STROKE_ORANGE = '#ed8936';
 const SLOT2_DASH = '6 4';
 
-type DrawerTab = 'umriss' | 'wegnetz' | 'icon';
+type DrawerTab = 'umriss' | 'wegnetz';
 
 // UÖ1: KEINE Geoman-Default-Toolbar mehr. Zeichnen/Bearbeiten werden über eigene
 // Umriss-Werkzeuge (Tool-Header links) per pm.enableDraw('Polygon') bzw.
@@ -130,6 +130,9 @@ interface Props {
   // Beim Oeffnen aus dem Workspace: diese Boundary-Geometry laden statt des Drafts.
   openGeometryId?: string | null;
   onGeometryConsumed?: () => void;
+  // Oberer Tab „Icon" (neben „Karte"): Icon-Build-Notiz als Voll-Overlay zeigen,
+  // der Karten-Canvas bleibt darunter gemountet.
+  iconView?: boolean;
 }
 
 // Drawer-Tab „Icon" (Icon-Build) — vorerst nur Baukonzeptnotiz, kein Editor.
@@ -188,7 +191,7 @@ function IconBuildNotiz() {
   );
 }
 
-export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsumed }: Props) {
+export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsumed, iconView }: Props) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const tileLayerRef = useRef<L.TileLayer | null>(null);
@@ -1546,7 +1549,10 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   ];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', fontFamily: 'system-ui, sans-serif' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', fontFamily: 'system-ui, sans-serif', position: 'relative' }}>
+      {/* Oberer Tab „Icon": Voll-Overlay ueber Header + Karte (Karte bleibt
+          gemountet). Umriss/Wegnetz liegen darunter und sind so verdeckt. */}
+      {iconView && <IconBuildNotiz />}
       {/* Tab-Strip Umriss / Wegnetz */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px 0',
@@ -1564,7 +1570,6 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
         {([
           { id: 'umriss', label: '◇ Umriss' },
           { id: 'wegnetz', label: '⋔ Wegnetz' },
-          { id: 'icon', label: '✎ Icon' },
         ] as { id: DrawerTab; label: string }[]).map((t) => (
           <button
             key={t.id}
@@ -1754,11 +1759,8 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
         </div>
       </div>
 
-      {/* Inhaltszeile: optionales Wegnetz-Filtermenue + gemeinsamer Map-Canvas.
-          position:relative, damit das Icon-Tab als Overlay drueber liegen kann,
-          ohne den Leaflet-Canvas zu unmounten. */}
-      <div style={{ display: 'flex', flex: 1, minHeight: 0, position: 'relative' }}>
-        {tab === 'icon' && <IconBuildNotiz />}
+      {/* Inhaltszeile: optionales Wegnetz-Filtermenue + gemeinsamer Map-Canvas */}
+      <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
         {tab === 'wegnetz' && (
           <PathFilterMenu
             gebiet={inspectorView?.geometry.id ?? ''}

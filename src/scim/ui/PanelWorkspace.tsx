@@ -37,7 +37,7 @@ interface Props {
   onCatalogConsumed?: () => void;
 }
 
-const TAB_ORDER: TabId[] = ['catalog', 'signal_intake', 'analysis', 'adjust', 'input', 'simulation', 'result', 'validation', 'leistungsblatt', 'raw'];
+const TAB_ORDER: TabId[] = ['catalog', 'signal_intake', 'analysis', 'adjust', 'input', 'icon', 'simulation', 'result', 'validation', 'leistungsblatt', 'raw'];
 
 function TabBar({
   tabs, active, onSelect,
@@ -191,7 +191,7 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
     return <WorkspacePanel onJumpTo={onJumpTo ?? (() => {})} />;
   }
   if (activeId === DRAWER_DESCRIPTOR.id) {
-    return <DrawerPanel onJumpTo={onJumpTo ?? (() => {})} openGeometryId={openGeometryId} onGeometryConsumed={onGeometryConsumed} />;
+    return <DrawerPanel onJumpTo={onJumpTo ?? (() => {})} openGeometryId={openGeometryId} onGeometryConsumed={onGeometryConsumed} iconView={activeTab === 'icon'} />;
   }
   if (activeId === CATALOG_DESCRIPTOR.id) {
     if (role !== 'operator') return null;

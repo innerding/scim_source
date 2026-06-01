@@ -6,7 +6,9 @@ export type InputMode = 'user_form' | 'auto_computed' | 'semi_auto' | 'optional'
 export type TabId =
   | 'catalog' | 'input' | 'result' | 'validation' | 'raw' | 'leistungsblatt' | 'simulation'
   // Threshold-Panels (Empfangsschirm-Fluss): empfangen → deuten → anpassen
-  | 'signal_intake' | 'analysis' | 'adjust';
+  | 'signal_intake' | 'analysis' | 'adjust'
+  // Drawer: oberer Tab neben „Karte"
+  | 'icon';
 
 export interface TabDescriptor {
   id: TabId;
@@ -456,7 +458,8 @@ export const DRAWER_DESCRIPTOR: WorkspaceDescriptor = {
   label: 'Drawer',
   icon: '◇',
   tabs: [
-    { id: 'input', label: 'Karte', icon: '◇' },
+    { id: 'input', label: 'Karte', icon: '◇' },   // enthält Umriss/Wegnetz (intern)
+    { id: 'icon', label: 'Icon', icon: '✎' },      // Icon-Build (kein Karte)
   ],
 };
 
