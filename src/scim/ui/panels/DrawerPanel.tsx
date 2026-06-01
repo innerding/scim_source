@@ -145,7 +145,10 @@ function IconBuildNotiz() {
   const LI: React.CSSProperties = { fontSize: 12.5, color: '#4a5568', lineHeight: 1.5 };
   return (
     <div style={{
-      position: 'absolute', inset: 0, zIndex: 10, overflowY: 'auto',
+      // z über Leaflet-Panes (≤700) UND -Controls (1000); unter dem POI-Modal (2000).
+      // Die Content-Row (flex) bildet keinen eigenen Stacking-Context, daher müssen
+      // wir die Karten-Panes hier wirklich überbieten.
+      position: 'absolute', inset: 0, zIndex: 1200, overflowY: 'auto',
       background: '#fffaf0', padding: '18px 22px', fontFamily: 'system-ui, sans-serif',
     }}>
       <div style={{
