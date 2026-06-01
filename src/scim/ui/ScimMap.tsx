@@ -22,7 +22,7 @@ import type { BoundaryGeometry, Representation, WegnetzFile } from '../workspace
 import { poiCompositeSvg } from '../poi-catalog/poiCatalog.composite';
 import { renderClusterPois } from './clusterOverlay';
 import { drawNet } from './netDraw';
-import { resampleNet, catmullRomSpline, type ResampledNet } from '../wegnetz/netResample';
+import { resampleNet, type ResampledNet } from '../wegnetz/netResample';
 import { simSegmentLoads, loadColour } from '../sensus/anthemSim';
 import { MVP_RESAMPLE_TARGET_METERS } from '../sensus/originPackage';
 import type { DerivedNet, LatLng } from '../regio-content/netModel';
@@ -458,16 +458,9 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
     if (vis.simLoad && activeRep && repWegnetz) {
       const sub = L.layerGroup();
       const rnet = resampleNet(repWegnetz.edges, { targetMeters: MVP_RESAMPLE_TARGET_METERS });
-      // Catmull-Rom je Strecke (Vertices bleiben Daten, Kurve abgeleitet, Enden
-      // = Kreuzungen scharf). Last auf der geglätteten Linie neu gesampelt
-      // (Last ist ein Raumfeld → Sampling an den Kurvenpunkten ist konsistent).
-      const smoothed: ResampledNet = {
-        ...rnet,
-        stretches: rnet.stretches.map((s) => ({ ...s, points: catmullRomSpline(s.points, 4) })),
-      };
-      const loads = simSegmentLoads(smoothed);
+      const loads = simSegmentLoads(rnet);
       let idx = 0;
-      for (const s of smoothed.stretches) {
+      for (const s of rnet.stretches) {
         for (let i = 1; i < s.points.length; i++) {
           L.polyline([s.points[i - 1], s.points[i]], {
             color: loadColour(loads[idx++] ?? 0), weight: 4, opacity: 1, lineCap: 'round',

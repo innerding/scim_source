@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { resamplePolyline, resampleNet, catmullRomSpline, distMeters, polylineMeters, type LatLng } from './netResample';
+import { resamplePolyline, resampleNet, distMeters, polylineMeters, type LatLng } from './netResample';
 import type { PathEdge } from '../regio-content/pathEngine';
 
 // Reiner Nord-Süd-Verlauf (lng konstant): 1 m ≈ 1/111194.9° Breitengrad,
@@ -103,31 +103,5 @@ describe('netResample – resampleNet (Kreuzungs-Split)', () => {
     expect(net.segmentCount).toBeGreaterThan(0);
     expect(net.loadArrayBytes).toBe(net.segmentCount);
     expect(net.geometryBytes).toBeGreaterThan(0);
-  });
-});
-
-describe('netResample – catmullRomSpline', () => {
-  const M = 1 / 111194.9;
-  const at = (m: number): LatLng => [48.0 + m * M, 14.0];
-
-  it('Endpunkte exakt erhalten (Kreuzungen scharf)', () => {
-    const sp = catmullRomSpline([[48, 14], [48.001, 14.0005], [48.002, 14.0]], 4);
-    expect(sp[0]).toEqual([48, 14]);
-    expect(sp[sp.length - 1][0]).toBeCloseTo(48.002, 9);
-    expect(sp[sp.length - 1][1]).toBeCloseTo(14.0, 9);
-  });
-
-  it('verdichtet nur fürs Rendern (length = 1 + (n-1)*samples)', () => {
-    const sp = catmullRomSpline([[48, 14], [48.001, 14.0005], [48.002, 14.0]], 4);
-    expect(sp.length).toBe(1 + 2 * 4);
-  });
-
-  it('gerade Linie bleibt gerade (lng konstant)', () => {
-    const sp = catmullRomSpline([at(0), at(5), at(10)], 4);
-    for (const p of sp) expect(p[1]).toBeCloseTo(14.0, 9);
-  });
-
-  it('< 3 Punkte unverändert', () => {
-    expect(catmullRomSpline([[48, 14], [48.001, 14]], 4)).toEqual([[48, 14], [48.001, 14]]);
   });
 });

@@ -100,28 +100,6 @@ export function resamplePolyline(points: LatLng[], opts: ResampleOptions): Resam
   return { points: out, segmentCount: n, segmentMeters: segMeters, totalMeters: total };
 }
 
-// Catmull-Rom-Spline: glättet eine Polylinie, ohne neue STÜTZpunkte zu speichern.
-// Die Vertices bleiben (die Kurve läuft exakt durch sie); die Tangente je Punkt
-// wird aus den Nachbarn ABGELEITET, und zwischen je zwei Punkten wird das Kurven-
-// stück fürs Zeichnen abgetastet (flüchtige Render-Punkte, keine Daten). Enden
-// werden gepinnt (Endpunkt verdoppelt) → je Strecke bleiben die Kreuzungen scharf.
-// Reine Render-Hilfe: das gespeicherte origin-net bleibt die geraden Segmente.
-export function catmullRomSpline(points: LatLng[], samples = 4): LatLng[] {
-  if (points.length < 3 || samples < 1) return points.slice();
-  const pt = (i: number) => points[Math.max(0, Math.min(points.length - 1, i))];
-  const out: LatLng[] = [points[0]];
-  for (let i = 0; i < points.length - 1; i++) {
-    const p0 = pt(i - 1), p1 = pt(i), p2 = pt(i + 1), p3 = pt(i + 2);
-    for (let s = 1; s <= samples; s++) {
-      const t = s / samples, t2 = t * t, t3 = t2 * t;
-      const c = (a: number, b: number, c2: number, d: number) =>
-        0.5 * ((2 * b) + (-a + c2) * t + (2 * a - 5 * b + 4 * c2 - d) * t2 + (-a + 3 * b - 3 * c2 + d) * t3);
-      out.push([c(p0[0], p1[0], p2[0], p3[0]), c(p0[1], p1[1], p2[1], p3[1])]);
-    }
-  }
-  return out;
-}
-
 // ─── Netz-weites Resampling ───────────────────────────────────────────────────
 // Jede inNet-Kante wird an ihren Kreuzungspunkten (von ≥2 Kanten geteilte
 // Koordinaten) in Strecken zerlegt; jede Strecke wird einzeln resampelt (so
