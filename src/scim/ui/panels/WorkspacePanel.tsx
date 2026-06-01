@@ -256,9 +256,14 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
       primary_count: net.primaryCount, connector_count: net.connectorCount,
       created_at: today,
     };
+    // Version: bei Re-Commit derselben id hochzaehlen (Basis: zuletzt deployter
+    // Stand). Das Origin-Paket erbt diese Version.
+    const repId = `rep-${slug}`;
+    const nextVersion = (REPRESENTATIONS.find((r) => r.id === repId)?.version ?? 0) + 1;
     const rep: RepresentationFile = {
-      schema: 'scim3_representation_v1', id: `rep-${slug}`, name: d.name || slug,
+      schema: 'scim3_representation_v1', id: repId, name: d.name || slug,
       geometry_id: slug, catalog_id: d.catalog_id || undefined, wegnetz_id: slug,
+      version: nextVersion,
       created_at: today, note: 'via Workspace-Commit (F7)',
     };
     // Reihenfolge: Boundary → Wegnetz → Representation (Keystone zuletzt).

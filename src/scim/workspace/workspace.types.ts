@@ -76,6 +76,7 @@ export interface RepresentationFile {
   catalog_id?: string;        // Referenz auf Catalog.id (z.B. 'gruenberg', 'lichtenberg')
   wegnetz_id?: string;        // Referenz auf WegnetzFile.id (Rep-Load-Paket)
   mask_polygon?: Position[];  // Crop-Boundary dieser Representation (optional)
+  version?: number;           // Representation-Version; das Origin-Paket erbt sie. Bump je Re-Commit.
   created_at: string;
   note?: string;
 }
