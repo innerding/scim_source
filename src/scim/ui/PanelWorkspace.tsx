@@ -184,35 +184,42 @@ function BaukonzeptNotiz({ id, title, lines }: { id: string; title: string; line
 // versionierte, selbst-enthaltende Kapsel via Sensus Core Service geborgt.
 interface P09Descriptor {
   tabId: TabId; no: number; name: string; actions: string; source: string;
-  horizon: string; pkg: string;
+  horizon: string; pkg: string; produces: string[];
   dependsMid: string; dependsShort: string; fn: string; rescueFrom: string; gallery?: boolean;
 }
-// Vorschlag-Mapping Artefakt → Horizont → Zielpaket (bitte bestätigen):
 const P09_DESCRIPTORS: P09Descriptor[] = [
   {
-    tabId: 't1', no: 1, name: 'poi-dompteur', actions: 'category-composit + sequenzer', source: 'poi-katalog',
-    horizon: 'long', pkg: 'App-Shell-Paket',
+    tabId: 't1', no: 1, name: 'poi-dompteur', actions: 'category-composit + sequenzer',
+    source: 'representation <xy> v.<x> · poi-katalog',
+    horizon: 'long', pkg: 'Shell',
+    produces: ['poi-dompteur (engine) → Shell · long', 'origin-asset-set → Origin · mid', 'origin-poi-set → Origin · mid', 'poi-translate (size=f(load)) → Anthem · short'],
     dependsMid: 'representation(xy) poi-asset (die Icons)',
     dependsShort: 'telco-load → poi-translate · size = f(load): hohe Last → kleinere Größe + Last-Farbe',
     fn: 'size, colour = F(load, …)', rescueFrom: 'poiCatalog.composite', gallery: true,
   },
   {
-    tabId: 't2', no: 2, name: 'load-colorist', actions: 'segment-gradient', source: 'gesampeltes Wegnetz (Segment-ids)',
-    horizon: 'short', pkg: 'Atem(load)-Paket',
+    tabId: 't2', no: 2, name: 'load-colorist', actions: 'segment-gradient',
+    source: 'representation <xy> v.<x> · gesampeltes Wegnetz (Segment-ids)',
+    horizon: 'short', pkg: 'Anthem',
+    produces: ['load-colorist (engine) → Shell · long', 'load-values (je Segment) → Anthem · short'],
     dependsMid: 'gesampeltes Netz (P08): Segment-Geometrie + id',
     dependsShort: 'telco-load je Segment',
     fn: 'colour = G(load_segment)', rescueFrom: 'colourMesh (heatColor)',
   },
   {
-    tabId: 't3', no: 3, name: 'comfort-masker', actions: 'segment-filter (BCK)', source: 'gesampeltes Wegnetz + User-Comfort',
-    horizon: 'short', pkg: 'Atem(load)-Paket',
+    tabId: 't3', no: 3, name: 'comfort-masker', actions: 'segment-filter (BCK)',
+    source: 'representation <xy> v.<x> · gesampeltes Wegnetz + User-Comfort',
+    horizon: 'short', pkg: 'Anthem',
+    produces: ['comfort-masker (engine) → Shell · long', 'comfort-setting → Anthem · short'],
     dependsMid: 'gesampeltes Netz',
     dependsShort: 'User-Comfort-Einstellung (Farbschwelle)',
     fn: 'visible = (segment_colour ≤ comfort_colour)', rescueFrom: 'mask-logik (folgt)',
   },
   {
-    tabId: 't4', no: 4, name: 'bak-router', actions: 'route-build + rest-detect (BAK)', source: 'gesampeltes Wegnetz + POI-Auswahl + Dauer',
-    horizon: 'short', pkg: 'Atem(load)-Paket',
+    tabId: 't4', no: 4, name: 'bak-router', actions: 'route-build + rest-detect (BAK)',
+    source: 'representation <xy> v.<x> · gesampeltes Wegnetz + POI-Auswahl + Dauer',
+    horizon: 'short', pkg: 'Anthem',
+    produces: ['bak-router (engine) → Shell · long', 'route-selection → Anthem · short'],
     dependsMid: 'gesampeltes Netz + POIs',
     dependsShort: 'User-Auswahl (POIs · Farbe · Dauer)',
     fn: 'route = BAK(net, pois, comfort, duration) · rest-detect', rescueFrom: 'routing-logik (folgt)',
@@ -267,7 +274,8 @@ function P09Artifact({ d }: { d: P09Descriptor }) {
       <P09Row k="artifact" v={<><strong>{d.name}</strong> · #{d.no}</>} />
       <P09Row k="actions" v={d.actions} />
       <P09Row k="source" v={d.source} />
-      <P09Row k="horizon · paket" v={<><strong>{d.horizon}</strong> → {d.pkg}</>} />
+      <P09Row k="produces" v={<>{d.produces.map((p, i) => <div key={i}>{p}</div>)}</>} />
+      <P09Row k="primär · paket" v={<><strong>{d.horizon}</strong> → {d.pkg}</>} />
       <P09Row k="depends · mid" v={d.dependsMid} />
       <P09Row k="depends · short" v={d.dependsShort} />
       <P09Row k="function" v={<code>{d.fn}</code>} />
@@ -295,6 +303,59 @@ function P09Artifact({ d }: { d: P09Descriptor }) {
             </div>
           ))}
         </div>
+      </div>
+    </div>
+  );
+}
+
+// Sensus Core (P11): die committete Representation (Originpackage) wird von
+// P07/P08/P09 in atomare particles portioniert; SCS sortiert sie nach Horizont
+// in die drei Pakete. Statische Modell-Sicht.
+const SCS_PACKAGES: { name: string; horizon: string; version: string; particles: string[] }[] = [
+  { name: 'Shell', horizon: 'long-term', version: 'eigene App-Shell-Version', particles: ['dompteur', 'colorist', 'masker', 'router (engines)', 'container-system'] },
+  { name: 'Origin', horizon: 'mid-term', version: '= Representation-Version', particles: ['origin-boundary', 'origin-net (wegnetz-sample)', 'origin-asset-set', 'origin-poi-set', 'origin-pixel-images'] },
+  { name: 'Anthem', horizon: 'short-term', version: 'Load-Zyklus (flüchtig)', particles: ['load-values', 'comfort-setting', 'route-selection'] },
+];
+const ORIGIN_PUSH: string[] = [
+  'push1   · origin-net (wegnetz-sample)',
+  'push2   · origin-asset-set + origin-poi-set  (poi-asset)',
+  'push3.1 · pixel-charge 1–10',
+  'push3.2 · pixel-charge 11–20',
+  '…',
+];
+
+function SensusCorePackages() {
+  return (
+    <div style={{ fontFamily: 'system-ui, sans-serif' }}>
+      <div style={{
+        display: 'inline-block', padding: '2px 8px', marginBottom: 8,
+        fontSize: 10, fontFamily: 'monospace', color: '#2b6cb0',
+        background: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: 4,
+      }}>
+        Sensus Core Service · Originpackage → Shell · Origin · Anthem
+      </div>
+      <p style={{ fontSize: 12.5, color: '#4a5568', lineHeight: 1.55, margin: '2px 0 14px' }}>
+        Sensus Core ordert die atomaren particles von <strong>P07/P08/P09</strong> und stellt daraus
+        <strong> Shell · Origin · Anthem</strong> zusammen. <strong>Origin erbt die Version der Representation.</strong>
+      </p>
+      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+        {SCS_PACKAGES.map((pkg) => (
+          <div key={pkg.name} style={{ flex: '1 1 220px', border: '1px solid #e2e8f0', borderRadius: 8, padding: '10px 12px', minWidth: 200 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#1a365d' }}>{pkg.name} <span style={{ fontSize: 10, fontWeight: 400, color: '#a0aec0' }}>({pkg.horizon})</span></div>
+            <div style={{ fontSize: 10, color: '#718096', fontFamily: 'monospace', margin: '2px 0 6px' }}>version: {pkg.version}</div>
+            <ul style={{ margin: 0, paddingLeft: 16, fontSize: 12, color: '#2d3748', lineHeight: 1.5 }}>
+              {pkg.particles.map((p) => <li key={p}>{p}</li>)}
+            </ul>
+          </div>
+        ))}
+      </div>
+      <div style={{ marginTop: 16 }}>
+        <div style={{ fontSize: 11, color: '#718096', marginBottom: 6 }}>Origin push-sequence — mid darf in Etappen, Pixel zuletzt:</div>
+        <pre style={{
+          background: '#0d1117', color: '#7ee787', padding: '12px 14px', borderRadius: 6,
+          fontSize: 11.5, lineHeight: 1.6, overflowX: 'auto', margin: 0,
+          fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+        }}>{ORIGIN_PUSH.join('\n')}</pre>
       </div>
     </div>
   );
@@ -351,6 +412,8 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
     const d = P09_DESCRIPTORS.find((x) => x.tabId === activeTab);
     if (d) return <P09Artifact d={d} />;
   }
+  // P11 Sensus Core Service: die drei Horizont-Pakete (Eingabe-Tab).
+  if (panel.id === 'P11' && activeTab === 'input') return <SensusCorePackages />;
 
   // Tab mit body → text-first Konzept-Kasten (z.B. Signal Intake / Analysis).
   const tabDesc = panel.tabs.find((t) => t.id === activeTab);
