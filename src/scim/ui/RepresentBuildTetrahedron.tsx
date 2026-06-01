@@ -229,14 +229,18 @@ const SICKLES: Array<{
 function TetraGlyph({ id, x, y, color }: { id: string; x: number; y: number; color: string }) {
   const s = { fill: 'none', stroke: color, strokeWidth: 0.8, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
   const f = { fill: color, stroke: 'none' };
-  const bolt = <path d="M-1.6 -4 L-3.8 0.4 L-2.2 0.4 L-3 4 L-0.2 -1 L-1.8 -1 Z" {...f} />;
+  const bolt = <path d="M-2.3 -4 L-4.5 0.4 L-2.9 0.4 L-3.7 4 L-0.9 -1 L-2.5 -1 Z" {...f} />;
   let body: JSX.Element | null = null;
   switch (id) {
-    case 'geometry_draw': // Stift
-      body = <><line x1={-3.6} y1={3.6} x2={2.4} y2={-2.4} {...s} /><path d="M2.4 -2.4 L4 -2 M2.4 -2.4 L2 -4" {...s} /><circle cx={-3.6} cy={3.6} r={0.7} {...f} /></>;
+    case 'geometry_draw': // Bleistift, diagonal (Spitze unten-links)
+      body = <g transform="rotate(-45)">
+        <path d="M-4.2 0 L-2.8 -1.05 L-2.8 1.05 Z" {...s} />
+        <path d="M-2.8 -1.05 L2.2 -1.05 L2.2 1.05 L-2.8 1.05 Z" {...s} />
+        <line x1={1.1} y1={-1.05} x2={1.1} y2={1.05} {...s} />
+      </g>;
       break;
-    case 'represent_organisation': // Kettenglied — aufrechte, nicht gestretchte Ovale
-      body = <><ellipse cx={-1.3} cy={0} rx={1.5} ry={2.0} {...s} /><ellipse cx={1.3} cy={0} rx={1.5} ry={2.0} {...s} /></>;
+    case 'represent_organisation': // Kettenglied — zwei ineinandergreifende, geneigte Ringe
+      body = <><ellipse cx={-1.2} cy={0} rx={1.3} ry={2.3} transform="rotate(32 -1.2 0)" {...s} /><ellipse cx={1.2} cy={0} rx={1.3} ry={2.3} transform="rotate(-32 1.2 0)" {...s} /></>;
       break;
     case 'catalog_magazination': // Bild/Icon
       body = <><rect x={-4} y={-4} width={8} height={8} rx={1} {...s} /><circle cx={-1.4} cy={-1.4} r={1} {...s} /><path d="M-3.5 3.2 L-1 0.2 L0.6 1.8 L2 0.4 L3.5 3" {...s} /></>;
@@ -247,8 +251,8 @@ function TetraGlyph({ id, x, y, color }: { id: string; x: number; y: number; col
     case 'engine_prep': // Zahnrad
       body = <><circle cx={0} cy={0} r={2.4} {...s} /><path d="M0 -3.4 L0 -2.2 M0 3.4 L0 2.2 M-3.4 0 L-2.2 0 M3.4 0 L2.2 0 M-2.4 -2.4 L-1.55 -1.55 M2.4 -2.4 L1.55 -1.55 M-2.4 2.4 L-1.55 1.55 M2.4 2.4 L1.55 1.55" {...s} /><circle cx={0} cy={0} r={0.8} {...f} /></>;
       break;
-    case 'wegnetz_sampling': // Sampling
-      body = <><line x1={-4} y1={1} x2={4} y2={-1} {...s} />{([[-4, 1], [-2, 0.5], [0, 0], [2, -0.5], [4, -1]] as [number, number][]).map(([cx, cy], i) => <circle key={i} cx={cx} cy={cy} r={0.7} {...f} />)}</>;
+    case 'wegnetz_sampling': // Sampling — Kurve mit gleichmäßigen Stützpunkten DARAUF
+      body = <><path d="M-4 1.6 Q0 -2.6 4 1.6" {...s} />{([[-4, 1.6], [-2, 0], [0, -0.55], [2, 0], [4, 1.6]] as [number, number][]).map(([cx, cy], i) => <circle key={i} cx={cx} cy={cy} r={0.7} {...f} />)}</>;
       break;
     case 'boundary': // unregelm. Polygon, 4 Knoten
       body = <><polygon points="-3.4,-2.6 3.6,-3.6 3,3.4 -3.8,2.2" {...s} />{([[-3.4, -2.6], [3.6, -3.6], [3, 3.4], [-3.8, 2.2]] as [number, number][]).map(([cx, cy], i) => <circle key={i} cx={cx} cy={cy} r={0.8} {...f} />)}</>;
@@ -267,7 +271,7 @@ function TetraGlyph({ id, x, y, color }: { id: string; x: number; y: number; col
   }
   // Threshold-Bögen leicht von der Bahn absetzen (sys links, reg rechts, load runter).
   const off: Record<string, [number, number]> = {
-    system_adjust: [-2.5, 0],
+    system_adjust: [-3.2, 0],
     regio_content: [1.5, 0],
     load_thresholds: [0, 1.5],
   };
