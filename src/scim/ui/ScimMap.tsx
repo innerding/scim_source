@@ -118,7 +118,7 @@ function drawResampledNet(layer: L.LayerGroup, net: ResampledNet): void {
   for (const s of net.stretches) {
     for (let i = 1; i < s.points.length; i++) {
       L.polyline([s.points[i - 1], s.points[i]], {
-        color: (i - 1) % 2 === 0 ? BLUE : YELLOW, weight: 3, opacity: 0.9,
+        color: (i - 1) % 2 === 0 ? BLUE : YELLOW, weight: 3, opacity: 0.9, lineCap: 'butt',
       }).addTo(layer);
     }
   }
@@ -463,7 +463,7 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
       for (const s of rnet.stretches) {
         for (let i = 1; i < s.points.length; i++) {
           L.polyline([s.points[i - 1], s.points[i]], {
-            color: loadColour(loads[idx++] ?? 0), weight: 4, opacity: 0.9,
+            color: loadColour(loads[idx++] ?? 0), weight: 4, opacity: 0.9, lineCap: 'butt',
           }).addTo(sub);
         }
       }
