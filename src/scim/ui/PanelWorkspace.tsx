@@ -316,12 +316,15 @@ const SCS_PACKAGES: { name: string; horizon: string; version: string; particles:
   { name: 'Origin', horizon: 'mid-term', version: '= Representation-Version', particles: ['origin-boundary', 'origin-net (wegnetz-sample)', 'origin-asset-set', 'origin-poi-set', 'origin-pixel-images'] },
   { name: 'Anthem', horizon: 'short-term', version: 'Load-Zyklus (flüchtig)', particles: ['origin-presence (Einatmen)', 'load-values (Ausatmen)'] },
 ];
-const ORIGIN_PUSH: string[] = [
-  'push1   · origin-net (wegnetz-sample)',
-  'push2   · origin-asset-set + origin-poi-set  (poi-asset)',
-  'push3.1 · pixel-charge 1–10',
-  'push3.2 · pixel-charge 11–20',
-  '…',
+// Deploy-Reihenfolge: quer über die Pakete (nicht Paket-für-Paket). Karte + Netz
+// + Last leben sofort; POIs/Pixel reichern danach an. „Sobald Load lieferbar" —
+// MVP ohne Telco fährt 1 → 2 → 4. Scheduling gehört später dem Transmitter
+// (SCS-nachgelagert); SCS deklariert die Reihenfolge hier.
+const DEPLOY_ORDER: string[] = [
+  '1 · Shell           — Engine-Suite (die App lebt)',
+  '2 · origin-wegnetz  — das Netz (Segmente zum Einfärben)',
+  '3 · Anthem          — presence ↔ load (Atem auf dem Netz)   [entfällt im MVP]',
+  '4 · origin-rest     — asset-set → poi-set → pixel-charges (Pixel zuletzt)',
 ];
 
 function SensusCorePackages() {
@@ -354,12 +357,17 @@ function SensusCorePackages() {
         Ausatmen: <strong>load-values</strong> (Segment-Farbe fürs Colour-Mesh). Nicht MVP (kein Telco) — der Slot wird vorbereitet.
       </p>
       <div style={{ marginTop: 16 }}>
-        <div style={{ fontSize: 11, color: '#718096', marginBottom: 6 }}>Origin push-sequence — mid darf in Etappen, Pixel zuletzt:</div>
+        <div style={{ fontSize: 11, color: '#718096', marginBottom: 6 }}>
+          Deploy-Reihenfolge — quer über die Pakete, sobald Load lieferbar (MVP ohne Load: 1 → 2 → 4):
+        </div>
         <pre style={{
           background: '#0d1117', color: '#7ee787', padding: '12px 14px', borderRadius: 6,
           fontSize: 11.5, lineHeight: 1.6, overflowX: 'auto', margin: 0,
           fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
-        }}>{ORIGIN_PUSH.join('\n')}</pre>
+        }}>{DEPLOY_ORDER.join('\n')}</pre>
+        <div style={{ fontSize: 10.5, color: '#a0aec0', marginTop: 6 }}>
+          Scheduling gehört später dem <strong>Transmitter</strong> (SCS-nachgelagert) — SCS deklariert die Reihenfolge hier.
+        </div>
       </div>
     </div>
   );
