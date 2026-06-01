@@ -365,38 +365,22 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
       ids: VERSIONEN_REGISTRY.map((v) => v.id) },
   ];
   const [manuallyOpen, setManuallyOpen] = useState<Set<string>>(() => loadOpenSections());
-  // manuallyClosed ueberschreibt die Auto-Open via activeId — sonst laesst
-  // sich eine Sektion nicht mehr aus dem Depth-T abwaehlen, wenn das aktive
-  // Panel innerhalb der Sektion liegt (z.B. R01 nach Hex-Klick auf den Mond).
-  const [manuallyClosed, setManuallyClosed] = useState<Set<string>>(new Set());
+  // Kapitel = reiner Manual-Zustand: nur das Substrat und die Listen-Koepfe
+  // oeffnen/schliessen sie (beide schreiben manuallyOpen). Navigation/Controls
+  // (oberer Tetraeder, aktives Panel) oeffnen KEIN Kapitel mehr — kein Auto-Open
+  // ueber activeId, daher auch kein manuallyClosed-Override noetig.
+  // sectionContainsActive bleibt nur fuer den (rein visuellen) locked-Hinweis am
+  // Kopf: zeigt, in welchem (evtl. zugeklappten) Kapitel das aktive Panel sitzt.
   const sectionContainsActive = (ids: readonly string[]) => ids.includes(activeId);
-  const isSectionOpen = (sectionId: string, ids: readonly string[]) => {
-    if (manuallyOpen.has(sectionId)) return true;
-    if (manuallyClosed.has(sectionId)) return false;
-    return sectionContainsActive(ids);
-  };
+  const isSectionOpen = (sectionId: string, _ids: readonly string[]) => manuallyOpen.has(sectionId);
   const toggleSection = (sectionId: string) => {
-    const def = SECTION_DEFS.find((s) => s.id === sectionId);
-    const currentlyOpen = def ? isSectionOpen(sectionId, def.ids) : manuallyOpen.has(sectionId);
-    if (currentlyOpen) {
-      setManuallyOpen((prev) => {
-        if (!prev.has(sectionId)) return prev;
-        const next = new Set(prev); next.delete(sectionId); saveOpenSections(next); return next;
-      });
-      setManuallyClosed((prev) => {
-        if (prev.has(sectionId)) return prev;
-        const next = new Set(prev); next.add(sectionId); return next;
-      });
-    } else {
-      setManuallyClosed((prev) => {
-        if (!prev.has(sectionId)) return prev;
-        const next = new Set(prev); next.delete(sectionId); return next;
-      });
-      setManuallyOpen((prev) => {
-        if (prev.has(sectionId)) return prev;
-        const next = new Set(prev); next.add(sectionId); saveOpenSections(next); return next;
-      });
-    }
+    setManuallyOpen((prev) => {
+      const next = new Set(prev);
+      if (next.has(sectionId)) next.delete(sectionId);
+      else next.add(sectionId);
+      saveOpenSections(next);
+      return next;
+    });
   };
 
   return (
@@ -692,13 +676,9 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
       }}>
         <NavDepthTetraeder
           size={208}
-          openSections={(() => {
-            const s = new Set<string>(manuallyOpen);
-            for (const sec of SECTION_DEFS) {
-              if (sectionContainsActive(sec.ids)) s.add(sec.id);
-            }
-            return s;
-          })()}
+          // Substrat spiegelt nur den manuellen Kapitel-Zustand — Navigation
+          // markiert hier nichts mehr (kein Auto-Open via aktivem Panel).
+          openSections={manuallyOpen}
           onToggleSection={(secId) => toggleSection(secId)}
         />
       </div>
