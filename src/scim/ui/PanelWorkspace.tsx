@@ -24,6 +24,8 @@ import V02RegionDetailPanel from './panels/V02RegionDetailPanel';
 import V03ActiveMonitorPanel from './panels/V03ActiveMonitorPanel';
 import WorkspacePanel from './panels/WorkspacePanel';
 import DrawerPanel from './panels/DrawerPanel';
+import { poiCompositeSvg } from '../poi-catalog/poiCatalog.composite';
+import { CONTAINER_SYSTEM } from '../poi-catalog/poiCatalog.containerSystem';
 
 interface Props {
   activeId: string;
@@ -176,6 +178,45 @@ function BaukonzeptNotiz({ id, title, lines }: { id: string; title: string; line
   );
 }
 
+// P09-„POI" ist die Heimat der POI-Darstellung: dieser Tab rendert die echte
+// Container-System-Galerie via poiCatalog.composite (poiCompositeSvg) — genau
+// das Modul, das der Inspector (System-Build-Mirror) für seine Katalog-/
+// Representation-POI-Ansicht borgt. Eine Wahrheit, hier sichtbar verankert.
+function P09PoiAppearance() {
+  return (
+    <div style={{ fontFamily: 'system-ui, sans-serif' }}>
+      <div style={{
+        display: 'inline-block', padding: '2px 8px', marginBottom: 10,
+        fontSize: 10, fontFamily: 'monospace', color: '#2b6cb0',
+        background: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: 4,
+      }}>
+        POI-Appearancy · P09 · Heimat von poiCatalog.composite
+      </div>
+      <p style={{ fontSize: 12.5, color: '#4a5568', lineHeight: 1.55, margin: '2px 0 14px' }}>
+        Rendert die POIs in ihren Kategorie-Containern, so wie sie auf der Ziel-App
+        erscheinen (Cluster, Ghosts, Animationen folgen). Der <strong>Inspector
+        (System-Build-Mirror)</strong> borgt genau dieses Modul für seine POI-Ansicht
+        eines Katalogs bzw. einer Representation mit Katalog.
+      </p>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
+        {CONTAINER_SYSTEM.map((spec) => {
+          const svg = poiCompositeSvg('', spec.color_label, spec.subcategory, 42);
+          return (
+            <div key={spec.subcategory} style={{ width: 96, textAlign: 'center' }}>
+              <div
+                style={{ width: 42, height: 42, margin: '0 auto' }}
+                dangerouslySetInnerHTML={{ __html: svg ?? '' }}
+              />
+              <div style={{ fontSize: 10, color: '#4a5568', marginTop: 4, wordBreak: 'break-word' }}>{spec.subcategory}</div>
+              <div style={{ fontSize: 9, color: '#a0aec0' }}>{spec.color_label}</div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, onGeometryConsumed, openCatalogId, onCatalogConsumed }: {
   activeId: string;
   activeTab: TabId;
@@ -221,6 +262,9 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
 
   const panel = PANEL_REGISTRY.find((p) => p.id === activeId);
   if (!panel) return <div style={{ padding: 20, color: '#e53e3e' }}>Panel nicht gefunden: {activeId}</div>;
+
+  // P09-„POI"-Tab: echte POI-Darstellung via poiCatalog.composite (die Heimat).
+  if (panel.id === 'P09' && activeTab === 't1') return <P09PoiAppearance />;
 
   // Tab mit body → text-first Konzept-Kasten (z.B. Signal Intake / Analysis).
   const tabDesc = panel.tabs.find((t) => t.id === activeTab);
