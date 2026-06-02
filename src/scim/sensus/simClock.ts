@@ -10,8 +10,10 @@
 // re-rendern bei jedem Schritt.
 
 const MIN = 6, MAX = 20;
-const STEP_SIM_MIN = 5;                 // 5-Min-Signal
-const STEP_HOURS = STEP_SIM_MIN / 60;
+// Snapshot-Leiter: Basis 5-Min-Signal; bei Turbo gröber (bis Stundenschritte),
+// damit die Render-Rate gedeckelt bleibt statt 5-Min-Schritte zu fluten.
+const SNAPSHOT_LADDER_MIN = [5, 10, 20, 30, 60];
+const MAX_RENDERS_PER_SEC = 8;
 
 let hour = 9.5;
 let speed = 0;                          // Sim-Minuten je realer Sekunde (0 = Pause)
@@ -21,24 +23,32 @@ const listeners = new Set<() => void>();
 const clamp = (x: number, a: number, b: number) => Math.max(a, Math.min(b, x));
 const emit = () => listeners.forEach((l) => l());
 
-export const SIM_CLOCK = { MIN, MAX, STEP_HOURS };
+export const SIM_CLOCK = { MIN, MAX };
 
 // ── reine, testbare Kerne ──
 export function coerceSpeed(raw: unknown): number {
   const n = typeof raw === 'number' ? raw : NaN;
   return Number.isFinite(n) ? Math.max(0, n) : 0;
 }
-// Nächste Stunde nach einem 5-Min-Schritt — umlaufend (MAX → MIN).
-export function nextHour(h: number): number {
-  const n = h + STEP_HOURS;
+// Snapshot-Schritt (Sim-Min) zum Tempo: kleinster Leiter-Wert, bei dem die
+// Render-Rate ≤ MAX_RENDERS_PER_SEC bleibt. Pause/lahm → 5 Min, Turbo → gröber.
+export function snapshotMin(speed: number): number {
+  if (speed <= 0) return SNAPSHOT_LADDER_MIN[0];
+  const need = speed / MAX_RENDERS_PER_SEC;
+  return SNAPSHOT_LADDER_MIN.find((m) => m >= need) ?? SNAPSHOT_LADDER_MIN[SNAPSHOT_LADDER_MIN.length - 1];
+}
+// Nächste Stunde nach einem Snapshot-Schritt — umlaufend (MAX → MIN).
+export function nextHour(h: number, stepMin = 5): number {
+  const n = h + stepMin / 60;
   return n > MAX + 1e-9 ? MIN : n;
 }
 
 function stop() { if (timer != null) { clearTimeout(timer); timer = null; } }
 function schedule() {
   if (speed <= 0) { stop(); return; }
-  const ms = Math.max(16, (STEP_SIM_MIN / speed) * 1000); // 5 Sim-Min / Tempo → reale Sekunden
-  timer = setTimeout(() => { hour = nextHour(hour); emit(); schedule(); }, ms);
+  const stepMin = snapshotMin(speed);
+  const ms = Math.max(16, (stepMin / speed) * 1000); // Snapshot-Schritt / Tempo → reale Sekunden
+  timer = setTimeout(() => { hour = nextHour(hour, stepMin); emit(); schedule(); }, ms);
 }
 
 export function getSimHour() { return hour; }
