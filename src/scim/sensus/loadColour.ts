@@ -25,3 +25,31 @@ export function heatColor(t: number): string {
   const last = HEAT_STOPS[HEAT_STOPS.length - 1].color;
   return `rgb(${last[0]},${last[1]},${last[2]})`;
 }
+
+const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
+
+// Parametrisierter Colorist (Umbauplan A2). Beugt die Last STETIG vor dem
+// Mappen auf die durchgehende heat-Palette — nie geschnitten/gebändert
+// (§2a Regler-Grundsatz):
+//   - spectrum  ∈ [0,1]: 0 = ruhig (langsam heiß) · 0.5 = linear · 1 = aggressiv
+//                        (früh heiß). Realisiert als Gamma 2^(1−2·spectrum).
+//   - bias      ∈ [−1,1]: regionale Tendenz, verschiebt die Skala kühler/heißer.
+// Defaults (spectrum 0.5, bias 0) ⇒ identisch zu heatColor (rückwärtskompatibel).
+export interface ColorizeParams {
+  spectrum?: number;
+  bias?: number;
+}
+
+// Beugt nur die Last (gibt 0..1 zurück) — getrennt von der Farbe, damit System-
+// Normalisierung (A3) darauf aufsetzen kann.
+export function shapeLoad(load: number, params: ColorizeParams = {}): number {
+  const spectrum = params.spectrum ?? 0.5;
+  const bias = params.bias ?? 0;
+  const gamma = Math.pow(2, 1 - 2 * clamp01(spectrum));
+  const v = Math.pow(clamp01(load), gamma);
+  return clamp01(v + bias * 0.5);
+}
+
+export function colorize(load: number, params: ColorizeParams = {}): string {
+  return heatColor(shapeLoad(load, params));
+}

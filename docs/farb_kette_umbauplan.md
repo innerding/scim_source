@@ -104,8 +104,8 @@ Origin (stabil); die *Last selbst* bleibt Anthem.
 
 ### Phase A — Engine-Kern (Shell · rein + getestet, keine UI)
 - **A1 `stretchAverages(net, loads)`** — Ø-Last je Strecke (zwischen Kreuzungen). Basis fürs Schalten.
-- **A2 `colorize(load, params)`** — parametrisierte Palette (Spektrum · Bias · Floor); ersetzt fixes `heatColor`.
-- **A3 `normalizeLoads(loads, {floor, spread})`** — System-Normalisierung aus der Last-Verteilung.
+- **A2 `colorize(load, params)`** — parametrisierte Palette (Spektrum · Bias), stetig; ersetzt fixes `heatColor`. Defaults = heatColor. *(Floor wandert zu A3 — gehört zur System-Normalisierung.)*
+- **A3 `normalizeLoads(loads, {floor, spread})`** — System-Normalisierung aus der Last-Verteilung (inkl. Mindest-Rot-Floor).
 - **A4 `classifyStretches(net, stretchAvg, {degradier, ausschluss})`** → je Strecke `normal | degraded | excluded`, crossing-gated.
 
 ### Phase B — Einstellungs-Modell + Operator-Regler
