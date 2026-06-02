@@ -19,17 +19,20 @@ function resolveDemo() {
   return { rep, origin, net, ring };
 }
 
-// Boundary-Ring groß als normalisiertes SVG (lat-Flip für Bildschirmkoordinaten).
+// Boundary-Ring groß als normalisiertes SVG. lat-Flip für Bildschirmkoordinaten
+// + Längengrad-Korrektur (1° Länge = cos(Breite) × 1° Breite), sonst stretcht es
+// horizontal. Gleicher Maßstab auf beiden Achsen → kein Verzerren.
 function RingSvg({ ring, size = 300 }: { ring: [number, number][]; size?: number }) {
   if (ring.length < 3) return null;
   const xs = ring.map((p) => p[0]), ys = ring.map((p) => p[1]);
   const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
-  const w = (maxX - minX) || 1, h = (maxY - minY) || 1;
+  const kx = Math.cos(((minY + maxY) / 2) * Math.PI / 180); // Längengrad stauchen
+  const w = ((maxX - minX) * kx) || 1, h = (maxY - minY) || 1;
   const pad = 10;
   const sc = Math.min((size - 2 * pad) / w, (size - 2 * pad) / h);
   const dw = w * sc + 2 * pad, dh = h * sc + 2 * pad;
   const pts = ring.map(([lon, lat]) =>
-    `${(pad + (lon - minX) * sc).toFixed(1)},${(pad + (maxY - lat) * sc).toFixed(1)}`).join(' ');
+    `${(pad + (lon - minX) * kx * sc).toFixed(1)},${(pad + (maxY - lat) * sc).toFixed(1)}`).join(' ');
   return (
     <svg width={dw} height={dh} style={{ display: 'block', maxWidth: '100%' }}>
       <polygon points={pts} fill="#0074d9" fillOpacity={0.06} stroke="#0074d9" strokeWidth={1.5} strokeLinejoin="round" />
