@@ -14,6 +14,7 @@ import ColourAdjust from './panels/ColourAdjust';
 import UserExclusionControl from './panels/UserExclusionControl';
 import TestRouteControl from './panels/TestRouteControl';
 import RuntimeFlowExplainer from './panels/RuntimeFlowExplainer';
+import SensusCoreReigen from './panels/SensusCoreReigen';
 import PanelResult from './panels/PanelResult';
 import PanelValidation from './panels/PanelValidation';
 import PanelRaw from './panels/PanelRaw';
@@ -361,6 +362,7 @@ function SensusCorePackages() {
       }}>
         Sensus Core Services · Originpackage → Shell · Origin · Anthem
       </div>
+      <SensusCoreReigen origin={origin} />
       <p style={{ fontSize: 12.5, color: '#4a5568', lineHeight: 1.55, margin: '2px 0 14px' }}>
         Sensus Core ordert die atomaren particles von <strong>P07/P08/P09</strong> und stellt daraus
         <strong> Shell · Origin · Anthem</strong> zusammen. <strong>Origin erbt die Version der Representation.</strong>
