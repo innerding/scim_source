@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { simSegmentLoads, stretchAverages, loadColour } from './anthemSim';
+import { simSegmentLoads, stretchAverages, normalizeLoads, loadColour } from './anthemSim';
 import type { ResampledNet } from '../wegnetz/netResample';
 
 const net = (): ResampledNet => ({
@@ -54,6 +54,41 @@ describe('anthemSim – stretchAverages', () => {
     const avg = stretchAverages(degenerate, [0.5]); // nur 1 Segment (Strecke e)
     expect(avg[0]).toEqual({ id: 'd', average: 0, segmentCount: 0 });
     expect(avg[1]).toEqual({ id: 'e', average: 0.5, segmentCount: 1 });
+  });
+});
+
+describe('anthemSim – normalizeLoads (System A3)', () => {
+  it('spread 0 = roh (unverändert)', () => {
+    expect(normalizeLoads([0.2, 0.4, 0.6], { spread: 0 })).toEqual([0.2, 0.4, 0.6]);
+  });
+
+  it('spread 1 = voll relativ (min→0, max→1)', () => {
+    const out = normalizeLoads([0.2, 0.4, 0.6], { spread: 1 });
+    expect(out[0]).toBeCloseTo(0, 10);
+    expect(out[1]).toBeCloseTo(0.5, 10);
+    expect(out[2]).toBeCloseTo(1, 10);
+  });
+
+  it('spread 0.5 = Blend roh↔normalisiert', () => {
+    const out = normalizeLoads([0.2, 0.6], { spread: 0.5 });
+    expect(out[0]).toBeCloseTo(0.1, 10);  // 0.2 + (0-0.2)*0.5
+    expect(out[1]).toBeCloseTo(0.8, 10);  // 0.6 + (1-0.6)*0.5
+  });
+
+  it('floor (Mindest-Rot) hebt den Peak auf floor, wenn Last da ist', () => {
+    const out = normalizeLoads([0.1, 0.2, 0.3], { spread: 0, floor: 0.9, minPartial: 0.05 });
+    expect(Math.max(...out)).toBeCloseTo(0.9, 10);   // Peak auf floor
+    expect(out[0]).toBeCloseTo(0.3, 10);             // proportional mitgehoben (0.1*3)
+  });
+
+  it('ruhiges Netz (Peak < minPartial) bleibt kalt — kein Mindest-Rot', () => {
+    const out = normalizeLoads([0.01, 0.02], { floor: 0.9, minPartial: 0.05 });
+    expect(out).toEqual([0.01, 0.02]);
+  });
+
+  it('konstante Last + floor: alle auf floor; leeres Array → []', () => {
+    expect(normalizeLoads([0.3, 0.3], { floor: 0.8, minPartial: 0.05 }).every((v) => Math.abs(v - 0.8) < 1e-9)).toBe(true);
+    expect(normalizeLoads([])).toEqual([]);
   });
 });
 

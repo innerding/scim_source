@@ -57,3 +57,45 @@ export function stretchAverages(net: ResampledNet, loads: number[]): StretchLoad
   }
   return out;
 }
+
+export interface NormalizeParams {
+  spread?: number;      // 0 = roh/absolut … 1 = voll relativ (min→kalt, max→heiß)
+  floor?: number;       // Mindest-Rot: der Peak erreicht mind. floor (wenn Last da ist)
+  minPartial?: number;  // unter diesem Peak gilt das Netz als ruhig → kein Mindest-Rot
+}
+
+// System-Normalisierung (Umbauplan A3). Macht die Anzeige aussagekräftig, ohne
+// die Daten zu ändern (reine Darstellung):
+//   - spread: blendet zwischen roher Last und min/max-Normalisierung. Bei voll
+//     (1) spannt jede Rep blau→rot über ihren eigenen Bereich → „nicht alles
+//     rot / nicht alles blau" und Reps werden vergleichbar (relativ, nicht
+//     absolut — bewusster Trade-off).
+//   - floor (Mindest-Rot): hat das Netz genug Last (Peak ≥ minPartial), wird die
+//     Verteilung so angehoben, dass der Peak mindestens `floor` erreicht (etwas
+//     Rot zeigt sich immer). Ein faktisch ruhiges Netz (Peak < minPartial)
+//     bleibt kalt.
+export function normalizeLoads(loads: number[], params: NormalizeParams = {}): number[] {
+  if (loads.length === 0) return [];
+  const spread = clamp01(params.spread ?? 0);
+  const floor = clamp01(params.floor ?? 0);
+  const minPartial = params.minPartial ?? 0.05;
+
+  let min = Infinity, max = -Infinity;
+  for (const l of loads) { if (l < min) min = l; if (l > max) max = l; }
+  const range = max - min;
+
+  const out = loads.map((l) => {
+    const norm = range > 0 ? (l - min) / range : l;
+    return clamp01(l + (norm - l) * spread);
+  });
+
+  if (floor > 0 && max >= minPartial) {
+    let curMax = 0;
+    for (const v of out) if (v > curMax) curMax = v;
+    if (curMax > 0 && curMax < floor) {
+      const lift = floor / curMax;
+      return out.map((v) => clamp01(v * lift));
+    }
+  }
+  return out;
+}
