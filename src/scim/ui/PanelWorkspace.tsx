@@ -206,10 +206,10 @@ const P09_DESCRIPTORS: P09Descriptor[] = [
     tabId: 't2', no: 2, name: 'load-colorist', actions: 'segment-gradient',
     source: 'representation <xy> v.<x> · origin-net (Segment-ids)',
     horizon: 'long', pkg: 'Shell',
-    produces: ['load-colorist (engine) → Shell · long', 'load-values (je Segment) → Anthem · short'],
-    dependsMid: 'origin-net (P08): Segment-Geometrie + id',
+    produces: ['colorize · normalizeLoads (engine) → Shell · long', 'load-values (je Segment) → Anthem · short'],
+    dependsMid: 'origin-net (P08): Segment-Geometrie + id · colour-settings (Origin)',
     dependsShort: 'telco-load je Segment · presence-origin (Gate: welche origin-boundary)',
-    fn: 'colour = G(load_segment)', rescueFrom: 'colourMesh (heatColor)',
+    fn: 'colour = colorize(normalizeLoads(load))', rescueFrom: 'sensus/loadColour.colorize + anthemSim.normalizeLoads (GEBAUT)',
   },
   {
     tabId: 't3', no: 3, name: 'comfort-masker', actions: 'segment-filter (BCK)',
@@ -218,7 +218,7 @@ const P09_DESCRIPTORS: P09Descriptor[] = [
     produces: ['comfort-masker / BCK (engine) → Shell · long'],
     dependsMid: 'origin-net',
     dependsShort: 'User-Comfort-Einstellung (Farbschwelle) — Laufzeit, kein Anthem-Particle',
-    fn: 'visible = (segment_colour ≤ comfort_colour)', rescueFrom: 'mask-logik (folgt)',
+    fn: 'state = classifyStretches(Ø-Last/Strecke)', rescueFrom: 'anthemSim.classifyStretches + stretchAverages (GEBAUT)',
   },
   {
     tabId: 't4', no: 4, name: 'bak-router', actions: 'route-build + rest-detect (BAK)',
@@ -317,9 +317,9 @@ function P09Artifact({ d }: { d: P09Descriptor }) {
 // P07/P08/P09 in atomare particles portioniert; SCS sortiert sie nach Horizont
 // in die drei Pakete. Statische Modell-Sicht.
 const SCS_PACKAGES: { name: string; horizon: string; version: string; particles: string[] }[] = [
-  { name: 'Shell', horizon: 'long-term', version: 'eigene App-Shell-Version', particles: ['dompteur', 'colorist', 'BCK (comfort)', 'BAK (route)', 'container-system'] },
-  { name: 'Origin', horizon: 'mid-term', version: '= Representation-Version', particles: ['origin-boundary', 'origin-net (wegnetz-sample)', 'origin-asset-set', 'origin-poi-set', 'origin-pixel-images'] },
-  { name: 'Anthem', horizon: 'short-term', version: 'Load-Zyklus (flüchtig)', particles: ['presence-origin (Einatmen · Gate)', 'load-values (Ausatmen)'] },
+  { name: 'Shell', horizon: 'long-term', version: 'eigene App-Shell-Version', particles: ['dompteur', 'Farb-Engine: colorize · normalizeLoads · classifyStretches', 'BCK (comfort)', 'BAK (route)', 'container-system'] },
+  { name: 'Origin', horizon: 'mid-term', version: '= Representation-Version', particles: ['origin-boundary', 'origin-net (wegnetz-sample)', 'origin-asset-set', 'origin-poi-set', 'origin-pixel-images', 'colour-settings (spectrum/bias/safety/degradier)'] },
+  { name: 'Anthem', horizon: 'short-term', version: 'Load-Zyklus (flüchtig)', particles: ['presence-origin (Einatmen · Gate)', 'load-values (Ausatmen)', 'user-exclusion (Runtime)'] },
 ];
 // Deploy-Reihenfolge: quer über die Pakete (nicht Paket-für-Paket). presence-origin
 // ist das Gate nach Shell — ohne zu wissen, in welcher origin-boundary der User
@@ -360,6 +360,8 @@ function SensusCorePackages() {
       <p style={{ fontSize: 12.5, color: '#4a5568', lineHeight: 1.55, margin: '2px 0 14px' }}>
         Sensus Core ordert die atomaren particles von <strong>P07/P08/P09</strong> und stellt daraus
         <strong> Shell · Origin · Anthem</strong> zusammen. <strong>Origin erbt die Version der Representation.</strong>
+        {' '}Tagging: <strong>Shell</strong> trägt die generischen <em>Engines</em> (Farb-Engine colorize/normalize/classify, BCK/BAK) ·
+        <strong> Anthem</strong> die flüchtige <em>Last</em> (load-values, presence-origin, user-exclusion).
       </p>
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
         {SCS_PACKAGES.map((pkg) => {
