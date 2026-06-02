@@ -69,7 +69,7 @@ export default function SensusCoreReigen({ origin }: { origin: OriginPackage | n
       {/* Kapselung nach Horizont */}
       <div style={{ fontSize: 12, fontWeight: 600, color: '#1a365d', marginBottom: 4 }}>Kapselung nach Horizont</div>
       <div style={{ fontSize: 11.5, color: '#2d3748', lineHeight: 1.6 }}>
-        <div><span style={{ color: TONES.shell[1], fontWeight: 700 }}>Shell</span> — die generischen <em>Engines</em> (colorize · BCK · BAK), lange Lebensdauer (App-Version).</div>
+        <div><span style={{ color: TONES.shell[1], fontWeight: 700 }}>Shell</span> — die generischen <em>Engines</em> (colorize · BCK · BAK · reveal-engine), lange Lebensdauer (App-Version).</div>
         <div><span style={{ color: TONES.origin[1], fontWeight: 700 }}>Origin</span> — die <em>statischen</em> Partikel der Representation (Boundary · Netz · POIs · Assets), mittlere Lebensdauer, erbt die Rep-Version.</div>
         <div><span style={{ color: TONES.anthem[1], fontWeight: 700 }}>Anthem</span> — die <em>flüchtige</em> Last (5-Min-Snapshot · presence · user-exclusion), kurze Lebensdauer.</div>
       </div>

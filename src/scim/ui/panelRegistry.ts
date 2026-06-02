@@ -11,7 +11,7 @@ export type TabId =
   | 'icon'
   // generische, stabile Tab-Handles (id fix, Label trägt die Bedeutung) für
   // panel-eigene Tab-Gliederungen (P07/P08/P09)
-  | 't1' | 't2' | 't3' | 't4';
+  | 't1' | 't2' | 't3' | 't4' | 't5';
 
 export interface TabDescriptor {
   id: TabId;
@@ -271,6 +271,9 @@ export const PANEL_REGISTRY: PanelDescriptor[] = [
       ] },
       { id: 't4', label: 'Move', icon: '↝', body: [
         'Move/Rest-BAK: Routen-Move / POIs-Rest (BAK-Path/-Rest) — bereitet R07 (Karte & Guidance) vor.',
+      ] },
+      { id: 't5', label: 'Intro', icon: '⬚', body: [
+        'Boundary-Intro / reveal-engine: das stille Einloggen — bereitet die Boundary-Reveal-Animation der Ziel-App vor.',
       ] },
     ],
   },

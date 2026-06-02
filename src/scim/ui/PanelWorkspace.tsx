@@ -50,7 +50,7 @@ interface Props {
   onCatalogConsumed?: () => void;
 }
 
-const TAB_ORDER: TabId[] = ['catalog', 't1', 't2', 't3', 't4', 'signal_intake', 'analysis', 'adjust', 'input', 'icon', 'simulation', 'result', 'validation', 'leistungsblatt', 'raw'];
+const TAB_ORDER: TabId[] = ['catalog', 't1', 't2', 't3', 't4', 't5', 'signal_intake', 'analysis', 'adjust', 'input', 'icon', 'simulation', 'result', 'validation', 'leistungsblatt', 'raw'];
 
 function TabBar({
   tabs, active, onSelect,
@@ -235,6 +235,16 @@ const P09_DESCRIPTORS: P09Descriptor[] = [
     dependsShort: 'User-Auswahl (POIs · Farbe · Dauer) — Laufzeit, kein Anthem-Particle',
     fn: 'route = buildRoutePath(net, a, b) · Ausweich folgt', rescueFrom: 'pathEngine.buildRoutePath + sensus/netRoute (GEBAUT) · Ausweich-Routing folgt (S5)',
   },
+  {
+    tabId: 't5', no: 5, name: 'reveal-engine', actions: 'boundary-intro · stilles Einloggen',
+    source: 'representation <xy> v.<x> · origin-boundary (L0-Manifest)',
+    horizon: 'long', pkg: 'Shell',
+    produces: ['reveal-engine (engine) → Shell · long', 'verbraucht: origin-boundary → Origin · mid (L0)'],
+    dependsMid: 'origin-boundary (L0): Ring + bbox — rahmt die OSM-Kamera',
+    dependsShort: 'presence-origin (Startschuss des Reveals) — Laufzeit, kein Anthem-Particle',
+    fn: 'invertierte Maske: Fenster-Zoom → Fill aus → Boundary ein (Stroke bleibt)',
+    rescueFrom: 'ui/boundaryReveal.playBoundaryReveal (GEBAUT als P07-Prep)',
+  },
 ];
 
 function P09Row({ k, v }: { k: string; v: ReactNode }) {
@@ -323,7 +333,7 @@ function P09Artifact({ d }: { d: P09Descriptor }) {
 // P07/P08/P09 in atomare particles portioniert; SCS sortiert sie nach Horizont
 // in die drei Pakete. Statische Modell-Sicht.
 const SCS_PACKAGES: { name: string; horizon: string; version: string; particles: string[] }[] = [
-  { name: 'Shell', horizon: 'long-term', version: 'eigene App-Shell-Version', particles: ['dompteur', 'Farb-Engine: colorize · normalizeLoads', 'BCK: classifyStretches · stretchAverages', 'BAK: buildRoutePath · netRoute', 'container-system'] },
+  { name: 'Shell', horizon: 'long-term', version: 'eigene App-Shell-Version', particles: ['dompteur', 'Farb-Engine: colorize · normalizeLoads', 'BCK: classifyStretches · stretchAverages', 'BAK: buildRoutePath · netRoute', 'reveal-engine: boundary-intro (verbraucht origin-boundary)', 'container-system'] },
   { name: 'Origin', horizon: 'mid-term', version: '= Representation-Version', particles: ['origin-boundary', 'origin-net (wegnetz-sample)', 'origin-asset-set', 'origin-poi-set', 'origin-pixel-images', 'colour-settings (spectrum/bias/safety/degradier)'] },
   { name: 'Anthem', horizon: 'short-term', version: 'Load-Zyklus (flüchtig)', particles: ['presence-origin (Einatmen · Gate)', 'load-values (Ausatmen)', 'user-exclusion (Runtime)'] },
 ];
