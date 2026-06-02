@@ -210,9 +210,7 @@ export const PANEL_REGISTRY: PanelDescriptor[] = [
     isBlocking: true,
     contextKey: 'boundary',
     tabs: [
-      { id: 't1', label: 'Boundary-Darstellung', icon: '▢', body: [
-        'Boundary-Appearancy & Regio-/Representation-Animation (Platzhalter — Funktion folgt).',
-      ] },
+      { id: 't1', label: 'Boundary-Darstellung', icon: '▢', body: [] },
       { id: 't2', label: 'Rep-Junction', icon: '⇄', body: [
         'Rep-Junction (Future-Function): Darstellung des Grenzbereichs einer benachbarten Representation / Anschlussfähigkeit der Gate-POIs inner-/outer-translate.',
       ] },

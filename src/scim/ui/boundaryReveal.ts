@@ -1,17 +1,25 @@
 // Boundary-Reveal-Animation (P07-Prep, im Inspector/ScimMap) — das „stille
-// Einloggen": ein weißer Invert-Fill liegt über der schon fokussierten Karte;
-// im Zentrum wächst die Boundary als Fenster, legt die OSM frei, der weiße Fill
-// dimmt aus, der Stroke bleibt. Live über die echte Leaflet-Projektion.
+// Einloggen". Ablauf (sequenziell):
+//   1. Fenster-Zoom: weißer Invert-Fill liegt über der schon fokussierten Karte;
+//      im Zentrum wächst die Boundary als Fenster und legt die OSM frei, während
+//      der weiße Fill ausdimmt. (Bewusst langsam, f0.5.)
+//   2. Warten bis der Fill ganz ausgeblendet ist.
+//   3. Dann die Boundary an einem Punkt beginnen und einmal herum bis zum
+//      Startpunkt nachzeichnen — in derselben Geschwindigkeit wie der Fenster-Zoom.
 //
 // Reine DOM/SVG-Animation als additives Overlay über dem Karten-Container —
-// rührt die Leaflet-Layer nicht an. Maßgeblich: docs/anthem_snapshot_spec.md
-// (Boundary-Reveal · invertierte Maske).
+// rührt die Leaflet-Layer nicht an. Maßgeblich: docs/anthem_snapshot_spec.md.
 
 import L from 'leaflet';
 
 const NS = 'http://www.w3.org/2000/svg';
 let seq = 0;
 const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
+
+// Geschwindigkeit: Fenster-Zoom um f0.5 verlangsamt (vorher ~1500 ms → ~3000 ms);
+// das Nachzeichnen läuft in derselben Dauer (= dieselbe Pace).
+const GROW_MS = 3000;
+const DRAW_MS = 3000;
 
 export function playBoundaryReveal(
   container: HTMLElement, map: L.Map, ringLatLng: [number, number][],
@@ -30,6 +38,7 @@ export function playBoundaryReveal(
   const cx = pts.reduce((s, p) => s + p[0], 0) / pts.length;
   const cy = pts.reduce((s, p) => s + p[1], 0) / pts.length;
   const ptsStr = pts.map((p) => `${p[0]},${p[1]}`).join(' ');
+  const pathD = `M ${pts.map((p) => `${p[0]} ${p[1]}`).join(' L ')} Z`;
   const id = `brmask-${seq++}`;
 
   const svg = document.createElementNS(NS, 'svg');
@@ -60,31 +69,42 @@ export function playBoundaryReveal(
   fill.setAttribute('mask', `url(#${id})`);
   svg.appendChild(fill);
 
-  // Der Stroke der Boundary — bleibt am Ende stehen.
-  const stroke = document.createElementNS(NS, 'polygon');
-  stroke.setAttribute('points', ptsStr);
+  // Der Boundary-Stroke als Pfad — wird in Phase 3 gezeichnet, bleibt dann stehen.
+  const stroke = document.createElementNS(NS, 'path');
+  stroke.setAttribute('d', pathD);
   stroke.setAttribute('fill', 'none');
   stroke.setAttribute('stroke', '#0074d9');
   stroke.setAttribute('stroke-width', '1.5');
-  stroke.setAttribute('opacity', '0');
+  stroke.setAttribute('stroke-linejoin', 'round');
   svg.appendChild(stroke);
 
   container.appendChild(svg);
 
-  // Animation: Loch wächst (0–70%), weißer Fill dimmt aus (40–100%), Stroke
-  // blendet ein. Live über requestAnimationFrame.
-  const DUR = 2200;
+  // Pfadlänge erst nach dem Einhängen abrufbar; mit Dash „aufrollen".
+  const len = stroke.getTotalLength();
+  stroke.style.strokeDasharray = String(len);
+  stroke.style.strokeDashoffset = String(len);
+
+  // ── Phase 1+2: Fenster-Zoom + Ausdimmen (langsam), endet wenn Fill = 0 ──
   const t0 = performance.now();
-  function frame(now: number) {
-    const t = Math.min(1, (now - t0) / DUR);
-    const grow = easeOutCubic(Math.min(1, t / 0.7));
+  function grow(now: number) {
+    const t = Math.min(1, (now - t0) / GROW_MS);
     hole.setAttribute('transform',
-      `translate(${cx} ${cy}) scale(${grow}) translate(${-cx} ${-cy})`);
-    const dim = t < 0.4 ? 1 : Math.max(0, 1 - (t - 0.4) / 0.6);
-    fill.setAttribute('opacity', String(dim));
-    stroke.setAttribute('opacity', String(Math.min(1, Math.max(0, (t - 0.4) / 0.4))));
-    if (t < 1) requestAnimationFrame(frame);
-    else setTimeout(() => svg.remove(), 600); // Stroke kurz stehen lassen, dann Overlay räumen (echter L.polygon-Stroke bleibt)
+      `translate(${cx} ${cy}) scale(${easeOutCubic(t)}) translate(${-cx} ${-cy})`);
+    fill.setAttribute('opacity', String(1 - t));
+    if (t < 1) { requestAnimationFrame(grow); }
+    else { fill.setAttribute('opacity', '0'); requestAnimationFrame(draw); }
   }
-  requestAnimationFrame(frame);
+
+  // ── Phase 3: Boundary von einem Punkt bis zum Startpunkt nachzeichnen ──
+  let drawStart = 0;
+  function draw(now: number) {
+    if (!drawStart) drawStart = now;
+    const t = Math.min(1, (now - drawStart) / DRAW_MS);
+    stroke.style.strokeDashoffset = String(len * (1 - t));
+    if (t < 1) { requestAnimationFrame(draw); }
+    else { setTimeout(() => svg.remove(), 1200); } // kurz stehen lassen, dann räumen (L.polygon-Stroke bleibt)
+  }
+
+  requestAnimationFrame(grow);
 }

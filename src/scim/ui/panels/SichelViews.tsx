@@ -64,9 +64,10 @@ export function BoundaryView() {
             </span>
           </div>
           <div style={{ fontSize: 10.5, color: '#a0aec0', marginTop: 8 }}>
-            Prep des „stillen Einloggens": weißer Invert-Fill, das Boundary-Fenster wächst und legt die OSM
-            frei, der Fill dimmt aus, der Stroke bleibt. Live aus <code>buildOriginPackage</code> — reale
-            UTF-8-Größe. Als L0-Manifest trägt sie später bbox + Verweise (<code>OriginManifest</code>).
+            Prep des „stillen Einloggens": das Boundary-Fenster wächst (langsam) und legt die OSM frei,
+            der weiße Fill dimmt aus, dann wird die Boundary nachgezeichnet und bleibt stehen. Live aus
+            <code>buildOriginPackage</code> — reale UTF-8-Größe. Als L0-Manifest trägt sie später bbox +
+            Verweise (<code>OriginManifest</code>).
           </div>
         </>
       ) : (

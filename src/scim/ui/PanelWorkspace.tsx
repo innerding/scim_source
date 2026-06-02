@@ -513,6 +513,17 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
   // P11 Sensus Core Service: die drei Horizont-Pakete (Eingabe-Tab).
   if (panel.id === 'P11' && activeTab === 'input') return <SensusCorePackages />;
 
+  // P07 t2 Rep-Junction: Notiz unauffällig halten (gedämpfte Zeile statt gelbem
+  // Konzept-Kasten) — Future-Function, soll nicht ablenken.
+  if (panel.id === 'P07' && activeTab === 't2') {
+    const td = panel.tabs.find((t) => t.id === 't2');
+    return (
+      <div style={{ fontSize: 11.5, color: '#a0aec0', fontStyle: 'italic', lineHeight: 1.55, maxWidth: 520 }}>
+        {td?.body?.join(' ')}
+      </div>
+    );
+  }
+
   // P07/P08: das bereits Funktionale sichtbar machen (Sicheln ehrlich) — die
   // Live-View ÜBER der bestehenden Konzept-Notiz, additiv. P07 t1 Boundary,
   // P08 t3 Mesh-Output.
