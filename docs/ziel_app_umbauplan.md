@@ -90,7 +90,7 @@ Segment `stretchId#segIndex` (z.B. `5.0#2`). Quelle: `netRoute.ts` (`netSegments
 
 | Phase | Inhalt | Berührt | Sichtbar |
 |---|---|---|---|
-| **0 · Vertrag** | Anthem-Snapshot-Format + Origin-Segment-Adjazenz als Typen/Doc | neue types | — |
+| **0 · Vertrag** ✅ | Anthem-Snapshot-Format + Origin-Manifest + Segment-Adjazenz als Typen/Doc → `src/scim/sensus/packageContract.ts` (reine Typen) | neue types | — |
 | **1 · Encoder** | reine `buildAnthemSnapshot(net, loads, repId, t)`; P09-t2 ruft sie, P11 nimmt sie als Anthem-Partikel | `src/scim/sensus/`, P09/P11 | P09/P11 zeigen Partikel |
 | **2 · Worker + Presence** | `GET /api/anthem/:repId` (5-Min-Snapshot) + Schreibpfad; **Presence-Handshake echt bauen**: App sendet `presence-origin`-Anforderung (beim 1. Upload nach Shell-Install) → triggert den 5-Min-Zyklus. App-Anforderungsteil ist NEU. | `worker/src/index.ts`, `sensus-core-runtime` | Lichtenberg: Presence → Snapshot |
 | **3 · App: Segment-ID** | `SvgSegment`→segment-id-keyed; App baut `segId→Geometrie` aus Origin-Net, färbt über Snapshot | `sensus-core-runtime` | App rendert Live-Last paket-only |
