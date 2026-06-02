@@ -54,6 +54,24 @@ Namen; jede Rolle *baut* ihr Paket.
 aktuellen `source`-/Reigen-Befunde (P09 zeigt `<xy>`, Reigen zeichnet alte Rollen)
 lösen sich **bei dieser Migration** auf — nicht vorher draufflicken.
 
+### Shell-Paket ≠ Runtime Shell (R01)
+
+- **Shell (Paket)** = der *ausgespielte Code* (High-Shell/P07 + Deep-Shell/P08, bei
+  P11 geschnürt).
+- **Runtime Shell (R01)** = die *Grundhülle auf dem Gerät*, die diesen Code **lädt
+  und ausführt** (bootet, lädt Pakete gestaffelt Shell→Origin, routet, Fehler,
+  Lebenszyklus; **Wirt** der lokal laufenden Engines). **Kein Analyse-Tool** — die
+  Analyse (presence→Last→Anthem) sitzt beim **Transmitter (P06)**.
+
+**presence-origin hat zwei Enden** (der Atem):
+- **Einatmen/Uplink:** Runtime Shell (App) → `presence-origin` → **Transmitter (P06)**
+  („ich bin in origin-boundary X"; beim 1. Upload nach Shell-Install, echt).
+- **Ausatmen/Downlink:** Transmitter (P06) → **Anthem-Snapshot** (5-Min-Last je
+  Segment) → Runtime Shell (App). Die Runtime Shell *konsumiert* und lässt BCK/BAK
+  lokal laufen.
+
+(R01-Panel ist mit dieser Einsicht befüllt: `RuntimeShellView`.)
+
 ---
 
 ## Aktuelle Karte (in Arbeit · Vor-Migrations-Stand, Code trägt noch alte Labels)

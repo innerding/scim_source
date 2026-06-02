@@ -17,6 +17,7 @@ import TestRouteControl from './panels/TestRouteControl';
 import RuntimeFlowExplainer from './panels/RuntimeFlowExplainer';
 import SensusCoreReigen from './panels/SensusCoreReigen';
 import { BoundaryView, WegnetzCompareView } from './panels/SichelViews';
+import RuntimeShellView from './panels/RuntimeShellView';
 import PanelResult from './panels/PanelResult';
 import PanelValidation from './panels/PanelValidation';
 import PanelRaw from './panels/PanelRaw';
@@ -555,6 +556,8 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
     return <AiInterfacePanel activeTab={activeTab} />;
   }
 
+  // R01 Runtime Shell: echte Erklär-/Aussichts-Ansicht statt Stub.
+  if (activeId === 'R01') return <RuntimeShellView />;
   const runtimeModule = RUNTIME_BUILDER_REGISTRY.find((m) => m.id === activeId);
   if (runtimeModule) {
     return <StubPanel id={runtimeModule.id} description={runtimeModule.shortDescription} />;
