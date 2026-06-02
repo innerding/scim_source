@@ -28,6 +28,8 @@ import { playbookLoad, buildFlows, pickTestRoute, reroute, routeFromBusTo } from
 import { routeComfortCheck } from '../sensus/netRoute';
 import { getTestSeed, getTestRoute, setTestRoute, setTestBefund, subscribeTestRoute,
   getDestPoi, setDestBefund, requestAltRoute } from '../sensus/testRoute';
+import { subscribeReveal } from '../sensus/revealPrep';
+import { playBoundaryReveal } from './boundaryReveal';
 import { colorize } from '../sensus/loadColour';
 import { loadColourSettings, COLOUR_SETTINGS_EVENT } from '../sensus/colourSettings';
 import { loadUserExclusion, USER_EXCLUSION_EVENT } from '../sensus/userExclusion';
@@ -306,6 +308,13 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
   useEffect(() => {
     window.dispatchEvent(new CustomEvent('scim:layers:state', { detail: vis }));
   }, [vis]);
+
+  // P07-Prep: Boundary-Reveal abspielen (Trigger aus revealPrep). Live über die
+  // echte Leaflet-Projektion, additives Overlay — siehe boundaryReveal.ts.
+  useEffect(() => subscribeReveal(() => {
+    const c = containerRef.current, m = mapRef.current;
+    if (c && m && repPolygonLatLng) playBoundaryReveal(c, m, repPolygonLatLng);
+  }), [repPolygonLatLng]);
   const [osmEdges, setOsmEdges] = useState<OsmEdge[]>([]);
   const [, setOsmStatus] = useState<'idle' | 'loading' | 'ok' | 'failed'>('idle');
 

@@ -7,6 +7,7 @@ import { REPRESENTATIONS, wegnetzById } from '../../workspace/workspace.registry
 import { buildOriginPackage, MVP_RESAMPLE_TARGET_METERS } from '../../sensus/originPackage';
 import { resampleNet } from '../../wegnetz/netResample';
 import { fmtBytes } from '../../sensus/formatBytes';
+import { playReveal } from '../../sensus/revealPrep';
 
 // Demo-Auflösung: dieselbe Quelle wie P11 (Lichtenberg bzw. erste Representation).
 function resolveDemo() {
@@ -53,9 +54,19 @@ export function BoundaryView() {
           {boundary
             ? <Stat label="origin-boundary" value={boundary.detail} hint={fmtBytes(boundary.bytes)} />
             : <div style={{ fontSize: 12, color: '#a0aec0' }}>— kein Boundary-Ring aufgelöst</div>}
+          <div style={{ marginTop: 12 }}>
+            <button onClick={() => playReveal()} style={{
+              fontSize: 12, padding: '5px 12px', borderRadius: 4, cursor: 'pointer',
+              border: '1px solid #2b6cb0', background: '#ebf8ff', color: '#1a365d', fontWeight: 600,
+            }}>▶ Reveal-Vorschau abspielen</button>
+            <span style={{ fontSize: 10.5, color: '#a0aec0', marginLeft: 8 }}>
+              spielt im <strong>Inspector</strong> (rechte Karte) — Karte muss offen sein.
+            </span>
+          </div>
           <div style={{ fontSize: 10.5, color: '#a0aec0', marginTop: 8 }}>
-            Live aus <code>buildOriginPackage</code> — reale UTF-8-Größe. Als L0-Manifest trägt sie
-            später bbox + Verweise (s. <code>OriginManifest</code>, packageContract.ts).
+            Prep des „stillen Einloggens": weißer Invert-Fill, das Boundary-Fenster wächst und legt die OSM
+            frei, der Fill dimmt aus, der Stroke bleibt. Live aus <code>buildOriginPackage</code> — reale
+            UTF-8-Größe. Als L0-Manifest trägt sie später bbox + Verweise (<code>OriginManifest</code>).
           </div>
         </>
       ) : (
