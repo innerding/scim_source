@@ -11,6 +11,7 @@ import type { ScimPipelineResult } from '../pipeline/scimPipeline.types';
 // Panel content placeholders — filled panel by panel in subsequent sessions
 import PanelInputForm from './panels/PanelInputForm';
 import ColourAdjust from './panels/ColourAdjust';
+import UserExclusionControl from './panels/UserExclusionControl';
 import PanelResult from './panels/PanelResult';
 import PanelValidation from './panels/PanelValidation';
 import PanelRaw from './panels/PanelRaw';
@@ -484,7 +485,20 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
   // P09: vier uniform beschriebene auto-compute-Artefakte (POI/Last/Mask/Move).
   if (panel.id === 'P09') {
     const d = P09_DESCRIPTORS.find((x) => x.tabId === activeTab);
-    if (d) return <P09Artifact d={d} />;
+    if (d) {
+      // Mask-Tab (t3): zusätzlich der User-Ausschluss-Regler (C1).
+      if (activeTab === 't3') {
+        return (
+          <>
+            <P09Artifact d={d} />
+            <div style={{ marginTop: 18, borderTop: '1px solid #e2e8f0', paddingTop: 14 }}>
+              <UserExclusionControl />
+            </div>
+          </>
+        );
+      }
+      return <P09Artifact d={d} />;
+    }
   }
   // P11 Sensus Core Service: die drei Horizont-Pakete (Eingabe-Tab).
   if (panel.id === 'P11' && activeTab === 'input') return <SensusCorePackages />;
