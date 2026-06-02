@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { netSegments, coveredSegmentIds, distToPath } from './netRoute';
+import { netSegments, coveredSegmentIds, distToPath, stretchOf, routeComfortCheck } from './netRoute';
 import type { ResampledNet, LatLng } from '../wegnetz/netResample';
+import type { StretchLoad } from './anthemSim';
 
 const M = 1 / 111195; // ~1 m Breitengrad
 const at = (m: number): LatLng => [48.0 + m * M, 14.0]; // Nord-Süd-Linie
@@ -46,5 +47,34 @@ describe('netRoute – coveredSegmentIds (S1)', () => {
 
   it('distToPath: Punkt auf der Linie ≈ 0', () => {
     expect(distToPath(at(5), [at(0), at(20)])).toBeLessThan(0.5);
+  });
+});
+
+describe('netRoute – routeComfortCheck (S4)', () => {
+  const sl = (id: string, average: number): StretchLoad => ({ id, average, segmentCount: 1 });
+  const avgs = [sl('1.0', 0.8), sl('2.0', 0.3), sl('3.0', 0.5)];
+
+  it('stretchOf: Segment-id → Strecken-id', () => {
+    expect(stretchOf('1.0#3')).toBe('1.0');
+    expect(stretchOf('2.0')).toBe('2.0');
+  });
+
+  it('findet überschrittene Strecken der Route (Ø-Last > Comfort)', () => {
+    const r = routeComfortCheck(['1.0#0', '1.0#1', '2.0#0'], avgs, 0.5);
+    expect(r.routeStretchIds.sort()).toEqual(['1.0', '2.0']);
+    expect(r.exceeding).toEqual(['1.0']); // 0.8 > 0.5; 2.0 (0.3) ok
+    expect(r.ok).toBe(false);
+  });
+
+  it('comfortabel genug → ok', () => {
+    const r = routeComfortCheck(['2.0#0'], avgs, 0.5); // 0.3 ≤ 0.5
+    expect(r.exceeding).toEqual([]);
+    expect(r.ok).toBe(true);
+  });
+
+  it('keine Comfort-Schwelle (null) → immer ok', () => {
+    const r = routeComfortCheck(['1.0#0'], avgs, null);
+    expect(r.ok).toBe(true);
+    expect(r.exceeding).toEqual([]);
   });
 });

@@ -3,6 +3,7 @@
 // Segmente nutzt ein gerouteter Pfad?). Rein, panel-unabhängig.
 
 import type { ResampledNet, LatLng } from '../wegnetz/netResample';
+import type { StretchLoad } from './anthemSim';
 
 export interface NetSegment {
   id: string;        // '<stretchId>#<segIndex>'
@@ -58,4 +59,31 @@ export function distToPath(p: LatLng, path: LatLng[]): number {
 // Pfad-Polylinie. Grundlage fürs Zählen (Playbook) und den Comfort-Check.
 export function coveredSegmentIds(segments: NetSegment[], path: LatLng[], tolMeters = 8): string[] {
   return segments.filter((s) => distToPath(s.mid, path) <= tolMeters).map((s) => s.id);
+}
+
+// Strecken-id aus einer Segment-id ('<stretchId>#<i>' → '<stretchId>').
+export function stretchOf(segmentId: string): string {
+  const i = segmentId.lastIndexOf('#');
+  return i >= 0 ? segmentId.slice(0, i) : segmentId;
+}
+
+export interface ComfortResult {
+  routeStretchIds: string[]; // Strecken, die die Route nutzt
+  exceeding: string[];       // davon: Ø-Last > Comfort (BCK)
+  ok: boolean;
+}
+
+// Comfort-Check (Umbauplan #2 · S4): überschreitet die Route auf einer Strecke
+// die Comfort-Schwelle? Entscheidung je STRECKE über die Ø-Last (crossing-gated,
+// = wie classifyStretches). comfort = null → keine Schwelle → immer ok.
+export function routeComfortCheck(
+  routeSegmentIds: string[],
+  stretchAvgs: StretchLoad[],
+  comfort: number | null,
+): ComfortResult {
+  const routeStretchIds = [...new Set(routeSegmentIds.map(stretchOf))];
+  if (comfort == null) return { routeStretchIds, exceeding: [], ok: true };
+  const avg = new Map(stretchAvgs.map((s) => [s.id, s.average]));
+  const exceeding = routeStretchIds.filter((id) => (avg.get(id) ?? 0) > comfort);
+  return { routeStretchIds, exceeding, ok: exceeding.length === 0 };
 }
