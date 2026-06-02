@@ -112,8 +112,9 @@ dieser Bonus klein, weil er auf den selben Daten arbeitet.
 
 - **BCK = Body Comfort Kernel** — beobachtet, wie wohl sich der Nutzer auf der
   aktuellen Route fühlt (Last, Tempo, Andrang)
-- **BAK = Body Adaptation Kernel** — *handelt*, wenn der Komfort kippt. Schlägt
-  alternative Routen vor, leitet um
+- **BAK = Broda Avoidance Kernel** — *handelt*, wenn der Komfort kippt. Meidet
+  als Kaskade volle Strecken → Wegpunkte → tauscht das Ziel-POI. Schlägt
+  alternative Routen vor, leitet um. Detail-Spec: `docs/komfort_kaskade_spec.md`.
 
 Im Runtime-Builder-Modell entspricht das R06.
 
