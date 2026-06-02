@@ -110,7 +110,7 @@ dieser Bonus klein, weil er auf den selben Daten arbeitet.
 
 ### Konzeptionelle Grundlage
 
-- **BCK = Body Comfort Kernel** — beobachtet, wie wohl sich der Nutzer auf der
+- **BCK = Broda Comfort Kernel** — beobachtet, wie wohl sich der Nutzer auf der
   aktuellen Route fühlt (Last, Tempo, Andrang)
 - **BAK = Broda Avoidance Kernel** — *handelt*, wenn der Komfort kippt. Meidet
   als Kaskade volle Strecken → Wegpunkte → tauscht das Ziel-POI. Schlägt

@@ -8,8 +8,8 @@ Comfort-Maximierung offen. Diese Spec ist maßgeblich für den Umbau.
 wenn der Komfort kippt — und zwar als **Vermeidungs-Kaskade**: er meidet zuerst
 volle Strecken, dann Wegpunkte, zuletzt verschiebt er das Ziel.
 
-> Hinweis: BCK in `runtime_mvp.md` ist als „Body Comfort Kernel" geführt —
-> Schreibweise (Broda Comfort Kernel?) noch zu bestätigen.
+> Gegenstück: **BCK = Broda Comfort Kernel** — *beobachtet* den Komfort; der BAK
+> *handelt*, wenn er kippt.
 
 ---
 
