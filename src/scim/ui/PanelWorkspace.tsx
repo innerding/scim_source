@@ -278,7 +278,11 @@ function P09PoiGallery() {
   );
 }
 
-function P09Artifact({ d }: { d: P09Descriptor }) {
+function P09Artifact({ d, rep }: { d: P09Descriptor; rep?: { name: string; version?: number } | null }) {
+  // source an die inspizierte Representation binden: <xy> → Name, v.<x> → Version.
+  const source = rep
+    ? d.source.replace('<xy>', rep.name).replace('v.<x>', rep.version != null ? `v.${rep.version}` : 'v.?')
+    : d.source;
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif' }}>
       {/* Gemeinsamer Header — gilt für alle vier P09-Tabs. */}
@@ -297,7 +301,7 @@ function P09Artifact({ d }: { d: P09Descriptor }) {
       </p>
       <P09Row k="artifact" v={<><strong>{d.name}</strong> · #{d.no}</>} />
       <P09Row k="actions" v={d.actions} />
-      <P09Row k="source" v={d.source} />
+      <P09Row k="source" v={source} />
       <P09Row k="produces" v={<>{d.produces.map((p, i) => <div key={i}>{p}</div>)}</>} />
       <P09Row k="primär · paket" v={<><strong>{d.horizon}</strong> → {d.pkg}</>} />
       <P09Row k="depends · mid" v={d.dependsMid} />
@@ -524,6 +528,7 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
   onCatalogConsumed?: () => void;
 }) {
   const role = useRole();
+  const inspectedRep = useInspectorView()?.representation ?? null;
   if (activeId === WORKSPACE_DESCRIPTOR.id) {
     return <WorkspacePanel onJumpTo={onJumpTo ?? (() => {})} />;
   }
@@ -570,12 +575,12 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
       if (extra) {
         return (
           <>
-            <P09Artifact d={d} />
+            <P09Artifact d={d} rep={inspectedRep} />
             <div style={{ marginTop: 18, borderTop: '1px solid #e2e8f0', paddingTop: 14 }}>{extra}</div>
           </>
         );
       }
-      return <P09Artifact d={d} />;
+      return <P09Artifact d={d} rep={inspectedRep} />;
     }
   }
   // P11 Sensus Core Service: die drei Horizont-Pakete (Eingabe-Tab).

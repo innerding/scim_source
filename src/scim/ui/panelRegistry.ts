@@ -307,10 +307,8 @@ export const PANEL_REGISTRY: PanelDescriptor[] = [
     isBlocking: true,
     contextKey: 'sensus_core_package',
     tabs: STANDARD_TABS,
-    bauKonzept: [
-      'Sensus Core ordert von P07/P08/P09 die atomaren particles einer committeten Representation und schnürt daraus die drei Horizonte (Bezug zur Representation bleibt erhalten) → origin.',
-      'Horizonte: Shell = langfristig (Engine-Suite) · Origin = mittelfristig (die origin-particles) · Anthem = kurzfristig (der Atem: alle 5 Min presence-origin ↔ load; MVP: Sim-Telco).',
-    ],
+    // bauKonzept entfernt — die live gebaute Sicht (Reigen · Auftraggeber · Kapsel ·
+    // Partikel-Kacheln) sagt das jetzt selbst.
   },
   {
     id: 'P12',
