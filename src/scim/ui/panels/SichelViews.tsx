@@ -105,6 +105,32 @@ export function BoundaryView() {
   );
 }
 
+// Gesampeltes Netz groß als normalisiertes SVG — gleiche lat-Flip- +
+// Längengrad-Korrektur wie RingSvg, damit nichts stretcht.
+function NetSvg({ stretches, size = 320 }: { stretches: { points: [number, number][] }[]; size?: number }) {
+  const all = stretches.flatMap((s) => s.points);
+  if (all.length < 2) return null;
+  const lats = all.map((p) => p[0]), lons = all.map((p) => p[1]);
+  const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+  const minLon = Math.min(...lons), maxLon = Math.max(...lons);
+  const kx = Math.cos(((minLat + maxLat) / 2) * Math.PI / 180);
+  const w = ((maxLon - minLon) * kx) || 1, h = (maxLat - minLat) || 1;
+  const pad = 10;
+  const sc = Math.min((size - 2 * pad) / w, (size - 2 * pad) / h);
+  const dw = w * sc + 2 * pad, dh = h * sc + 2 * pad;
+  const toXY = ([lat, lon]: [number, number]) =>
+    `${(pad + (lon - minLon) * kx * sc).toFixed(1)},${(pad + (maxLat - lat) * sc).toFixed(1)}`;
+  return (
+    <svg width={dw} height={dh} style={{ display: 'block', maxWidth: '100%' }}>
+      {stretches.map((s, i) => (
+        <polyline key={i} points={s.points.map(toXY).join(' ')} fill="none"
+          stroke="#4a5568" strokeWidth={0.8} strokeOpacity={0.85}
+          strokeLinejoin="round" strokeLinecap="round" />
+      ))}
+    </svg>
+  );
+}
+
 // ── P08 Wegnetz-Sampling ─────────────────────────────────────────────────────
 export function WegnetzSamplingView() {
   const { net } = resolveDemo();
@@ -117,6 +143,11 @@ export function WegnetzSamplingView() {
         Das committete Netz, resampelt auf die MVP-Zielsegmentlänge. Ergebnis = <strong>origin-net</strong>:
         Geometrie (1×) + stabile <strong>Segment-IDs</strong>, adressiert vom Anthem-Last-Array.
       </div>
+      {r && r.stretches.length > 0 && (
+        <div style={{ margin: '8px 0 12px', border: '1px solid #e2e8f0', borderRadius: 8, padding: 8, display: 'inline-block', background: '#fbfdff' }}>
+          <NetSvg stretches={r.stretches} size={320} />
+        </div>
+      )}
       {r ? (
         <>
           <Stat label="Segmente" value={`${r.segmentCount}`} hint={`über ${r.stretchCount} Strecken`} />
