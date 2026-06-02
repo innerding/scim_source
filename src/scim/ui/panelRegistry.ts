@@ -230,15 +230,14 @@ export const PANEL_REGISTRY: PanelDescriptor[] = [
     isBlocking: true,
     contextKey: 'graph',
     tabs: [
-      { id: 't1', label: 'Quell-Netz', icon: '⌗', body: [
-        'Das committete Netz der Representation kommt herein (Quelle, Konvergenz). Läuft nach Workspace-Binding, vor P09.',
-      ] },
+      // Mesh-Output (Netzbild) zuerst — Notiz entfernt, die View steht für sich.
+      { id: 't3', label: 'Mesh-Output', icon: '▦', body: [] },
       { id: 't2', label: 'Sampling', icon: '⋔', body: [
         'Wegnetz-Sampling: merge → Douglas-Peucker → Bogenlängen-Resampling → regelmäßiges Knoten-Netz.',
         'Mindestsegmentlänge 3 m; pro Strecke gleiche Teilung (kein Kreuzungs-Stub); zu kurze Strecke (< ~4,5 m) bleibt ein Segment.',
       ] },
-      { id: 't3', label: 'Mesh-Output', icon: '▦', body: [
-        'Produkt: gesampeltes Netz (Geometrie, 1×) + id/Code je Segment → P11 Sensus Core Services.',
+      { id: 't1', label: 'Quell-Netz', icon: '⌗', body: [
+        'Das committete Netz der Representation kommt herein (Quelle, Konvergenz). Läuft nach Workspace-Binding, vor P09.',
       ] },
     ],
   },
