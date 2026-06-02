@@ -246,7 +246,7 @@ export const PANEL_REGISTRY: PanelDescriptor[] = [
   // ── Gruppe 3: Engine (4 Modelle) ───────────────────────────────────────────
   {
     id: 'P09',
-    label: 'Engine-Prep-Build',
+    label: 'Engine-Prep & Origin Capsulation',
     kurzLabel: 'epb',
     group: 3,
     order: 9,

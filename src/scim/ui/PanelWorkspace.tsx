@@ -39,6 +39,7 @@ import { REPRESENTATIONS, wegnetzById } from '../workspace/workspace.registry';
 import { buildOriginPackage, MVP_RESAMPLE_TARGET_METERS } from '../sensus/originPackage';
 import { buildOriginManifest } from '../sensus/originManifest';
 import type { OriginManifest } from '../sensus/packageContract';
+import type { OriginPackage } from '../sensus/originPackage';
 import { resampleNet } from '../wegnetz/netResample';
 
 interface Props {
@@ -278,11 +279,18 @@ function P09PoiGallery() {
   );
 }
 
-function P09Artifact({ d, rep }: { d: P09Descriptor; rep?: { name: string; version?: number } | null }) {
+function P09Artifact({ d, rep, origin }: { d: P09Descriptor; rep?: { name: string; version?: number } | null; origin?: OriginPackage | null }) {
   // source an die inspizierte Representation binden: <xy> → Name, v.<x> → Version.
   const source = rep
     ? d.source.replace('<xy>', rep.name).replace('v.<x>', rep.version != null ? `v.${rep.version}` : 'v.?')
     : d.source;
+  // produces live machen: nennt eine Zeile ein origin-Partikel, echte Zahl+Bytes
+  // aus dem aufgelösten Origin der Rep anhängen (gleicher Resolver wie P11).
+  const enrich = (line: string): string => {
+    if (!origin) return line;
+    const p = origin.particles.find((x) => line.includes(x.id));
+    return p ? `${line} · ${p.detail} · ${fmtBytes(p.bytes)}` : line;
+  };
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif' }}>
       {/* Gemeinsamer Header — gilt für alle vier P09-Tabs. */}
@@ -291,7 +299,7 @@ function P09Artifact({ d, rep }: { d: P09Descriptor; rep?: { name: string; versi
         fontSize: 10, fontFamily: 'monospace', color: '#2b6cb0',
         background: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: 4,
       }}>
-        P09 · Engine-Prep-Build · auto-compute-Artefakt
+        P09 · Engine-Prep &amp; Origin Capsulation · auto-compute-Artefakt
       </div>
       <p style={{ fontSize: 12, color: '#718096', lineHeight: 1.5, margin: '2px 0 14px' }}>
         Build-seitige Vorbereitung. Die Engine läuft <strong>lokal in der Ziel-App</strong>, nicht in
@@ -302,7 +310,7 @@ function P09Artifact({ d, rep }: { d: P09Descriptor; rep?: { name: string; versi
       <P09Row k="artifact" v={<><strong>{d.name}</strong> · #{d.no}</>} />
       <P09Row k="actions" v={d.actions} />
       <P09Row k="source" v={source} />
-      <P09Row k="produces" v={<>{d.produces.map((p, i) => <div key={i}>{p}</div>)}</>} />
+      <P09Row k="produces" v={<>{d.produces.map((p, i) => <div key={i}>{enrich(p)}</div>)}</>} />
       <P09Row k="primär · paket" v={<><strong>{d.horizon}</strong> → {d.pkg}</>} />
       <P09Row k="depends · mid" v={d.dependsMid} />
       <P09Row k="depends · short" v={d.dependsShort} />
@@ -568,6 +576,9 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
   if (panel.id === 'P09') {
     const d = P09_DESCRIPTORS.find((x) => x.tabId === activeTab);
     if (d) {
+      // Origin der inspizierten Rep live auflösen (gleicher Resolver wie P11) —
+      // speist die produces-Zeilen mit echten Zahlen+Bytes.
+      const p09Origin = inspectedRep ? buildOriginPackage(inspectedRep) : null;
       // Mask-Tab (t3): User-Ausschluss-Regler (C1) · Move-Tab (t4): Test-Route (S4b).
       const extra = activeTab === 't3' ? <UserExclusionControl />
         : activeTab === 't4' ? <><RuntimeFlowExplainer /><TestRouteControl /></>
@@ -575,12 +586,12 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
       if (extra) {
         return (
           <>
-            <P09Artifact d={d} rep={inspectedRep} />
+            <P09Artifact d={d} rep={inspectedRep} origin={p09Origin} />
             <div style={{ marginTop: 18, borderTop: '1px solid #e2e8f0', paddingTop: 14 }}>{extra}</div>
           </>
         );
       }
-      return <P09Artifact d={d} rep={inspectedRep} />;
+      return <P09Artifact d={d} rep={inspectedRep} origin={p09Origin} />;
     }
   }
   // P11 Sensus Core Service: die drei Horizont-Pakete (Eingabe-Tab).
