@@ -261,14 +261,32 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
     if (!wid) return null;
     return wegnetzById(wid) ?? null;
   }, [activeRep]);
+  // Das teure Sim-Routing (buildFlows, N×M) wird HINTER den ersten Paint verschoben:
+  // simReady kippt erst nach Mount (idle) auf true. Sonst blockiert das Routing den
+  // Seitenstart, weil Inspector-Default (aktive Rep) + „Last (sim)"-Default beim
+  // Laden zusammenfallen.
+  const [simReady, setSimReady] = useState(false);
+  useEffect(() => {
+    const w = window as Window & {
+      requestIdleCallback?: (cb: () => void) => number;
+      cancelIdleCallback?: (id: number) => void;
+    };
+    if (w.requestIdleCallback) {
+      const id = w.requestIdleCallback(() => setSimReady(true));
+      return () => w.cancelIdleCallback?.(id);
+    }
+    const id = window.setTimeout(() => setSimReady(true), 250);
+    return () => clearTimeout(id);
+  }, []);
+
   // Playbook-Sim (S2/S2b): resampeltes Netz + geroutete Flows (Bus→Attraktor),
   // memoisiert (Routing läuft nur bei Asset-/Netz-Wechsel). simHour treibt die
   // Tageszeit — S3-Slider folgt; Default Mittag (Peak), damit man sofort etwas sieht.
-  // Nur rechnen, wenn „Last (sim)" wirklich an ist — sonst blockiert das Routing
-  // (buildFlows) den ersten Render jeder Rep, obwohl gar nichts angezeigt wird.
+  // Nur rechnen, wenn „Last (sim)" an UND simReady (nach erstem Paint) — sonst
+  // blockiert buildFlows den ersten Render.
   const simNet = useMemo(
-    () => (vis.simLoad && activeRep && repWegnetz) ? resampleNet(repWegnetz.edges, { targetMeters: MVP_RESAMPLE_TARGET_METERS }) : null,
-    [vis.simLoad, activeRep, repWegnetz],
+    () => (vis.simLoad && simReady && activeRep && repWegnetz) ? resampleNet(repWegnetz.edges, { targetMeters: MVP_RESAMPLE_TARGET_METERS }) : null,
+    [vis.simLoad, simReady, activeRep, repWegnetz],
   );
   const simFlows = useMemo(
     () => (vis.simLoad && simNet && repWegnetz) ? buildFlows(repWegnetz.edges, simNet, repCatalog.all) : [],
