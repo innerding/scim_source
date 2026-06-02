@@ -124,3 +124,44 @@ Origin (stabil); die *Last selbst* bleibt Anthem.
 **Reihenfolge:** A → B → C → D → E. A ist das pure, testbare Fundament; B/C füttern Parameter; D macht sichtbar; E dokumentiert die Paketzugehörigkeit.
 
 **Erste Einheit: A1** (`stretchAverages`) — Grundlage für Ausschluss/Degradierung, von nichts abhängig.
+
+---
+
+## 5 · Phase A–E KOMPLETT (Stand 2026-06) + Nachträge
+
+A–E gebaut & live (Last→Farbe-Kette wirkt sichtbar im Inspector „Last (sim)").
+
+**#1 Colour-System-Base (gebaut):** 3 durchgehende Paletten in `loadColour` —
+`heat` (alt) · **`green_violet` (Default, p10-Farben stetig)** · `calm`. Wähler in
+P04 „Grund-Spektrum"; `colorize(load, {palette, spectrum, bias})`.
+
+## 6 · #2 — Runtime-MVP (Last-Sim + Comfort + Ausweichroute) — EINGEFROREN
+
+**Fluss:**
+```
+P06 Transmitter :  Playbook-Sim (Sonntags-Tagesverlauf) × Zeitraffer-Slider (SCIM-Test, 0.5 h)
+        │  alle 5 Min → sim-last-signal
+        ▼
+   Anthem-Load (Pers/10 m, 1 B/Segment; 10 Pers/10 m = rot) → Colour-Mesh (A–E)
+        │
+   User : Route wählen (BAK · P09 Move) · Comfort (BCK · P09 Mask) → Ausweichroute
+```
+**MVP (geparkt, Wiring offen):** Mesh wird vom 5-Min-Load getrieben; Zeitraffer-
+Slider links neben dem Comfort-Slider (Runtime).
+
+**Modell-Treue (User-Entscheid):** echtes Routing (Besucher Bus→Attraktor über
+das Netz), kein bloßes Attraktor-Feld. Kosten-Trick: OD-Pfade (Bus→Attraktor)
+einmal routen, mit der Tageskurve gewichten.
+
+**Einheiten + Verortung:**
+| Unit | Was | Heimat |
+|---|---|---|
+| **S1** Pfad→Segment-Zähler | Pfad auf resampelte Segmente abbilden | Shell-Support (BCK+BAK) |
+| **S2** Playbook-Sim (Modell-Treue) | Bus→Attraktor (gis/square/point) via BAK routen → Pers/10 m, alle 5 Min | **P06 Transmitter** |
+| **S3** Zeitraffer-Slider (0.5 h) | treibt Tageszeit (SCIM-Test) | **P06 Transmitter** (MVP: links v. Comfort) |
+| **S4** Comfort-Check | Segmente wo `load(t) > comfort` | **P09 Mask · BCK** |
+| **S5** Ausweichroute | last-bewusstes Re-Routing (Strafgewicht), Original vs. Alternative | **P09 Move · BAK** |
+
+Fundament: `netGraph.graphCompose` + `pathEngine.buildRoutePath` (vorhanden).
+Engines bleiben Shell (classifyStretches=BCK, Router=BAK), sichtbar/justiert in
+P09 Mask/Move. **Start: S1** (panel-unabhängig).
