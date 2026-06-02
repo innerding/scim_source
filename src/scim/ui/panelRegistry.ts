@@ -68,6 +68,7 @@ const STANDARD_TABS: TabDescriptor[] = [
 // P06 SignalInterpretation hat zusaetzlich einen Simulation-Tab — Sandbox fuer
 // die Pattern-Klassifikation, frueher unter P04 TelcoLoad. Siehe ann_064.
 const P06_TABS: TabDescriptor[] = [
+  { id: 't1',         label: 'Transmission Schwellen', icon: '📡' },
   { id: 'input',      label: 'Eingabe',     icon: '✎' },
   { id: 'simulation', label: 'Simulation',  icon: '🎭' },
   { id: 'result',     label: 'Ergebnis',    icon: '◎' },

@@ -72,6 +72,21 @@ lösen sich **bei dieser Migration** auf — nicht vorher draufflicken.
 
 (R01-Panel ist mit dieser Einsicht befüllt: `RuntimeShellView`.)
 
+### Transmission Schwellen (Konsens 2026-06-02)
+
+In der Praxis spielt **Anthem alle Thresholds aus**, auch wenn System/Region
+thematisch zu Shell/Origin gehören. Daher **weiter Schnitt**: Kapitel
+**„Transmission Schwellen"** = **Transmitter (P06) · Thresholds (P01/P02/P04) ·
+Anthem-Encoder** (+ presence-Intake, Sim-Clock; später Anthem-Auslieferung/
+Scheduling). Horizont-Logik bleibt als innere Ordnung: Load→Anthem · Region→Origin
+· System→Shell. Text liegt in-app bei **P06 · Tab „Transmission Schwellen"**
+(`TransmissionView`).
+
+**Row-Ordnung — noch anzudenken (NICHT gebaut):** eigenes Navigator-Kapitel
+„Transmission Schwellen" (P06+P01/P02/P04 gruppieren) · **TargetAppUI (P03) → P07
+High-Shell** (Inhalt später) · **Route+Layer (P10)** → vermutlich Thresholds / geht
+in Engine-Prep auf (offen).
+
 ---
 
 ## Aktuelle Karte (in Arbeit · Vor-Migrations-Stand, Code trägt noch alte Labels)

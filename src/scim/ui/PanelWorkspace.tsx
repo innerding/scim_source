@@ -19,6 +19,7 @@ import RuntimeFlowExplainer from './panels/RuntimeFlowExplainer';
 import SensusCoreReigen from './panels/SensusCoreReigen';
 import { BoundaryView, WegnetzCompareView, IntroView } from './panels/SichelViews';
 import RuntimeShellView from './panels/RuntimeShellView';
+import TransmissionView from './panels/TransmissionView';
 import PanelResult from './panels/PanelResult';
 import PanelValidation from './panels/PanelValidation';
 import PanelRaw from './panels/PanelRaw';
@@ -654,6 +655,9 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
 
   // P09 (Origin-Capsuler): Auftraggeber + kapseln + Sampling-Vorschau (ohne Tabs). M4.
   if (panel.id === 'P09') return <OriginCapsulerView />;
+
+  // P06 t1: Transmission Schwellen (Atem/Anthem-Cluster + Row-Ordnungs-Notizen).
+  if (panel.id === 'P06' && activeTab === 't1') return <TransmissionView />;
 
   // P07 t3: Intro (reveal-engine, High-Shell). M3.
   if (panel.id === 'P07' && activeTab === 't3') return <IntroView />;

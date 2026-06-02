@@ -251,8 +251,8 @@ function TetraGlyph({ id, x, y, color }: { id: string; x: number; y: number; col
     case 'engine_prep': // Zahnrad
       body = <><circle cx={0} cy={0} r={2.4} {...s} /><path d="M0 -3.4 L0 -2.2 M0 3.4 L0 2.2 M-3.4 0 L-2.2 0 M3.4 0 L2.2 0 M-2.4 -2.4 L-1.55 -1.55 M2.4 -2.4 L1.55 -1.55 M-2.4 2.4 L-1.55 1.55 M2.4 2.4 L1.55 1.55" {...s} /><circle cx={0} cy={0} r={0.8} {...f} /></>;
       break;
-    case 'wegnetz_sampling': // Pill/Kapsel — Origin-Capsuler (P09)
-      body = <g transform="rotate(-30)"><rect x={-4} y={-1.7} width={8} height={3.4} rx={1.7} {...s} /><line x1={0} y1={-1.7} x2={0} y2={1.7} {...s} /></g>;
+    case 'wegnetz_sampling': // Pill/Kapsel (horizontal) — Origin-Capsuler (P09)
+      body = <><rect x={-4} y={-1.7} width={8} height={3.4} rx={1.7} {...s} /><line x1={0} y1={-1.7} x2={0} y2={1.7} {...s} /></>;
       break;
     case 'boundary': // Mobile Device — High-Shell (P07, App-UI/UX)
       body = <><rect x={-2.7} y={-4} width={5.4} height={8} rx={1} {...s} /><line x1={-0.9} y1={-3} x2={0.9} y2={-3} {...s} /><circle cx={0} cy={3} r={0.5} {...f} /></>;
