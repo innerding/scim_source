@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react';
-import { useInspectorView } from '../../runtime/repContext';
+import { useInspectorAsset, useRepresentationContext } from '../../runtime/repContext';
+import type { Representation } from '../workspace/workspace.types';
 import type { TabId } from './panelRegistry';
 import {
   KOSMOLOGIE_IDS,
@@ -361,21 +362,94 @@ const DEPLOY_ORDER: string[] = [
 const fmtBytes = (n: number) =>
   n < 1024 ? `${n} B` : n < 1024 * 1024 ? `${(n / 1024).toFixed(1)} kB` : `${(n / 1048576).toFixed(2)} MB`;
 
-function SensusCorePackages() {
-  // Demo-Rep bleibt als Fallback/„Teilespender" erhalten — die Quelle, wenn kein
-  // Auftraggeber gewählt/inspiziert ist.
+// Robuster Auftraggeber-Resolver: die im Inspector aktive Representation (Default
+// = letzte), NIE leer. Heilt das alte <xy>-Problem (useInspectorView war leer,
+// solange keine URL-/Compare-Rep gesetzt war).
+function useAuftraggeberRep(): Representation {
+  const asset = useInspectorAsset();
   const demoRep = REPRESENTATIONS.find((r) => /lichtenberg/i.test(r.id) || /lichtenberg/i.test(r.name)) ?? REPRESENTATIONS[0];
-  const inspected = useInspectorView()?.representation ?? null;
-  // Auftraggeber: explizit gewählt > inspizierte (zuletzt aktive) > Demo-Rep.
-  const [selId, setSelId] = useState<string | null>(null);
-  const auftraggeber = REPRESENTATIONS.find((r) => r.id === selId) ?? inspected ?? demoRep;
-  const origin = auftraggeber ? buildOriginPackage(auftraggeber) : null;
-  // Beauftragung/Kapselung: der Button baut das echte OriginManifest. Wird der
-  // Auftraggeber gewechselt, gilt eine alte Kapsel als veraltet (neu beauftragen).
+  if (asset?.kind === 'representation') {
+    const r = REPRESENTATIONS.find((x) => x.id === asset.id);
+    if (r) return r;
+  }
+  if (asset?.kind === 'geometry') {
+    const r = REPRESENTATIONS.find((x) => x.geometry_id === asset.id);
+    if (r) return r;
+  }
+  return demoRep;
+}
+
+// P09 · Origin-Capsuler — baut Origin: Auftraggeber wählen → kapseln (OriginManifest)
+// + Wegnetz-Sampling-Vorschau. M4: aus P11 hierher gezogen.
+function OriginCapsulerView() {
+  const rep = useAuftraggeberRep();
+  const { setInspectorAsset } = useRepresentationContext();
   const [capsule, setCapsule] = useState<OriginManifest | null>(null);
-  const capsuleFresh = capsule != null && capsule.repId === auftraggeber?.id;
-  // Resample-Trade-off: dasselbe Netz bei verschiedenen Zielsegmentlängen.
-  const net = auftraggeber?.wegnetz_id ? wegnetzById(auftraggeber.wegnetz_id) : undefined;
+  const capsuleFresh = capsule != null && capsule.repId === rep.id;
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', fontFamily: 'system-ui, sans-serif' }}>
+      <div style={{ flex: '0 0 auto' }}>
+        <div style={{
+          display: 'inline-block', padding: '2px 8px', marginBottom: 8, fontSize: 10, fontFamily: 'monospace',
+          color: '#2b6cb0', background: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: 4,
+        }}>
+          P09 · Origin-Capsuler · committete Representation → Origin-Partikel
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, fontSize: 12, flexWrap: 'wrap' }}>
+          <span style={{ fontWeight: 700, color: '#1a365d' }}>Auftraggeber:</span>
+          <select
+            value={rep.id}
+            onChange={(e) => setInspectorAsset({ kind: 'representation', id: e.target.value })}
+            style={{ fontSize: 12, padding: '3px 6px', borderRadius: 4, border: '1px solid #cbd5e0', color: '#1a365d' }}
+          >
+            {REPRESENTATIONS.map((r) => (
+              <option key={r.id} value={r.id}>{r.name}{r.version != null ? ` · v${r.version}` : ''}</option>
+            ))}
+          </select>
+          <button
+            onClick={() => setCapsule(buildOriginManifest(rep))}
+            style={{
+              marginLeft: 'auto', fontSize: 12, padding: '4px 12px', borderRadius: 4, cursor: 'pointer',
+              border: '1px solid #2f855a', background: '#f0fff4', color: '#22543d', fontWeight: 600,
+            }}
+          >▣ Origin auflösen &amp; kapseln</button>
+        </div>
+        {capsuleFresh && capsule && (
+          <div style={{ border: '1px solid #c6f6d5', background: '#f0fff4', borderRadius: 8, padding: '10px 12px', marginBottom: 12 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#22543d' }}>
+              Kapsel · {capsule.kind} · „{capsule.repName}" v{capsule.version}
+            </div>
+            <div style={{ fontSize: 11, color: '#2f855a', margin: '2px 0 8px' }}>
+              Origin gekapselt — geht an <strong>P11 Sensus Core Publishing</strong>. Shell + Anthem werden referenziert, nicht hier aufgelöst.
+            </div>
+            <div style={{ fontSize: 11.5, fontFamily: 'ui-monospace, Menlo, monospace', color: '#22543d', lineHeight: 1.7 }}>
+              <div>L0 · origin-boundary (Manifest) · {capsule.boundary.length} Punkte · bbox [{capsule.bbox.map((n) => n.toFixed(4)).join(', ')}]</div>
+              {capsule.layers.map((l) => (
+                <div key={l.id}>· {l.id}{l.bytes != null ? ` · ${fmtBytes(l.bytes)}` : ' · (reserviert)'} → <span style={{ color: '#718096' }}>{l.ref}</span></div>
+              ))}
+              <div>anthem → <span style={{ color: '#718096' }}>{capsule.anthemEndpoint}</span></div>
+            </div>
+          </div>
+        )}
+        {capsule && !capsuleFresh && (
+          <div style={{ fontSize: 10.5, color: '#a0aec0', fontStyle: 'italic', marginBottom: 8 }}>
+            Auftraggeber gewechselt — bitte neu „Origin auflösen &amp; kapseln".
+          </div>
+        )}
+      </div>
+      <div style={{ flex: '1 1 auto', minHeight: 0 }}>
+        <WegnetzCompareView />
+      </div>
+    </div>
+  );
+}
+
+function SensusCorePackages() {
+  // M4: Publishing baut nichts mehr — der Auftraggeber wird im Origin-Capsuler (P09)
+  // bzw. Inspector gewählt; hier nur lesen + die drei Pakete schnüren/anzeigen.
+  const auftraggeber = useAuftraggeberRep();
+  const origin = buildOriginPackage(auftraggeber);
+  const net = auftraggeber.wegnetz_id ? wegnetzById(auftraggeber.wegnetz_id) : undefined;
   const resampleVariants = net
     ? [3, 10, 25].map((t) => ({ t, r: resampleNet(net.edges, { targetMeters: t }) }))
     : [];
@@ -386,55 +460,12 @@ function SensusCorePackages() {
         fontSize: 10, fontFamily: 'monospace', color: '#2b6cb0',
         background: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: 4,
       }}>
-        Sensus Core Publishing · Originpackage → Shell · Origin · Anthem
+        Sensus Core Publishing · Shell · Origin · Anthem schnüren + ausspielen
       </div>
-      {/* Auftraggeber-Wähler: welche committete Representation Sensus Core beauftragt. */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, fontSize: 12 }}>
-        <span style={{ fontWeight: 700, color: '#1a365d' }}>Auftraggeber:</span>
-        <select
-          value={auftraggeber?.id ?? ''}
-          onChange={(e) => setSelId(e.target.value)}
-          style={{ fontSize: 12, padding: '3px 6px', borderRadius: 4, border: '1px solid #cbd5e0', color: '#1a365d' }}
-        >
-          {REPRESENTATIONS.map((r) => (
-            <option key={r.id} value={r.id}>{r.name}{r.version != null ? ` · v${r.version}` : ''}</option>
-          ))}
-        </select>
-        {inspected && auftraggeber?.id === inspected.id && selId == null && (
-          <span style={{ fontSize: 10, color: '#a0aec0', fontStyle: 'italic' }}>(folgt dem Inspector)</span>
-        )}
-        <button
-          onClick={() => { if (auftraggeber) setCapsule(buildOriginManifest(auftraggeber)); }}
-          style={{
-            marginLeft: 'auto', fontSize: 12, padding: '4px 12px', borderRadius: 4, cursor: 'pointer',
-            border: '1px solid #2f855a', background: '#f0fff4', color: '#22543d', fontWeight: 600,
-          }}
-        >▣ Origin auflösen &amp; kapseln</button>
+      <div style={{ fontSize: 12, color: '#4a5568', marginBottom: 12 }}>
+        Auftraggeber: <strong>„{auftraggeber.name}"{auftraggeber.version != null ? ` v${auftraggeber.version}` : ''}</strong>
+        <span style={{ color: '#a0aec0' }}> — gewählt im Origin-Capsuler (P09) / Inspector.</span>
       </div>
-
-      {/* Kapsel: das materialisierte OriginManifest (Vorschlag A · Schritt 2). */}
-      {capsuleFresh && capsule && (
-        <div style={{ border: '1px solid #c6f6d5', background: '#f0fff4', borderRadius: 8, padding: '10px 12px', marginBottom: 14 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: '#22543d' }}>
-            Kapsel · {capsule.kind} · „{capsule.repName}" v{capsule.version}
-          </div>
-          <div style={{ fontSize: 11, color: '#2f855a', margin: '2px 0 8px' }}>
-            Origin gekapselt — bereit zum Publish (P14). Shell (Engines) + Anthem (Laufzeit) werden referenziert, nicht hier aufgelöst.
-          </div>
-          <div style={{ fontSize: 11.5, fontFamily: 'ui-monospace, Menlo, monospace', color: '#22543d', lineHeight: 1.7 }}>
-            <div>L0 · origin-boundary (Manifest) · {capsule.boundary.length} Punkte · bbox [{capsule.bbox.map((n) => n.toFixed(4)).join(', ')}]</div>
-            {capsule.layers.map((l) => (
-              <div key={l.id}>· {l.id}{l.bytes != null ? ` · ${fmtBytes(l.bytes)}` : ' · (reserviert)'} → <span style={{ color: '#718096' }}>{l.ref}</span></div>
-            ))}
-            <div>anthem → <span style={{ color: '#718096' }}>{capsule.anthemEndpoint}</span></div>
-          </div>
-        </div>
-      )}
-      {capsule && !capsuleFresh && (
-        <div style={{ fontSize: 10.5, color: '#a0aec0', fontStyle: 'italic', marginBottom: 10 }}>
-          Auftraggeber gewechselt — bitte neu „Origin auflösen &amp; kapseln".
-        </div>
-      )}
       <SensusCoreReigen origin={origin} />
       <p style={{ fontSize: 12.5, color: '#4a5568', lineHeight: 1.55, margin: '2px 0 14px' }}>
         Sensus Core ordert die atomaren particles von <strong>P07/P08/P09</strong> und stellt daraus
@@ -528,7 +559,7 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
   onCatalogConsumed?: () => void;
 }) {
   const role = useRole();
-  const inspectedRep = useInspectorView()?.representation ?? null;
+  const inspectedRep = useAuftraggeberRep(); // robust, nie leer → heilt source=<xy>
   if (activeId === WORKSPACE_DESCRIPTOR.id) {
     return <WorkspacePanel onJumpTo={onJumpTo ?? (() => {})} />;
   }
@@ -618,8 +649,8 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
     );
   }
 
-  // P09 (Origin-Capsuler): Sampling-Pipeline als Direktvergleich (ohne Tabs). M2: von P08.
-  if (panel.id === 'P09') return <WegnetzCompareView />;
+  // P09 (Origin-Capsuler): Auftraggeber + kapseln + Sampling-Vorschau (ohne Tabs). M4.
+  if (panel.id === 'P09') return <OriginCapsulerView />;
 
   // P07 t3: Intro (reveal-engine, High-Shell). M3.
   if (panel.id === 'P07' && activeTab === 't3') return <IntroView />;
