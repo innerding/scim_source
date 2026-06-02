@@ -13,6 +13,7 @@ import RepresentBuildTetrahedron from './RepresentBuildTetrahedron';
 import type { RepresentBuildFace, RepresentBuildArc, RepresentBuildSickle } from './RepresentBuildTetrahedron';
 import type { TabId } from './panelRegistry';
 import NavTransmissionField from './NavTransmissionField';
+import NavMetaSpace from './NavMetaSpace';
 import NavDepthTetraeder from './NavDepthTetraeder';
 
 interface Props {
@@ -686,6 +687,17 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
         />
       </div>
 
+      {/* Meta-Space — grobe Felsbrocken (Mondlandschaft) unter dem Substrat-Tetraeder.
+          Echtes Flow-Element: nimmt Platz und schiebt Cosmo-Controls + alles darunter
+          nach unten. marginTop:-20 tuckt die Brocken unter die Substrat-Spitze;
+          zIndex:2 lässt das Substrat-Drahtgitter über die Brocken-Köpfe malen. */}
+      <div style={{
+        padding: '0 18px', flexShrink: 0, marginTop: -20,
+        position: 'relative', zIndex: 2, pointerEvents: 'none',
+      }}>
+        <NavMetaSpace />
+      </div>
+
       {/* Manual + Reader sitzen am Fuss der Kosmologie — unter der gesamten
           Bipyramide. Reader-Dot (●, rechts) ist Default fast unsichtbar
           (opacity 0.03) und erscheint mit Pulse, wenn die Maus die Zeile
@@ -698,7 +710,9 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
         style={{
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           padding: '0 14px', marginBottom: 6, flexShrink: 0,
-          marginTop: -68,
+          // war -68 (zog die Zeile ins Substrat hoch); 0 → rückt sie + alles
+          // darunter unter die Meta-Space-Brocken.
+          marginTop: 0,
           // Diese Zeile (Cosmo-Controls + Reader-Diode) liegt durch marginTop:-68
           // im Bereich des Substrats (zIndex:3). Ohne eigenes zIndex deckt der
           // Substrat-Treffer-Faenger sie zu → Row-Hover/Diode tot. zIndex:4 hebt
