@@ -510,6 +510,17 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
         }).map((c) => [c.id, c.state]),
       );
       const effBias = Math.max(-1, Math.min(1, colourCfg.bias + colourCfg.safety));
+      // Pass 1: Shadow-Halo je Strecke (dunkle, breite Unterlage), damit die
+      // Farbe — v. a. Grün — abhebt. Ein Polyline je Strecke (günstig).
+      for (const s of simNet.stretches) {
+        if (s.points.length >= 2) {
+          L.polyline(s.points, {
+            color: 'rgba(15,23,42,0.45)', weight: 8, opacity: 0.5,
+            lineCap: 'round', lineJoin: 'round',
+          }).addTo(sub);
+        }
+      }
+      // Pass 2: farbige Segmente oben drauf.
       let idx = 0;
       for (const s of simNet.stretches) {
         const state = stateById.get(s.id) ?? 'normal';
