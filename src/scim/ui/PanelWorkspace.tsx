@@ -274,9 +274,12 @@ function P09PoiGallery() {
 
 function P09Artifact({ d, rep, origin }: { d: P09Descriptor; rep?: { name: string; version?: number } | null; origin?: OriginPackage | null }) {
   // source an die inspizierte Representation binden: <xy> → Name, v.<x> → Version.
-  const source = rep
-    ? d.source.replace('<xy>', rep.name).replace('v.<x>', rep.version != null ? `v.${rep.version}` : 'v.?')
-    : d.source;
+  // Platzhalter an die Rep binden: <xy>/(xy) → Name, v.<x> → Version.
+  const bindRep = (s: string) => rep
+    ? s.replace('<xy>', rep.name).replace('(xy)', `(${rep.name})`).replace('v.<x>', rep.version != null ? `v.${rep.version}` : 'v.?')
+    : s;
+  const source = bindRep(d.source);
+  const dependsMid = bindRep(d.dependsMid);
   // produces live machen: nennt eine Zeile ein origin-Partikel, echte Zahl+Bytes
   // aus dem aufgelösten Origin der Rep anhängen (gleicher Resolver wie P11).
   const enrich = (line: string): string => {
@@ -305,7 +308,7 @@ function P09Artifact({ d, rep, origin }: { d: P09Descriptor; rep?: { name: strin
       <P09Row k="source" v={source} />
       <P09Row k="produces" v={<>{d.produces.map((p, i) => <div key={i}>{enrich(p)}</div>)}</>} />
       <P09Row k="primär · paket" v={<><strong>{d.horizon}</strong> → {d.pkg}</>} />
-      <P09Row k="depends · mid" v={d.dependsMid} />
+      <P09Row k="depends · mid" v={dependsMid} />
       <P09Row k="depends · short" v={d.dependsShort} />
       <P09Row k="function" v={<code>{d.fn}</code>} />
       <P09Row k="rescue-kette" v={<>Berge <code>{d.rescueFrom}</code> → Kapsel (Hash/Diff) → SCS → {d.pkg}</>} />

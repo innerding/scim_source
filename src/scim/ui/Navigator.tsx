@@ -231,9 +231,11 @@ function arcFromActive(activeId: string): RepresentBuildArc | undefined {
 
 // Sichel-Highlight: bou = P07, wns = P08, epb = P09.
 function sickleFromActive(activeId: string): RepresentBuildSickle | undefined {
+  // M6: Sichel-Rotation. P08 Deep-Shell → engine_prep-Sichel (Zahnrad, rechts);
+  // P09 Origin-Capsuler → wegnetz_sampling-Sichel (Sampling, unten). P07 bleibt links.
   if (activeId === 'P07') return 'boundary';
-  if (activeId === 'P08') return 'wegnetz_sampling';
-  if (activeId === 'P09') return 'engine_prep';
+  if (activeId === 'P08') return 'engine_prep';
+  if (activeId === 'P09') return 'wegnetz_sampling';
   return undefined;
 }
 
@@ -649,9 +651,10 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
             else if (a === 'load_thresholds') go('P04');
           }}
           onSickleClick={(s) => {
+            // M6: engine_prep-Sichel → P08 (Deep-Shell); wegnetz_sampling → P09 (Origin-Capsuler).
             if (s === 'boundary') go('P07');
-            else if (s === 'wegnetz_sampling') go('P08');
-            else if (s === 'engine_prep') go('P09');
+            else if (s === 'engine_prep') go('P08');
+            else if (s === 'wegnetz_sampling') go('P09');
           }}
         />
       </div>
