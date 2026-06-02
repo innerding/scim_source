@@ -259,13 +259,15 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
   // Playbook-Sim (S2/S2b): resampeltes Netz + geroutete Flows (Bus→Attraktor),
   // memoisiert (Routing läuft nur bei Asset-/Netz-Wechsel). simHour treibt die
   // Tageszeit — S3-Slider folgt; Default Mittag (Peak), damit man sofort etwas sieht.
+  // Nur rechnen, wenn „Last (sim)" wirklich an ist — sonst blockiert das Routing
+  // (buildFlows) den ersten Render jeder Rep, obwohl gar nichts angezeigt wird.
   const simNet = useMemo(
-    () => (activeRep && repWegnetz) ? resampleNet(repWegnetz.edges, { targetMeters: MVP_RESAMPLE_TARGET_METERS }) : null,
-    [activeRep, repWegnetz],
+    () => (vis.simLoad && activeRep && repWegnetz) ? resampleNet(repWegnetz.edges, { targetMeters: MVP_RESAMPLE_TARGET_METERS }) : null,
+    [vis.simLoad, activeRep, repWegnetz],
   );
   const simFlows = useMemo(
-    () => (simNet && repWegnetz) ? buildFlows(repWegnetz.edges, simNet, repCatalog.all) : [],
-    [simNet, repWegnetz, repCatalog],
+    () => (vis.simLoad && simNet && repWegnetz) ? buildFlows(repWegnetz.edges, simNet, repCatalog.all) : [],
+    [vis.simLoad, simNet, repWegnetz, repCatalog],
   );
   const [simHour, setSimHour] = useState(getSimHour());
   useEffect(() => subscribeSimClock(() => setSimHour(getSimHour())), []);
