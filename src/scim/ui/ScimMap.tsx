@@ -266,7 +266,7 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
     () => (simNet && repWegnetz) ? buildFlows(repWegnetz.edges, simNet, repCatalog.all) : [],
     [simNet, repWegnetz, repCatalog],
   );
-  const [simHour] = useState(12.5);
+  const [simHour] = useState(9.5);
   // Wegnetz-Edges in die Colour-Mesh-Edge-Form ([lon,lat]-coordinates) bringen.
   const wegnetzAsEdges = useMemo(() => {
     if (!repWegnetz) return [];

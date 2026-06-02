@@ -17,13 +17,18 @@ export interface ODFlow {
   intensity: number;
 }
 
-// Sonntags-Tageskurve (Juni): ~0 vor 7:00, Anstieg ab 8:30, Plateau/Peak Mittag
-// (~12–14), Abklang bis Abend. Liefert einen Faktor 0..1. Logistik-Anstieg ×
-// Logistik-Abfall — glatt, kein Sprung.
+// Sonntags-Tageskurve (Juni). Zwei Schwünge: Vormittag 8:30–10:30 und um 14:00;
+// dazwischen/sonst kaum was los, mit kleinem Grund-Aufkommen (alle ein bisschen
+// verteilt). Stundentakt: Welle zur halben Stunde (Bus :30), Senke dazwischen.
 export function arrivalCurve(hour: number): number {
-  const rise = 1 / (1 + Math.exp(-(hour - 9) * 1.5));   // ~0 bei 7, ~0.5 bei 9, ~1 ab 11
-  const fall = 1 / (1 + Math.exp((hour - 17) * 1.2));   // ~1 bis 15, ~0.5 bei 17, ~0 ab 19
-  return clamp01(rise * fall);
+  const g = (mu: number, sig: number) => Math.exp(-((hour - mu) ** 2) / (2 * sig * sig));
+  const envelope =
+    0.9 * g(9.5, 1.0)              // Vormittags-Schwung 8:30–10:30
+    + 0.75 * g(14, 0.8)           // Nachmittags-Schwung um 14:00
+    + (hour >= 7 && hour <= 19 ? 0.06 : 0); // schwaches Grund-Aufkommen tagsüber
+  const ripple = (Math.cos(2 * Math.PI * (hour - 0.5)) + 1) / 2; // 1 bei :30, 0 bei :00
+  const pulse = 0.35 + 0.65 * ripple;                            // Stundentakt
+  return clamp01(envelope * pulse);
 }
 
 // Per-Segment-Last (0..1) zur Stunde `hour`, ausgerichtet auf die
@@ -57,14 +62,18 @@ const ATTRACTOR_BUCKETS = new Set(['Points', 'Squares']);
 // Stark frequentierte Bus-Stationen (Namens-Fragmente, lowercase) — der Rest
 // trägt nur schwach bei. Szenario-Default für Lichtenberg.
 const STRONG_SOURCES_DEFAULT = ['lichtenberg', 'rohrbach', 'kirchschlag', 'eidenberg'];
+// Trotz Namens-Treffer ganz schwach (überstimmt die starke Liste).
+const WEAK_OVERRIDES_DEFAULT = ['haslinger', 'neulichtenberg'];
 
 export interface BuildFlowsOpts {
   intensityPerFlow?: number;  // Personen je Strom bei vollem Aufkommen
   tolMeters?: number;         // Pfad→Segment-Toleranz
   maxStraightMeters?: number; // Fallback-Grenze des Routers
   strongSources?: string[];   // starke Quellen (Namens-Fragmente, lowercase)
+  weakOverrides?: string[];   // trotz Treffer ganz schwach
   strongWeight?: number;      // Gewicht starker Quellen (Default 1)
   weakWeight?: number;        // Gewicht der übrigen (Default 0.3)
+  veryWeakWeight?: number;    // Gewicht der Overrides (Default 0.1)
   maxHours?: number;          // max GESAMT-Gehzeit eines Besuchers (Default 6)
   speedKmh?: number;          // Gehgeschwindigkeit (Default 4)
   roundTrip?: boolean;        // Hin+Zurück (Default true)
@@ -79,17 +88,22 @@ export function buildFlows(
   const intensity = opts.intensityPerFlow ?? 2;
   const tol = opts.tolMeters ?? 10;
   const strong = (opts.strongSources ?? STRONG_SOURCES_DEFAULT).map((s) => s.toLowerCase());
+  const overrides = (opts.weakOverrides ?? WEAK_OVERRIDES_DEFAULT).map((s) => s.toLowerCase());
   const strongW = opts.strongWeight ?? 1;
   const weakW = opts.weakWeight ?? 0.3;
+  const veryWeakW = opts.veryWeakWeight ?? 0.1;
   const speed = (opts.speedKmh ?? 4) * 1000;
   const oneWayMax = ((opts.maxHours ?? 6) / (opts.roundTrip === false ? 1 : 2)) * speed; // m
 
   const toLatLng = (p: CatalogPoi): LatLng => [p.coord[1], p.coord[0]];
   const usable = pois.filter((p) => p.subcategory !== 'Cluster');
-  const sources = usable.filter((p) => SOURCE_BUCKETS.has(p.bucket)).map((p) => ({
-    coord: toLatLng(p),
-    weight: strong.some((s) => (p.text ?? '').toLowerCase().includes(s)) ? strongW : weakW,
-  }));
+  const sources = usable.filter((p) => SOURCE_BUCKETS.has(p.bucket)).map((p) => {
+    const t = (p.text ?? '').toLowerCase();
+    const weight = overrides.some((s) => t.includes(s)) ? veryWeakW
+      : strong.some((s) => t.includes(s)) ? strongW
+      : weakW;
+    return { coord: toLatLng(p), weight };
+  });
   const attractors = usable.filter((p) => ATTRACTOR_BUCKETS.has(p.bucket)).map(toLatLng);
   if (sources.length === 0 || attractors.length === 0 || edges.length === 0) return [];
 
