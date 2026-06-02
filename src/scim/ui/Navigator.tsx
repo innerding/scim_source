@@ -675,8 +675,9 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
         // Bereich nimmt Hover/Lock, sodass der loa-Arc oben klickbar bleibt.
         position: 'relative', zIndex: 3,
         pointerEvents: 'none',
-        // nur den Substrat-Tetraeder 6px nach unten (Transform → Layout/Folgendes unberührt).
-        transform: 'translateY(6px)',
+        // nur den Substrat-Tetraeder nach unten (Transform → Layout/Folgendes
+        // unberührt). 6px + 24px = 30px (gesamter Tetraeder samt Hitbox).
+        transform: 'translateY(30px)',
       }}>
         <NavDepthTetraeder
           size={208}
