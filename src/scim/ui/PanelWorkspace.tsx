@@ -13,6 +13,7 @@ import PanelInputForm from './panels/PanelInputForm';
 import ColourAdjust from './panels/ColourAdjust';
 import UserExclusionControl from './panels/UserExclusionControl';
 import TestRouteControl from './panels/TestRouteControl';
+import RuntimeFlowExplainer from './panels/RuntimeFlowExplainer';
 import PanelResult from './panels/PanelResult';
 import PanelValidation from './panels/PanelValidation';
 import PanelRaw from './panels/PanelRaw';
@@ -493,7 +494,7 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
     if (d) {
       // Mask-Tab (t3): User-Ausschluss-Regler (C1) · Move-Tab (t4): Test-Route (S4b).
       const extra = activeTab === 't3' ? <UserExclusionControl />
-        : activeTab === 't4' ? <TestRouteControl />
+        : activeTab === 't4' ? <><RuntimeFlowExplainer /><TestRouteControl /></>
         : null;
       if (extra) {
         return (
