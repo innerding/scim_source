@@ -23,7 +23,8 @@ import { poiCompositeSvg } from '../poi-catalog/poiCatalog.composite';
 import { renderClusterPois } from './clusterOverlay';
 import { drawNet } from './netDraw';
 import { resampleNet, type ResampledNet } from '../wegnetz/netResample';
-import { simSegmentLoads, stretchAverages, normalizeLoads, classifyStretches } from '../sensus/anthemSim';
+import { stretchAverages, normalizeLoads, classifyStretches } from '../sensus/anthemSim';
+import { playbookLoad, buildFlows } from '../sensus/playbook';
 import { colorize } from '../sensus/loadColour';
 import { loadColourSettings, COLOUR_SETTINGS_EVENT } from '../sensus/colourSettings';
 import { loadUserExclusion, USER_EXCLUSION_EVENT } from '../sensus/userExclusion';
@@ -254,6 +255,18 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
     if (!wid) return null;
     return wegnetzById(wid) ?? null;
   }, [activeRep]);
+  // Playbook-Sim (S2/S2b): resampeltes Netz + geroutete Flows (Bus→Attraktor),
+  // memoisiert (Routing läuft nur bei Asset-/Netz-Wechsel). simHour treibt die
+  // Tageszeit — S3-Slider folgt; Default Mittag (Peak), damit man sofort etwas sieht.
+  const simNet = useMemo(
+    () => (activeRep && repWegnetz) ? resampleNet(repWegnetz.edges, { targetMeters: MVP_RESAMPLE_TARGET_METERS }) : null,
+    [activeRep, repWegnetz],
+  );
+  const simFlows = useMemo(
+    () => (simNet && repWegnetz) ? buildFlows(repWegnetz.edges, simNet, repCatalog.all) : [],
+    [simNet, repWegnetz, repCatalog],
+  );
+  const [simHour] = useState(12.5);
   // Wegnetz-Edges in die Colour-Mesh-Edge-Form ([lon,lat]-coordinates) bringen.
   const wegnetzAsEdges = useMemo(() => {
     if (!repWegnetz) return [];
@@ -479,21 +492,22 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
     // Last (sim): die VOLLE Farb-Kette (Umbauplan Phase D). Anzeige je Segment
     // via colorize(System-normalisierte Last); Degradierung/Ausschluss je
     // STRECKE über die Ø-Last (crossing-gated). §2a: stetiger Gradient.
-    if (vis.simLoad && activeRep && repWegnetz) {
+    if (vis.simLoad && activeRep && repWegnetz && simNet) {
       const sub = L.layerGroup();
-      const rnet = resampleNet(repWegnetz.edges, { targetMeters: MVP_RESAMPLE_TARGET_METERS });
+      // Playbook-Last zur Tageszeit (Bus→Attraktor-Flows × Sonntagskurve)
+      const raw = playbookLoad(simNet, simFlows, simHour);
       // System: normalisieren (Spreizung + Mindest-Rot)
-      const loads = normalizeLoads(simSegmentLoads(rnet), { spread: colourCfg.spread, floor: colourCfg.floor });
+      const loads = normalizeLoads(raw, { spread: colourCfg.spread, floor: colourCfg.floor });
       // je Strecke klassifizieren (Operator-Degradierung + User-Ausschluss)
       const stateById = new Map(
-        classifyStretches(stretchAverages(rnet, loads), {
+        classifyStretches(stretchAverages(simNet, loads), {
           degradier: colourCfg.degradier ?? undefined,
           ausschluss: userExcl ?? undefined,
         }).map((c) => [c.id, c.state]),
       );
       const effBias = Math.max(-1, Math.min(1, colourCfg.bias + colourCfg.safety));
       let idx = 0;
-      for (const s of rnet.stretches) {
+      for (const s of simNet.stretches) {
         const state = stateById.get(s.id) ?? 'normal';
         for (let i = 1; i < s.points.length; i++) {
           const load = loads[idx++] ?? 0;
@@ -616,7 +630,7 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
         [Math.max(...lats), Math.max(...lons)],
       ]);
     }
-  }, [result, vis, osmEdges, repBbox, repPolygonLatLng, activeRep, repCatalog, availLayers, repWegnetz, wegnetzAsEdges, colourCfg, userExcl]);
+  }, [result, vis, osmEdges, repBbox, repPolygonLatLng, activeRep, repCatalog, availLayers, repWegnetz, wegnetzAsEdges, colourCfg, userExcl, simNet, simFlows, simHour]);
 
   // Dynamisches Cluster-Overlay: bei jedem zoom/move neu rechnen (Pixel-Logik).
   // Eigener Layer, damit der Haupt-Render unberuehrt bleibt.
