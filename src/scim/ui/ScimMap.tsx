@@ -76,13 +76,13 @@ const DEFAULT_VISIBILITY: LayerVisibility = {
   routes: false,
   pois: true,
   poiIcons: true,
-  colourmesh: true,
+  colourmesh: false,
   mapBase: true,
-  darkBase: true,
+  darkBase: false,
   resample3: false,
   resample10: false,
   resample25: false,
-  simLoad: false,
+  simLoad: true,
 };
 
 // Polygon (outer ring) -> [minLon, minLat, maxLon, maxLat].

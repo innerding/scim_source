@@ -116,7 +116,13 @@ function buildView(repId: string): ActiveRepresentation | null {
 export function RepresentationProvider({ children }: RepresentationProviderProps) {
   const [active, setActive] = useState<ActiveRepresentation | null>(() => resolveCurrent());
   const [inspectorView, setInspectorViewState] = useState<ActiveRepresentation | null>(null);
-  const [inspectorAsset, setInspectorAsset] = useState<InspectorAsset | null>(null);
+  // Inspector-Default beim Start: die letzte Representation (zuletzt in der
+  // Registry) — damit der Inspector nicht leer startet.
+  const [inspectorAsset, setInspectorAsset] = useState<InspectorAsset | null>(
+    () => REPRESENTATIONS.length > 0
+      ? { kind: 'representation', id: REPRESENTATIONS[REPRESENTATIONS.length - 1].id }
+      : null,
+  );
 
   // Browser-Back/Forward synchronisieren
   useEffect(() => {

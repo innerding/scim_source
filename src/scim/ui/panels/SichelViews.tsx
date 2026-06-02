@@ -3,7 +3,7 @@
 // Reine Anzeige über vorhandene Resolver (buildOriginPackage · resampleNet).
 // Heimat: P07 t1 (Boundary), P08 t3 (Mesh-Output). Voll: docs/anthem_snapshot_spec.md.
 
-import { REPRESENTATIONS, wegnetzById } from '../../workspace/workspace.registry';
+import { REPRESENTATIONS, wegnetzById, geometryById } from '../../workspace/workspace.registry';
 import { buildOriginPackage, MVP_RESAMPLE_TARGET_METERS } from '../../sensus/originPackage';
 import { resampleNet } from '../../wegnetz/netResample';
 import { fmtBytes } from '../../sensus/formatBytes';
@@ -14,7 +14,27 @@ function resolveDemo() {
   const rep = REPRESENTATIONS.find((r) => /lichtenberg/i.test(r.id) || /lichtenberg/i.test(r.name)) ?? REPRESENTATIONS[0];
   const origin = rep ? buildOriginPackage(rep) : null;
   const net = rep?.wegnetz_id ? wegnetzById(rep.wegnetz_id) : undefined;
-  return { rep, origin, net };
+  const geo = rep?.geometry_id ? geometryById(rep.geometry_id) : undefined;
+  const ring = (geo?.polygon ?? null) as [number, number][] | null;
+  return { rep, origin, net, ring };
+}
+
+// Boundary-Ring groß als normalisiertes SVG (lat-Flip für Bildschirmkoordinaten).
+function RingSvg({ ring, size = 300 }: { ring: [number, number][]; size?: number }) {
+  if (ring.length < 3) return null;
+  const xs = ring.map((p) => p[0]), ys = ring.map((p) => p[1]);
+  const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+  const w = (maxX - minX) || 1, h = (maxY - minY) || 1;
+  const pad = 10;
+  const sc = Math.min((size - 2 * pad) / w, (size - 2 * pad) / h);
+  const dw = w * sc + 2 * pad, dh = h * sc + 2 * pad;
+  const pts = ring.map(([lon, lat]) =>
+    `${(pad + (lon - minX) * sc).toFixed(1)},${(pad + (maxY - lat) * sc).toFixed(1)}`).join(' ');
+  return (
+    <svg width={dw} height={dh} style={{ display: 'block', maxWidth: '100%' }}>
+      <polygon points={pts} fill="#0074d9" fillOpacity={0.06} stroke="#0074d9" strokeWidth={1.5} strokeLinejoin="round" />
+    </svg>
+  );
 }
 
 function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {
@@ -39,7 +59,7 @@ function Badge({ text }: { text: string }) {
 
 // ── P07 Boundary ────────────────────────────────────────────────────────────
 export function BoundaryView() {
-  const { origin } = resolveDemo();
+  const { origin, ring } = resolveDemo();
   const boundary = origin?.particles.find((p) => p.id === 'origin-boundary') ?? null;
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 560 }}>
@@ -48,6 +68,11 @@ export function BoundaryView() {
         Die <strong>Boundary</strong> der committeten Representation — im Origin-Paket das
         <strong> Manifest (L0)</strong>: unsichtbar, rahmt die OSM-Kamera und verlinkt den Rest.
       </div>
+      {ring && (
+        <div style={{ margin: '8px 0 12px', border: '1px solid #e2e8f0', borderRadius: 8, padding: 8, display: 'inline-block', background: '#fbfdff' }}>
+          <RingSvg ring={ring} size={320} />
+        </div>
+      )}
       {origin ? (
         <>
           <Stat label="Representation" value={`„${origin.repName}" · v${origin.version}`} />
