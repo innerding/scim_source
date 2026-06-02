@@ -37,6 +37,8 @@ import { poiCompositeSvg } from '../poi-catalog/poiCatalog.composite';
 import { CONTAINER_SYSTEM } from '../poi-catalog/poiCatalog.containerSystem';
 import { REPRESENTATIONS, wegnetzById } from '../workspace/workspace.registry';
 import { buildOriginPackage, MVP_RESAMPLE_TARGET_METERS } from '../sensus/originPackage';
+import { buildOriginManifest } from '../sensus/originManifest';
+import type { OriginManifest } from '../sensus/packageContract';
 import { resampleNet } from '../wegnetz/netResample';
 
 interface Props {
@@ -364,6 +366,10 @@ function SensusCorePackages() {
   const [selId, setSelId] = useState<string | null>(null);
   const auftraggeber = REPRESENTATIONS.find((r) => r.id === selId) ?? inspected ?? demoRep;
   const origin = auftraggeber ? buildOriginPackage(auftraggeber) : null;
+  // Beauftragung/Kapselung: der Button baut das echte OriginManifest. Wird der
+  // Auftraggeber gewechselt, gilt eine alte Kapsel als veraltet (neu beauftragen).
+  const [capsule, setCapsule] = useState<OriginManifest | null>(null);
+  const capsuleFresh = capsule != null && capsule.repId === auftraggeber?.id;
   // Resample-Trade-off: dasselbe Netz bei verschiedenen Zielsegmentlängen.
   const net = auftraggeber?.wegnetz_id ? wegnetzById(auftraggeber.wegnetz_id) : undefined;
   const resampleVariants = net
@@ -390,11 +396,41 @@ function SensusCorePackages() {
             <option key={r.id} value={r.id}>{r.name}{r.version != null ? ` · v${r.version}` : ''}</option>
           ))}
         </select>
-        <span style={{ color: '#a0aec0' }}>→ Origin auflösen</span>
         {inspected && auftraggeber?.id === inspected.id && selId == null && (
           <span style={{ fontSize: 10, color: '#a0aec0', fontStyle: 'italic' }}>(folgt dem Inspector)</span>
         )}
+        <button
+          onClick={() => { if (auftraggeber) setCapsule(buildOriginManifest(auftraggeber)); }}
+          style={{
+            marginLeft: 'auto', fontSize: 12, padding: '4px 12px', borderRadius: 4, cursor: 'pointer',
+            border: '1px solid #2f855a', background: '#f0fff4', color: '#22543d', fontWeight: 600,
+          }}
+        >▣ Origin auflösen &amp; kapseln</button>
       </div>
+
+      {/* Kapsel: das materialisierte OriginManifest (Vorschlag A · Schritt 2). */}
+      {capsuleFresh && capsule && (
+        <div style={{ border: '1px solid #c6f6d5', background: '#f0fff4', borderRadius: 8, padding: '10px 12px', marginBottom: 14 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#22543d' }}>
+            Kapsel · {capsule.kind} · „{capsule.repName}" v{capsule.version}
+          </div>
+          <div style={{ fontSize: 11, color: '#2f855a', margin: '2px 0 8px' }}>
+            Origin gekapselt — bereit zum Publish (P14). Shell (Engines) + Anthem (Laufzeit) werden referenziert, nicht hier aufgelöst.
+          </div>
+          <div style={{ fontSize: 11.5, fontFamily: 'ui-monospace, Menlo, monospace', color: '#22543d', lineHeight: 1.7 }}>
+            <div>L0 · origin-boundary (Manifest) · {capsule.boundary.length} Punkte · bbox [{capsule.bbox.map((n) => n.toFixed(4)).join(', ')}]</div>
+            {capsule.layers.map((l) => (
+              <div key={l.id}>· {l.id}{l.bytes != null ? ` · ${fmtBytes(l.bytes)}` : ' · (reserviert)'} → <span style={{ color: '#718096' }}>{l.ref}</span></div>
+            ))}
+            <div>anthem → <span style={{ color: '#718096' }}>{capsule.anthemEndpoint}</span></div>
+          </div>
+        </div>
+      )}
+      {capsule && !capsuleFresh && (
+        <div style={{ fontSize: 10.5, color: '#a0aec0', fontStyle: 'italic', marginBottom: 10 }}>
+          Auftraggeber gewechselt — bitte neu „Origin auflösen &amp; kapseln".
+        </div>
+      )}
       <SensusCoreReigen origin={origin} />
       <p style={{ fontSize: 12.5, color: '#4a5568', lineHeight: 1.55, margin: '2px 0 14px' }}>
         Sensus Core ordert die atomaren particles von <strong>P07/P08/P09</strong> und stellt daraus
