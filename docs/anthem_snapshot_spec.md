@@ -86,6 +86,29 @@ ist das *Ergebnis*, nicht der *Übertragungswert*.
 
 ---
 
+## Erst-Bezug — Reveal-Choreografie
+
+Der **erste Anthem-Bezug** der Ziel-App wird gestaffelt aufgebaut (füllt die Lücke
+zwischen Presence-Signal und erstem Snapshot mit einem progressiven Reveal statt
+Leerbild). Origin wird dabei **in Teilen** gestreamt, nicht als ein Blob:
+
+1. **Boundary** wird ausgespielt, **sobald SCIM origin-presence hat**.
+2. Die Ziel-App **fokussiert gemächlich** auf die Boundary in der OSM-Karte.
+3. **origin-wegnetz** blendet in **Weiß** ein.
+4. **Anthem** legt sich über das Netz (Last→Farbe via Shell `colorize`).
+5. **origin-rest** wird nacheinander überspielt: **asset-set · poi-set · pixel-charges**.
+
+**Prioritäts-Entscheidung (load-first):** Anthem kommt in Schritt 4 — also **vor**
+poi-set/asset-set. Der flüchtige „Puls" des Orts erscheint zuerst, die statischen
+Punkte danach. Das prägt die Lade-/Deploy-Reihenfolge des **Package Loaders**
+(vgl. P11 „Deploy-Reihenfolge deklarieren").
+
+> ⚐ Offen: **`pixel-charges`** ist als Origin-Bestandteil hier neu genannt (bisherige
+> Origin-Partikel: boundary · net · poi-set · asset-set). Bedeutung/Inhalt noch zu
+> bestätigen.
+
+---
+
 ## Turbo-Slider (nur Sim-MVP)
 
 Das **unterscheidende UI-Element des Sim-MVP** gegenüber der echten App. Da Sim-Zeit
