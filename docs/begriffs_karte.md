@@ -22,7 +22,41 @@ Code (und die Maschine) dabei den Halt nicht verliert, gilt:
 Beweis, dass das trägt: der **Drawer** heißt im Label „Drawer", seine `id` ist
 weiterhin `geometry_editor` — Label neu, ID stabil, nichts brach.
 
-## Aktuelle Karte (in Arbeit)
+## Rollen-Neuzuordnung — Builder-Modell (Konsens 2026-06-02, AUTORITATIV)
+
+**Kernlinie:** Die Paketnamen **Shell · Origin · Anthem sind Publishing-Begriffe —
+sie entstehen erst *ab* Sensus Core (P11).** Davor stehen die **Bauer** mit eigenen
+Namen; jede Rolle *baut* ihr Paket.
+
+| id (fix) | Name (neu) | baut → wird bei Publishing zu | Sichel/Ort |
+|---|---|---|---|
+| `P06` | **Transmitter** (Anthem-Builder) | → **Anthem** | Mesh |
+| `P07` | **High-Shell** (App-UI/UX · Intro/Boundary/Reveal) | → **Shell** (high) | Sichel **links** |
+| `P08` | **Deep-Shell** (Engine-Prep · colorize/BCK/BAK) | → **Shell** (deep) | Sichel **rechts** |
+| `P09` | **Origin-Capsuler** (Atomic Particles · boundary/Wegnetz-Sampling/POIs/Assets) | → **Origin** | Sichel **unten** |
+| `P11` | **Sensus Core Publishing** | schnürt Shell(high⊕deep)·Origin·Anthem, versioniert, spielt aus (→ R2) | Apex |
+
+- **Shell = High-Shell ⊕ Deep-Shell**, **Origin = Capsuler-Partikel**, **Anthem =
+  Transmitter** — diese drei Worte fallen **erst bei P11**.
+- **P11 baut nichts mehr** — Assembler/Publisher. Der **Reigen** lebt hier als
+  Übersicht des Bauplans.
+- **Sichel-Rotation:** P07 links (Rolle neu), P08 → rechts, P09 → unten. **IDs
+  eingefroren**, Label/Konzept/Sichel-Position frei (Prinzip oben).
+
+**Wo die Builder-Funktionen zuhause sind:**
+- **Origin-Manifest-Builder** (`buildOriginManifest`, gebaut) → **P09 Origin-Capsuler**
+  (zieht aus P11 dorthin).
+- **Anthem-Encoder** (`buildAnthemSnapshot`, offen) → **P06 Transmitter**.
+- **Intro/reveal-engine** → **P07 High-Shell** (raus aus P09; „Engine-Prep & Origin
+  Capsulation" war die Fehl-Verklebung).
+
+**Status:** Karte beschlossen. **Code-Migration offen** (eigener Schritt). Die
+aktuellen `source`-/Reigen-Befunde (P09 zeigt `<xy>`, Reigen zeichnet alte Rollen)
+lösen sich **bei dieser Migration** auf — nicht vorher draufflicken.
+
+---
+
+## Aktuelle Karte (in Arbeit · Vor-Migrations-Stand, Code trägt noch alte Labels)
 
 | id (fix) | label | kurzLabel | konzept/rolle |
 |---|---|---|---|
