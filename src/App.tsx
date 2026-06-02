@@ -15,7 +15,9 @@ export default function App() {
   const result = useScimPipeline();
   const [activeId, setActiveId] = useState('P01');
   const [activeTab, setActiveTab] = useState<TabId>('input');
-  const [mapCollapsed, setMapCollapsed] = useState(false);
+  // Inspector startet eingeklappt — ScimMap wird nur montiert, wenn offen
+  // (kein Rendern/Rechnen off-screen). Öffnen via Navigator-Trapez.
+  const [mapCollapsed, setMapCollapsed] = useState(true);
   const [showManual, setShowManual] = useState(false);
   // Beim Sprung in den Geometry-Editor optional die zu oeffnende Boundary mitgeben.
   const [pendingGeometryId, setPendingGeometryId] = useState<string | null>(null);
@@ -70,16 +72,18 @@ export default function App() {
           overflow: 'hidden',
           position: 'relative',
         }}>
-          <ScimMap
-            result={result}
-            onCollapseToggle={toggleMap}
-            onNavigate={(face) => {
-              if (face === 'geometry_draw') goTo('geometry_editor');
-              else if (face === 'catalog_magazination') goTo('catalog');
-              else if (face === 'represent_organisation') goTo('workspace');
-              else if (face === 'sensus_core_build') goTo('P11');
-            }}
-          />
+          {!mapCollapsed && (
+            <ScimMap
+              result={result}
+              onCollapseToggle={toggleMap}
+              onNavigate={(face) => {
+                if (face === 'geometry_draw') goTo('geometry_editor');
+                else if (face === 'catalog_magazination') goTo('catalog');
+                else if (face === 'represent_organisation') goTo('workspace');
+                else if (face === 'sensus_core_build') goTo('P11');
+              }}
+            />
+          )}
         </div>
         {showManual && <RepresentBuildManualModal onClose={() => setShowManual(false)} />}
       </div>

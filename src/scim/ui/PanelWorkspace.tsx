@@ -300,7 +300,7 @@ function P09Artifact({ d, rep, origin }: { d: P09Descriptor; rep?: { name: strin
         fontSize: 10, fontFamily: 'monospace', color: '#2b6cb0',
         background: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: 4,
       }}>
-        P09 · Engine-Prep &amp; Origin Capsulation · auto-compute-Artefakt
+        P08 · Deep-Shell · Engine-Prep-Artefakt
       </div>
       <p style={{ fontSize: 12, color: '#718096', lineHeight: 1.5, margin: '2px 0 14px' }}>
         Build-seitige Vorbereitung. Die Engine läuft <strong>lokal in der Ziel-App</strong>, nicht in
@@ -575,8 +575,8 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
   const panel = PANEL_REGISTRY.find((p) => p.id === activeId);
   if (!panel) return <div style={{ padding: 20, color: '#e53e3e' }}>Panel nicht gefunden: {activeId}</div>;
 
-  // P09: vier uniform beschriebene auto-compute-Artefakte (POI/Last/Mask/Move).
-  if (panel.id === 'P09') {
+  // P08 (Deep-Shell): vier Engine-Prep-Artefakte (POI/Last/Mask/Move). M2: von P09.
+  if (panel.id === 'P08') {
     const d = P09_DESCRIPTORS.find((x) => x.tabId === activeTab);
     if (d) {
       // Origin der inspizierten Rep live auflösen (gleicher Resolver wie P11) —
@@ -627,8 +627,8 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
     );
   }
 
-  // P08: Sampling-Pipeline als Direktvergleich (ohne Tabs, ohne Notiz).
-  if (panel.id === 'P08') return <WegnetzCompareView />;
+  // P09 (Origin-Capsuler): Sampling-Pipeline als Direktvergleich (ohne Tabs). M2: von P08.
+  if (panel.id === 'P09') return <WegnetzCompareView />;
 
   // P07 t1: Boundary-View (Ring + Reveal-Prep). Notiz ist entfernt; falls wieder
   // gesetzt, erscheint sie darunter.
@@ -737,8 +737,8 @@ export default function PanelWorkspace({ activeId, activeTab, onTabChange, resul
       minWidth: 0,
     }}>
       <PanelHeader id={entry.id} title={entry.label} subtitle={subtitle} dimmed={KOSMOLOGIE_IDS.has(activeId)} />
-      {/* P08 rendert die Sampling-Pipeline als eine Vergleichsansicht — ohne Tabs. */}
-      {activeId !== 'P08' && <TabBar tabs={tabs} active={safeTab} onSelect={onTabChange} />}
+      {/* P09 (Origin-Capsuler) rendert die Sampling-Pipeline als Vergleich — ohne Tabs. */}
+      {activeId !== 'P09' && <TabBar tabs={tabs} active={safeTab} onSelect={onTabChange} />}
       {/* Geometry-Editor braucht volle Hoehe ohne Padding */}
       {activeId === DRAWER_DESCRIPTOR.id ? (
         <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>

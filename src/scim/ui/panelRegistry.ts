@@ -218,63 +218,44 @@ export const PANEL_REGISTRY: PanelDescriptor[] = [
     ],
   },
   {
+    // M2: P08 = Deep-Shell (Engine-Prep). Inhalt von P09 hierher getauscht.
     id: 'P08',
-    label: 'Wegnetz-Sampling',
+    label: 'Deep-Shell',
     kurzLabel: 'wns',
     group: 2,
     order: 8,
-    icon: '⌗',
-    shortDescription: 'Netz harmonisieren: merge → DP → resample',
-    helpText: 'Macht aus dem committeten Netz ein regelmäßiges Knoten-Netz mit Segment-ids — als reproduzierbare Ableitung nach dem Commit.',
+    icon: '↯',
+    shortDescription: 'Engine-Prep der Ziel-App-Engines · POI/Last/Mask/Move (baut Shell-deep)',
+    helpText: 'Build-seitige Vorbereitung der Engine-Anteile (colorize/BCK/BAK/dompteur). Die Laufzeit-Engines selbst liegen auf der Ziel-App (R06 BCK/BAK, R07 Karte & Guidance).',
     dependsOn: ['P07'],
     inputMode: 'auto_computed',
     isBlocking: true,
     contextKey: 'graph',
     tabs: [
-      // Mesh-Output (Netzbild) zuerst — Notiz entfernt, die View steht für sich.
-      { id: 't3', label: 'Mesh-Output', icon: '▦', body: [] },
-      { id: 't2', label: 'Sampling', icon: '⋔', body: [
-        'Wegnetz-Sampling: merge → Douglas-Peucker → Bogenlängen-Resampling → regelmäßiges Knoten-Netz.',
-        'Mindestsegmentlänge 3 m; pro Strecke gleiche Teilung (kein Kreuzungs-Stub); zu kurze Strecke (< ~4,5 m) bleibt ein Segment.',
-      ] },
-      { id: 't1', label: 'Quell-Netz', icon: '⌗', body: [
-        'Das committete Netz der Representation kommt herein (Quelle, Konvergenz). Läuft nach Workspace-Binding, vor P09.',
-      ] },
+      { id: 't1', label: 'POI', icon: '⊙' },
+      { id: 't2', label: 'Last', icon: '≋' },
+      { id: 't3', label: 'Mask', icon: '⛉' },
+      { id: 't4', label: 'Move', icon: '↝' },
     ],
   },
 
   // ── Gruppe 3: Engine (4 Modelle) ───────────────────────────────────────────
   {
+    // M2: P09 = Origin-Capsuler (Atomic Particles). Inhalt von P08 (Sampling) hierher.
     id: 'P09',
-    label: 'Engine-Prep & Origin Capsulation',
+    label: 'Origin-Capsuler',
     kurzLabel: 'epb',
     group: 3,
     order: 9,
-    icon: '↯',
-    shortDescription: 'Bereitet POI/Last/Mask/Move für die Ziel-App vor',
-    helpText: 'Build-seitige Vorbereitung der vier Engine-Anteile. Die Laufzeit-Engines selbst liegen auf der Ziel-App (R06 BCK/BAK, R07 Karte & Guidance).',
+    icon: '⌗',
+    shortDescription: 'Atomic Particles der Representation · Boundary · Wegnetz-Sampling · POIs · Assets (baut Origin)',
+    helpText: 'Kapselt die committete Representation in Origin-Partikel (boundary · resampled Netz mit Segment-ids · poi-set · asset-set).',
     dependsOn: ['P08', 'P06'],
     inputMode: 'auto_computed',
     isBlocking: true,
     contextKey: 'poi_model',
     tabs: [
-      { id: 't1', label: 'POI', icon: '⊙', body: [
-        'POI-Appearancy: Cluster, Ghosts + Animations.',
-        'Heimat des Composite-Moduls (poiCatalog.composite / poiCompositeSvg) — rendert die Icons so, wie sie auf der Ziel-App erscheinen; der Inspector borgt es bereits.',
-      ] },
-      { id: 't2', label: 'Last', icon: '≋', body: [
-        'Last-Appearancy: gradient-Colorization je Segment-id + Farbe (Colour-Mesh auf der Ziel-App).',
-        'P09 = Build-Prep der vier Engine-Anteile; die echten Laufzeit-Engines liegen auf der Ziel-App: R06 BCK/BAK, R07 Karte & Guidance.',
-      ] },
-      { id: 't3', label: 'Mask', icon: '⛉', body: [
-        'Mask-BCK: Segment-Einschränkung nach User-Comfort-Einstellung — bereitet R06 (BCK / Maskierung = Comfort) vor.',
-      ] },
-      { id: 't4', label: 'Move', icon: '↝', body: [
-        'Move/Rest-BAK: Routen-Move / POIs-Rest (BAK-Path/-Rest) — bereitet R07 (Karte & Guidance) vor.',
-      ] },
-      { id: 't5', label: 'Intro', icon: '⬚', body: [
-        'Boundary-Intro / reveal-engine: das stille Einloggen — bereitet die Boundary-Reveal-Animation der Ziel-App vor.',
-      ] },
+      { id: 't1', label: 'Origin-Netz', icon: '▦' },
     ],
   },
   {

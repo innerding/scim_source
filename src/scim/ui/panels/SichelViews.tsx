@@ -67,7 +67,7 @@ export function BoundaryView() {
   const boundary = origin?.particles.find((p) => p.id === 'origin-boundary') ?? null;
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 560 }}>
-      <Badge text="P07 · Boundary (bou) · live aufgelöst" />
+      <Badge text="P07 · High-Shell · Boundary · live aufgelöst" />
       <div style={{ fontSize: 11, color: '#718096', margin: '0 0 8px', lineHeight: 1.45 }}>
         Die <strong>Boundary</strong> der committeten Representation — im Origin-Paket das
         <strong> Manifest (L0)</strong>: unsichtbar, rahmt die OSM-Kamera und verlinkt den Rest.
@@ -175,7 +175,7 @@ export function WegnetzCompareView() {
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div style={{ flex: '0 0 auto' }}>
-        <Badge text={`P08 · Wegnetz-Sampling (wns) · @${MVP_RESAMPLE_TARGET_METERS} m · live`} />
+        <Badge text={`P09 · Origin-Capsuler · Wegnetz-Sampling @${MVP_RESAMPLE_TARGET_METERS} m · live`} />
         <div style={{ fontSize: 11, color: '#718096', margin: '0 0 12px', lineHeight: 1.45, maxWidth: 600 }}>
           Die Sampling-Pipeline im direkten Vergleich: vom rohen committeten Netz über das Abtasten zum
           gesampelten <strong>origin-net</strong> mit stabilen Segment-IDs.
