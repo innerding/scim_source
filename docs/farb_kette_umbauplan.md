@@ -66,6 +66,26 @@ Runtime-Kette.
 
 ---
 
+## 2a · Regler-Grundsatz (verbindlich): der Gradient bleibt durchgehend
+
+Jeder Farb-Regler zeigt **EINE stetige Skala** — die volle `colorize`-Palette,
+ununterbrochen; sie ist zugleich die Legende. **Schwellen sind aufgesetzte
+Marker** an ihrer Position („ab hier") — sie **schneiden, recolorieren oder
+beenden den Gradienten nie.**
+
+- **Negativbeispiel (so nicht):** der alte Route-Layer-Regler
+  `P08RouteLayerForm` (Z. 203–204) baut die Leiste aus zwei umgefärbten Stücken
+  (grün→gelb | orange→rot) mit Farbsprung am `degrade`-Griff und Abschnitt bei
+  `exclude` → der Gradient ist zerschnitten.
+- Das eigentliche **Wegnehmen (Degradieren/Ausschließen) passiert je Strecke
+  über die Ø-Last**, nicht durch Zerschneiden der Farbskala.
+
+**Ausnahme nur bewusst:** sollte später eine Funktion das Bändern/Schneiden
+sinnvoll brauchen, wird das *explizit* entschieden. Default ist **immer** der
+durchgehende Gradient — damit es nicht ungewollt passiert.
+
+---
+
 ## 3 · Shell / Origin / Anthem — Zuordnung
 
 | Paket | Inhalt (zur Farb-/Schwellen-Logik) |
