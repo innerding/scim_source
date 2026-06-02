@@ -115,28 +115,31 @@ function boundsOf(groups: { points: [number, number][] }[]): NetBounds | null {
   const lats = all.map((p) => p[0]), lons = all.map((p) => p[1]);
   return { minLat: Math.min(...lats), maxLat: Math.max(...lats), minLon: Math.min(...lons), maxLon: Math.max(...lons) };
 }
-function NetSvg({ stretches, size = 320, nodes = false, bounds }: {
-  stretches: { points: [number, number][] }[]; size?: number; nodes?: boolean; bounds?: NetBounds | null;
+function NetSvg({ stretches, nodes = false, bounds }: {
+  stretches: { points: [number, number][] }[]; nodes?: boolean; bounds?: NetBounds | null;
 }) {
   const b = bounds ?? boundsOf(stretches);
   if (!b) return null;
   const { minLat, maxLat, minLon, maxLon } = b;
   const kx = Math.cos(((minLat + maxLat) / 2) * Math.PI / 180);
   const w = ((maxLon - minLon) * kx) || 1, h = (maxLat - minLat) || 1;
-  const pad = 8;
-  const sc = Math.min((size - 2 * pad) / w, (size - 2 * pad) / h);
-  const dw = w * sc + 2 * pad, dh = h * sc + 2 * pad;
-  const X = (lon: number) => pad + (lon - minLon) * kx * sc;
-  const Y = (lat: number) => pad + (maxLat - lat) * sc;
+  // Normalisierte viewBox; das SVG skaliert per CSS responsiv in seinen Container.
+  const NOM = 300;
+  const k = NOM / Math.max(w, h);
+  const vbW = w * k, vbH = h * k;
+  const r = Math.max(vbW, vbH) * 0.006;
+  const X = (lon: number) => (lon - minLon) * kx * k;
+  const Y = (lat: number) => (maxLat - lat) * k;
   return (
-    <svg width={dw} height={dh} style={{ display: 'block', maxWidth: '100%' }}>
+    <svg viewBox={`0 0 ${vbW.toFixed(1)} ${vbH.toFixed(1)}`} preserveAspectRatio="xMidYMid meet"
+      style={{ display: 'block', width: '100%', height: '100%' }}>
       {stretches.map((s, i) => (
         <polyline key={i} points={s.points.map(([lat, lon]) => `${X(lon).toFixed(1)},${Y(lat).toFixed(1)}`).join(' ')}
-          fill="none" stroke="#4a5568" strokeWidth={0.8} strokeOpacity={0.85}
-          strokeLinejoin="round" strokeLinecap="round" />
+          fill="none" stroke="#4a5568" strokeWidth={1} strokeOpacity={0.85}
+          strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
       ))}
       {nodes && stretches.flatMap((s, si) => s.points.map(([lat, lon], pi) => (
-        <circle key={`${si}-${pi}`} cx={X(lon)} cy={Y(lat)} r={1.1} fill="#3182ce" fillOpacity={0.7} />
+        <circle key={`${si}-${pi}`} cx={X(lon)} cy={Y(lat)} r={r} fill="#3182ce" fillOpacity={0.7} />
       )))}
     </svg>
   );
@@ -149,49 +152,51 @@ export function WegnetzCompareView() {
   const edges = net.edges as unknown as { points: [number, number][] }[];
   const r = resampleNet(net.edges, { targetMeters: MVP_RESAMPLE_TARGET_METERS });
   const bounds = boundsOf(edges); // geteilter Maßstab für alle drei Boxen
-  const SIZE = 220;
   const exampleId = r.stretches.length > 0 ? `${r.stretches[0].id}#0` : '—';
 
   const stages: { title: string; svg: ReactNode; lines: string[] }[] = [
     {
       title: '1 · Quell-Netz',
-      svg: <NetSvg stretches={edges} bounds={bounds} size={SIZE} nodes />,
+      svg: <NetSvg stretches={edges} bounds={bounds} nodes />,
       lines: ['Das rohe committete Netz (Quelle, Konvergenz).', `${edges.length} Kanten · unregelmäßige Vertices.`],
     },
     {
       title: `2 · Sampling @${MVP_RESAMPLE_TARGET_METERS} m`,
-      svg: <NetSvg stretches={r.stretches} bounds={bounds} size={SIZE} nodes />,
+      svg: <NetSvg stretches={r.stretches} bounds={bounds} nodes />,
       lines: ['merge → Douglas-Peucker → Bogenlängen-Resampling.', 'Gleichmäßige Sample-Knoten, pro Strecke gleiche Teilung.'],
     },
     {
       title: '3 · Mesh-Output',
-      svg: <NetSvg stretches={r.stretches} bounds={bounds} size={SIZE} />,
+      svg: <NetSvg stretches={r.stretches} bounds={bounds} />,
       lines: [`Produkt: ${r.segmentCount} Segmente · ${r.stretchCount} Strecken.`, 'Geometrie (1×) + Segment-IDs → Origin.'],
     },
   ];
 
   return (
-    <div style={{ fontFamily: 'system-ui, sans-serif' }}>
-      <Badge text={`P08 · Wegnetz-Sampling (wns) · @${MVP_RESAMPLE_TARGET_METERS} m · live`} />
-      <div style={{ fontSize: 11, color: '#718096', margin: '0 0 12px', lineHeight: 1.45, maxWidth: 600 }}>
-        Die Sampling-Pipeline im direkten Vergleich: vom rohen committeten Netz über das Abtasten zum
-        gesampelten <strong>origin-net</strong> mit stabilen Segment-IDs.
+    <div style={{ fontFamily: 'system-ui, sans-serif', height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ flex: '0 0 auto' }}>
+        <Badge text={`P08 · Wegnetz-Sampling (wns) · @${MVP_RESAMPLE_TARGET_METERS} m · live`} />
+        <div style={{ fontSize: 11, color: '#718096', margin: '0 0 12px', lineHeight: 1.45, maxWidth: 600 }}>
+          Die Sampling-Pipeline im direkten Vergleich: vom rohen committeten Netz über das Abtasten zum
+          gesampelten <strong>origin-net</strong> mit stabilen Segment-IDs.
+        </div>
       </div>
-      <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'stretch' }}>
+      {/* Höhe füllt den Content dynamisch; Spalten brechen NICHT um (nowrap + minWidth:0). */}
+      <div style={{ flex: '1 1 auto', minHeight: 0, display: 'flex', gap: 14, flexWrap: 'nowrap', alignItems: 'stretch' }}>
         {stages.map((s) => (
           <div key={s.title} style={{
-            flex: '1 1 220px', minWidth: 200, minHeight: 320, display: 'flex', flexDirection: 'column',
+            flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column',
             border: '1px solid #e2e8f0', borderRadius: 8, padding: 10, background: '#fbfdff',
           }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: '#1a365d', marginBottom: 8 }}>{s.title}</div>
-            <div style={{ flex: '1 0 auto' }}>{s.svg}</div>
-            <div style={{ marginTop: 10, paddingTop: 8, borderTop: '1px solid #edf2f7', fontSize: 11, color: '#718096', lineHeight: 1.5 }}>
+            <div style={{ flex: '0 0 auto', fontSize: 12, fontWeight: 700, color: '#1a365d', marginBottom: 8 }}>{s.title}</div>
+            <div style={{ flex: '1 1 auto', minHeight: 0 }}>{s.svg}</div>
+            <div style={{ flex: '0 0 auto', marginTop: 10, paddingTop: 8, borderTop: '1px solid #edf2f7', fontSize: 11, color: '#718096', lineHeight: 1.5 }}>
               {s.lines.map((l, i) => <div key={i}>{l}</div>)}
             </div>
           </div>
         ))}
       </div>
-      <div style={{ fontSize: 10.5, color: '#a0aec0', marginTop: 10 }}>
+      <div style={{ flex: '0 0 auto', fontSize: 10.5, color: '#a0aec0', marginTop: 10 }}>
         Knoten-Punkte zeigen den Unterschied: rohe Vertices (links) vs. gleichmäßige Sample-Punkte (Mitte).
         Beispiel-Segment-ID: <code>{exampleId}</code> (Format stretchId#segIndex). Größen-Trade-off (3/10/25 m): siehe <strong>P11</strong>.
       </div>
