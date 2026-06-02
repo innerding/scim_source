@@ -501,10 +501,10 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
           if (state === 'excluded') {
             color = '#9aa5b1'; weight = 2; opacity = 0.5;        // farblos neutralisiert
           } else if (state === 'degraded') {
-            color = colorize(load, { spectrum: colourCfg.spectrum, bias: effBias });
+            color = colorize(load, { palette: colourCfg.palette, spectrum: colourCfg.spectrum, bias: effBias });
             weight = 2; opacity = 0.4;                            // entdrängt (behält Farbe)
           } else {
-            color = colorize(load, { spectrum: colourCfg.spectrum, bias: effBias });
+            color = colorize(load, { palette: colourCfg.palette, spectrum: colourCfg.spectrum, bias: effBias });
             weight = 4; opacity = 1;
           }
           L.polyline([s.points[i - 1], s.points[i]], { color, weight, opacity, lineCap: 'round' }).addTo(sub);

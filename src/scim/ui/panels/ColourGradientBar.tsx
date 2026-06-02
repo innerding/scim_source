@@ -2,7 +2,7 @@
 // Stops → stetig, nie gebändert) und legt Schwellen als aufgesetzte Marker
 // darüber. Der Balken ist zugleich die Legende. NIE den Gradienten schneiden.
 
-import { colorize } from '../../sensus/loadColour';
+import { colorize, type PaletteId } from '../../sensus/loadColour';
 
 export interface GradientMarker {
   at: number;        // Position 0..1 auf dem Gradienten
@@ -13,8 +13,9 @@ export interface GradientMarker {
 const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
 
 export function ColourGradientBar({
-  spectrum = 0.5, bias = 0, markers = [], height = 22,
+  palette, spectrum = 0.5, bias = 0, markers = [], height = 22,
 }: {
+  palette?: PaletteId;
   spectrum?: number;
   bias?: number;
   markers?: GradientMarker[];
@@ -23,7 +24,7 @@ export function ColourGradientBar({
   const N = 24; // viele Stops → stetiger Verlauf, kein Band
   const stops = Array.from({ length: N + 1 }, (_, i) => {
     const t = i / N;
-    return `${colorize(t, { spectrum, bias })} ${(t * 100).toFixed(1)}%`;
+    return `${colorize(t, { palette, spectrum, bias })} ${(t * 100).toFixed(1)}%`;
   }).join(', ');
 
   return (

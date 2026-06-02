@@ -30,7 +30,7 @@ export default function UserExclusionControl() {
         <strong> neutralisiert</strong> (farblos) — anders als die Operator-Degradierung, die nur entdrängt.
       </div>
       <div style={{ marginBottom: 10 }}>
-        <ColourGradientBar spectrum={settings.spectrum} bias={effBias} markers={markers} />
+        <ColourGradientBar palette={settings.palette} spectrum={settings.spectrum} bias={effBias} markers={markers} />
       </div>
       <label style={{ fontSize: 11, color: '#4a5568', display: 'flex', gap: 6, alignItems: 'center', marginBottom: 6 }}>
         <input type="checkbox" checked={val != null}

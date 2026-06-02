@@ -11,7 +11,10 @@
 //
 // Die User-Ausschluss-Schwelle ist NICHT hier — sie ist runtime/user (P09 Mask).
 
+import { PALETTES, DEFAULT_PALETTE, type PaletteId } from './loadColour';
+
 export interface ColourSettings {
+  palette: PaletteId;        // P04 — Palette-Modell (Grund-Spektrum)
   spectrum: number;          // P04 — 0 ruhig … 0.5 linear … 1 aggressiv
   bias: number;              // P02 — −1 kühler … 0 … +1 heißer (regionale Tendenz)
   safety: number;            // P02 — 0 … 1 zusätzliche Aggressivität (Safety-Default)
@@ -21,7 +24,7 @@ export interface ColourSettings {
 }
 
 export const DEFAULT_COLOUR_SETTINGS: ColourSettings = {
-  spectrum: 0.5, bias: 0, safety: 0, degradier: null, spread: 0, floor: 0,
+  palette: DEFAULT_PALETTE, spectrum: 0.5, bias: 0, safety: 0, degradier: null, spread: 0, floor: 0,
 };
 
 export const COLOUR_SETTINGS_EVENT = 'scim:colour-settings:changed';
@@ -36,7 +39,9 @@ export function coerceSettings(raw: unknown): ColourSettings {
   const r = (raw && typeof raw === 'object') ? raw as Record<string, unknown> : {};
   const d = DEFAULT_COLOUR_SETTINGS;
   const degValid = typeof r.degradier === 'number' && Number.isFinite(r.degradier);
+  const palette = (typeof r.palette === 'string' && r.palette in PALETTES) ? r.palette as PaletteId : d.palette;
   return {
+    palette,
     spectrum: clamp(num(r.spectrum, d.spectrum), 0, 1),
     bias: clamp(num(r.bias, d.bias), -1, 1),
     safety: clamp(num(r.safety, d.safety), 0, 1),

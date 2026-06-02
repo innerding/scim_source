@@ -6,6 +6,7 @@
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { loadColourSettings, saveColourSettings, type ColourSettings } from '../../sensus/colourSettings';
+import { PALETTES, type PaletteId } from '../../sensus/loadColour';
 import { useInspectorView } from '../../../runtime/repContext';
 import { slugify } from '../../../runtime/router';
 import { ColourGradientBar, type GradientMarker } from './ColourGradientBar';
@@ -67,14 +68,31 @@ export default function ColourAdjust({ panelId }: { panelId: string }) {
         Region „{regionSlug}" · durchgehender Gradient, Schwellen als Marker (§2a)
       </div>
       <div style={{ marginBottom: 16 }}>
-        <ColourGradientBar spectrum={s.spectrum} bias={effBias} markers={markers} />
+        <ColourGradientBar palette={s.palette} spectrum={s.spectrum} bias={effBias} markers={markers} />
       </div>
 
       {panelId === 'P04' && (
-        <Field title="Spektrum-Charakter" desc="Wie früh die Last ins Heiße kippt — ruhig (spät) ↔ aggressiv (früh). Das Grund-Farbschema der Region.">
-          <Slider value={s.spectrum} min={0} max={1} onChange={(v) => update({ spectrum: v })}
-            fmt={(v) => (v < 0.34 ? 'ruhig' : v > 0.66 ? 'aggressiv' : 'linear')} />
-        </Field>
+        <>
+          <Field title="Palette-Modell" desc="Das Grund-Farbschema der Region (durchgehend, §2a). Default: Grün→Violett.">
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {(Object.keys(PALETTES) as PaletteId[]).map((id) => (
+                <button key={id} onClick={() => update({ palette: id })}
+                  style={{
+                    fontSize: 11, padding: '4px 10px', borderRadius: 4, cursor: 'pointer',
+                    border: s.palette === id ? '2px solid #2b6cb0' : '1px solid #cbd5e0',
+                    background: s.palette === id ? '#ebf8ff' : '#fff',
+                    color: '#2d3748', fontWeight: s.palette === id ? 700 : 400,
+                  }}>
+                  {PALETTES[id].label}
+                </button>
+              ))}
+            </div>
+          </Field>
+          <Field title="Spektrum-Charakter" desc="Wie früh die Last ins Heiße kippt — ruhig (spät) ↔ aggressiv (früh).">
+            <Slider value={s.spectrum} min={0} max={1} onChange={(v) => update({ spectrum: v })}
+              fmt={(v) => (v < 0.34 ? 'ruhig' : v > 0.66 ? 'aggressiv' : 'linear')} />
+          </Field>
+        </>
       )}
 
       {panelId === 'P02' && (
