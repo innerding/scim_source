@@ -32,3 +32,28 @@ export function simSegmentLoads(net: ResampledNet): number[] {
   }
   return loads;
 }
+
+export interface StretchLoad {
+  id: string;          // Strecken-id '<edgeId>.<piece>'
+  average: number;     // Ø-Last (0..1) zwischen den Kreuzungen
+  segmentCount: number;
+}
+
+// Ø-Last je Strecke (zwischen Kreuzungsknoten). `loads` ist die flache
+// Segment-Last-Liste in derselben Strecken-/Segment-Reihenfolge wie
+// simSegmentLoads sie liefert (MUSS vom selben Netz stammen).
+//
+// Grundlage für Ausschluss/Degradierung (Umbauplan A1): die werden je STRECKE
+// über diese Ø-Last entschieden — nur an Kreuzungen schaltbar —, während die
+// Anzeige weiter pro Segment gefärbt wird.
+export function stretchAverages(net: ResampledNet, loads: number[]): StretchLoad[] {
+  const out: StretchLoad[] = [];
+  let idx = 0;
+  for (const s of net.stretches) {
+    const segs = Math.max(0, s.points.length - 1);
+    let sum = 0;
+    for (let i = 0; i < segs; i++) sum += loads[idx++] ?? 0;
+    out.push({ id: s.id, average: segs > 0 ? sum / segs : 0, segmentCount: segs });
+  }
+  return out;
+}

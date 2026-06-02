@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { simSegmentLoads, loadColour } from './anthemSim';
+import { simSegmentLoads, stretchAverages, loadColour } from './anthemSim';
 import type { ResampledNet } from '../wegnetz/netResample';
 
 const net = (): ResampledNet => ({
@@ -23,6 +23,37 @@ describe('anthemSim – simSegmentLoads', () => {
 
   it('deterministisch (gleiches Netz → gleiche Lasten)', () => {
     expect(simSegmentLoads(net())).toEqual(simSegmentLoads(net()));
+  });
+});
+
+describe('anthemSim – stretchAverages', () => {
+  it('mittelt je Strecke über ihre Segmente (in Reihenfolge)', () => {
+    // net(): Strecke 1.0 hat 2 Segmente, Strecke 2.0 hat 1 Segment.
+    const avg = stretchAverages(net(), [0.2, 0.4, 0.8]);
+    expect(avg.map((a) => a.id)).toEqual(['1.0', '2.0']);
+    expect(avg.map((a) => a.segmentCount)).toEqual([2, 1]);
+    expect(avg[0].average).toBeCloseTo(0.3, 10); // (0.2+0.4)/2
+    expect(avg[1].average).toBeCloseTo(0.8, 10);
+  });
+
+  it('mit echten Sim-Lasten: ein Eintrag je Strecke, Ø in [0,1]', () => {
+    const n = net();
+    const avg = stretchAverages(n, simSegmentLoads(n));
+    expect(avg.length).toBe(n.stretches.length);
+    for (const a of avg) {
+      expect(a.average).toBeGreaterThanOrEqual(0);
+      expect(a.average).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it('entartete Strecke (1 Punkt) → segmentCount 0, average 0, verschiebt idx nicht', () => {
+    const degenerate: ResampledNet = {
+      ...net(),
+      stretches: [{ id: 'd', points: [[48, 14]] }, { id: 'e', points: [[48, 14], [48.001, 14]] }],
+    };
+    const avg = stretchAverages(degenerate, [0.5]); // nur 1 Segment (Strecke e)
+    expect(avg[0]).toEqual({ id: 'd', average: 0, segmentCount: 0 });
+    expect(avg[1]).toEqual({ id: 'e', average: 0.5, segmentCount: 1 });
   });
 });
 
