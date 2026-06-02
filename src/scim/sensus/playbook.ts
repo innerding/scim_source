@@ -154,3 +154,19 @@ export function pickTestRoute(edges: PathEdge[], net: ResampledNet, pois: Catalo
     to: attr.text ?? 'Ziel',
   };
 }
+
+// S5: Ausweichroute — routet A→B auf dem Netz OHNE die zu meidenden Kanten
+// (deren OSM-way-id in avoidEdgeIds). So weicht der Router den überschrittenen
+// Strecken aus. null, wenn dadurch kein Pfad mehr existiert (unvermeidbar).
+export function reroute(
+  edges: PathEdge[],
+  net: ResampledNet,
+  a: LatLng,
+  b: LatLng,
+  avoidEdgeIds: Set<number>,
+): { path: LatLng[]; segmentIds: string[] } | null {
+  const reduced = edges.filter((e) => !avoidEdgeIds.has(e.id));
+  const res = buildRoutePath(reduced, a, b, [], { maxStraightMeters: 1500 });
+  if (!res || res.points.length < 2) return null;
+  return { path: res.points as LatLng[], segmentIds: coveredSegmentIds(netSegments(net), res.points as LatLng[]) };
+}

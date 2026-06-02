@@ -9,9 +9,13 @@
 import type { TestRoute } from './playbook';
 import type { ComfortResult } from './netRoute';
 
+export interface AltRoute { path: TestRoute['path']; segmentIds: string[]; }
+
 let seed = 0;
 let route: TestRoute | null = null;
 let comfort: ComfortResult | null = null;
+let alt: AltRoute | null = null;
+let altComfort: ComfortResult | null = null;
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
 
@@ -19,9 +23,16 @@ export function requestTestRoute(): void { seed += 1; emit(); }
 export function getTestSeed(): number { return seed; }
 export function getTestRoute(): TestRoute | null { return route; }
 export function getTestComfort(): ComfortResult | null { return comfort; }
+export function getTestAlt(): AltRoute | null { return alt; }
+export function getTestAltComfort(): ComfortResult | null { return altComfort; }
 
-export function setTestRoute(r: TestRoute | null): void { route = r; comfort = null; emit(); }
-export function setTestComfort(c: ComfortResult | null): void { comfort = c; emit(); }
+export function setTestRoute(r: TestRoute | null): void {
+  route = r; comfort = null; alt = null; altComfort = null; emit();
+}
+// Befund in einem Rutsch (ein Emit): Comfort der Route + ggf. Ausweichroute.
+export function setTestBefund(c: ComfortResult | null, a: AltRoute | null, ac: ComfortResult | null): void {
+  comfort = c; alt = a; altComfort = ac; emit();
+}
 
 export function subscribeTestRoute(fn: () => void): () => void {
   listeners.add(fn);

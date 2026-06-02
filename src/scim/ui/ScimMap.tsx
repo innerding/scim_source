@@ -24,9 +24,9 @@ import { renderClusterPois } from './clusterOverlay';
 import { drawNet } from './netDraw';
 import { resampleNet, type ResampledNet } from '../wegnetz/netResample';
 import { stretchAverages, normalizeLoads, classifyStretches } from '../sensus/anthemSim';
-import { playbookLoad, buildFlows, pickTestRoute } from '../sensus/playbook';
+import { playbookLoad, buildFlows, pickTestRoute, reroute } from '../sensus/playbook';
 import { routeComfortCheck } from '../sensus/netRoute';
-import { getTestSeed, getTestRoute, setTestRoute, setTestComfort, subscribeTestRoute } from '../sensus/testRoute';
+import { getTestSeed, getTestRoute, setTestRoute, setTestBefund, subscribeTestRoute } from '../sensus/testRoute';
 import { colorize } from '../sensus/loadColour';
 import { loadColourSettings, COLOUR_SETTINGS_EVENT } from '../sensus/colourSettings';
 import { loadUserExclusion, USER_EXCLUSION_EVENT } from '../sensus/userExclusion';
@@ -558,7 +558,17 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
       const route = getTestRoute();
       if (route && route.segmentIds.length > 0) {
         const comfortRes = routeComfortCheck(route.segmentIds, avgs, userExcl);
-        setTestComfort(comfortRes);
+        // S5: bei Überschreitung eine Ausweichroute suchen (überschrittene
+        // Strecken-Kanten meiden) und gegen Comfort prüfen.
+        let alt: { path: typeof route.path; segmentIds: string[] } | null = null;
+        let altComfort = null;
+        if (!comfortRes.ok && route.path.length >= 2) {
+          const avoid = new Set(comfortRes.exceeding.map((id) => parseInt(id.split('.')[0], 10)));
+          alt = reroute(repWegnetz.edges, simNet, route.path[0], route.path[route.path.length - 1], avoid);
+          if (alt) altComfort = routeComfortCheck(alt.segmentIds, avgs, userExcl);
+        }
+        setTestBefund(comfortRes, alt, altComfort);
+        // Original (blau gestrichelt) + überschrittene Strecken (rot)
         L.polyline(route.path, { color: '#3182ce', weight: 6, opacity: 0.55, lineCap: 'round', dashArray: '1 7' }).addTo(sub);
         const exSet = new Set(comfortRes.exceeding);
         for (const s of simNet.stretches) {
@@ -566,6 +576,8 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
             L.polyline(s.points, { color: '#e53e3e', weight: 6, opacity: 0.95, lineCap: 'round' }).addTo(sub);
           }
         }
+        // Ausweichroute (grün)
+        if (alt) L.polyline(alt.path, { color: '#2f855a', weight: 5, opacity: 0.9, lineCap: 'round' }).addTo(sub);
       }
       sub.addTo(layerGroup);
     }

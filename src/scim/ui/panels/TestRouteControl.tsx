@@ -4,7 +4,7 @@
 // Das Routing/Highlight macht ScimMap; hier nur Auslöser + Report.
 
 import { useEffect, useReducer } from 'react';
-import { requestTestRoute, getTestRoute, getTestComfort, subscribeTestRoute } from '../../sensus/testRoute';
+import { requestTestRoute, getTestRoute, getTestComfort, getTestAlt, getTestAltComfort, subscribeTestRoute } from '../../sensus/testRoute';
 
 export default function TestRouteControl() {
   const [, force] = useReducer((x) => x + 1, 0);
@@ -12,6 +12,8 @@ export default function TestRouteControl() {
 
   const route = getTestRoute();
   const comfort = getTestComfort();
+  const alt = getTestAlt();
+  const altComfort = getTestAltComfort();
 
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 440, marginTop: 4 }}>
@@ -35,9 +37,18 @@ export default function TestRouteControl() {
           comfort.ok ? (
             <div style={{ color: '#276749', marginTop: 4 }}>✓ comfortabel auf allen {comfort.routeStretchIds.length} Strecken</div>
           ) : (
-            <div style={{ color: '#c53030', marginTop: 4 }}>
-              ⚠ überschreitet auf <strong>{comfort.exceeding.length}/{comfort.routeStretchIds.length}</strong> Strecken — Ausweichroute (S5) folgt
-            </div>
+            <>
+              <div style={{ color: '#c53030', marginTop: 4 }}>
+                ⚠ überschreitet auf <strong>{comfort.exceeding.length}/{comfort.routeStretchIds.length}</strong> Strecken (rot)
+              </div>
+              {alt ? (
+                <div style={{ color: '#2f855a', marginTop: 2 }}>
+                  ↳ <strong style={{ color: '#2f855a' }}>Ausweichroute</strong> (grün) {altComfort?.ok ? '— comfortabel ✓' : `— noch ${altComfort?.exceeding.length ?? '?'} Strecke(n) über Comfort`}
+                </div>
+              ) : (
+                <div style={{ color: '#a0aec0', marginTop: 2 }}>↳ keine Ausweichroute — Strecke unvermeidbar</div>
+              )}
+            </>
           )
         ) : (
           route && <div style={{ color: '#a0aec0', marginTop: 4 }}>kein Comfort-Befund (Comfort-Schwelle in P09 Mask setzen + „Last (sim)" an)</div>
