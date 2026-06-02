@@ -114,6 +114,31 @@ Segment `stretchId#segIndex` (z.B. `5.0#2`). Quelle: `netRoute.ts` (`netSegments
 
 ---
 
+## Leitplanken (Anti-Dopplung · Mock-Erbe · Tests)
+
+SCIM entstand als **Mock-Gerüst**. Vieles wird nicht mehr gebraucht, nach Zielerreichung
+noch weniger — aber das bisher Gebaute ist **schön und übersichtlich**. Diese Arbeit
+darf **keine verwirrende Dopplung** erzeugen.
+
+- **Keine Dopplung:** Jede neue Sache **ersetzt oder konvergiert** ihren Vorgänger,
+  statt daneben zu existieren.
+- **Eine Quelle je Engine** (Shell), **eine Quelle je Begriff** (Spec).
+- **Mock-/Altteile markieren, nicht jetzt aufräumen:** Ein echtes Aufräumen der
+  **Navigations-Row** oder von **Panel-/Panel-Tab-Inhalten** ist **nicht absehbar**.
+  Überholtes wird als *Legacy/deprecated* gekennzeichnet, nicht umgebaut.
+- **Tests, Analysen, Reviews** gehören in **jede Phase** (nicht als Nachgedanke).
+
+**Bekannte Dopplungs-Nähte (bewusst beobachten):**
+1. **Engine-Doppelung (größtes Risiko):** Routing/Comfort liegen im Editor
+   (`playbook.ts`/`netRoute.ts`) UND in der App (`brodaComfortKernel`/
+   `brodaAvoidanceKernel`). Phase 4 **konvergiert** beide in die geteilte Shell-Engine
+   — baut keine dritte Variante.
+2. **Bundle-Doppelung:** alt `scim3_bundle_v1` (GeoJSON+Koords) vs. neu Shell/Origin/
+   Anthem. Neu **löst ab**, alt = Legacy markieren.
+3. **Format-Doppelung:** App `SvgSegment` (Koords) → Phase 3 **ersetzt** durch
+   Anthem (segId-only), hält nicht beide.
+4. **Begriffs-Doppelung:** BCK/BAK kanonisch nur in `komfort_kaskade_spec.md`.
+
 ## Was bleibt im Editor, was geht in die App
 
 - **Editor (Build-Phase):** Netz resampeln, POIs, Boundary, Last *simulieren/messen*,
