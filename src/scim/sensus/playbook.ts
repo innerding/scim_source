@@ -3,7 +3,7 @@
 // (Bus→Attraktor via buildRoutePath → ODFlow.segmentIds) ist die Integration
 // (S2b, in P06). „10 Pers/10 m = rot" → load = persons / personsForRed.
 
-import type { ResampledNet, LatLng } from '../wegnetz/netResample';
+import { distMeters, type ResampledNet, type LatLng } from '../wegnetz/netResample';
 import { netSegments, coveredSegmentIds } from './netRoute';
 import { buildRoutePath, type PathEdge } from '../regio-content/pathEngine';
 import type { CatalogPoi } from '../poi-catalog/poiCatalog.types';
@@ -54,11 +54,20 @@ export function playbookLoad(
 
 const SOURCE_BUCKETS = new Set(['Transport']);
 const ATTRACTOR_BUCKETS = new Set(['Points', 'Squares']);
+// Stark frequentierte Bus-Stationen (Namens-Fragmente, lowercase) — der Rest
+// trägt nur schwach bei. Szenario-Default für Lichtenberg.
+const STRONG_SOURCES_DEFAULT = ['lichtenberg', 'rohrbach', 'kirchschlag', 'eidenberg'];
 
 export interface BuildFlowsOpts {
   intensityPerFlow?: number;  // Personen je Strom bei vollem Aufkommen
   tolMeters?: number;         // Pfad→Segment-Toleranz
   maxStraightMeters?: number; // Fallback-Grenze des Routers
+  strongSources?: string[];   // starke Quellen (Namens-Fragmente, lowercase)
+  strongWeight?: number;      // Gewicht starker Quellen (Default 1)
+  weakWeight?: number;        // Gewicht der übrigen (Default 0.3)
+  maxHours?: number;          // max GESAMT-Gehzeit eines Besuchers (Default 6)
+  speedKmh?: number;          // Gehgeschwindigkeit (Default 4)
+  roundTrip?: boolean;        // Hin+Zurück (Default true)
 }
 
 export function buildFlows(
@@ -69,20 +78,31 @@ export function buildFlows(
 ): ODFlow[] {
   const intensity = opts.intensityPerFlow ?? 2;
   const tol = opts.tolMeters ?? 10;
+  const strong = (opts.strongSources ?? STRONG_SOURCES_DEFAULT).map((s) => s.toLowerCase());
+  const strongW = opts.strongWeight ?? 1;
+  const weakW = opts.weakWeight ?? 0.3;
+  const speed = (opts.speedKmh ?? 4) * 1000;
+  const oneWayMax = ((opts.maxHours ?? 6) / (opts.roundTrip === false ? 1 : 2)) * speed; // m
+
   const toLatLng = (p: CatalogPoi): LatLng => [p.coord[1], p.coord[0]];
   const usable = pois.filter((p) => p.subcategory !== 'Cluster');
-  const sources = usable.filter((p) => SOURCE_BUCKETS.has(p.bucket)).map(toLatLng);
+  const sources = usable.filter((p) => SOURCE_BUCKETS.has(p.bucket)).map((p) => ({
+    coord: toLatLng(p),
+    weight: strong.some((s) => (p.text ?? '').toLowerCase().includes(s)) ? strongW : weakW,
+  }));
   const attractors = usable.filter((p) => ATTRACTOR_BUCKETS.has(p.bucket)).map(toLatLng);
   if (sources.length === 0 || attractors.length === 0 || edges.length === 0) return [];
 
   const segs = netSegments(net);
   const flows: ODFlow[] = [];
-  for (const a of sources) {
+  for (const src of sources) {
+    if (src.weight <= 0) continue;
     for (const b of attractors) {
-      const res = buildRoutePath(edges, a, b, [], { maxStraightMeters: opts.maxStraightMeters ?? 800 });
-      if (!res || res.points.length < 2) continue;
+      if (distMeters(src.coord, b) > oneWayMax) continue;                 // Luftlinie schon zu weit
+      const res = buildRoutePath(edges, src.coord, b, [], { maxStraightMeters: opts.maxStraightMeters ?? 800 });
+      if (!res || res.points.length < 2 || res.meters > oneWayMax) continue; // > Gehzeit-Budget → kein Besucher
       const ids = coveredSegmentIds(segs, res.points, tol);
-      if (ids.length) flows.push({ segmentIds: ids, intensity });
+      if (ids.length) flows.push({ segmentIds: ids, intensity: intensity * src.weight });
     }
   }
   return flows;
