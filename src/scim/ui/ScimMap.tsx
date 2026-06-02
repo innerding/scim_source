@@ -23,7 +23,10 @@ import { poiCompositeSvg } from '../poi-catalog/poiCatalog.composite';
 import { renderClusterPois } from './clusterOverlay';
 import { drawNet } from './netDraw';
 import { resampleNet, type ResampledNet } from '../wegnetz/netResample';
-import { simSegmentLoads, loadColour } from '../sensus/anthemSim';
+import { simSegmentLoads, stretchAverages, normalizeLoads, classifyStretches } from '../sensus/anthemSim';
+import { colorize } from '../sensus/loadColour';
+import { loadColourSettings, COLOUR_SETTINGS_EVENT } from '../sensus/colourSettings';
+import { loadUserExclusion, USER_EXCLUSION_EVENT } from '../sensus/userExclusion';
 import { MVP_RESAMPLE_TARGET_METERS } from '../sensus/originPackage';
 import type { DerivedNet, LatLng } from '../regio-content/netModel';
 import type { CatalogPoi } from '../poi-catalog/poiCatalog.types';
@@ -194,6 +197,27 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
     window.addEventListener('scim:edge-types:changed', onChange);
     return () => window.removeEventListener('scim:edge-types:changed', onChange);
   }, [regionSlug]);
+
+  // Farb-Settings (P01/P02/P04) pro Region + User-Ausschluss (runtime). Beide
+  // speisen das „Last (sim)"-Rendern; bei Änderung (Regler) live neu zeichnen.
+  const [colourCfg, setColourCfg] = useState(() => loadColourSettings(regionSlug));
+  useEffect(() => { setColourCfg(loadColourSettings(regionSlug)); }, [regionSlug]);
+  useEffect(() => {
+    const onChange = (e: Event) => {
+      const d = (e as CustomEvent).detail as { regionSlug?: string } | undefined;
+      if (d && d.regionSlug && d.regionSlug !== regionSlug) return;
+      setColourCfg(loadColourSettings(regionSlug));
+    };
+    window.addEventListener(COLOUR_SETTINGS_EVENT, onChange);
+    return () => window.removeEventListener(COLOUR_SETTINGS_EVENT, onChange);
+  }, [regionSlug]);
+
+  const [userExcl, setUserExcl] = useState<number | null>(() => loadUserExclusion());
+  useEffect(() => {
+    const onChange = () => setUserExcl(loadUserExclusion());
+    window.addEventListener(USER_EXCLUSION_EVENT, onChange);
+    return () => window.removeEventListener(USER_EXCLUSION_EVENT, onChange);
+  }, []);
   // Stabile Identitaet fuer Effect-Deps (sortiert).
   const edgeTypesKey = useMemo(() => [...edgeTypes].sort().join('|'), [edgeTypes]);
   const repBbox = useMemo(
@@ -452,19 +476,38 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
       }
     }
 
-    // Last (sim): das resampelte @MVP-Netz nach simulierter Last eingefärbt
-    // (Sim-Telco · loadColour = colour = G(load)). Erster Anthem-Link: die
-    // Einfärbung auf dem echten Netz, indexiert über die Segment-Reihenfolge.
+    // Last (sim): die VOLLE Farb-Kette (Umbauplan Phase D). Anzeige je Segment
+    // via colorize(System-normalisierte Last); Degradierung/Ausschluss je
+    // STRECKE über die Ø-Last (crossing-gated). §2a: stetiger Gradient.
     if (vis.simLoad && activeRep && repWegnetz) {
       const sub = L.layerGroup();
       const rnet = resampleNet(repWegnetz.edges, { targetMeters: MVP_RESAMPLE_TARGET_METERS });
-      const loads = simSegmentLoads(rnet);
+      // System: normalisieren (Spreizung + Mindest-Rot)
+      const loads = normalizeLoads(simSegmentLoads(rnet), { spread: colourCfg.spread, floor: colourCfg.floor });
+      // je Strecke klassifizieren (Operator-Degradierung + User-Ausschluss)
+      const stateById = new Map(
+        classifyStretches(stretchAverages(rnet, loads), {
+          degradier: colourCfg.degradier ?? undefined,
+          ausschluss: userExcl ?? undefined,
+        }).map((c) => [c.id, c.state]),
+      );
+      const effBias = Math.max(-1, Math.min(1, colourCfg.bias + colourCfg.safety));
       let idx = 0;
       for (const s of rnet.stretches) {
+        const state = stateById.get(s.id) ?? 'normal';
         for (let i = 1; i < s.points.length; i++) {
-          L.polyline([s.points[i - 1], s.points[i]], {
-            color: loadColour(loads[idx++] ?? 0), weight: 4, opacity: 1, lineCap: 'round',
-          }).addTo(sub);
+          const load = loads[idx++] ?? 0;
+          let color: string, weight: number, opacity: number;
+          if (state === 'excluded') {
+            color = '#9aa5b1'; weight = 2; opacity = 0.5;        // farblos neutralisiert
+          } else if (state === 'degraded') {
+            color = colorize(load, { spectrum: colourCfg.spectrum, bias: effBias });
+            weight = 2; opacity = 0.4;                            // entdrängt (behält Farbe)
+          } else {
+            color = colorize(load, { spectrum: colourCfg.spectrum, bias: effBias });
+            weight = 4; opacity = 1;
+          }
+          L.polyline([s.points[i - 1], s.points[i]], { color, weight, opacity, lineCap: 'round' }).addTo(sub);
         }
       }
       sub.addTo(layerGroup);
@@ -573,7 +616,7 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
         [Math.max(...lats), Math.max(...lons)],
       ]);
     }
-  }, [result, vis, osmEdges, repBbox, repPolygonLatLng, activeRep, repCatalog, availLayers, repWegnetz, wegnetzAsEdges]);
+  }, [result, vis, osmEdges, repBbox, repPolygonLatLng, activeRep, repCatalog, availLayers, repWegnetz, wegnetzAsEdges, colourCfg, userExcl]);
 
   // Dynamisches Cluster-Overlay: bei jedem zoom/move neu rechnen (Pixel-Logik).
   // Eigener Layer, damit der Haupt-Render unberuehrt bleibt.
