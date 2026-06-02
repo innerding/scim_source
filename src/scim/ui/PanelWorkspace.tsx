@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
+import { useInspectorView } from '../../runtime/repContext';
 import type { TabId } from './panelRegistry';
 import {
   KOSMOLOGIE_IDS,
@@ -355,14 +356,18 @@ const fmtBytes = (n: number) =>
   n < 1024 ? `${n} B` : n < 1024 * 1024 ? `${(n / 1024).toFixed(1)} kB` : `${(n / 1048576).toFixed(2)} MB`;
 
 function SensusCorePackages() {
-  // Erster echter Resolver: die Origin-particles der Lichtenberg-Representation
-  // live auflösen (reale Byte-Größen). Shell/Anthem bleiben vorerst Platzhalter.
+  // Demo-Rep bleibt als Fallback/„Teilespender" erhalten — die Quelle, wenn kein
+  // Auftraggeber gewählt/inspiziert ist.
   const demoRep = REPRESENTATIONS.find((r) => /lichtenberg/i.test(r.id) || /lichtenberg/i.test(r.name)) ?? REPRESENTATIONS[0];
-  const origin = demoRep ? buildOriginPackage(demoRep) : null;
+  const inspected = useInspectorView()?.representation ?? null;
+  // Auftraggeber: explizit gewählt > inspizierte (zuletzt aktive) > Demo-Rep.
+  const [selId, setSelId] = useState<string | null>(null);
+  const auftraggeber = REPRESENTATIONS.find((r) => r.id === selId) ?? inspected ?? demoRep;
+  const origin = auftraggeber ? buildOriginPackage(auftraggeber) : null;
   // Resample-Trade-off: dasselbe Netz bei verschiedenen Zielsegmentlängen.
-  const demoNet = demoRep?.wegnetz_id ? wegnetzById(demoRep.wegnetz_id) : undefined;
-  const resampleVariants = demoNet
-    ? [3, 10, 25].map((t) => ({ t, r: resampleNet(demoNet.edges, { targetMeters: t }) }))
+  const net = auftraggeber?.wegnetz_id ? wegnetzById(auftraggeber.wegnetz_id) : undefined;
+  const resampleVariants = net
+    ? [3, 10, 25].map((t) => ({ t, r: resampleNet(net.edges, { targetMeters: t }) }))
     : [];
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif' }}>
@@ -372,6 +377,23 @@ function SensusCorePackages() {
         background: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: 4,
       }}>
         Sensus Core Services · Originpackage → Shell · Origin · Anthem
+      </div>
+      {/* Auftraggeber-Wähler: welche committete Representation Sensus Core beauftragt. */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, fontSize: 12 }}>
+        <span style={{ fontWeight: 700, color: '#1a365d' }}>Auftraggeber:</span>
+        <select
+          value={auftraggeber?.id ?? ''}
+          onChange={(e) => setSelId(e.target.value)}
+          style={{ fontSize: 12, padding: '3px 6px', borderRadius: 4, border: '1px solid #cbd5e0', color: '#1a365d' }}
+        >
+          {REPRESENTATIONS.map((r) => (
+            <option key={r.id} value={r.id}>{r.name}{r.version != null ? ` · v${r.version}` : ''}</option>
+          ))}
+        </select>
+        <span style={{ color: '#a0aec0' }}>→ Origin auflösen</span>
+        {inspected && auftraggeber?.id === inspected.id && selId == null && (
+          <span style={{ fontSize: 10, color: '#a0aec0', fontStyle: 'italic' }}>(folgt dem Inspector)</span>
+        )}
       </div>
       <SensusCoreReigen origin={origin} />
       <p style={{ fontSize: 12.5, color: '#4a5568', lineHeight: 1.55, margin: '2px 0 14px' }}>
