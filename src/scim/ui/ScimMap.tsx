@@ -24,7 +24,9 @@ import { renderClusterPois } from './clusterOverlay';
 import { drawNet } from './netDraw';
 import { resampleNet, type ResampledNet } from '../wegnetz/netResample';
 import { stretchAverages, normalizeLoads, classifyStretches } from '../sensus/anthemSim';
-import { playbookLoad, buildFlows } from '../sensus/playbook';
+import { playbookLoad, buildFlows, pickTestRoute } from '../sensus/playbook';
+import { routeComfortCheck } from '../sensus/netRoute';
+import { getTestSeed, getTestRoute, setTestRoute, setTestComfort, subscribeTestRoute } from '../sensus/testRoute';
 import { colorize } from '../sensus/loadColour';
 import { loadColourSettings, COLOUR_SETTINGS_EVENT } from '../sensus/colourSettings';
 import { loadUserExclusion, USER_EXCLUSION_EVENT } from '../sensus/userExclusion';
@@ -271,6 +273,16 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
   );
   const [simHour, setSimHour] = useState(getSimHour());
   useEffect(() => subscribeSimClock(() => setSimHour(getSimHour())), []);
+
+  // Test-Route (S4b): P09-Button bumpt den seed → hier neu routen. seed im State,
+  // damit der Render die Route zeichnet; route-/comfort-Emits ändern den seed
+  // nicht → keine Render-Schleife.
+  const [testSeed, setTestSeed] = useState(getTestSeed());
+  useEffect(() => subscribeTestRoute(() => setTestSeed(getTestSeed())), []);
+  useEffect(() => {
+    if (!simNet || !repWegnetz || !activeRep) return;
+    setTestRoute(pickTestRoute(repWegnetz.edges, simNet, repCatalog.all, getTestSeed()));
+  }, [testSeed, simNet, repWegnetz, repCatalog, activeRep]);
   // Wegnetz-Edges in die Colour-Mesh-Edge-Form ([lon,lat]-coordinates) bringen.
   const wegnetzAsEdges = useMemo(() => {
     if (!repWegnetz) return [];
@@ -503,8 +515,9 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
       // System: normalisieren (Spreizung + Mindest-Rot)
       const loads = normalizeLoads(raw, { spread: colourCfg.spread, floor: colourCfg.floor });
       // je Strecke klassifizieren (Operator-Degradierung + User-Ausschluss)
+      const avgs = stretchAverages(simNet, loads);
       const stateById = new Map(
-        classifyStretches(stretchAverages(simNet, loads), {
+        classifyStretches(avgs, {
           degradier: colourCfg.degradier ?? undefined,
           ausschluss: userExcl ?? undefined,
         }).map((c) => [c.id, c.state]),
@@ -537,6 +550,21 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
             weight = 4; opacity = 1;
           }
           L.polyline([s.points[i - 1], s.points[i]], { color, weight, opacity, lineCap: 'round' }).addTo(sub);
+        }
+      }
+
+      // Test-Route (S4b): Pfad hervorheben + Comfort-Check (Ø-Last > Comfort
+      // = User-Ausschluss-Schwelle) → überschrittene Strecken rot markieren.
+      const route = getTestRoute();
+      if (route && route.segmentIds.length > 0) {
+        const comfortRes = routeComfortCheck(route.segmentIds, avgs, userExcl);
+        setTestComfort(comfortRes);
+        L.polyline(route.path, { color: '#3182ce', weight: 6, opacity: 0.55, lineCap: 'round', dashArray: '1 7' }).addTo(sub);
+        const exSet = new Set(comfortRes.exceeding);
+        for (const s of simNet.stretches) {
+          if (exSet.has(s.id) && s.points.length >= 2) {
+            L.polyline(s.points, { color: '#e53e3e', weight: 6, opacity: 0.95, lineCap: 'round' }).addTo(sub);
+          }
         }
       }
       sub.addTo(layerGroup);
@@ -645,7 +673,7 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
         [Math.max(...lats), Math.max(...lons)],
       ]);
     }
-  }, [result, vis, osmEdges, repBbox, repPolygonLatLng, activeRep, repCatalog, availLayers, repWegnetz, wegnetzAsEdges, colourCfg, userExcl, simNet, simFlows, simHour]);
+  }, [result, vis, osmEdges, repBbox, repPolygonLatLng, activeRep, repCatalog, availLayers, repWegnetz, wegnetzAsEdges, colourCfg, userExcl, simNet, simFlows, simHour, testSeed]);
 
   // Dynamisches Cluster-Overlay: bei jedem zoom/move neu rechnen (Pixel-Logik).
   // Eigener Layer, damit der Haupt-Render unberuehrt bleibt.

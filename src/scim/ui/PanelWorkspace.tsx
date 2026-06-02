@@ -12,6 +12,7 @@ import type { ScimPipelineResult } from '../pipeline/scimPipeline.types';
 import PanelInputForm from './panels/PanelInputForm';
 import ColourAdjust from './panels/ColourAdjust';
 import UserExclusionControl from './panels/UserExclusionControl';
+import TestRouteControl from './panels/TestRouteControl';
 import PanelResult from './panels/PanelResult';
 import PanelValidation from './panels/PanelValidation';
 import PanelRaw from './panels/PanelRaw';
@@ -490,14 +491,15 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
   if (panel.id === 'P09') {
     const d = P09_DESCRIPTORS.find((x) => x.tabId === activeTab);
     if (d) {
-      // Mask-Tab (t3): zusätzlich der User-Ausschluss-Regler (C1).
-      if (activeTab === 't3') {
+      // Mask-Tab (t3): User-Ausschluss-Regler (C1) · Move-Tab (t4): Test-Route (S4b).
+      const extra = activeTab === 't3' ? <UserExclusionControl />
+        : activeTab === 't4' ? <TestRouteControl />
+        : null;
+      if (extra) {
         return (
           <>
             <P09Artifact d={d} />
-            <div style={{ marginTop: 18, borderTop: '1px solid #e2e8f0', paddingTop: 14 }}>
-              <UserExclusionControl />
-            </div>
+            <div style={{ marginTop: 18, borderTop: '1px solid #e2e8f0', paddingTop: 14 }}>{extra}</div>
           </>
         );
       }

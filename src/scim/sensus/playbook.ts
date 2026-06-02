@@ -121,3 +121,36 @@ export function buildFlows(
   }
   return flows;
 }
+
+// ─── S4b: eine Testperson-Route (Bus→Attraktor) für den Comfort-Check ─────────
+export interface TestRoute {
+  path: LatLng[];
+  segmentIds: string[];
+  from: string;
+  to: string;
+}
+
+// Würfelt (deterministisch über seed) eine Route von einer starken Bus-Station
+// zu einem Attraktor und liefert Pfad + überdeckte Segmente.
+export function pickTestRoute(edges: PathEdge[], net: ResampledNet, pois: CatalogPoi[], seed: number): TestRoute | null {
+  const usable = pois.filter((p) => p.subcategory !== 'Cluster');
+  const sources = usable.filter((p) => SOURCE_BUCKETS.has(p.bucket));
+  const attractors = usable.filter((p) => ATTRACTOR_BUCKETS.has(p.bucket));
+  if (sources.length === 0 || attractors.length === 0 || edges.length === 0) return null;
+
+  const strongSrc = sources.find((p) =>
+    STRONG_SOURCES_DEFAULT.some((s) => (p.text ?? '').toLowerCase().includes(s))) ?? sources[0];
+  const attr = attractors[((seed % attractors.length) + attractors.length) % attractors.length];
+
+  const a: LatLng = [strongSrc.coord[1], strongSrc.coord[0]];
+  const b: LatLng = [attr.coord[1], attr.coord[0]];
+  const res = buildRoutePath(edges, a, b, [], { maxStraightMeters: 1500 });
+  if (!res || res.points.length < 2) return null;
+
+  return {
+    path: res.points as LatLng[],
+    segmentIds: coveredSegmentIds(netSegments(net), res.points as LatLng[]),
+    from: strongSrc.text ?? 'Bus',
+    to: attr.text ?? 'Ziel',
+  };
+}
