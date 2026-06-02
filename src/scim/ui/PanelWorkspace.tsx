@@ -395,7 +395,7 @@ function SensusCorePackages() {
         fontSize: 10, fontFamily: 'monospace', color: '#2b6cb0',
         background: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: 4,
       }}>
-        Sensus Core Services · Originpackage → Shell · Origin · Anthem
+        Sensus Core Publishing · Originpackage → Shell · Origin · Anthem
       </div>
       {/* Auftraggeber-Wähler: welche committete Representation Sensus Core beauftragt. */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, fontSize: 12 }}>

@@ -199,12 +199,12 @@ export const PANEL_REGISTRY: PanelDescriptor[] = [
   // ── Gruppe 2: Räumliche Grundlage ─────────────────────────────────────────
   {
     id: 'P07',
-    label: 'Boundary',
+    label: 'High-Shell',
     kurzLabel: 'bou',
     group: 2,
     order: 7,
     icon: '⬡',
-    shortDescription: 'Boundary-Darstellung + Rep-Junction',
+    shortDescription: 'App-UI/UX der Ziel-App · Intro · Boundary · Reveal (baut Shell-high)',
     helpText: 'Darstellung des Analyse-Boundary und Anschlussfähigkeit zu benachbarten Representations. POI-Extraktion entfällt — POIs kommen aus dem Katalog.',
     dependsOn: ['P01', 'P02', 'P03'],
     inputMode: 'auto_computed',
@@ -296,11 +296,11 @@ export const PANEL_REGISTRY: PanelDescriptor[] = [
   // ── Gruppe 4: Paketierung und Release ──────────────────────────────────────
   {
     id: 'P11',
-    label: 'Sensus Core Services',
+    label: 'Sensus Core Publishing',
     group: 4,
     order: 11,
     icon: '▣',
-    shortDescription: 'ordert die atomaren particles von P07/P08/P09 · schnürt Shell · Origin · Anthem (+ Version + Deploy-Reihenfolge)',
+    shortDescription: 'schnürt Shell · Origin · Anthem, versioniert, spielt aus (R2) — baut nichts; die Bauer sind P06–P09',
     helpText: 'Sortiert die portionierten origin-particles nach Horizont in die drei Pakete und deklariert die Auslieferungs-Reihenfolge (Scheduling später: Transmitter).',
     dependsOn: ['P10'],
     inputMode: 'auto_computed',
