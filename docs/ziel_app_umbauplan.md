@@ -77,6 +77,12 @@ Segment `stretchId#segIndex` (z.B. `5.0#2`). Quelle: `netRoute.ts` (`netSegments
   Datengrößen-Budget.
 - Presence-Anmeldung: App meldet Aufenthalt (Region/Boundary) → fordert
   Lastbewertung → erhält den aktuellen Snapshot der Representation.
+- **Anthem trägt normalisierte Last `[0..1]`, NICHT Farbe** — die Farbe rechnet die
+  Shell-Engine (`colorize`) app-seitig, weil die Komfort-Kaskade den Lastwert
+  braucht. **Lebenszyklus:** presence-getakteter Pflichtzyklus mit 2 h-Hysterese
+  (Presence → sofort + alle 5 Min rechnen; 2 h ohne Presence → Stopp, nichts
+  vorhalten, Kaltstart). **Turbo-Slider** nur im Sim-MVP (zieht Sim-Snapshots zur
+  Sim-Zeit `t`). **Volle Spec: `docs/anthem_snapshot_spec.md`.**
 
 ---
 

@@ -1,0 +1,102 @@
+# Anthem-Snapshot — Spec (verbindlich)
+
+**Status:** Design-Konsens 2026-06-02. Maßgeblich für die Anthem-Schicht des
+paket-basierten Umbaus (`docs/ziel_app_umbauplan.md`, `docs/komfort_kaskade_spec.md`).
+
+---
+
+## Begriff
+
+**Ein Snapshot = ein 5-Minuten-Lastbild**, das SCIM erzeugt und ausliefert.
+Das **Anthem ist genau dieses ausgelieferte Artefakt** (das kurzfristige Paket im
+Horizont Shell/Origin/**Anthem**). Die laufende Auslieferung ist eine **Folge von
+Snapshots im 5-Min-Takt**.
+
+- **Sim vs. echt:** Heute existiert nur eine **Sim-Telco** → jeder Snapshot ist ein
+  **Sim-Snapshot = Sim-Anthem**. Das Format ist **quellen-agnostisch**; echte Telco
+  tauscht später nur den Erzeuger, nicht den Vertrag.
+
+---
+
+## Erzeugung (SCIM-Seite)
+
+Pro 5-Min-Schritt:
+1. **Telco-Auslastung** abnehmen (heute: Sim via Playbook/Tageskurve).
+2. **Auf die Boundary der Representation normalisieren** (z.B. Lichtenberg) —
+   `normalizeLoads`, geклippt auf den Rep-Umriss.
+3. **Segment-Last `[0..1]`** je Segment ableiten (Reihenfolge = Origin-Net-Index;
+   Segment-ID-Format `stretchId#segIndex`, eingefroren).
+
+**Wichtig — Last, nicht Farbe:** Anthem trägt die **normalisierte Last `[0..1]`**.
+Die **Farbe rechnet die Shell-Engine (`colorize`) in der App** aus Last + Palette
+(Palette liegt in Origin/colour-settings). Grund: die Komfort-Kaskade in der App
+(Comfort-Check + BAK-Routing) braucht den **Lastwert**, nicht nur eine Farbe —
+sonst kann sie nicht gegen die User-Schwelle prüfen oder Wege gewichten. „Farbcode"
+ist das *Ergebnis*, nicht der *Übertragungswert*.
+
+---
+
+## Format
+
+```jsonc
+{
+  "kind": "anthem_snapshot_v1",
+  "repId": "rep-lichtenberg",
+  "t": "<ISO-Zeit, 5-Min-Raster (Sim-Zeit im MVP)>",
+  "loads": [0.0 .. 1.0]   // normalisierte Last je Segment, Reihenfolge = Origin-Net-Index
+  // segmentIds[] nur, falls die Index-Reihenfolge nicht garantiert werden kann
+}
+```
+
+- **Keine Koordinaten.** Die App mappt `Index/segId → Geometrie` über das **Origin-
+  Netz** (einmal statisch geladen).
+- **Größe:** ~1 Byte/Segment (vgl. `ResampledNet.loadArrayBytes`) — im Datengrößen-
+  Budget.
+
+---
+
+## Lebenszyklus — presence-getakteter Pflichtzyklus mit 2 h-Hysterese
+
+```
+[Leerlauf]  keine Presence → SCIM rechnet NICHT, hält NICHTS vor (kalt)
+    │
+    │  erste origin-presence kommt rein
+    ▼
+[Aktiv]     - sofort erstes Anthem rechnen + ausliefern
+            - danach alle 5 Min ein neues Anthem rechnen + ausliefern
+            - jede weitere Presence frischt „zuletzt gesehen" auf
+    │
+    │  2 h ohne neue origin-presence
+    ▼
+[Leerlauf]  SCIM stoppt, verwirft alles → kalt
+```
+
+- **Trigger Start:** erste `presence-origin`-Information (App meldet Aufenthalt /
+  erste Anforderung).
+- **Trigger Ende:** 2 h nach der **letzten** `presence-origin`-Information.
+- **Kein Vorrechnen, keine Vorhaltung** über den Live-Zyklus hinaus. Nach 2 h
+  Kaltstart: die nächste eingehende Presence startet den Zyklus neu.
+- Der erste Snapshot wird **on presence** gerechnet (deckt „liefert nach erster
+  Anforderung aus").
+
+---
+
+## Turbo-Slider (nur Sim-MVP)
+
+Das **unterscheidende UI-Element des Sim-MVP** gegenüber der echten App. Da Sim-Zeit
+raffbar ist, spult der Turbo die **Sim-Uhr** vor:
+
+- Die App fragt den Sim-Snapshot **zur Sim-Zeit `t`** an; **Turbo erhöht `t`
+  schneller** → zieht die nächste Snapshot-Stufe. **Kein lokales Rechnen** in der
+  App — sie bleibt reiner Konsument.
+- Editor-Vorbild existiert: `simClock.ts`, Turbo-Leiter 5/10/20/30/60 Min.
+- **Echte App:** kein Turbo — nur Echtzeit-5-Min-Bilder.
+
+---
+
+## Abgrenzung
+
+- **Origin** (mittel, statisch): Geometrie, Segment-IDs, Adjazenz, POIs — einmal
+  geladen.
+- **Anthem** (kurz, 5 Min): nur die Last-Folge dieser Spec.
+- **Shell** (lang): die Engines, u.a. `colorize` (Last→Farbe) und der BAK-Router.
