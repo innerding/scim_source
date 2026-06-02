@@ -10,6 +10,7 @@ import type { ScimPipelineResult } from '../pipeline/scimPipeline.types';
 
 // Panel content placeholders — filled panel by panel in subsequent sessions
 import PanelInputForm from './panels/PanelInputForm';
+import ColourAdjust from './panels/ColourAdjust';
 import PanelResult from './panels/PanelResult';
 import PanelValidation from './panels/PanelValidation';
 import PanelRaw from './panels/PanelRaw';
@@ -495,9 +496,14 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
     tabContent = <BaukonzeptNotiz id={panel.id} title={tabDesc.label} lines={tabDesc.body} />;
   } else {
     switch (activeTab) {
-      // 'adjust' (Threshold-Panels) rendert die echten Schwellen-Slider.
-      case 'input':
-      case 'adjust':     tabContent = <PanelInputForm panel={panel} result={result} />; break;
+      // 'adjust' der Farb-Stationen P01/P02/P04 → die Farb-Regler (B2);
+      // sonst die generischen Schwellen-Slider.
+      case 'input':      tabContent = <PanelInputForm panel={panel} result={result} />; break;
+      case 'adjust':
+        tabContent = (panel.id === 'P01' || panel.id === 'P02' || panel.id === 'P04')
+          ? <ColourAdjust panelId={panel.id} />
+          : <PanelInputForm panel={panel} result={result} />;
+        break;
       case 'simulation': {
         // Heute nur fuer P06 implementiert (Pattern-Klassifikator-Sandbox, ann_064).
         if (panel.id === 'P06') {
