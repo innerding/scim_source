@@ -73,6 +73,11 @@ ist das *Ergebnis*, nicht der *Übertragungswert*.
 
 - **Trigger Start:** erste `presence-origin`-Information (App meldet Aufenthalt /
   erste Anforderung).
+- **Presence-Handshake (echt, kein Sim-Shortcut):** Die Ziel-App schickt beim ersten
+  Upload nach der **Shell-Installation** ein `presence-origin`-Anforderungssignal an
+  SCIM — **identisch zum späteren Echtbetrieb ohne Simulation**. Dieses Anforderungs-
+  teil der App **existiert noch nicht** und ist neu zu bauen (so, wie es später
+  sinnvoll und richtig ist).
 - **Trigger Ende:** 2 h nach der **letzten** `presence-origin`-Information.
 - **Kein Vorrechnen, keine Vorhaltung** über den Live-Zyklus hinaus. Nach 2 h
   Kaltstart: die nächste eingehende Presence startet den Zyklus neu.
@@ -86,9 +91,10 @@ ist das *Ergebnis*, nicht der *Übertragungswert*.
 Das **unterscheidende UI-Element des Sim-MVP** gegenüber der echten App. Da Sim-Zeit
 raffbar ist, spult der Turbo die **Sim-Uhr** vor:
 
-- Die App fragt den Sim-Snapshot **zur Sim-Zeit `t`** an; **Turbo erhöht `t`
-  schneller** → zieht die nächste Snapshot-Stufe. **Kein lokales Rechnen** in der
-  App — sie bleibt reiner Konsument.
+- **Globale Sim-Tageszeit:** Es läuft eine *globale* Sim-Uhr; die App **steigt ein**
+  (startet `t` nicht bei Presence-Eingang neu). Sie fragt den Sim-Snapshot **zur
+  Sim-Zeit `t`** an; **Turbo erhöht `t` schneller** → zieht die nächste Snapshot-
+  Stufe. **Kein lokales Rechnen** in der App — sie bleibt reiner Konsument.
 - Editor-Vorbild existiert: `simClock.ts`, Turbo-Leiter 5/10/20/30/60 Min.
 - **Echte App:** kein Turbo — nur Echtzeit-5-Min-Bilder.
 

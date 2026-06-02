@@ -92,7 +92,7 @@ Segment `stretchId#segIndex` (z.B. `5.0#2`). Quelle: `netRoute.ts` (`netSegments
 |---|---|---|---|
 | **0 · Vertrag** | Anthem-Snapshot-Format + Origin-Segment-Adjazenz als Typen/Doc | neue types | — |
 | **1 · Encoder** | reine `buildAnthemSnapshot(net, loads, repId, t)`; P09-t2 ruft sie, P11 nimmt sie als Anthem-Partikel | `src/scim/sensus/`, P09/P11 | P09/P11 zeigen Partikel |
-| **2 · Worker** | `GET /api/anthem/:repId` (5-Min-Snapshot aus R2/KV) + Schreibpfad; Presence→Lastbewertung | `worker/src/index.ts` | Lichtenberg liefert Snapshot |
+| **2 · Worker + Presence** | `GET /api/anthem/:repId` (5-Min-Snapshot) + Schreibpfad; **Presence-Handshake echt bauen**: App sendet `presence-origin`-Anforderung (beim 1. Upload nach Shell-Install) → triggert den 5-Min-Zyklus. App-Anforderungsteil ist NEU. | `worker/src/index.ts`, `sensus-core-runtime` | Lichtenberg: Presence → Snapshot |
 | **3 · App: Segment-ID** | `SvgSegment`→segment-id-keyed; App baut `segId→Geometrie` aus Origin-Net, färbt über Snapshot | `sensus-core-runtime` | App rendert Live-Last paket-only |
 | **4 · Routing in die App** | Routing-Kern als Segment-Graph-Variante in geteilte Shell-Engine; App-BAK fährt die Komfort-Kaskade über Segmente + Live-Last | Shell-Engine, App-BAK | Kaskade lebt in der App |
 | **5 · Guidance** | Auto-Segment-Vorschub, Next-Stop-Karte, „Route verlassen"-Hinweis; optional GPS | `sensus-core-runtime/.../guidance` | geführte Route |
