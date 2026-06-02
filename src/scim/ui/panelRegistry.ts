@@ -79,13 +79,12 @@ const P06_TABS: TabDescriptor[] = [
 // Signal Intake + Analysis sind vorerst text-first (body); Adjust rendert die
 // echten Schwellen-Slider (PanelInputForm) — das ist die eigentliche Anpassung,
 // die der Sensus Core Service danach verpackt.
+// Reihenfolge umgedreht: Adjust (die echten Slider) zuerst, danach die Deutung.
 const THRESHOLD_TABS: TabDescriptor[] = [
   {
-    id: 'signal_intake', label: 'Signal Intake', icon: '📡',
-    body: [
-      'Empfangsschirm: hier kommen die Signale aus der User-App an.',
-      'Roh-Eingang für diesen Zeit-Horizont (Load = kurzfristig · Region = mittelfristig · System = langfristig).',
-    ],
+    id: 'adjust', label: 'Adjust', icon: '🎚',
+    // kein body → rendert die echten Schwellen-Slider; diese Anpassung verpackt
+    // anschliessend der Sensus Core Service. (Notiz hier bewusst NICHT.)
   },
   {
     id: 'analysis', label: 'Analysis', icon: '🔬',
@@ -95,9 +94,11 @@ const THRESHOLD_TABS: TabDescriptor[] = [
     ],
   },
   {
-    id: 'adjust', label: 'Adjust', icon: '🎚',
-    // kein body → rendert die echten Schwellen-Slider (PanelInputForm);
-    // diese Anpassung verpackt anschliessend der Sensus Core Service.
+    id: 'signal_intake', label: 'Signal Intake', icon: '📡',
+    body: [
+      'Empfangsschirm: hier kommen die Signale aus der User-App an.',
+      'Roh-Eingang für diesen Zeit-Horizont (Load = kurzfristig · Region = mittelfristig · System = langfristig).',
+    ],
   },
 ];
 

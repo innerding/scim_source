@@ -524,6 +524,22 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
     );
   }
 
+  // P01/P02/P04 (Threshold-Bögen, gleiche Tabs): Adjust zeigt NUR die Slider;
+  // die Konzept-Notizen erscheinen unauffällig (gedämpfte Zeilen) in den anderen
+  // Tabs. P01-bauKonzept nur einmal (Signal Intake), nicht doppelt auf jedem Tab.
+  if (panel.id === 'P01' || panel.id === 'P02' || panel.id === 'P04') {
+    if (activeTab === 'adjust') return <ColourAdjust panelId={panel.id} />;
+    const td = panel.tabs.find((t) => t.id === activeTab);
+    const lines = [...(td?.body ?? [])];
+    if (activeTab === 'signal_intake' && panel.bauKonzept) lines.push(...panel.bauKonzept);
+    if (lines.length === 0) return null;
+    return (
+      <div style={{ fontSize: 11.5, color: '#a0aec0', fontStyle: 'italic', lineHeight: 1.55, maxWidth: 560 }}>
+        {lines.map((l, i) => <div key={i} style={{ marginBottom: 4 }}>{l}</div>)}
+      </div>
+    );
+  }
+
   // P08: Sampling-Pipeline als Direktvergleich (ohne Tabs, ohne Notiz).
   if (panel.id === 'P08') return <WegnetzCompareView />;
 
