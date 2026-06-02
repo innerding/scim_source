@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { simSegmentLoads, stretchAverages, normalizeLoads, loadColour } from './anthemSim';
+import { simSegmentLoads, stretchAverages, normalizeLoads, classifyStretches, loadColour } from './anthemSim';
+import type { StretchLoad } from './anthemSim';
 import type { ResampledNet } from '../wegnetz/netResample';
 
 const net = (): ResampledNet => ({
@@ -89,6 +90,35 @@ describe('anthemSim – normalizeLoads (System A3)', () => {
   it('konstante Last + floor: alle auf floor; leeres Array → []', () => {
     expect(normalizeLoads([0.3, 0.3], { floor: 0.8, minPartial: 0.05 }).every((v) => Math.abs(v - 0.8) < 1e-9)).toBe(true);
     expect(normalizeLoads([])).toEqual([]);
+  });
+});
+
+describe('anthemSim – classifyStretches (A4)', () => {
+  const sl = (id: string, average: number): StretchLoad => ({ id, average, segmentCount: 1 });
+  const stretches = [sl('a', 0.2), sl('b', 0.5), sl('c', 0.8)];
+
+  it('normal / degraded / excluded je Ø-Last', () => {
+    const out = classifyStretches(stretches, { degradier: 0.4, ausschluss: 0.7 });
+    expect(out.map((s) => s.state)).toEqual(['normal', 'degraded', 'excluded']);
+  });
+
+  it('Ausschluss schlägt Degradierung; Grenzen inklusive (>=)', () => {
+    const out = classifyStretches([sl('x', 0.7), sl('y', 0.4), sl('z', 0.39)], { degradier: 0.4, ausschluss: 0.7 });
+    expect(out.map((s) => s.state)).toEqual(['excluded', 'degraded', 'normal']);
+  });
+
+  it('undefinierte Schwellen → alles normal', () => {
+    expect(classifyStretches(stretches, {}).every((s) => s.state === 'normal')).toBe(true);
+  });
+
+  it('nur Ausschluss gesetzt → kein degraded', () => {
+    const out = classifyStretches(stretches, { ausschluss: 0.7 });
+    expect(out.map((s) => s.state)).toEqual(['normal', 'normal', 'excluded']);
+  });
+
+  it('trägt id + average durch', () => {
+    const out = classifyStretches([sl('a', 0.8)], { ausschluss: 0.7 });
+    expect(out[0]).toEqual({ id: 'a', average: 0.8, state: 'excluded' });
   });
 });
 

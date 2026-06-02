@@ -99,3 +99,32 @@ export function normalizeLoads(loads: number[], params: NormalizeParams = {}): n
   }
   return out;
 }
+
+export type StretchState = 'normal' | 'degraded' | 'excluded';
+
+export interface ClassifiedStretch {
+  id: string;
+  average: number;
+  state: StretchState;
+}
+
+export interface ClassifyParams {
+  degradier?: number;   // Operator: ab dieser Ø-Last → 'degraded' (visuell entdrängt)
+  ausschluss?: number;  // User: ab dieser Ø-Last → 'excluded' (farblos neutralisiert)
+}
+
+// Klassifiziert je STRECKE über die Ø-Last (Umbauplan A4). Crossing-gated, weil
+// die Eingabe (stretchAverages) schon je Kreuzung→Kreuzung gemittelt ist — nur
+// ganze Strecken werden degradiert/ausgeschlossen, nie einzelne Segmente.
+// Ausschluss schlägt Degradierung. Undefinierte Schwelle = Stufe aus.
+// Wichtig (§2a): das ist die ENTSCHEIDUNG, nicht der Gradient — der bleibt stetig.
+export function classifyStretches(stretches: StretchLoad[], params: ClassifyParams = {}): ClassifiedStretch[] {
+  const deg = params.degradier;
+  const exc = params.ausschluss;
+  return stretches.map((s) => {
+    let state: StretchState = 'normal';
+    if (exc != null && s.average >= exc) state = 'excluded';
+    else if (deg != null && s.average >= deg) state = 'degraded';
+    return { id: s.id, average: s.average, state };
+  });
+}
