@@ -15,7 +15,7 @@ import UserExclusionControl from './panels/UserExclusionControl';
 import TestRouteControl from './panels/TestRouteControl';
 import RuntimeFlowExplainer from './panels/RuntimeFlowExplainer';
 import SensusCoreReigen from './panels/SensusCoreReigen';
-import { BoundaryView, WegnetzSamplingView } from './panels/SichelViews';
+import { BoundaryView, WegnetzCompareView } from './panels/SichelViews';
 import PanelResult from './panels/PanelResult';
 import PanelValidation from './panels/PanelValidation';
 import PanelRaw from './panels/PanelRaw';
@@ -524,15 +524,16 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
     );
   }
 
-  // P07/P08: das bereits Funktionale sichtbar machen (Sicheln ehrlich) — die
-  // Live-View ÜBER der bestehenden Konzept-Notiz, additiv. P07 t1 Boundary,
-  // P08 t3 Mesh-Output.
-  if ((panel.id === 'P07' && activeTab === 't1') || (panel.id === 'P08' && activeTab === 't3')) {
-    const td = panel.tabs.find((t) => t.id === activeTab);
-    const view = panel.id === 'P07' ? <BoundaryView /> : <WegnetzSamplingView />;
+  // P08: Sampling-Pipeline als Direktvergleich (ohne Tabs, ohne Notiz).
+  if (panel.id === 'P08') return <WegnetzCompareView />;
+
+  // P07 t1: Boundary-View (Ring + Reveal-Prep). Notiz ist entfernt; falls wieder
+  // gesetzt, erscheint sie darunter.
+  if (panel.id === 'P07' && activeTab === 't1') {
+    const td = panel.tabs.find((t) => t.id === 't1');
     return (
       <>
-        {view}
+        <BoundaryView />
         {td?.body && td.body.length > 0 && (
           <div style={{ marginTop: 18, borderTop: '1px solid #e2e8f0', paddingTop: 14 }}>
             <BaukonzeptNotiz id={panel.id} title={td.label} lines={td.body} />
@@ -633,7 +634,8 @@ export default function PanelWorkspace({ activeId, activeTab, onTabChange, resul
       minWidth: 0,
     }}>
       <PanelHeader id={entry.id} title={entry.label} subtitle={subtitle} dimmed={KOSMOLOGIE_IDS.has(activeId)} />
-      <TabBar tabs={tabs} active={safeTab} onSelect={onTabChange} />
+      {/* P08 rendert die Sampling-Pipeline als eine Vergleichsansicht — ohne Tabs. */}
+      {activeId !== 'P08' && <TabBar tabs={tabs} active={safeTab} onSelect={onTabChange} />}
       {/* Geometry-Editor braucht volle Hoehe ohne Padding */}
       {activeId === DRAWER_DESCRIPTOR.id ? (
         <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
