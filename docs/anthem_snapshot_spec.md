@@ -98,7 +98,8 @@ Leerbild). Origin wird dabei **in Teilen** gestreamt, nicht als ein Blob:
    (Einstiegs-/Verlinkungselement): rahmt die OSM-Karte (bbox) **und** referenziert
    alle weiteren Origin-Schichten + den Anthem-Endpoint (gebunden an `repId`).
 2. Die App **fokussiert gemächlich** auf die Boundary in der OSM-Karte — die
-   Boundary selbst bleibt **unsichtbar** (sie richtet nur die Kamera aus).
+   Boundary wird dabei als **invertierte Maske** animiert (s.u.), nicht als bloß
+   gezeichnete Linie.
 3. **origin-net** (origin-wegnetz) blendet in **Weiß** ein.
 4. **Anthem** legt sich über das Netz (Last→Farbe via Shell `colorize`).
 5. **origin-rest** nacheinander: **asset-set · poi-set · pixel-charges**.
@@ -115,6 +116,27 @@ L2 origin-asset-set · L3 origin-poi-set · L4 origin-pixel-charges.
 
 > **`pixel-charges`**: im MVP **nur ein Begriff**, kein Asset/Inhalt (reservierter
 > Origin-Platz, leer). **Später: Pixel-Bilder für POI-Sheets** (Raster).
+
+---
+
+### Boundary-Reveal (invertierte Maske)
+
+Die Boundary erscheint **nicht** als bloß unsichtbarer Rahmen, sondern als
+**animierte invertierte Maske** — das *stille Einloggen* in die Representation:
+
+- Beim Start gibt es **kein sichtbares OSM**, obwohl die Shell die Karte längst
+  aufgerufen hat: davor liegt ein **weißer Screen** (Info „Lichtenberg" + Logo).
+  Dahinter ist die Karte bereits **fokussiert**.
+- „Lichtenberg" + Logo **blenden aus oder wandern** an ihren Zielort **links oben
+  in den Header**.
+- Im Zentrum **wächst die Boundary als Fenster**: der weiße Invert-Fill bekommt ein
+  Loch in Boundary-Form, das die OSM **freilegt**. Gleichzeitig **dimmt der weiße
+  Invert-Fill aus**, und der **Stroke der Boundary bleibt** stehen.
+
+> **Bau-Ort:** Wird zunächst in **P07 als Prep** gebaut und im **Inspector**
+> angezeigt — **nicht im Panel**.
+> **Noch nicht bauen (nur notiert):** Logo + „Lichtenberg"-Schriftzug und ihr
+> Wandern in den Header.
 
 ---
 
