@@ -4,7 +4,8 @@
 // Das Routing/Highlight macht ScimMap; hier nur Auslöser + Report.
 
 import { useEffect, useReducer } from 'react';
-import { requestTestRoute, getTestRoute, getTestComfort, getTestAlt, getTestAltComfort, subscribeTestRoute } from '../../sensus/testRoute';
+import { requestTestRoute, getTestRoute, getTestComfort, getTestAlt, getTestAltComfort, subscribeTestRoute,
+  getDestPoi, getRouteDest, getDestComfort, getDestAlt, getDestAltComfort, clearAltRoute } from '../../sensus/testRoute';
 
 export default function TestRouteControl() {
   const [, force] = useReducer((x) => x + 1, 0);
@@ -14,6 +15,12 @@ export default function TestRouteControl() {
   const comfort = getTestComfort();
   const alt = getTestAlt();
   const altComfort = getTestAltComfort();
+  // S6: Alternativroute zu einem frei angeklickten POI.
+  const destPoi = getDestPoi();
+  const routeDest = getRouteDest();
+  const destComfort = getDestComfort();
+  const destAlt = getDestAlt();
+  const destAltComfort = getDestAltComfort();
 
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 440, marginTop: 4 }}>
@@ -52,6 +59,53 @@ export default function TestRouteControl() {
           )
         ) : (
           route && <div style={{ color: '#a0aec0', marginTop: 4 }}>kein Comfort-Befund (Comfort-Schwelle in P09 Mask setzen + „Last (sim)" an)</div>
+        )}
+      </div>
+
+      {/* S6: Alternativroute — Klick auf ein POI auf der Karte. */}
+      <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid #e2e8f0', fontSize: 12 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: '#553c9a' }}>Alternativroute</div>
+        {destPoi ? (
+          <>
+            <div style={{ color: '#2d3748', marginTop: 4 }}>
+              Ziel: <strong>{destPoi.label}</strong>
+              <button onClick={() => clearAltRoute()} style={{
+                marginLeft: 8, fontSize: 10, padding: '1px 6px', borderRadius: 3, cursor: 'pointer',
+                border: '1px solid #cbd5e0', background: '#f7fafc', color: '#718096',
+              }}>✕ zurücksetzen</button>
+            </div>
+            {routeDest ? (
+              <>
+                <div style={{ color: '#2d3748', marginTop: 2 }}>
+                  Route (violett): <strong>{routeDest.from}</strong> → <strong>{routeDest.to}</strong>
+                </div>
+                {destComfort && (
+                  destComfort.ok ? (
+                    <div style={{ color: '#276749', marginTop: 4 }}>✓ comfortabel auf allen {destComfort.routeStretchIds.length} Strecken</div>
+                  ) : (
+                    <>
+                      <div style={{ color: '#c53030', marginTop: 4 }}>
+                        ⚠ überschreitet auf <strong>{destComfort.exceeding.length}/{destComfort.routeStretchIds.length}</strong> Strecken (rot)
+                      </div>
+                      {destAlt ? (
+                        <div style={{ color: '#2f855a', marginTop: 2 }}>
+                          ↳ <strong style={{ color: '#2f855a' }}>Ausweichroute</strong> (grün) {destAltComfort?.ok ? '— comfortabel ✓' : `— noch ${destAltComfort?.exceeding.length ?? '?'} Strecke(n) über Comfort`}
+                        </div>
+                      ) : (
+                        <div style={{ color: '#a0aec0', marginTop: 2 }}>↳ keine Ausweichroute — Strecke unvermeidbar</div>
+                      )}
+                    </>
+                  )
+                )}
+              </>
+            ) : (
+              <div style={{ color: '#a0aec0', marginTop: 4 }}>— keine Route zum Ziel (ggf. „Last (sim)" einschalten)</div>
+            )}
+          </>
+        ) : (
+          <div style={{ color: '#a0aec0', marginTop: 4, lineHeight: 1.45 }}>
+            Klicke ein beliebiges POI auf der Karte an → es wird eine comfort-bewusste Route dorthin gebildet.
+          </div>
         )}
       </div>
     </div>

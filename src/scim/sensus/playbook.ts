@@ -155,6 +155,27 @@ export function pickTestRoute(edges: PathEdge[], net: ResampledNet, pois: Catalo
   };
 }
 
+// S6: Alternativroute — Route von einer starken Bus-Station zu einem FREI
+// gewählten Ziel (angeklicktes POI). Comfort-Bewertung/Ausweich passiert wie
+// gehabt im Render.
+export function routeFromBusTo(
+  edges: PathEdge[], net: ResampledNet, pois: CatalogPoi[], dest: LatLng, toLabel = 'Ziel',
+): TestRoute | null {
+  const sources = pois.filter((p) => p.subcategory !== 'Cluster' && SOURCE_BUCKETS.has(p.bucket));
+  if (sources.length === 0 || edges.length === 0) return null;
+  const strongSrc = sources.find((p) =>
+    STRONG_SOURCES_DEFAULT.some((s) => (p.text ?? '').toLowerCase().includes(s))) ?? sources[0];
+  const a: LatLng = [strongSrc.coord[1], strongSrc.coord[0]];
+  const res = buildRoutePath(edges, a, dest, [], { maxStraightMeters: 1500 });
+  if (!res || res.points.length < 2) return null;
+  return {
+    path: res.points as LatLng[],
+    segmentIds: coveredSegmentIds(netSegments(net), res.points as LatLng[]),
+    from: strongSrc.text ?? 'Bus',
+    to: toLabel,
+  };
+}
+
 // S5: Ausweichroute — routet A→B auf dem Netz OHNE die zu meidenden Kanten
 // (deren OSM-way-id in avoidEdgeIds). So weicht der Router den überschrittenen
 // Strecken aus. null, wenn dadurch kein Pfad mehr existiert (unvermeidbar).

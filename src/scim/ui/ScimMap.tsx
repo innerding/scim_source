@@ -24,9 +24,10 @@ import { renderClusterPois } from './clusterOverlay';
 import { drawNet } from './netDraw';
 import { resampleNet, type ResampledNet } from '../wegnetz/netResample';
 import { stretchAverages, normalizeLoads, classifyStretches } from '../sensus/anthemSim';
-import { playbookLoad, buildFlows, pickTestRoute, reroute } from '../sensus/playbook';
+import { playbookLoad, buildFlows, pickTestRoute, reroute, routeFromBusTo } from '../sensus/playbook';
 import { routeComfortCheck } from '../sensus/netRoute';
-import { getTestSeed, getTestRoute, setTestRoute, setTestBefund, subscribeTestRoute } from '../sensus/testRoute';
+import { getTestSeed, getTestRoute, setTestRoute, setTestBefund, subscribeTestRoute,
+  getDestPoi, setDestBefund, requestAltRoute } from '../sensus/testRoute';
 import { colorize } from '../sensus/loadColour';
 import { loadColourSettings, COLOUR_SETTINGS_EVENT } from '../sensus/colourSettings';
 import { loadUserExclusion, USER_EXCLUSION_EVENT } from '../sensus/userExclusion';
@@ -579,6 +580,37 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
         // Ausweichroute (grün)
         if (alt) L.polyline(alt.path, { color: '#2f855a', weight: 5, opacity: 0.9, lineCap: 'round' }).addTo(sub);
       }
+
+      // Alternativroute (S6): User hat ein POI angeklickt → Route von einer
+      // starken Bus-Station zu diesem frei gewählten Ziel, wieder comfort-
+      // bewusst (gleiche Bewertung + Ausweich wie bei der Test-Route).
+      const destPoi = getDestPoi();
+      if (destPoi) {
+        const dRoute = routeFromBusTo(repWegnetz.edges, simNet, repCatalog.all, destPoi.coord, destPoi.label);
+        if (dRoute && dRoute.segmentIds.length > 0) {
+          const dComfort = routeComfortCheck(dRoute.segmentIds, avgs, userExcl);
+          let dAlt: { path: typeof dRoute.path; segmentIds: string[] } | null = null;
+          let dAltComfort = null;
+          if (!dComfort.ok && dRoute.path.length >= 2) {
+            const avoid = new Set(dComfort.exceeding.map((id) => parseInt(id.split('.')[0], 10)));
+            dAlt = reroute(repWegnetz.edges, simNet, dRoute.path[0], dRoute.path[dRoute.path.length - 1], avoid);
+            if (dAlt) dAltComfort = routeComfortCheck(dAlt.segmentIds, avgs, userExcl);
+          }
+          setDestBefund(dRoute, dComfort, dAlt, dAltComfort);
+          // Alternativroute violett gestrichelt (klar von der Test-Route blau
+          // unterscheidbar) + überschrittene Strecken rot + Ausweich grün.
+          L.polyline(dRoute.path, { color: '#805ad5', weight: 6, opacity: 0.7, lineCap: 'round', dashArray: '1 7' }).addTo(sub);
+          const dEx = new Set(dComfort.exceeding);
+          for (const s of simNet.stretches) {
+            if (dEx.has(s.id) && s.points.length >= 2) {
+              L.polyline(s.points, { color: '#e53e3e', weight: 6, opacity: 0.95, lineCap: 'round' }).addTo(sub);
+            }
+          }
+          if (dAlt) L.polyline(dAlt.path, { color: '#2f855a', weight: 5, opacity: 0.9, lineCap: 'round' }).addTo(sub);
+        } else {
+          setDestBefund(null, null, null, null);
+        }
+      }
       sub.addTo(layerGroup);
     }
 
@@ -640,6 +672,8 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
           icon: L.divIcon({ html, className: '', iconSize: [POI_SIZE, POI_SIZE], iconAnchor: [POI_SIZE / 2, POI_SIZE / 2] }),
         })
           .bindTooltip(tooltip)
+          // S6: Klick auf POI → comfort-bewusste Alternativroute dorthin.
+          .on('click', () => requestAltRoute([lat, lon], poi.text))
           .addTo(layerGroup);
       }
     }
