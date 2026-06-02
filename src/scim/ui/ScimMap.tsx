@@ -515,7 +515,7 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
       for (const s of simNet.stretches) {
         if (s.points.length >= 2) {
           L.polyline(s.points, {
-            color: 'rgba(15,23,42,0.45)', weight: 8, opacity: 0.5,
+            color: '#ffffff', weight: 8, opacity: 1,
             lineCap: 'round', lineJoin: 'round',
           }).addTo(sub);
         }
