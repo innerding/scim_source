@@ -5,9 +5,7 @@
 // die in Shell · Origin · Anthem gekapselt werden. Heimat P11. Reine Doku/Anzeige.
 
 import type { OriginPackage } from '../../sensus/originPackage';
-
-const fmtBytes = (n: number) =>
-  n < 1024 ? `${n} B` : n < 1024 * 1024 ? `${(n / 1024).toFixed(1)} kB` : `${(n / 1048576).toFixed(2)} MB`;
+import { fmtBytes } from '../../sensus/formatBytes';
 
 type Tone = 'rep' | 'sichel' | 'particle' | 'shell' | 'origin' | 'anthem';
 const TONES: Record<Tone, [string, string]> = {

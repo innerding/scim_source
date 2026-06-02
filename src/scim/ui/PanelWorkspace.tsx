@@ -15,6 +15,7 @@ import UserExclusionControl from './panels/UserExclusionControl';
 import TestRouteControl from './panels/TestRouteControl';
 import RuntimeFlowExplainer from './panels/RuntimeFlowExplainer';
 import SensusCoreReigen from './panels/SensusCoreReigen';
+import { BoundaryView, WegnetzSamplingView } from './panels/SichelViews';
 import PanelResult from './panels/PanelResult';
 import PanelValidation from './panels/PanelValidation';
 import PanelRaw from './panels/PanelRaw';
@@ -511,6 +512,24 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
   }
   // P11 Sensus Core Service: die drei Horizont-Pakete (Eingabe-Tab).
   if (panel.id === 'P11' && activeTab === 'input') return <SensusCorePackages />;
+
+  // P07/P08: das bereits Funktionale sichtbar machen (Sicheln ehrlich) — die
+  // Live-View ÜBER der bestehenden Konzept-Notiz, additiv. P07 t1 Boundary,
+  // P08 t3 Mesh-Output.
+  if ((panel.id === 'P07' && activeTab === 't1') || (panel.id === 'P08' && activeTab === 't3')) {
+    const td = panel.tabs.find((t) => t.id === activeTab);
+    const view = panel.id === 'P07' ? <BoundaryView /> : <WegnetzSamplingView />;
+    return (
+      <>
+        {view}
+        {td?.body && td.body.length > 0 && (
+          <div style={{ marginTop: 18, borderTop: '1px solid #e2e8f0', paddingTop: 14 }}>
+            <BaukonzeptNotiz id={panel.id} title={td.label} lines={td.body} />
+          </div>
+        )}
+      </>
+    );
+  }
 
   // Tab mit body → text-first Konzept-Kasten (z.B. Signal Intake / Analysis).
   const tabDesc = panel.tabs.find((t) => t.id === activeTab);
