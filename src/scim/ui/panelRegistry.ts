@@ -212,6 +212,7 @@ export const PANEL_REGISTRY: PanelDescriptor[] = [
     contextKey: 'boundary',
     tabs: [
       { id: 't1', label: 'Boundary-Darstellung', icon: '▢', body: [] },
+      { id: 't3', label: 'Intro', icon: '⬚' }, // M3: reveal-engine (High-Shell)
       { id: 't2', label: 'Rep-Junction', icon: '⇄', body: [
         'Rep-Junction (Future-Function): Darstellung des Grenzbereichs einer benachbarten Representation / Anschlussfähigkeit der Gate-POIs inner-/outer-translate.',
       ] },

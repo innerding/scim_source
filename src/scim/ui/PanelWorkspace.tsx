@@ -16,7 +16,7 @@ import UserExclusionControl from './panels/UserExclusionControl';
 import TestRouteControl from './panels/TestRouteControl';
 import RuntimeFlowExplainer from './panels/RuntimeFlowExplainer';
 import SensusCoreReigen from './panels/SensusCoreReigen';
-import { BoundaryView, WegnetzCompareView } from './panels/SichelViews';
+import { BoundaryView, WegnetzCompareView, IntroView } from './panels/SichelViews';
 import RuntimeShellView from './panels/RuntimeShellView';
 import PanelResult from './panels/PanelResult';
 import PanelValidation from './panels/PanelValidation';
@@ -240,16 +240,7 @@ const P09_DESCRIPTORS: P09Descriptor[] = [
     dependsShort: 'User-Auswahl (POIs · Farbe · Dauer) — Laufzeit, kein Anthem-Particle',
     fn: 'route = buildRoutePath(net, a, b) · Ausweich folgt', rescueFrom: 'pathEngine.buildRoutePath + sensus/netRoute (GEBAUT) · Ausweich-Routing folgt (S5)',
   },
-  {
-    tabId: 't5', no: 5, name: 'reveal-engine', actions: 'boundary-intro · stilles Einloggen',
-    source: 'representation <xy> v.<x> · origin-boundary (L0-Manifest)',
-    horizon: 'long', pkg: 'Shell',
-    produces: ['reveal-engine (engine) → Shell · long', 'verbraucht: origin-boundary → Origin · mid (L0)'],
-    dependsMid: 'origin-boundary (L0): Ring + bbox — rahmt die OSM-Kamera',
-    dependsShort: 'presence-origin (Startschuss des Reveals) — Laufzeit, kein Anthem-Particle',
-    fn: 'invertierte Maske: Fenster-Zoom → Fill aus → Boundary ein (Stroke bleibt)',
-    rescueFrom: 'ui/boundaryReveal.playBoundaryReveal (GEBAUT als P07-Prep)',
-  },
+  // (M3: reveal-engine/t5 → P07 High-Shell, siehe IntroView. Hier entfernt.)
 ];
 
 function P09Row({ k, v }: { k: string; v: ReactNode }) {
@@ -630,8 +621,11 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
   // P09 (Origin-Capsuler): Sampling-Pipeline als Direktvergleich (ohne Tabs). M2: von P08.
   if (panel.id === 'P09') return <WegnetzCompareView />;
 
-  // P07 t1: Boundary-View (Ring + Reveal-Prep). Notiz ist entfernt; falls wieder
-  // gesetzt, erscheint sie darunter.
+  // P07 t3: Intro (reveal-engine, High-Shell). M3.
+  if (panel.id === 'P07' && activeTab === 't3') return <IntroView />;
+
+  // P07 t1: Boundary-View (Ring). Notiz ist entfernt; falls wieder gesetzt,
+  // erscheint sie darunter.
   if (panel.id === 'P07' && activeTab === 't1') {
     const td = panel.tabs.find((t) => t.id === 't1');
     return (

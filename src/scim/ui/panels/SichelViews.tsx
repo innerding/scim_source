@@ -83,25 +83,42 @@ export function BoundaryView() {
           {boundary
             ? <Stat label="origin-boundary" value={boundary.detail} hint={fmtBytes(boundary.bytes)} />
             : <div style={{ fontSize: 12, color: '#a0aec0' }}>— kein Boundary-Ring aufgelöst</div>}
-          <div style={{ marginTop: 12 }}>
-            <button onClick={() => playReveal()} style={{
-              fontSize: 12, padding: '5px 12px', borderRadius: 4, cursor: 'pointer',
-              border: '1px solid #2b6cb0', background: '#ebf8ff', color: '#1a365d', fontWeight: 600,
-            }}>▶ Reveal-Vorschau abspielen</button>
-            <span style={{ fontSize: 10.5, color: '#a0aec0', marginLeft: 8 }}>
-              spielt im <strong>Inspector</strong> (rechte Karte) — Karte muss offen sein.
-            </span>
-          </div>
           <div style={{ fontSize: 10.5, color: '#a0aec0', marginTop: 8 }}>
-            Prep des „stillen Einloggens": das Boundary-Fenster wächst (langsam) und legt die OSM frei,
-            der weiße Fill dimmt aus, dann wird die Boundary nachgezeichnet und bleibt stehen. Live aus
-            <code>buildOriginPackage</code> — reale UTF-8-Größe. Als L0-Manifest trägt sie später bbox +
-            Verweise (<code>OriginManifest</code>).
+            Live aus <code>buildOriginPackage</code> — reale UTF-8-Größe. Als L0-Manifest trägt sie später bbox +
+            Verweise (<code>OriginManifest</code>). Die Reveal-Animation liegt im Tab <strong>Intro</strong>.
           </div>
         </>
       ) : (
         <div style={{ fontSize: 12, color: '#a0aec0' }}>— keine Representation auflösbar.</div>
       )}
+    </div>
+  );
+}
+
+// ── P07 · Intro (reveal-engine, High-Shell) ─────────────────────────────────
+export function IntroView() {
+  return (
+    <div style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 560 }}>
+      <Badge text="P07 · High-Shell · Intro (reveal-engine)" />
+      <div style={{ fontSize: 12, color: '#2d3748', lineHeight: 1.6, margin: '0 0 10px' }}>
+        Das <strong>stille Einloggen</strong> in die Representation: die <strong>reveal-engine</strong> ist die
+        High-Shell-Engine, die den Boundary-Reveal spielt. Sie <em>produziert</em> die reveal-engine → <strong>Shell</strong> (high)
+        und <em>verbraucht</em> <code>origin-boundary</code> (Origin · L0).
+      </div>
+      <div style={{ marginBottom: 10 }}>
+        <button onClick={() => playReveal()} style={{
+          fontSize: 12, padding: '5px 12px', borderRadius: 4, cursor: 'pointer',
+          border: '1px solid #2b6cb0', background: '#ebf8ff', color: '#1a365d', fontWeight: 600,
+        }}>▶ Reveal-Vorschau abspielen</button>
+        <span style={{ fontSize: 10.5, color: '#a0aec0', marginLeft: 8 }}>
+          spielt im <strong>Inspector</strong> (rechte Karte) — Karte muss offen sein.
+        </span>
+      </div>
+      <div style={{ fontSize: 11, color: '#718096', lineHeight: 1.55 }}>
+        Ablauf: weißer Screen vor der schon fokussierten Karte → das Boundary-Fenster wächst (langsam) und legt
+        die OSM frei → der weiße Invert-Fill dimmt aus → die Boundary blendet ein und bleibt stehen.
+        Volle Spec: <code>docs/anthem_snapshot_spec.md</code> (Boundary-Reveal).
+      </div>
     </div>
   );
 }
