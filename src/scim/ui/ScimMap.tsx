@@ -28,6 +28,7 @@ import { playbookLoad, buildFlows } from '../sensus/playbook';
 import { colorize } from '../sensus/loadColour';
 import { loadColourSettings, COLOUR_SETTINGS_EVENT } from '../sensus/colourSettings';
 import { loadUserExclusion, USER_EXCLUSION_EVENT } from '../sensus/userExclusion';
+import { getSimHour, subscribeSimClock } from '../sensus/simClock';
 import { MVP_RESAMPLE_TARGET_METERS } from '../sensus/originPackage';
 import type { DerivedNet, LatLng } from '../regio-content/netModel';
 import type { CatalogPoi } from '../poi-catalog/poiCatalog.types';
@@ -266,7 +267,8 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
     () => (simNet && repWegnetz) ? buildFlows(repWegnetz.edges, simNet, repCatalog.all) : [],
     [simNet, repWegnetz, repCatalog],
   );
-  const [simHour] = useState(9.5);
+  const [simHour, setSimHour] = useState(getSimHour());
+  useEffect(() => subscribeSimClock(() => setSimHour(getSimHour())), []);
   // Wegnetz-Edges in die Colour-Mesh-Edge-Form ([lon,lat]-coordinates) bringen.
   const wegnetzAsEdges = useMemo(() => {
     if (!repWegnetz) return [];

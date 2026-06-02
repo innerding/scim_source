@@ -16,6 +16,7 @@ import PanelResult from './panels/PanelResult';
 import PanelValidation from './panels/PanelValidation';
 import PanelRaw from './panels/PanelRaw';
 import P06SimulationForm from './panels/P06SimulationForm';
+import SimClockControl from './panels/SimClockControl';
 import type { TelcoLoadState } from '../telco-load/telcoLoad.types';
 import SystemPanel from './panels/SystemPanel';
 import AiInterfacePanel from './panels/AiInterfacePanel';
@@ -524,7 +525,12 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
         // Heute nur fuer P06 implementiert (Pattern-Klassifikator-Sandbox, ann_064).
         if (panel.id === 'P06') {
           const ctx = result.success ? (result.context as unknown as Record<string, unknown>) : null;
-          tabContent = <P06SimulationForm state={ctx?.telco_load as TelcoLoadState | undefined} />;
+          tabContent = (
+            <>
+              <SimClockControl />
+              <P06SimulationForm state={ctx?.telco_load as TelcoLoadState | undefined} />
+            </>
+          );
         }
         break;
       }
