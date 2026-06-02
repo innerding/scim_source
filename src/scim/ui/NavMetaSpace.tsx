@@ -1,51 +1,63 @@
 // Meta-Space — grobe Felsbrocken (Mondlandschaft) unter dem Substrat-Tetraeder.
-// „Der Grund": dunkles Substrat-Geröll. NICHT aufgereiht, sondern in der TIEFE
-// verteilt (hinten klein/höher/blasser, vorn groß/tiefer/dunkler). Licht oben-links
-// → Schlagschatten nach unten-rechts; kleine Punkte auf der Schattenseite (Boden +
-// Körper). Rein dekorativ. Siehe docs/begriffs_karte.md (Meta-Space „Der Grund").
+// „Der Grund": dunkles Substrat-Geröll. In der TIEFE verteilt (hinten klein/blass,
+// vorn groß/dunkel). Jeder Brocken ein EIGENES Polygon, Unterseite immer fast
+// gerade (sitzt flach am Boden). Licht oben-links → Schlagschatten nach unten-rechts;
+// kleine Punkte auf der Schattenseite (Boden + Körper). Siehe docs/begriffs_karte.md.
 
-type Rock = { cx: number; cy: number; r: number; fill: string };
-
-// Tiefen-Streuung (back → front; in dieser Reihenfolge gemalt = Z-Sortierung).
-const ROCKS: Rock[] = [
-  { cx: 34, cy: 12, r: 5.5, fill: '#232d3b' },
-  { cx: 92, cy: 10, r: 4.8, fill: '#232d3b' },
-  { cx: 60, cy: 22, r: 7.5, fill: '#1f2835' },
-  { cx: 104, cy: 28, r: 6.6, fill: '#1f2835' },
-  { cx: 22, cy: 38, r: 9.5, fill: '#1a2330' },
-  { cx: 74, cy: 45, r: 11, fill: '#18212d' },
+// Sechs verschiedene Brocken-Silhouetten (relativ, x rechts / y unten). Erster und
+// letzter Punkt liegen auf der flachen Basis (dy ≈ 0.72) → gerade Unterkante.
+const SHAPES: [number, number][][] = [
+  // 0 · breite Niedrig-Platte, flacher Rücken
+  [[-1.15, 0.72], [-1.2, 0.2], [-0.8, -0.22], [-0.1, -0.38], [0.55, -0.3], [1.08, -0.16], [1.2, 0.32], [1.1, 0.72]],
+  // 1 · hoch, spitzer Gipfel
+  [[-0.85, 0.72], [-0.96, 0.02], [-0.5, -0.78], [-0.05, -1.06], [0.22, -0.58], [0.56, -0.86], [0.92, -0.18], [0.86, 0.72]],
+  // 2 · asymmetrisch, geneigt
+  [[-0.92, 0.72], [-1.02, -0.12], [-0.55, -0.5], [0.02, -0.46], [0.36, -0.82], [0.78, -0.54], [1.02, 0.12], [0.86, 0.72]],
+  // 3 · gedrungenes Fünfeck
+  [[-1.0, 0.72], [-1.06, -0.06], [-0.36, -0.72], [0.46, -0.6], [1.02, -0.05], [1.06, 0.72]],
+  // 4 · drei Buckel
+  [[-1.02, 0.72], [-1.12, 0.1], [-0.72, -0.46], [-0.22, -0.7], [0.26, -0.54], [0.72, -0.66], [1.06, -0.1], [1.0, 0.72]],
+  // 5 · kleiner, kantiger Dreikant
+  [[-0.95, 0.72], [-0.8, -0.32], [0.02, -0.76], [0.72, -0.34], [0.95, 0.72]],
 ];
 
-// Unregelmäßiger Brocken (deterministisch), y leicht abgeflacht (Aufsicht).
-const ANG = [0, 42, 88, 130, 176, 222, 268, 316];
-const RAD = [1.0, 0.78, 1.08, 0.72, 1.0, 0.84, 1.06, 0.7];
-function blob(cx: number, cy: number, r: number, rot: number): string {
-  return ANG.map((deg, i) => {
-    const a = ((deg + rot) * Math.PI) / 180;
-    return `${(cx + Math.cos(a) * r * RAD[i]).toFixed(1)},${(cy + Math.sin(a) * r * RAD[i] * 0.82).toFixed(1)}`;
-  }).join(' ');
+type Rock = { cx: number; cy: number; r: number; fill: string; shape: number };
+
+// Tiefen-Streuung (back → front; Mal-Reihenfolge = Z-Sortierung), jeweils mit
+// eigener Form-Nummer.
+const ROCKS: Rock[] = [
+  { cx: 34, cy: 13, r: 5.5, fill: '#232d3b', shape: 5 },
+  { cx: 92, cy: 11, r: 4.8, fill: '#232d3b', shape: 3 },
+  { cx: 60, cy: 23, r: 7.5, fill: '#1f2835', shape: 0 },
+  { cx: 104, cy: 29, r: 6.6, fill: '#1f2835', shape: 4 },
+  { cx: 22, cy: 39, r: 9.5, fill: '#1a2330', shape: 2 },
+  { cx: 74, cy: 46, r: 11, fill: '#18212d', shape: 1 },
+];
+
+function pts(cx: number, cy: number, r: number, shape: [number, number][]): string {
+  return shape.map(([dx, dy]) => `${(cx + dx * r).toFixed(1)},${(cy + dy * r).toFixed(1)}`).join(' ');
 }
 
 export default function NavMetaSpace() {
   return (
     <svg viewBox="0 0 124 60" width="100%" style={{ display: 'block', overflow: 'visible' }} aria-hidden>
       {ROCKS.map((k, i) => {
-        const rot = (i * 53) % 360; // variiert die Form je Brocken
+        const baseY = k.cy + k.r * 0.72; // die flache Unterkante
         return (
           <g key={i}>
-            {/* Schlagschatten — auf den Boden, nach unten-rechts (Schattenseite). */}
-            <ellipse cx={k.cx + k.r * 0.5} cy={k.cy + k.r * 0.52} rx={k.r * 1.15} ry={k.r * 0.42} fill="rgba(0,0,0,0.40)" />
+            {/* Schlagschatten — am Boden, nach unten-rechts (Schattenseite). */}
+            <ellipse cx={k.cx + k.r * 0.45} cy={baseY + k.r * 0.06} rx={k.r * 1.1} ry={k.r * 0.32} fill="rgba(0,0,0,0.40)" />
             {/* Boden-Punkte auf der Schattenseite. */}
-            <circle cx={k.cx + k.r * 1.05} cy={k.cy + k.r * 0.55} r={0.6} fill="rgba(0,0,0,0.42)" />
-            <circle cx={k.cx + k.r * 1.4} cy={k.cy + k.r * 0.38} r={0.45} fill="rgba(0,0,0,0.3)" />
+            <circle cx={k.cx + k.r * 0.95} cy={baseY + k.r * 0.05} r={0.6} fill="rgba(0,0,0,0.42)" />
+            <circle cx={k.cx + k.r * 1.3} cy={baseY - k.r * 0.04} r={0.45} fill="rgba(0,0,0,0.3)" />
             {/* Körper. */}
-            <polygon points={blob(k.cx, k.cy, k.r, rot)} fill={k.fill} stroke="#3a485d" strokeWidth={0.5} strokeLinejoin="round" />
+            <polygon points={pts(k.cx, k.cy, k.r, SHAPES[k.shape])} fill={k.fill} stroke="#3a485d" strokeWidth={0.5} strokeLinejoin="round" />
             {/* Licht-Kante oben-links (zarter Glanz). */}
-            <path d={`M ${(k.cx - k.r * 0.7).toFixed(1)} ${(k.cy - k.r * 0.2).toFixed(1)} Q ${(k.cx - k.r * 0.2).toFixed(1)} ${(k.cy - k.r * 0.7).toFixed(1)} ${(k.cx + k.r * 0.4).toFixed(1)} ${(k.cy - k.r * 0.55).toFixed(1)}`}
+            <path d={`M ${(k.cx - k.r * 0.7).toFixed(1)} ${(k.cy - k.r * 0.15).toFixed(1)} Q ${(k.cx - k.r * 0.2).toFixed(1)} ${(k.cy - k.r * 0.62).toFixed(1)} ${(k.cx + k.r * 0.35).toFixed(1)} ${(k.cy - k.r * 0.5).toFixed(1)}`}
               fill="none" stroke="#4a5b71" strokeWidth={0.5} strokeLinecap="round" opacity={0.7} />
-            {/* Körper-Punkte auf der Schattenseite. */}
-            <circle cx={k.cx + k.r * 0.42} cy={k.cy + k.r * 0.28} r={0.6} fill="#0f141d" />
-            <circle cx={k.cx + k.r * 0.6} cy={k.cy + k.r * 0.02} r={0.42} fill="#0f141d" />
+            {/* Körper-Punkte auf der Schattenseite (unten-rechts auf dem Körper). */}
+            <circle cx={k.cx + k.r * 0.42} cy={k.cy + k.r * 0.3} r={0.6} fill="#0f141d" />
+            <circle cx={k.cx + k.r * 0.6} cy={k.cy + k.r * 0.05} r={0.42} fill="#0f141d" />
           </g>
         );
       })}
