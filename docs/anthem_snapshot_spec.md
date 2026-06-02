@@ -92,20 +92,29 @@ Der **erste Anthem-Bezug** der Ziel-App wird gestaffelt aufgebaut (füllt die L�
 zwischen Presence-Signal und erstem Snapshot mit einem progressiven Reveal statt
 Leerbild). Origin wird dabei **in Teilen** gestreamt, nicht als ein Blob:
 
-1. **Boundary** wird ausgespielt, **sobald SCIM origin-presence hat**.
-2. Die Ziel-App **fokussiert gemächlich** auf die Boundary in der OSM-Karte.
-3. **origin-wegnetz** blendet in **Weiß** ein.
+0. **Shell** wird zuerst geladen — sie ist der **Orchestrator** und fordert alles
+   Weitere **gestaffelt** an (nie alles auf einmal).
+1. Die Shell fordert die **unsichtbare Boundary** an = das **Origin-Manifest**
+   (Einstiegs-/Verlinkungselement): rahmt die OSM-Karte (bbox) **und** referenziert
+   alle weiteren Origin-Schichten + den Anthem-Endpoint (gebunden an `repId`).
+2. Die App **fokussiert gemächlich** auf die Boundary in der OSM-Karte — die
+   Boundary selbst bleibt **unsichtbar** (sie richtet nur die Kamera aus).
+3. **origin-net** (origin-wegnetz) blendet in **Weiß** ein.
 4. **Anthem** legt sich über das Netz (Last→Farbe via Shell `colorize`).
-5. **origin-rest** wird nacheinander überspielt: **asset-set · poi-set · pixel-charges**.
+5. **origin-rest** nacheinander: **asset-set · poi-set · pixel-charges**.
 
 **Prioritäts-Entscheidung (load-first):** Anthem kommt in Schritt 4 — also **vor**
 poi-set/asset-set. Der flüchtige „Puls" des Orts erscheint zuerst, die statischen
-Punkte danach. Das prägt die Lade-/Deploy-Reihenfolge des **Package Loaders**
-(vgl. P11 „Deploy-Reihenfolge deklarieren").
+Punkte danach. Lade-Reihenfolge = Reveal-Reihenfolge; das Manifest (L0) hält die
+Referenzen, die Shell zieht jede Schicht einzeln nach (vgl. P11 „Deploy-Reihenfolge
+deklarieren").
 
-> ⚐ Offen: **`pixel-charges`** ist als Origin-Bestandteil hier neu genannt (bisherige
-> Origin-Partikel: boundary · net · poi-set · asset-set). Bedeutung/Inhalt noch zu
-> bestätigen.
+**Origin gestaffelt (Manifest-first):** L0 origin-boundary (Manifest, unsichtbar,
+rahmt+verlinkt) · L1 origin-net (weiß, Segment-IDs+Adjazenz) · *(Anthem-Strom)* ·
+L2 origin-asset-set · L3 origin-poi-set · L4 origin-pixel-charges.
+
+> **`pixel-charges`**: im MVP **nur ein Begriff**, kein Asset/Inhalt (reservierter
+> Origin-Platz, leer). **Später: Pixel-Bilder für POI-Sheets** (Raster).
 
 ---
 

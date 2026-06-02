@@ -35,7 +35,7 @@ ihren Aufenthalt in einer **Representation** (z.Z. nur Lichtenberg), fordert ein
 | Paket | Horizont | Inhalt | Quelle heute |
 |---|---|---|---|
 | **Shell** | lang (App-Version) | die Engines selbst (colorize, BCK, BAK-Routing) | `src/scim/sensus/*` |
-| **Origin** | mittel (Representation) | Boundary · resampled Netz @10 m **mit Segment-IDs** · **Segment-Adjazenz (NEU)** · POI-Set · Asset-Set | `src/scim/sensus/originPackage.ts` |
+| **Origin** | mittel (Representation) | **gestaffelt (Manifest-first):** L0 boundary=**Manifest** (unsichtbar, rahmt OSM + verlinkt Rest+Anthem) · L1 Netz @10 m **mit Segment-IDs + Adjazenz (NEU)** · L2 asset-set · L3 poi-set · L4 pixel-charges (MVP leer, später POI-Sheet-Raster) | `src/scim/sensus/originPackage.ts` |
 | **Anthem** | kurz (~5 Min) | presence-origin · **Snapshot `segId→load` (NEU)** · user-exclusion | heute nur intern als `number[]` |
 
 **Segment-ID-Format (eingefroren, konsistent im Code):** Strecke `edgeId.piece`,
