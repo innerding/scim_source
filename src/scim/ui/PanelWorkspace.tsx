@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { useInspectorAsset, useRepresentationContext } from '../../runtime/repContext';
 import type { Representation } from '../workspace/workspace.types';
 import type { TabId } from './panelRegistry';
@@ -46,6 +46,7 @@ import type { OriginManifest } from '../sensus/packageContract';
 import type { OriginPackage } from '../sensus/originPackage';
 import { buildAnthemSnapshot } from '../sensus/anthemEncoder';
 import { simSegmentLoads, normalizeLoads } from '../sensus/anthemSim';
+import { getSimHour, subscribeSimClock } from '../sensus/simClock';
 import { resampleNet } from '../wegnetz/netResample';
 
 interface Props {
@@ -388,6 +389,87 @@ function useAuftraggeberRep(): Representation {
 
 // P09 · Origin-Capsuler — baut Origin: Auftraggeber wählen → kapseln (OriginManifest)
 // + Wegnetz-Sampling-Vorschau. M4: aus P11 hierher gezogen.
+// P02 · Coder — der Anthem-Encoder mit echtem (client-seitigem) Atemzyklus:
+// presence-Toggle gated, Sim-Clock-getaktet (Time-Turbo in Telco treibt sie),
+// re-encodet je 5-Min-Tick → live aktualisierter Snapshot. Plan T · T4 + Plan B
+// Phase 2 (Loop client-seitig real; Worker-Auslieferung weiter offen = Phase 2b).
+function CoderView() {
+  const rep = useAuftraggeberRep();
+  const [presence, setPresence] = useState(false);
+  const [simHour, setSimHour] = useState(getSimHour());
+  const [cycles, setCycles] = useState(0);
+  // Sim-Clock-Tick → re-render (= re-encode, wenn presence aktiv).
+  useEffect(() => subscribeSimClock(() => { setSimHour(getSimHour()); setCycles((c) => c + 1); }), []);
+
+  const net = rep.wegnetz_id ? wegnetzById(rep.wegnetz_id) : undefined;
+  const r = net ? resampleNet(net.edges, { targetMeters: MVP_RESAMPLE_TARGET_METERS }) : null;
+  const pad = (n: number) => String(Math.max(0, Math.floor(n))).padStart(2, '0');
+  const t = `${pad(simHour)}:${pad((simHour % 1) * 60)} · Sim`;
+  // Tageskurve (6–20 h): die Last „atmet" mit der Zeit → sichtbar je Tick.
+  const phase = (Math.sin(((Math.min(20, Math.max(6, simHour)) - 6) / 14) * Math.PI));
+  const base = r ? normalizeLoads(simSegmentLoads(r)) : [];
+  const loads = base.map((l) => Math.max(0, Math.min(1, l * (0.35 + 0.65 * phase))));
+  const snap = presence ? buildAnthemSnapshot(loads, rep.id, t) : null;
+  const jsonBytes = snap ? JSON.stringify(snap).length : 0;
+
+  return (
+    <div style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 600 }}>
+      <div style={{
+        display: 'inline-block', padding: '2px 8px', marginBottom: 8, fontSize: 10, fontFamily: 'monospace',
+        color: '#2b6cb0', background: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: 4,
+      }}>
+        P02 · Coder · Anthem-Encoder
+      </div>
+      <p style={{ fontSize: 12, color: '#4a5568', lineHeight: 1.55, margin: '2px 0 12px' }}>
+        Packt die normalisierte Last <strong>[0..1] je Segment</strong> in den <strong>Anthem-Snapshot</strong> —
+        ohne Koordinaten, Reihenfolge = Origin-Net-Segment-Index. Der Atemzyklus läuft hier <strong>real
+        (client-seitig)</strong>: presence gated, Sim-Clock-getaktet (Time-Turbo in Telco).
+      </p>
+
+      <div style={{ marginBottom: 12 }}>
+        <button
+          onClick={() => setPresence((p) => !p)}
+          style={{
+            fontSize: 12, padding: '5px 12px', borderRadius: 4, cursor: 'pointer', fontWeight: 600,
+            border: presence ? '1px solid #2f855a' : '1px solid #cbd5e0',
+            background: presence ? '#f0fff4' : '#f7fafc', color: presence ? '#22543d' : '#718096',
+          }}
+        >{presence ? '● presence aktiv — Atemzyklus läuft' : '○ presence aus (kalt) — klopfen'}</button>
+      </div>
+
+      {presence && snap ? (
+        <div style={{ border: '1px solid #d6bcfa', background: '#faf5ff', borderRadius: 8, padding: '10px 12px', marginBottom: 12 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#553c9a' }}>
+            Snapshot · {snap.kind} · „{rep.name}" · t {snap.t} · Zyklus #{cycles}
+          </div>
+          <div style={{ fontSize: 11.5, fontFamily: 'ui-monospace, Menlo, monospace', color: '#44337a', lineHeight: 1.7, marginTop: 6 }}>
+            <div>segments: {snap.loads.length}{r ? ` (origin-net @${MVP_RESAMPLE_TARGET_METERS} m)` : ''}</div>
+            <div>size: ~{fmtBytes(snap.loads.length)} (1 B/Segment, Wire) · JSON {fmtBytes(jsonBytes)}</div>
+            <div style={{ color: '#718096', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              loads[0..15]: {snap.loads.slice(0, 16).map((v) => v.toFixed(2)).join(' ')}{snap.loads.length > 16 ? ' …' : ''}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div style={{ fontSize: 11.5, color: '#a0aec0', fontStyle: 'italic', marginBottom: 12 }}>
+          Kalt — keine presence. Klick „presence" (die App klopft) → der Transmitter-Atemzyklus startet und encodet
+          je Sim-Clock-Tick (5 Min) neu. (2 h ohne presence → wieder kalt.)
+        </div>
+      )}
+
+      <div style={{ fontSize: 11, color: '#718096', lineHeight: 1.6 }}>
+        <strong>Kette:</strong> Telco (einatmen) <em>normalisiert</em> → Thresholds (deuten) → Coder (packen, echter
+        Encoder) → Transmitter (ausatmen) sendet — auf Anfrage der Ziel-App — alle 5 Min einen aktualisierten Snapshot.
+        <div style={{ marginTop: 6, fontStyle: 'italic' }}>
+          Stand: <strong style={{ color: '#2f855a' }}>funktional</strong> = Encoder + Normalize + der presence-getaktete
+          5-Min-Loop (client-seitig, Sim-Clock). <strong style={{ color: '#c05621' }}>Noch offen</strong> = die echte
+          Auslieferung übers Netz (Worker <code>/api/anthem/:repId</code>) + presence aus der App → Phase 2b.
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function OriginCapsulerView() {
   const rep = useAuftraggeberRep();
   const { setInspectorAsset } = useRepresentationContext();
@@ -694,60 +776,9 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
       </div>
     );
   }
-  // T4: Coder = der Anthem-Encoder. Packt die normalisierte Last [0..1] je Segment
-  // live in den AnthemSnapshot (ohne Koordinaten) — Gegenstück zum Origin-Manifest-Builder.
-  if (panel.id === 'P02') {
-    const rep = inspectedRep; // useAuftraggeberRep (oben)
-    const net = rep.wegnetz_id ? wegnetzById(rep.wegnetz_id) : undefined;
-    const r = net ? resampleNet(net.edges, { targetMeters: MVP_RESAMPLE_TARGET_METERS }) : null;
-    const loads = r ? normalizeLoads(simSegmentLoads(r)) : [];
-    const t = '12:00 · Sim';
-    const snap = buildAnthemSnapshot(loads, rep.id, t);
-    const jsonBytes = JSON.stringify(snap).length;
-    return (
-      <div style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 600 }}>
-        <div style={{
-          display: 'inline-block', padding: '2px 8px', marginBottom: 8, fontSize: 10, fontFamily: 'monospace',
-          color: '#2b6cb0', background: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: 4,
-        }}>
-          P02 · Coder · Anthem-Encoder
-        </div>
-        <p style={{ fontSize: 12, color: '#4a5568', lineHeight: 1.55, margin: '2px 0 12px' }}>
-          Packt die normalisierte Last <strong>[0..1] je Segment</strong> in den <strong>Anthem-Snapshot</strong> —
-          <strong> ohne Koordinaten</strong>, Reihenfolge = Origin-Net-Segment-Index. Die App mappt Index → Geometrie
-          übers Origin-Netz und färbt (colorize). Gegenstück zum Origin-Manifest-Builder (P09).
-        </p>
-        <div style={{ border: '1px solid #d6bcfa', background: '#faf5ff', borderRadius: 8, padding: '10px 12px', marginBottom: 12 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: '#553c9a' }}>
-            Snapshot · {snap.kind} · „{rep.name}" · t {snap.t}
-          </div>
-          <div style={{ fontSize: 11.5, fontFamily: 'ui-monospace, Menlo, monospace', color: '#44337a', lineHeight: 1.7, marginTop: 6 }}>
-            <div>segments: {snap.loads.length}{r ? ` (origin-net @${MVP_RESAMPLE_TARGET_METERS} m)` : ''}</div>
-            <div>size: ~{fmtBytes(snap.loads.length)} (1 B/Segment, Wire) · JSON {fmtBytes(jsonBytes)}</div>
-            <div style={{ color: '#718096', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              loads[0..15]: {snap.loads.slice(0, 16).map((v) => v.toFixed(2)).join(' ')}{snap.loads.length > 16 ? ' …' : ''}
-            </div>
-          </div>
-        </div>
-        <div style={{ fontSize: 11, color: '#718096', lineHeight: 1.6 }}>
-          <strong>Kette:</strong> Telco (einatmen) <em>normalisiert</em> → Thresholds (deuten) → Coder (packen, echter
-          Encoder) → Transmitter (ausatmen) sendet — <strong>auf Anfrage der Ziel-App</strong> — alle 5 Min einen
-          aktualisierten Snapshot.
-          <div style={{ marginTop: 4 }}>
-            <strong>Wer erstellt ihn?</strong> Der <strong>Transmitter-Atemzyklus</strong>: Telco liest + normalisiert,
-            Coder packt — getaktet von der <strong>Sim-Clock</strong> (5 Min), <strong>gegated durch presence</strong>
-            (2 h-Hysterese; kalt, wenn niemand da ist).
-          </div>
-          <div style={{ marginTop: 6, fontStyle: 'italic' }}>
-            Stand: <strong style={{ color: '#2f855a' }}>funktional</strong> = der Encoder
-            (<code>buildAnthemSnapshot</code>) + Last/Normalize. <strong style={{ color: '#c05621' }}>Noch nicht gebaut</strong>
-            = der presence-getaktete 5-Min-Loop + die Auslieferung (Worker <code>/api/anthem/:repId</code>) → Plan B Phase 2.
-            Heute zeigt der Coder einen <em>einmaligen</em> Snapshot.
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // T4 + Plan B Phase 2: Coder = Anthem-Encoder mit echtem (client-seitigem)
+  // presence-getaktetem 5-Min-Atemzyklus.
+  if (panel.id === 'P02') return <CoderView />;
 
   // P09 (Origin-Capsuler): Auftraggeber + kapseln + Sampling-Vorschau (ohne Tabs). M4.
   if (panel.id === 'P09') return <OriginCapsulerView />;
