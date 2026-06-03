@@ -729,9 +729,21 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
             </div>
           </div>
         </div>
-        <div style={{ fontSize: 11, color: '#718096', lineHeight: 1.55 }}>
-          Kette: <strong>Telco</strong> normalisiert → <strong>Coder</strong> packt → <strong>Transmitter</strong> sendet (alle 5 Min).
-          Quelle: <code>anthemEncoder.buildAnthemSnapshot</code> · Last heute Sim (<code>simSegmentLoads → normalizeLoads</code>).
+        <div style={{ fontSize: 11, color: '#718096', lineHeight: 1.6 }}>
+          <strong>Kette:</strong> Telco (einatmen) <em>normalisiert</em> → Thresholds (deuten) → Coder (packen, echter
+          Encoder) → Transmitter (ausatmen) sendet — <strong>auf Anfrage der Ziel-App</strong> — alle 5 Min einen
+          aktualisierten Snapshot.
+          <div style={{ marginTop: 4 }}>
+            <strong>Wer erstellt ihn?</strong> Der <strong>Transmitter-Atemzyklus</strong>: Telco liest + normalisiert,
+            Coder packt — getaktet von der <strong>Sim-Clock</strong> (5 Min), <strong>gegated durch presence</strong>
+            (2 h-Hysterese; kalt, wenn niemand da ist).
+          </div>
+          <div style={{ marginTop: 6, fontStyle: 'italic' }}>
+            Stand: <strong style={{ color: '#2f855a' }}>funktional</strong> = der Encoder
+            (<code>buildAnthemSnapshot</code>) + Last/Normalize. <strong style={{ color: '#c05621' }}>Noch nicht gebaut</strong>
+            = der presence-getaktete 5-Min-Loop + die Auslieferung (Worker <code>/api/anthem/:repId</code>) → Plan B Phase 2.
+            Heute zeigt der Coder einen <em>einmaligen</em> Snapshot.
+          </div>
         </div>
       </div>
     );
