@@ -215,6 +215,9 @@ function IconBuildNotiz() {
 
       <div style={H}>Inspector-Kopplung (später)</div>
       <p style={P}>Der Inspector zeigt im Icon-Build das Icon im Umfeld der verschiedenen Icon-Container sichtbar — und, sobald vorhanden, deren Animationen.</p>
+
+      <div style={H}>Speicher &amp; Katalog-Zugriff</div>
+      <p style={P}>Der <strong>Drawer bekommt einen Speicher</strong>, der vorher über den <strong>Drawer-icon-Cleaner</strong> gelaufen ist. Der <strong>Katalog darf auf diesen zugreifen</strong> — der Drawer ist die Quelle der gecleanten Icons, der Katalog bezieht nur von dort.</p>
     </div>
   );
 }
