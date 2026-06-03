@@ -15,6 +15,8 @@ import { ColourGradientBar } from './ColourGradientBar';
 import { RingSvg } from './SichelViews';
 import { useAuftraggeberRep } from '../../../runtime/useAuftraggeberRep';
 import { geometryById } from '../../workspace/workspace.registry';
+import { iconById } from '../../poi-catalog/iconRegistry';
+import { slugify } from '../../../runtime/router';
 
 const FRAME_H = 300;
 
@@ -67,16 +69,27 @@ function Notes({ title, items, tone }: { title: string; items: string[]; tone: s
   );
 }
 
-// Intro-Surface — Standbild des Boundary-Reveals (Boundary auf weißem Screen).
+// Intro-Surface — Standbild des Boundary-Reveals: das reg-Icon (aus dem capsulated
+// origin-asset-set, links oben, luftig) + die Boundary auf weißem Screen.
 function IntroSurface() {
   const rep = useAuftraggeberRep();
-  const ring = (geometryById(rep.geometry_id)?.polygon ?? []) as [number, number][];
+  const geo = geometryById(rep.geometry_id);
+  const ring = (geo?.polygon ?? []) as [number, number][];
+  const regSlug = geo?.region ? slugify(geo.region) : '';
+  const regIcon = regSlug ? iconById(`reg-${regSlug}`)?.svg_cleaned : undefined;
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, background: '#fff', padding: 8 }}>
-      {ring.length >= 3
-        ? <RingSvg ring={ring} size={120} />
-        : <span style={{ fontSize: 10, color: '#cbd5e0' }}>keine Boundary</span>}
-      <span style={{ fontSize: 9, color: '#a0aec0' }}>Boundary-Reveal · „{rep.name}"</span>
+    <div style={{ position: 'relative', height: '100%', background: '#fff', overflow: 'hidden' }}>
+      {/* reg-Icon — links oben, relativ groß, luftig (aus capsulated origin-asset-set). */}
+      {regIcon && (
+        <div style={{ position: 'absolute', top: 14, left: 14, width: 40, height: 40 }} dangerouslySetInnerHTML={{ __html: regIcon }} />
+      )}
+      {/* Boundary auf weißem Screen (Reveal-Endbild). */}
+      <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, padding: 8 }}>
+        {ring.length >= 3
+          ? <RingSvg ring={ring} size={104} />
+          : <span style={{ fontSize: 10, color: '#cbd5e0' }}>keine Boundary</span>}
+        <span style={{ fontSize: 9, color: '#a0aec0' }}>{geo?.region ?? 'Region'} · „{rep.name}"</span>
+      </div>
     </div>
   );
 }

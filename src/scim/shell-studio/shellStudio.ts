@@ -115,13 +115,13 @@ seg.color = colorize(anthem.loads[i], origin.colourSettings);`,
     surface: 'intro',
     viz: 'reveal',
     highNotes: [
-      'Stilles Einloggen: weißer Screen vor der schon fokussierten Karte.',
+      'Stilles Einloggen: weißer Screen mit dem reg-Icon (links oben, luftig) vor der fokussierten Karte.',
       'Boundary-Fenster wächst langsam (f0.5) und legt die OSM frei — kein Ausdimmen dabei.',
-      'Danach: Fill aus + Boundary blendet ein und bleibt. Ausbau: Logo/Region-Name auf dem weißen Screen.',
+      'Danach: Fill aus + Boundary blendet ein und bleibt. Ausbau: zusätzlich Region-Name/Logo.',
     ],
     deepNotes: [
       'Reine DOM/SVG-Maske als additives Overlay — rührt die Karten-Layer nicht an.',
-      'Verbraucht origin-boundary (L0); die Geometrie kommt aus dem Origin.',
+      'Verbraucht origin-boundary (L0); das reg-Icon kommt aus dem capsulated origin-asset-set.',
       'Nativ: gleiche zwei Phasen mit Plattform-Masking (CALayer-Mask / Canvas-Clip).',
     ],
     simCode: `// reveal-engine — Boundary-Reveal („stilles Einloggen"). Additives SVG-Overlay
