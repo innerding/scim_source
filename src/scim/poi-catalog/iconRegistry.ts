@@ -53,6 +53,12 @@ function hasGroup(svg: string): boolean {
   return /<g\s+[^>]*\bid="/.test(svg);
 }
 
+// Logo (verbatim) — Ausnahme: Kunden-/Logo-Icons (z.B. rep-gruenberg) tragen die
+// Punkt-Begrenzung (viewBox 0 0 48 48) HART, folgen aber NICHT unbedingt unserer
+// Layer-Konvention (id="fill"/id="stroke", Layerzahl). Für solche Assets ist die
+// "Layer …nicht gefunden"-Warnung ERWARTET und ok — niemand soll sie wegreparieren.
+// Klassifizieren (= Logo?) ist Origin/Sensus-Core-Metadatum; Honorieren (Recolor
+// überspringen) ist Deep-Shell. Der Validator urteilt hier nur, blockt nicht.
 function liteValidate(svg: string): string[] {
   const warnings: string[] = [];
   // viewBox 0 0 48 48 erwartet

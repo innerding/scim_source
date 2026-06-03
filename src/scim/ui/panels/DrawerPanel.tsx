@@ -198,6 +198,7 @@ function IconBuildNotiz() {
 
       <div style={H}>Cleaner (Fremd-SVGs)</div>
       <p style={P}>Erweitert den bestehenden Registry-Cleaner (svg_cleaned). Illustrator: defs/ids/data-name raus, Transforms einbacken, Stellen runden, auf 48/24 + fill #fff / stroke #000 normalisieren. Tabler (auch verändert): currentColor→#000, stroke-basiert auf die Konvention heben.</p>
+      <p style={P}><strong>Ausnahme „Logo (verbatim)"</strong>: Kunden-/Logo-Icons (z.B. <code>rep-gruenberg</code>) tragen die <strong>Punkt-Begrenzung hart</strong> (48/24, Node-Budget), folgen aber <strong>nicht</strong> zwingend unserer Layer-Konvention (<code>fill</code>/<code>stroke</code>, Layerzahl). Der Cleaner normalisiert sie <strong>nicht</strong> auf die Konvention, die „Layer fehlt"-Warnung ist erwartet. <strong>Klassifizieren</strong> (ist es ein Logo?) = Origin/Sensus-Core-Metadatum · <strong>Honorieren</strong> (Recolor überspringen) = Deep-Shell.</p>
 
       <div style={H}>Node-Budget &amp; Begrenzer</div>
       <ul style={{ margin: 0, paddingLeft: 18 }}>
