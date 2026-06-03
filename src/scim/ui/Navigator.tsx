@@ -91,8 +91,8 @@ function NavItem({
 // ─── Cosmo Controls Row (textlicher Spiegel der Kosmologie) ──────────────────
 // Reihenfolge von oben (entsprechend den Controls): Mond → Transmitter →
 // Komposit-Tetraeder → Substrat. Dünne Zwischen-Labels als Trenner.
-const COSMO_GROUPS: { label: string; ids: string[] }[] = [
-  { label: 'Mond', ids: ['R01', 'V01'] },
+const COSMO_GROUPS: { label: string; ids: string[]; sub?: string }[] = [
+  { label: 'Mond', ids: ['R01', 'V01'], sub: 'url: diesenpark.com' },
   { label: 'Transmitter', ids: ['P06', 'P01', 'P04', 'P02'] },
   { label: 'Komposit-Tetraeder', ids: ['P11', 'P07', 'P08', 'P09', 'workspace', 'geometry_editor', 'catalog'] },
   { label: 'Substrat', ids: ['ai_interface', 'P05', 'system'] },
@@ -113,12 +113,15 @@ function descById(id: string): { id: string; icon: string; label: string } | nul
   return null;
 }
 
-function CosmoSubLabel({ text }: { text: string }) {
+function CosmoSubLabel({ text, sub }: { text: string; sub?: string }) {
   return (
-    <div style={{
-      fontSize: 8.5, color: '#3d556f', textTransform: 'uppercase', letterSpacing: '0.10em',
-      fontFamily: 'monospace', padding: '6px 12px 2px 12px', userSelect: 'none',
-    }}>{text}</div>
+    <div style={{ padding: '6px 12px 2px 12px', userSelect: 'none' }}>
+      <div style={{
+        fontSize: 8.5, color: '#3d556f', textTransform: 'uppercase', letterSpacing: '0.10em',
+        fontFamily: 'monospace',
+      }}>{text}</div>
+      {sub && <div style={{ fontSize: 8, color: '#2f4459', fontFamily: 'monospace', marginTop: 1 }}>{sub}</div>}
+    </div>
   );
 }
 
@@ -793,7 +796,7 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
           if (items.length === 0) return null;
           return (
             <div key={g.label}>
-              <CosmoSubLabel text={g.label} />
+              <CosmoSubLabel text={g.label} sub={g.sub} />
               {items.map((d) => (
                 <CosmoItem
                   key={d.id}
