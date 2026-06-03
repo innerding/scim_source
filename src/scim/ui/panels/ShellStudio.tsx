@@ -12,6 +12,9 @@ import { useWorkspaceNav } from '../workspaceNav';
 import DeepShellMap from './DeepShellMap';
 import { colorize } from '../../sensus/loadColour';
 import { ColourGradientBar } from './ColourGradientBar';
+import { RingSvg } from './SichelViews';
+import { useAuftraggeberRep } from '../../../runtime/useAuftraggeberRep';
+import { geometryById } from '../../workspace/workspace.registry';
 
 const FRAME_H = 300;
 
@@ -64,9 +67,24 @@ function Notes({ title, items, tone }: { title: string; items: string[]; tone: s
   );
 }
 
+// Intro-Surface — Standbild des Boundary-Reveals (Boundary auf weißem Screen).
+function IntroSurface() {
+  const rep = useAuftraggeberRep();
+  const ring = (geometryById(rep.geometry_id)?.polygon ?? []) as [number, number][];
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, background: '#fff', padding: 8 }}>
+      {ring.length >= 3
+        ? <RingSvg ring={ring} size={120} />
+        : <span style={{ fontSize: 10, color: '#cbd5e0' }}>keine Boundary</span>}
+      <span style={{ fontSize: 9, color: '#a0aec0' }}>Boundary-Reveal · „{rep.name}"</span>
+    </div>
+  );
+}
+
 // Spalte 1 · Sim-Vorschau (im Device-Frame): der echte App-Screen.
 function Surface({ fn }: { fn: ShellFunction }) {
   if (fn.surface === 'map') return <DeepShellMap />;
+  if (fn.surface === 'intro') return <IntroSurface />;
   if (fn.surface === 'engine') {
     return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', padding: 12, textAlign: 'center', fontSize: 10, color: '#cbd5e0', fontStyle: 'italic', lineHeight: 1.4 }}>Engine · kein eigener Screen<br />(Effekt erscheint in einer Surface)</div>;
   }
@@ -93,9 +111,31 @@ function ColorizeViz() {
   );
 }
 
+// Funktions-Visualisierung „reveal" — die vier Phasen des Boundary-Reveals.
+function RevealViz() {
+  const phases = [
+    { n: 1, t: 'weißer Screen', c: '#fff', b: '#e2e8f0' },
+    { n: 2, t: 'Fenster wächst (f0.5)', c: '#f7fafc', b: '#cbd5e0' },
+    { n: 3, t: 'Fill dimmt aus', c: '#edf2f7', b: '#a0aec0' },
+    { n: 4, t: 'Boundary bleibt', c: '#fff', b: '#0074d9' },
+  ];
+  return (
+    <div style={{ padding: 12, height: '100%', display: 'flex', flexDirection: 'column', gap: 8, fontFamily: 'system-ui, sans-serif' }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: '#1a365d' }}>Reveal · Phasen</div>
+      {phases.map((p) => (
+        <div key={p.n} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ width: 22, height: 22, flexShrink: 0, borderRadius: 4, background: p.c, border: `2px solid ${p.b}` }} />
+          <span style={{ fontSize: 10, color: '#4a5568' }}><strong>{p.n}.</strong> {p.t}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // Spalte 3 · Funktions-Visualisierung (rahmenlos): analytische Sicht.
 function Viz({ fn }: { fn: ShellFunction }) {
   if (fn.viz === 'colorize') return <ColorizeViz />;
+  if (fn.viz === 'reveal') return <RevealViz />;
   return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', padding: 12, textAlign: 'center', fontSize: 10, color: '#cbd5e0', fontStyle: 'italic' }}>—</div>;
 }
 

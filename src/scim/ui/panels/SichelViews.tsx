@@ -23,7 +23,7 @@ function resolveDemo() {
 // Boundary-Ring groß als normalisiertes SVG. lat-Flip für Bildschirmkoordinaten
 // + Längengrad-Korrektur (1° Länge = cos(Breite) × 1° Breite), sonst stretcht es
 // horizontal. Gleicher Maßstab auf beiden Achsen → kein Verzerren.
-function RingSvg({ ring, size = 300 }: { ring: [number, number][]; size?: number }) {
+export function RingSvg({ ring, size = 300 }: { ring: [number, number][]; size?: number }) {
   if (ring.length < 3) return null;
   const xs = ring.map((p) => p[0]), ys = ring.map((p) => p[1]);
   const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);

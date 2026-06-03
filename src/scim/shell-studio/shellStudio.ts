@@ -20,9 +20,9 @@ export interface ShellFunction {
   title: string;
   subtitle?: string;
   /** Sim-Vorschau (Device-Frame) = echter App-Screen. 'engine' = kein eigener Screen → leer. */
-  surface: 'map' | 'engine' | 'placeholder';
+  surface: 'map' | 'intro' | 'engine' | 'placeholder';
   /** Funktions-Visualisierung (rahmenlos) = analytische Sicht der Funktion. 'none' = keine. */
-  viz: 'colorize' | 'none';
+  viz: 'colorize' | 'reveal' | 'none';
   /** High · Design-Notizen zur Oberfläche: so kann es sein · bewährt · Fallback · Ausbau. */
   highNotes: string[];
   /** Deep · Notizen zum Produktions-Code: was er tun muss · schneller weil · Budget · erneuert weil. */
@@ -107,5 +107,36 @@ export function colorize(load, { palette = 'green_violet', spectrum, bias } = {}
 
 // app-seitig je Segment:
 seg.color = colorize(anthem.loads[i], origin.colourSettings);`,
+  },
+  {
+    id: 'intro',
+    title: 'Intro',
+    subtitle: 'reveal-engine · Boundary-Reveal',
+    surface: 'intro',
+    viz: 'reveal',
+    highNotes: [
+      'Stilles Einloggen: weißer Screen vor der schon fokussierten Karte.',
+      'Boundary-Fenster wächst langsam (f0.5) und legt die OSM frei — kein Ausdimmen dabei.',
+      'Danach: Fill aus + Boundary blendet ein und bleibt. Ausbau: Logo/Region-Name auf dem weißen Screen.',
+    ],
+    deepNotes: [
+      'Reine DOM/SVG-Maske als additives Overlay — rührt die Karten-Layer nicht an.',
+      'Verbraucht origin-boundary (L0); die Geometrie kommt aus dem Origin.',
+      'Nativ: gleiche zwei Phasen mit Plattform-Masking (CALayer-Mask / Canvas-Clip).',
+    ],
+    simCode: `// reveal-engine — Boundary-Reveal („stilles Einloggen"). Additives SVG-Overlay
+// über der Karte; rührt die Leaflet-Layer NICHT an.
+export function playBoundaryReveal(container, map, ringLatLng) {
+  const pts = ringLatLng.map(([lat, lon]) =>
+    map.latLngToContainerPoint(L.latLng(lat, lon)));   // Ring → Container-Pixel
+
+  // Maske: weiß = sichtbarer Fill, schwarz = Loch (Boundary-Fenster).
+  // 1) weißer Invert-Fill über der Karte; im Zentrum wächst die Boundary als
+  //    Fenster und legt die OSM frei (f0.5, ~3000 ms · KEIN Ausdimmen dabei).
+  animate(GROW_MS, t => maskScale(easeOutCubic(t)));
+
+  // 2) danach: Fill aus + Boundary blendet ein und bleibt (~1400 ms).
+  then(DIM_MS, t => { fillOpacity(1 - t); strokeOpacity(t); });
+}`,
   },
 ];
