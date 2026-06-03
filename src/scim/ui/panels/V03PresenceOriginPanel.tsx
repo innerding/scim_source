@@ -7,6 +7,7 @@ import { REPRESENTATIONS } from '../../workspace/workspace.registry';
 import { useRepresentationContext } from '../../../runtime/repContext';
 import { useAuftraggeberRep } from '../../../runtime/useAuftraggeberRep';
 import { fetchPresence, anthemReadConfigured, type PresenceStatus } from '../../../runtime/anthemApi';
+import { AnthemCycleBadge } from '../AnthemCycleInfo';
 
 const POLL_MS = 15000;
 
@@ -43,16 +44,21 @@ export default function V03PresenceOriginPanel() {
 
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 600 }}>
-      <div style={{
-        display: 'inline-block', padding: '2px 8px', marginBottom: 8, fontSize: 10, fontFamily: 'monospace',
-        color: '#2b6cb0', background: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: 4,
-      }}>
-        V03 · t1 · Presence-Origin (Call-Log)
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
+        <div style={{
+          display: 'inline-block', padding: '2px 8px', fontSize: 10, fontFamily: 'monospace',
+          color: '#2b6cb0', background: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: 4,
+        }}>
+          V03 · t1 · Presence-Origin (Call-Log)
+        </div>
+        <AnthemCycleBadge />
       </div>
       <p style={{ fontSize: 12, color: '#4a5568', lineHeight: 1.55, margin: '2px 0 12px' }}>
-        Beobachtet das <strong>presence-origin</strong>-Signal der ausgelieferten Maschine: klopft gerade eine
-        Ziel-App in dieser Representation? Read-only Spiegel des Workers (alle {POLL_MS / 1000} s) — das
-        Auslieferungs-seitige Gegenstück zum Intake in <strong>P04 · Presence</strong>.
+        <strong>Publishing-Monitor · Beobachter</strong> der ausgelieferten Maschine. Dieser Tab beobachtet das
+        <strong> presence-origin</strong>-Signal: klopft gerade eine Ziel-App in dieser Representation? Read-only
+        Spiegel des Workers (alle {POLL_MS / 1000} s) — das Auslieferungs-seitige Gegenstück zum Intake in
+        <strong> P04 · Presence</strong> (Anthem-Kreislauf, Station „klopfen"). Nebenan <strong>t2 Active-Monitor</strong>:
+        was ist installiert + live ausgespielt.
       </p>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, fontSize: 12, flexWrap: 'wrap' }}>

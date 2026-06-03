@@ -5,6 +5,7 @@ import packageOpenIcon from '../../../assets/Package-open.svg';
 import packageIcon     from '../../../assets/Package.svg';
 import type { PackageEntry } from './usePackagesApi';
 import { fetchOriginMeta, fetchPresence, type OriginMeta, type PresenceStatus } from '../../../runtime/anthemApi';
+import { AnthemCycleBadge } from '../AnthemCycleInfo';
 
 const WORKER_URL = import.meta.env.VITE_WORKER_URL as string | undefined;
 
@@ -187,15 +188,24 @@ export default function V03ActiveMonitorPanel() {
 
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
         <img src={packageOpenIcon} alt="" width={28} height={28} />
         <div>
-          <div style={{ fontSize: 14, fontWeight: 600, color: '#1a365d' }}>Aktiv-Monitor</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 14, fontWeight: 600, color: '#1a365d' }}>Active-Monitor</span>
+            <AnthemCycleBadge />
+          </div>
           <div style={{ fontSize: 11, color: '#718096' }}>
             Je Representation: aktives Bundle-Paket (CDN/QR) <strong>+ Anthem-Schicht</strong> (live ausgespielt: Origin + presence)
           </div>
         </div>
       </div>
+      <p style={{ fontSize: 11.5, color: '#718096', lineHeight: 1.55, margin: '0 0 18px', maxWidth: 620 }}>
+        <strong>Publishing-Monitor · Beobachter</strong> der ausgelieferten Maschine. Zeigt zweierlei: <strong>was
+        installiert ist</strong> (versioniertes Bundle-Paket, D1/CDN) und <strong>was live ausgespielt wird</strong>
+        (Origin-Schicht in R2 + presence). Das Anthem-<em>Snapshot</em> selbst ist ein flüchtiger 5-Min-Stream —
+        nicht als Paket gelistet; seine Lebendigkeit zeigt die presence-Anzeige (auch im Footer · Tab t1).
+      </p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {REGION_MAP.flatMap((region) =>
