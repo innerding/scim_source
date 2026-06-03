@@ -73,9 +73,9 @@ export const ANTHEM_STATIONS: AnthemStation[] = [
     blurb: 'Spielt den Snapshot aus — auf Anfrage der Ziel-App, nicht von sich aus. Die Ausspielung erfüllt der deployte Worker-GET (presence-gegated, siehe „senden"); P06 ist die Atem-Anatomie/Erklärung dazu. Funktional erfüllt.',
   },
   {
-    n: 7, word: 'adressieren', title: 'Adresse (anthemEndpoint)', home: 'P09 · Origin-Manifest', panelId: 'P09',
+    n: 7, word: 'adressieren', title: 'Adresse (anthemEndpoint)', home: 'P09 · cap origin-mesh', panelId: 'P09', tabId: 't2',
     status: 'done',
-    blurb: 'Das Origin-Manifest schreibt die Adresse, an der die App den Snapshot zieht (anthemEndpoint = /api/anthem/:repId), und bindet sie an die repId. Der „Origin-Mesh veröffentlichen"-Button (P09) PUTet das resampelte Netz nach R2 — der Worker liest es und rechnet daraus. Round-Trip live verifiziert.',
+    blurb: 'Das Origin-Manifest schreibt die Adresse, an der die App den Snapshot zieht (anthemEndpoint = /api/anthem/:repId), und bindet sie an die repId. Der „cap origin-mesh veröffentlichen"-Button (P09 · t2) PUTet das resampelte Netz nach R2 — der Worker liest es und rechnet daraus. Round-Trip live verifiziert.',
   },
   {
     n: 8, word: 'senden', title: 'Auslieferung (Worker)', home: 'Worker /api/anthem/:repId',

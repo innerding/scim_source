@@ -263,7 +263,10 @@ export const PANEL_REGISTRY: PanelDescriptor[] = [
     isBlocking: true,
     contextKey: 'poi_model',
     tabs: [
-      { id: 't1', label: 'Origin-Netz', icon: '▦' },
+      { id: 't1', label: 'cap origin-boundary', icon: '⬡' },
+      { id: 't2', label: 'cap origin-mesh', icon: '▦' },
+      { id: 't3', label: 'cap origin-asset-set', icon: '◫' },
+      { id: 't4', label: 'cap origin-poi-set', icon: '⊙' },
     ],
   },
   {

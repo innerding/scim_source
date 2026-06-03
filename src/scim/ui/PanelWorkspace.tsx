@@ -624,38 +624,54 @@ function AnthemGateView() {
   );
 }
 
-function OriginCapsulerView() {
+// Ein noch nicht gebauter Cap — ehrlicher Stub (beschreibt, was er einkapseln wird).
+function CapStub({ title, schicht, was, key_ }: { title: string; schicht: string; was: string; key_: string }) {
+  return (
+    <div style={{ fontSize: 12, color: '#4a5568', lineHeight: 1.6, maxWidth: 560 }}>
+      <div style={{ fontSize: 13, fontWeight: 700, color: '#1a365d' }}>{title} <span style={{ fontSize: 10.5, fontWeight: 400, color: '#a0aec0' }}>· {schicht}</span></div>
+      <p style={{ margin: '6px 0' }}>{was}</p>
+      <div style={{ fontSize: 11, color: '#a0aec0', fontStyle: 'italic', borderTop: '1px solid #e2e8f0', paddingTop: 8 }}>
+        Cap — Publishing folgt: kapselt diesen Partikel aus der committeten Representation → R2
+        (<code>{key_}</code>), Worker serviert ihn, App lädt ihn aus dem Origin. Noch nicht gebaut.
+      </div>
+    </div>
+  );
+}
+
+// P09 · Origin-Capsuler — die committete Representation in Origin-Partikel („Caps")
+// gekapselt; ein Tab = ein Cap (boundary · mesh · asset-set · poi-set). Prinzip:
+// alles, was zur Representation gehört, kommt AUS dem Origin.
+function OriginCapsulerView({ tab }: { tab: TabId }) {
   const rep = useAuftraggeberRep();
   const { setInspectorAsset } = useRepresentationContext();
   const [capsule, setCapsule] = useState<OriginManifest | null>(null);
   const capsuleFresh = capsule != null && capsule.repId === rep.id;
-  // Phase 2b: Origin-Mesh nach R2 veröffentlichen, damit der Worker den Anthem
-  // selbst rechnen kann (Station „adressieren/senden").
   const [publishing, setPublishing] = useState(false);
   const [publishMsg, setPublishMsg] = useState<string | null>(null);
-  const onPublish = async () => {
+  const onPublishMesh = async () => {
     const net = rep.wegnetz_id ? wegnetzById(rep.wegnetz_id) : undefined;
     const r = net ? resampleNet(net.edges, { targetMeters: MVP_RESAMPLE_TARGET_METERS }) : null;
     if (!r) { setPublishMsg('✗ Kein Wegnetz an dieser Representation.'); return; }
     setPublishing(true); setPublishMsg(null);
     try {
-      // Load-Thresholds mit veröffentlichen → der Worker normalisiert bit-gleich.
       const payload = { stretches: r.stretches.map((s) => ({ id: s.id, points: s.points })), norm: repLoadNorm(rep) };
       const res = await publishOriginMesh(rep.id, payload);
-      setPublishMsg(`✓ veröffentlicht: ${res.stretches} Strecken → origin/${rep.id}/net.json`);
+      setPublishMsg(`✓ veröffentlicht: ${res.stretches} Strecken → origin/${rep.id}/mesh.json`);
     } catch (e) {
       setPublishMsg(`✗ ${(e as Error).message}`);
     } finally { setPublishing(false); }
   };
+
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', fontFamily: 'system-ui, sans-serif' }}>
+      {/* Geteilter Kopf: Cap-Herkunft + Auftraggeber. */}
       <div style={{ flex: '0 0 auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
           <div style={{
             display: 'inline-block', padding: '2px 8px', fontSize: 10, fontFamily: 'monospace',
             color: '#2b6cb0', background: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: 4,
           }}>
-            P09 · Origin-Capsuler · committete Representation → Origin-Partikel
+            P09 · Origin-Capsuler · committete Representation → Origin-Caps
           </div>
           <AnthemCycleBadge />
         </div>
@@ -670,59 +686,84 @@ function OriginCapsulerView() {
               <option key={r.id} value={r.id}>{r.name}{r.version != null ? ` · v${r.version}` : ''}</option>
             ))}
           </select>
-          <button
-            onClick={() => setCapsule(buildOriginManifest(rep))}
-            style={{
-              marginLeft: 'auto', fontSize: 12, padding: '4px 12px', borderRadius: 4, cursor: 'pointer',
-              border: '1px solid #2f855a', background: '#f0fff4', color: '#22543d', fontWeight: 600,
-            }}
-          >▣ Origin auflösen &amp; kapseln</button>
         </div>
-        {/* Phase 2b: Origin-Mesh veröffentlichen → Worker rechnet daraus den Anthem. */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
-          <button
-            onClick={onPublish}
-            disabled={publishing || !anthemPublishConfigured()}
-            title={anthemPublishConfigured() ? 'PUT /api/origin/:repId/net' : 'VITE_WORKER_URL + VITE_UPLOAD_API_KEY setzen'}
-            style={{
-              fontSize: 12, padding: '4px 12px', borderRadius: 4,
-              cursor: publishing || !anthemPublishConfigured() ? 'not-allowed' : 'pointer',
-              border: '1px solid #4299e1', background: '#ebf8ff',
-              color: '#2b6cb0', fontWeight: 600, opacity: anthemPublishConfigured() ? 1 : 0.55,
-            }}
-          >{publishing ? '… veröffentliche' : '⇪ Origin-Mesh veröffentlichen (→ Worker)'}</button>
-          {!anthemPublishConfigured() && (
-            <span style={{ fontSize: 10.5, color: '#a0aec0', fontStyle: 'italic' }}>Worker nicht konfiguriert</span>
-          )}
-          {publishMsg && (
-            <span style={{ fontSize: 11, fontFamily: 'ui-monospace, Menlo, monospace', color: publishMsg.startsWith('✓') ? '#2f855a' : '#c05621' }}>{publishMsg}</span>
-          )}
-        </div>
-        {capsuleFresh && capsule && (
-          <div style={{ border: '1px solid #c6f6d5', background: '#f0fff4', borderRadius: 8, padding: '10px 12px', marginBottom: 12 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: '#22543d' }}>
-              Kapsel · {capsule.kind} · „{capsule.repName}" v{capsule.version}
-            </div>
-            <div style={{ fontSize: 11, color: '#2f855a', margin: '2px 0 8px' }}>
-              Origin gekapselt — geht an <strong>P11 Sensus Core Publishing</strong>. Shell + Anthem werden referenziert, nicht hier aufgelöst.
-            </div>
-            <div style={{ fontSize: 11.5, fontFamily: 'ui-monospace, Menlo, monospace', color: '#22543d', lineHeight: 1.7 }}>
-              <div>L0 · origin-boundary (Manifest) · {capsule.boundary.length} Punkte · bbox [{capsule.bbox.map((n) => n.toFixed(4)).join(', ')}]</div>
-              {capsule.layers.map((l) => (
-                <div key={l.id}>· {l.id}{l.bytes != null ? ` · ${fmtBytes(l.bytes)}` : ' · (reserviert)'} → <span style={{ color: '#718096' }}>{l.ref}</span></div>
-              ))}
-              <div>anthem → <span style={{ color: '#718096' }}>{capsule.anthemEndpoint}</span></div>
-            </div>
-          </div>
-        )}
-        {capsule && !capsuleFresh && (
-          <div style={{ fontSize: 10.5, color: '#a0aec0', fontStyle: 'italic', marginBottom: 8 }}>
-            Auftraggeber gewechselt — bitte neu „Origin auflösen &amp; kapseln".
-          </div>
-        )}
       </div>
-      <div style={{ flex: '1 1 auto', minHeight: 0 }}>
-        <WegnetzCompareView />
+
+      {/* Tab-Inhalt = ein Cap. */}
+      <div style={{ flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+        {tab === 't1' && (
+          <div style={{ flex: '0 0 auto' }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#1a365d', marginBottom: 4 }}>cap origin-boundary <span style={{ fontSize: 10.5, fontWeight: 400, color: '#a0aec0' }}>· L0 · Manifest-Anker</span></div>
+            <p style={{ fontSize: 12, color: '#4a5568', lineHeight: 1.55, margin: '0 0 10px', maxWidth: 560 }}>
+              Die Boundary rahmt OSM (bbox) und verlinkt die übrigen Caps + den Anthem-Endpoint. „Origin auflösen" baut
+              das Manifest (lokal); das <em>Publizieren</em> des Boundary-Caps folgt.
+            </p>
+            <button
+              onClick={() => setCapsule(buildOriginManifest(rep))}
+              style={{
+                fontSize: 12, padding: '4px 12px', borderRadius: 4, cursor: 'pointer', marginBottom: 10,
+                border: '1px solid #2f855a', background: '#f0fff4', color: '#22543d', fontWeight: 600,
+              }}
+            >▣ Origin auflösen (Manifest)</button>
+            {capsuleFresh && capsule && (
+              <div style={{ border: '1px solid #c6f6d5', background: '#f0fff4', borderRadius: 8, padding: '10px 12px', marginBottom: 8 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#22543d' }}>Manifest · „{capsule.repName}" v{capsule.version}</div>
+                <div style={{ fontSize: 11.5, fontFamily: 'ui-monospace, Menlo, monospace', color: '#22543d', lineHeight: 1.7, marginTop: 4 }}>
+                  <div>L0 · origin-boundary · {capsule.boundary.length} Punkte · bbox [{capsule.bbox.map((n) => n.toFixed(4)).join(', ')}]</div>
+                  {capsule.layers.map((l) => (
+                    <div key={l.id}>· {l.id}{l.bytes != null ? ` · ${fmtBytes(l.bytes)}` : ' · (reserviert)'}</div>
+                  ))}
+                  <div>anthem → <span style={{ color: '#718096' }}>{capsule.anthemEndpoint}</span></div>
+                </div>
+              </div>
+            )}
+            {capsule && !capsuleFresh && (
+              <div style={{ fontSize: 10.5, color: '#a0aec0', fontStyle: 'italic' }}>Auftraggeber gewechselt — neu auflösen.</div>
+            )}
+            <div style={{ fontSize: 11, color: '#a0aec0', fontStyle: 'italic', borderTop: '1px solid #e2e8f0', paddingTop: 8, marginTop: 4 }}>
+              Cap — Publishing folgt: Boundary → R2 (<code>origin/{rep.id}/boundary.json</code>). Noch nicht gebaut.
+            </div>
+          </div>
+        )}
+
+        {tab === 't2' && (
+          <>
+            <div style={{ flex: '0 0 auto' }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#1a365d', marginBottom: 4 }}>cap origin-mesh <span style={{ fontSize: 10.5, fontWeight: 400, color: '#a0aec0' }}>· L1 · gesampeltes Wegnetz</span></div>
+              <p style={{ fontSize: 12, color: '#4a5568', lineHeight: 1.55, margin: '0 0 10px', maxWidth: 560 }}>
+                Das resampelte Wegnetz @{MVP_RESAMPLE_TARGET_METERS} m (Segment-Geometrie + ids) — Grundlage, auf der der
+                Worker den Anthem rechnet. <strong>Funktional</strong>: Publish nach R2 + Worker-GET.
+              </p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
+                <button
+                  onClick={onPublishMesh}
+                  disabled={publishing || !anthemPublishConfigured()}
+                  title={anthemPublishConfigured() ? 'PUT /api/origin/:repId/mesh' : 'VITE_WORKER_URL + VITE_UPLOAD_API_KEY setzen'}
+                  style={{
+                    fontSize: 12, padding: '4px 12px', borderRadius: 4,
+                    cursor: publishing || !anthemPublishConfigured() ? 'not-allowed' : 'pointer',
+                    border: '1px solid #4299e1', background: '#ebf8ff',
+                    color: '#2b6cb0', fontWeight: 600, opacity: anthemPublishConfigured() ? 1 : 0.55,
+                  }}
+                >{publishing ? '… veröffentliche' : '⇪ cap origin-mesh veröffentlichen (→ Worker)'}</button>
+                {!anthemPublishConfigured() && <span style={{ fontSize: 10.5, color: '#a0aec0', fontStyle: 'italic' }}>Worker nicht konfiguriert</span>}
+                {publishMsg && <span style={{ fontSize: 11, fontFamily: 'ui-monospace, Menlo, monospace', color: publishMsg.startsWith('✓') ? '#2f855a' : '#c05621' }}>{publishMsg}</span>}
+              </div>
+            </div>
+            <div style={{ flex: '1 1 auto', minHeight: 0 }}>
+              <WegnetzCompareView />
+            </div>
+          </>
+        )}
+
+        {tab === 't3' && (
+          <CapStub title="cap origin-asset-set" schicht="L2" key_={`origin/${rep.id}/asset-set.json`}
+            was="Die Assets der Representation (Container-/Icon-Geometrien, später POI-Sheet-Pixel-Bilder), die die App zur Darstellung braucht." />
+        )}
+        {tab === 't4' && (
+          <CapStub title="cap origin-poi-set" schicht="L3" key_={`origin/${rep.id}/poi-set.json`}
+            was="Das POI-Set der Representation (Katalog-POIs + Gate-POIs): Position, Typ, Container — was die App als Marker/Ziele zeigt." />
+        )}
       </div>
     </div>
   );
@@ -982,7 +1023,7 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
   if (panel.id === 'P02') return <CoderView />;
 
   // P09 (Origin-Capsuler): Auftraggeber + kapseln + Sampling-Vorschau (ohne Tabs). M4.
-  if (panel.id === 'P09') return <OriginCapsulerView />;
+  if (panel.id === 'P09') return <OriginCapsulerView tab={activeTab} />;
 
   // P06 t1: Transmission Schwellen (Atem/Anthem-Cluster + Row-Ordnungs-Notizen).
   if (panel.id === 'P06' && activeTab === 't1') return <TransmissionView />;
@@ -1086,7 +1127,7 @@ export default function PanelWorkspace({ activeId, activeTab, onTabChange, resul
     }}>
       <PanelHeader id={entry.id} title={entry.label} subtitle={subtitle} dimmed={KOSMOLOGIE_IDS.has(activeId)} />
       {/* P09 (Origin-Capsuler) rendert die Sampling-Pipeline als Vergleich — ohne Tabs. */}
-      {!['P01', 'P02', 'P09'].includes(activeId) && <TabBar tabs={tabs} active={safeTab} onSelect={onTabChange} />}
+      {!['P01', 'P02'].includes(activeId) && <TabBar tabs={tabs} active={safeTab} onSelect={onTabChange} />}
       {/* Geometry-Editor braucht volle Hoehe ohne Padding */}
       {activeId === DRAWER_DESCRIPTOR.id ? (
         <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
