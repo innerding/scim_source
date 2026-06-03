@@ -641,18 +641,23 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
   // P01 (Thresholds · T1): die drei Schwellen gestaffelt (System/Region/Load), ohne Tabs.
   if (panel.id === 'P01') return <ThresholdsView />;
 
-  // P02/P04 (Threshold-Bögen, gleiche Tabs): Adjust zeigt NUR die Slider;
-  // die Konzept-Notizen erscheinen unauffällig (gedämpfte Zeilen) in den anderen
-  // Tabs. P01-bauKonzept nur einmal (Signal Intake), nicht doppelt auf jedem Tab.
-  if (panel.id === 'P02' || panel.id === 'P04') {
-    if (activeTab === 'adjust') return <ColourAdjust panelId={panel.id} />;
-    const td = panel.tabs.find((t) => t.id === activeTab);
-    const lines = [...(td?.body ?? [])];
-    if (activeTab === 'signal_intake' && panel.bauKonzept) lines.push(...panel.bauKonzept);
-    if (lines.length === 0) return null;
+  // T2: P04 = Telco, P02 = Coder. Die Schwellen-Regler leben jetzt im Thresholds-
+  // Panel (P01); der echte Inhalt zieht in T3 (Telco) bzw. T4 (Coder) ein.
+  if (panel.id === 'P04') {
     return (
-      <div style={{ fontSize: 11.5, color: '#a0aec0', fontStyle: 'italic', lineHeight: 1.55, maxWidth: 560 }}>
-        {lines.map((l, i) => <div key={i} style={{ marginBottom: 4 }}>{l}</div>)}
+      <div style={{ fontSize: 12, color: '#4a5568', lineHeight: 1.6, maxWidth: 560 }}>
+        <strong style={{ color: '#1a365d' }}>Telco</strong> — die Quelle (Einatmen): Simulation · Sim-Clock/Time-Turbo ·
+        presence-Intake · Normalization.
+        <div style={{ fontSize: 10.5, color: '#a0aec0', fontStyle: 'italic', marginTop: 6 }}>Inhalt zieht in T3 hier ein.</div>
+      </div>
+    );
+  }
+  if (panel.id === 'P02') {
+    return (
+      <div style={{ fontSize: 12, color: '#4a5568', lineHeight: 1.6, maxWidth: 560 }}>
+        <strong style={{ color: '#1a365d' }}>Coder</strong> — der Anthem-Encoder: Last → segId-Snapshot
+        (<code>buildAnthemSnapshot</code>).
+        <div style={{ fontSize: 10.5, color: '#a0aec0', fontStyle: 'italic', marginTop: 6 }}>Entsteht in T4 hier.</div>
       </div>
     );
   }
@@ -774,7 +779,7 @@ export default function PanelWorkspace({ activeId, activeTab, onTabChange, resul
     }}>
       <PanelHeader id={entry.id} title={entry.label} subtitle={subtitle} dimmed={KOSMOLOGIE_IDS.has(activeId)} />
       {/* P09 (Origin-Capsuler) rendert die Sampling-Pipeline als Vergleich — ohne Tabs. */}
-      {activeId !== 'P09' && activeId !== 'P01' && <TabBar tabs={tabs} active={safeTab} onSelect={onTabChange} />}
+      {!['P01', 'P02', 'P04', 'P09'].includes(activeId) && <TabBar tabs={tabs} active={safeTab} onSelect={onTabChange} />}
       {/* Geometry-Editor braucht volle Hoehe ohne Padding */}
       {activeId === DRAWER_DESCRIPTOR.id ? (
         <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>

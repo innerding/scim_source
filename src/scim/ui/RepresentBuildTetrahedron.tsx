@@ -137,8 +137,8 @@ const ARCS: Array<{
   // Top (-90°) → Bottom-Right (30°): zwischen Geometry und Inspection
   {
     id: 'regio_content',
-    shortLabel: 'reg',
-    longLabel: 'Region Thresholds',
+    shortLabel: 'tel',
+    longLabel: 'Telco',
     startDeg: -90,
     endDeg: 30,
     labelAngleDeg: -30,
@@ -146,8 +146,8 @@ const ARCS: Array<{
   // Bottom-Right (30°) → Bottom-Left (150°): dritte Schwellen-Sphere
   {
     id: 'load_thresholds',
-    shortLabel: 'loa',
-    longLabel: 'Load Thresholds',
+    shortLabel: 'cod',
+    longLabel: 'Coder',
     startDeg: 30,
     endDeg: 150,
     labelAngleDeg: 90,
@@ -155,8 +155,8 @@ const ARCS: Array<{
   // Bottom-Left (150°) → Top (270°): zwischen Catalog und Geometry
   {
     id: 'system_adjust',
-    shortLabel: 'sys',
-    longLabel: 'System Thresholds',
+    shortLabel: 'thr',
+    longLabel: 'Thresholds',
     startDeg: 150,
     endDeg: 270,
     labelAngleDeg: 210,
@@ -229,7 +229,6 @@ const SICKLES: Array<{
 function TetraGlyph({ id, x, y, color }: { id: string; x: number; y: number; color: string }) {
   const s = { fill: 'none', stroke: color, strokeWidth: 0.8, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
   const f = { fill: color, stroke: 'none' };
-  const bolt = <path d="M-2.3 -4 L-4.5 0.4 L-2.9 0.4 L-3.7 4 L-0.9 -1 L-2.5 -1 Z" {...f} />;
   let body: JSX.Element | null = null;
   switch (id) {
     case 'geometry_draw': // Bleistift, diagonal (Spitze unten-links)
@@ -257,14 +256,14 @@ function TetraGlyph({ id, x, y, color }: { id: string; x: number; y: number; col
     case 'boundary': // Mobile Device — High-Shell (P07, App-UI/UX)
       body = <><rect x={-2.7} y={-4} width={5.4} height={8} rx={1} {...s} /><line x1={-0.9} y1={-3} x2={0.9} y2={-3} {...s} /><circle cx={0} cy={3} r={0.5} {...f} /></>;
       break;
-    case 'system_adjust': // Blitz + Slider
-      body = <>{bolt}<line x1={0.8} y1={-2.2} x2={4} y2={-2.2} {...s} /><circle cx={2.6} cy={-2.2} r={0.7} {...f} /><line x1={0.8} y1={0} x2={4} y2={0} {...s} /><circle cx={1.7} cy={0} r={0.7} {...f} /><line x1={0.8} y1={2.2} x2={4} y2={2.2} {...s} /><circle cx={3.1} cy={2.2} r={0.7} {...f} /></>;
+    case 'system_adjust': // Thresholds — drei gestaffelte Slider
+      body = <><line x1={-3.5} y1={-2.4} x2={3.5} y2={-2.4} {...s} /><circle cx={-1.5} cy={-2.4} r={0.8} {...f} /><line x1={-3.5} y1={0} x2={3.5} y2={0} {...s} /><circle cx={1.3} cy={0} r={0.8} {...f} /><line x1={-3.5} y1={2.4} x2={3.5} y2={2.4} {...s} /><circle cx={-0.3} cy={2.4} r={0.8} {...f} /></>;
       break;
-    case 'load_thresholds': // Blitz + Load (Load-Symbol über die horizontale Achse gespiegelt)
-      body = <>{bolt}<g transform="scale(1,-1)"><path d="M2.4 -2.8 L2.4 1.4 M0.9 -0.1 L2.4 1.7 L3.9 -0.1" {...s} /><path d="M0.7 2.6 L0.7 3.6 L4.1 3.6 L4.1 2.6" {...s} /></g></>;
+    case 'load_thresholds': // Coder — Code-Chevrons + Punkt
+      body = <><path d="M-1.4 -3 L-3.6 0 L-1.4 3" {...s} /><path d="M1.4 -3 L3.6 0 L1.4 3" {...s} /><circle cx={0} cy={0} r={0.8} {...f} /></>;
       break;
-    case 'regio_content': // Blitz + Schild (ausgewogenere Proportion)
-      body = <>{bolt}<path d="M0.6 -2.8 L4.4 -2.8 L4.4 0.6 C4.4 2.3 2.5 3.4 2.5 3.4 C2.5 3.4 0.6 2.3 0.6 0.6 Z" {...s} /></>;
+    case 'regio_content': // Telco — Antenne mit Wellen
+      body = <><line x1={0} y1={3.6} x2={0} y2={-1} {...s} /><circle cx={0} cy={-1.5} r={0.7} {...f} /><path d="M-2 -2.8 Q0 -4.4 2 -2.8" {...s} /><path d="M-3.2 -1.8 Q0 -5 3.2 -1.8" {...s} /></>;
       break;
     default:
       body = null;

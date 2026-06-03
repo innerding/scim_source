@@ -126,7 +126,7 @@ export const PANEL_REGISTRY: PanelDescriptor[] = [
   },
   {
     id: 'P02',
-    label: 'Region Thresholds',
+    label: 'Coder',
     kurzLabel: 'reg',
     group: 1,
     order: 2,
@@ -155,7 +155,7 @@ export const PANEL_REGISTRY: PanelDescriptor[] = [
   },
   {
     id: 'P04',
-    label: 'Load Thresholds',
+    label: 'Telco',
     kurzLabel: 'loa',
     group: 1,
     order: 4,

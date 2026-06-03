@@ -224,9 +224,11 @@ function faceFromActive(activeId: string): RepresentBuildFace | undefined {
 
 // Arc-Highlight: sys = P01, rou = P02, loa = P04 (Load/TelcoLoad).
 function arcFromActive(activeId: string): RepresentBuildArc | undefined {
-  if (activeId === 'P02') return 'regio_content';
+  // T2: Bögen = Transmitter-Anatomie. system_adjust(oben-links)=Thresholds→P01 ·
+  // regio_content(oben-rechts)=Telco→P04 · load_thresholds(unten)=Coder→P02.
   if (activeId === 'P01') return 'system_adjust';
-  if (activeId === 'P04') return 'load_thresholds';
+  if (activeId === 'P04') return 'regio_content';
+  if (activeId === 'P02') return 'load_thresholds';
   return undefined;
 }
 
@@ -647,9 +649,10 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
             else if (f === 'sensus_core_build') go('P11');
           }}
           onArcClick={(a) => {
+            // T2: Thresholds→P01 · Telco→P04 · Coder→P02.
             if (a === 'system_adjust') go('P01');
-            else if (a === 'regio_content') go('P02', 'input');
-            else if (a === 'load_thresholds') go('P04');
+            else if (a === 'regio_content') go('P04');
+            else if (a === 'load_thresholds') go('P02');
           }}
           onSickleClick={(s) => {
             // M6: engine_prep-Sichel → P08 (Deep-Shell); wegnetz_sampling → P09 (Origin-Capsuler).
