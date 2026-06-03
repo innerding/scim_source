@@ -19,8 +19,10 @@ export interface ShellFunction {
   id: string;
   title: string;
   subtitle?: string;
-  /** Surface-Renderer-Schlüssel. 'engine' = keine eigene Oberfläche (Vorschau bleibt leer). */
+  /** Sim-Vorschau (Device-Frame) = echter App-Screen. 'engine' = kein eigener Screen → leer. */
   surface: 'map' | 'engine' | 'placeholder';
+  /** Funktions-Visualisierung (rahmenlos) = analytische Sicht der Funktion. 'none' = keine. */
+  viz: 'colorize' | 'none';
   /** High · Design-Notizen zur Oberfläche: so kann es sein · bewährt · Fallback · Ausbau. */
   highNotes: string[];
   /** Deep · Notizen zum Produktions-Code: was er tun muss · schneller weil · Budget · erneuert weil. */
@@ -35,6 +37,7 @@ export const SHELL_FUNCTIONS: ShellFunction[] = [
     title: 'Karte',
     subtitle: 'Leaflet + OSM',
     surface: 'map',
+    viz: 'none',
     highNotes: [
       'Vollbild-Karte; endet vor der Home-Indicator-Zone (iOS-Geste durchlassen).',
       'Fallback: keine Tiles erreichbar → heller Hintergrund + Boundary-Umriss.',
@@ -66,6 +69,7 @@ new ResizeObserver(() => map.invalidateSize()).observe(el);`,
     title: 'Colorize',
     subtitle: 'Last → Farbe (Engine)',
     surface: 'engine',
+    viz: 'colorize',
     highNotes: [
       'Durchgehender Gradient ruhig → busy; Schwellen NUR als Marker, nie geschnitten (§2a).',
       'Default-Palette green_violet (stetig); umschaltbar heat / calm.',
