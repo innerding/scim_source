@@ -58,6 +58,7 @@ import { getSimHour, setSimHour, subscribeSimClock } from '../sensus/simClock';
 import { evaluateGate, ANTHEM_REFRESH_GAP_MIN, type HeldSnapshot } from '../sensus/anthemGate';
 import { ANTHEM_PERIOD_MIN } from '../sensus/packageContract';
 import { AnthemCycleBadge } from './AnthemCycleInfo';
+import { ShellRunBadge } from './ShellRunInfo';
 import { publishOriginMesh, anthemPublishConfigured, knockPresence, anthemReadConfigured } from '../../runtime/anthemApi';
 import { resampleNet } from '../wegnetz/netResample';
 
@@ -573,6 +574,7 @@ function AnthemGateView() {
         }}>
           P08 · Deep-Shell · Refresh-Gate (app-seitig)
         </div>
+        <ShellRunBadge compact />
         <AnthemCycleBadge />
       </div>
       <p style={{ fontSize: 12, color: '#4a5568', lineHeight: 1.55, margin: '2px 0 12px' }}>
@@ -909,8 +911,11 @@ function ShellIdView() {
   const ring = (geo?.polygon ?? []) as [number, number][];
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 600 }}>
-      <div style={{ display: 'inline-block', padding: '2px 8px', marginBottom: 8, fontSize: 10, fontFamily: 'monospace', color: '#2b6cb0', background: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: 4 }}>
-        P11 · Shell-ID · Stamping
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+        <div style={{ display: 'inline-block', padding: '2px 8px', fontSize: 10, fontFamily: 'monospace', color: '#2b6cb0', background: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: 4 }}>
+          P11 · Shell-ID · Stamping
+        </div>
+        <ShellRunBadge compact />
       </div>
       <p style={{ fontSize: 12.5, color: '#2d3748', lineHeight: 1.6, margin: '0 0 12px' }}>
         Die Shell ist <strong>generisch</strong>. Beim Publishing wird ihr eine <strong>Identität gestempelt</strong> =

@@ -9,6 +9,7 @@
 import { useState, type ReactNode } from 'react';
 import { SHELL_FUNCTIONS, TARGET_PLATFORMS, type ShellFunction, type TargetPlatform } from '../../shell-studio/shellStudio';
 import { useWorkspaceNav } from '../workspaceNav';
+import { ShellRunBadge } from '../ShellRunInfo';
 import { colorize } from '../../sensus/loadColour';
 import { ColourGradientBar } from './ColourGradientBar';
 
@@ -201,11 +202,14 @@ export default function ShellStudio() {
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div style={{ flex: '0 0 auto', marginBottom: 8 }}>
-        <div style={{
-          display: 'inline-block', padding: '2px 8px', fontSize: 10, fontFamily: 'monospace',
-          color: '#2b6cb0', background: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: 4,
-        }}>
-          Shell-Studio · <span style={{ color: '#2b6cb0' }}>SIM = Oberfläche + Code</span> | <span style={{ color: '#805ad5' }}>Produktion = Ziel-App-Code (generiert)</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <div style={{
+            display: 'inline-block', padding: '2px 8px', fontSize: 10, fontFamily: 'monospace',
+            color: '#2b6cb0', background: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: 4,
+          }}>
+            Shell-Studio · <span style={{ color: '#2b6cb0' }}>SIM = Oberfläche + Code</span> | <span style={{ color: '#805ad5' }}>Produktion = Ziel-App-Code (generiert)</span>
+          </div>
+          <ShellRunBadge />
         </div>
         <p style={{ fontSize: 11.5, color: '#718096', lineHeight: 1.5, margin: '6px 0 0', maxWidth: 640 }}>
           Was SCIM3 in die Ziel-App bringt — je Funktion ein Block. Links die <strong>SIM</strong> (Vorschau + der Code,
