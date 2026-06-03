@@ -8,6 +8,7 @@
  *   DELETE /api/packages/:id             — Version archivieren
  *   GET    /api/packages/active/:region  — aktive Version einer Region
  *   PUT    /api/origin/:repId/net        — Origin-Netz veröffentlichen (für Anthem-Compute)
+ *   GET    /api/origin/:repId            — Origin-Schicht-Status (read-only): published, stretches, bytes, uploadedAt
  *   POST   /api/anthem/:repId/presence   — App klopft: Presence-Session + erster Snapshot
  *   GET    /api/anthem/:repId/presence   — Presence-Status (read-only): present, firstSeen, lastSeen, durationMin
  *   GET    /api/anthem/:repId            — Worker rechnet aktuellen Anthem-Snapshot (presence-gegated)
@@ -407,10 +408,35 @@ export default {
       const stretches = (body as { stretches?: unknown })?.stretches;
       if (!Array.isArray(stretches)) return err('Expected ResampledNet with stretches[]', 422);
 
-      await env.PACKAGES.put(`origin/${repId}/net.json`, JSON.stringify(body), {
+      const netJson = JSON.stringify(body);
+      await env.PACKAGES.put(`origin/${repId}/net.json`, netJson, {
         httpMetadata: { contentType: 'application/json', cacheControl: 'public, max-age=3600' },
       });
-      return json({ ok: true, repId, stretches: stretches.length });
+      // Kleines Meta-Objekt für den Publishing-Monitor (V03 t2): ohne das ganze Netz
+      // zu laden, weiß der Monitor „veröffentlicht · N Strecken · Größe · wann".
+      const meta = { stretches: stretches.length, bytes: netJson.length, uploadedAt: new Date().toISOString() };
+      await env.PACKAGES.put(`origin/${repId}/meta.json`, JSON.stringify(meta), {
+        httpMetadata: { contentType: 'application/json', cacheControl: 'no-store' },
+      });
+      return json({ ok: true, repId, ...meta });
+    }
+
+    // ── GET /api/origin/:repId ───────────────────────────────────────────────
+    // Read-only fürs Publishing-Monitor (V03 t2): ist die Origin-/Anthem-Schicht
+    // veröffentlicht (N Strecken · Größe · wann)? Kein Key nötig.
+    if (request.method === 'GET' && pathname.match(/^\/api\/origin\/[^/]+$/)) {
+      const repId = pathname.split('/')[3];
+      if (!KEY_PATTERN.test(repId)) return err('Invalid repId', 422);
+      const anthemEndpoint = `/api/anthem/${repId}`;
+      const metaObj = await env.PACKAGES.get(`origin/${repId}/meta.json`);
+      if (metaObj) {
+        const m = await metaObj.json() as { stretches: number; bytes: number; uploadedAt: string };
+        return json({ repId, published: true, ...m, anthemEndpoint });
+      }
+      // Fallback: Netz da, aber (älter) ohne meta → Größe via head.
+      const head = await env.PACKAGES.head(`origin/${repId}/net.json`);
+      if (head) return json({ repId, published: true, stretches: null, bytes: head.size, uploadedAt: null, anthemEndpoint });
+      return json({ repId, published: false, stretches: null, bytes: null, uploadedAt: null, anthemEndpoint });
     }
 
     // ── POST /api/anthem/:repId/presence ─────────────────────────────────────

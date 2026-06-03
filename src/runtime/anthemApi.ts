@@ -28,6 +28,22 @@ export async function knockPresence(repId: string, t?: number) {
   return res.json() as Promise<{ ok: boolean; repId: string; lastSeen: string; snapshot: unknown }>;
 }
 
+export interface OriginMeta {
+  repId: string;
+  published: boolean;
+  stretches: number | null;
+  bytes: number | null;
+  uploadedAt: string | null;
+  anthemEndpoint: string;
+}
+
+/** Origin-/Anthem-Schicht-Status lesen (read-only) — für V03 t2 (Active-Monitor). */
+export async function fetchOriginMeta(repId: string): Promise<OriginMeta> {
+  const res = await fetch(`${WORKER_URL}/api/origin/${repId}`);
+  if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
+  return res.json() as Promise<OriginMeta>;
+}
+
 export interface PresenceStatus {
   repId: string;
   present: boolean;

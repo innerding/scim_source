@@ -4,8 +4,64 @@ import { REGION_MAP } from './V01PackagesPanel';
 import packageOpenIcon from '../../../assets/Package-open.svg';
 import packageIcon     from '../../../assets/Package.svg';
 import type { PackageEntry } from './usePackagesApi';
+import { fetchOriginMeta, fetchPresence, type OriginMeta, type PresenceStatus } from '../../../runtime/anthemApi';
 
 const WORKER_URL = import.meta.env.VITE_WORKER_URL as string | undefined;
+
+const fmtKB = (b: number | null) => (b == null ? '' : `${(b / 1024).toFixed(1)} KB`);
+const fmtUploaded = (iso: string | null) => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+
+// Die ANTHEM-/ORIGIN-SCHICHT je Rep: was live ausgespielt wird (≠ Bundle-Paket).
+// Origin-Netz veröffentlicht? · presence (live). Read-only Worker-Poll.
+function AnthemLayerLine({ repId }: { repId: string }) {
+  const [origin, setOrigin] = useState<OriginMeta | null>(null);
+  const [presence, setPresence] = useState<PresenceStatus | null>(null);
+  const [errored, setErrored] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    const tick = () => {
+      Promise.allSettled([fetchOriginMeta(repId), fetchPresence(repId)]).then(([o, p]) => {
+        if (!alive) return;
+        if (o.status === 'fulfilled') { setOrigin(o.value); setErrored(false); } else setErrored(true);
+        if (p.status === 'fulfilled') setPresence(p.value);
+      });
+    };
+    tick();
+    const id = setInterval(tick, 15000);
+    return () => { alive = false; clearInterval(id); };
+  }, [repId]);
+
+  const published = origin?.published ?? false;
+  const present = presence?.present ?? false;
+
+  return (
+    <div style={{
+      fontSize: 10.5, fontFamily: 'ui-monospace, Menlo, monospace', color: '#4a5568',
+      borderTop: '1px dashed #e2e8f0', paddingTop: 6, marginTop: 2, lineHeight: 1.7,
+    }}>
+      <span style={{ color: '#a0aec0' }}>Anthem-Schicht: </span>
+      {errored && !origin ? (
+        <span style={{ color: '#a0aec0' }}>Worker nicht erreichbar</span>
+      ) : (
+        <>
+          <span style={{ color: published ? '#2f855a' : '#a0aec0', fontWeight: 700 }}>{published ? '●' : '○'}</span>{' '}
+          {published
+            ? <>Origin veröffentlicht{origin?.stretches != null ? ` · ${origin.stretches} Strecken` : ''}{origin?.bytes != null ? ` · ${fmtKB(origin.bytes)}` : ''}{origin?.uploadedAt ? ` · ${fmtUploaded(origin.uploadedAt)}` : ''}</>
+            : <span style={{ color: '#a0aec0' }}>Origin nicht veröffentlicht</span>}
+          {' · '}
+          <span style={{ color: present ? '#2f855a' : '#a0aec0' }}>{present ? '● presence' : '○ kalt'}</span>
+          {origin?.anthemEndpoint && <span style={{ color: '#a0aec0' }}> · {origin.anthemEndpoint}</span>}
+        </>
+      )}
+    </div>
+  );
+}
 
 function useActiveForRepresentation(representationId: string) {
   const [pkg, setPkg]         = useState<PackageEntry | null>(null);
@@ -110,9 +166,12 @@ function RepresentationRow({
         </div>
       </div>
 
-      {loading && <div style={{ fontSize: 12, color: '#a0aec0' }}>…</div>}
-      {!loading && !pkg && <div style={{ fontSize: 12, color: '#a0aec0' }}>Kein aktives Paket</div>}
-      {!loading && pkg && <QrCell url={pkg.cdn_url} />}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0 }}>
+        {loading && <div style={{ fontSize: 12, color: '#a0aec0' }}>…</div>}
+        {!loading && !pkg && <div style={{ fontSize: 12, color: '#a0aec0' }}>Kein aktives Paket</div>}
+        {!loading && pkg && <QrCell url={pkg.cdn_url} />}
+        <AnthemLayerLine repId={rep.id} />
+      </div>
     </div>
   );
 }
@@ -133,7 +192,7 @@ export default function V03ActiveMonitorPanel() {
         <div>
           <div style={{ fontSize: 14, fontWeight: 600, color: '#1a365d' }}>Aktiv-Monitor</div>
           <div style={{ fontSize: 11, color: '#718096' }}>
-            Aktive Pakete je Representation — CDN-URL und QR-Code
+            Je Representation: aktives Bundle-Paket (CDN/QR) <strong>+ Anthem-Schicht</strong> (live ausgespielt: Origin + presence)
           </div>
         </div>
       </div>
