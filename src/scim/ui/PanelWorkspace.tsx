@@ -46,7 +46,8 @@ import type { OriginManifest } from '../sensus/packageContract';
 import type { OriginPackage } from '../sensus/originPackage';
 import { buildAnthemSnapshot } from '../sensus/anthemEncoder';
 import { simSegmentLoads, normalizeLoads } from '../sensus/anthemSim';
-import { getSimHour, subscribeSimClock } from '../sensus/simClock';
+import { getSimHour, setSimHour, subscribeSimClock } from '../sensus/simClock';
+import { evaluateGate, ANTHEM_STALE_AFTER_MIN } from '../sensus/anthemGate';
 import { resampleNet } from '../wegnetz/netResample';
 
 interface Props {
@@ -470,6 +471,110 @@ function CoderView() {
   );
 }
 
+// P08 · Deep-Shell · Refresh-Gate — die app-seitige Selbst-Drosselung. Macht die
+// Engine (anthemGate) sichtbar, BEVOR sie untergeht: nicht jede Interaktion löst eine
+// Anforderung aus; eine neue ist erst erlaubt, wenn der Snapshot stale ist (≥ 5,1 Min).
+function AnthemGateView() {
+  const [tick, setTick] = useState(0);
+  useEffect(() => subscribeSimClock(() => setTick((c) => c + 1)), []);
+  const [lastSnapshotMin, setLastSnapshotMin] = useState<number | null>(null);
+  const [interactions, setInteractions] = useState(0);
+  const [requests, setRequests] = useState(0);
+  const [log, setLog] = useState<string[]>([]);
+
+  const nowMin = getSimHour() * 60;
+  const live = evaluateGate({ lastSnapshotMin }, nowMin);
+  const fmtClock = (m: number) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(Math.round(m % 60)).padStart(2, '0')}`;
+  const fmtMin = (m: number) => `${m.toFixed(1)} min`;
+  const push = (line: string) => setLog((l) => [line, ...l].slice(0, 6));
+
+  // Eine beliebige User-Interaktion VERSUCHT eine Anforderung — das Gate entscheidet.
+  const onInteract = () => {
+    const n = getSimHour() * 60;
+    const dec = evaluateGate({ lastSnapshotMin }, n);
+    setInteractions((i) => i + 1);
+    if (dec.allowed) {
+      setLastSnapshotMin(n); // Anforderung raus → frischer Snapshot empfangen (t = jetzt)
+      setRequests((r) => r + 1);
+      push(`✅ ${fmtClock(n)} · erlaubt (${dec.reason}) → Anthem angefordert`);
+    } else {
+      push(`⛔ ${fmtClock(n)} · blockiert · frisch (Alter ${fmtMin(dec.ageMin ?? 0)}) · nächste in ${fmtMin(dec.nextEligibleInMin)}`);
+    }
+  };
+  // Sim-Zeit selbst vorspulen (sonst über den Time-Turbo in Telco/P04).
+  const advance = () => { const nh = getSimHour() + 5 / 60; setSimHour(nh > 20 ? 6 : nh); };
+
+  const coalesced = interactions - requests;
+  void tick;
+  return (
+    <div style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 600 }}>
+      <div style={{
+        display: 'inline-block', padding: '2px 8px', marginBottom: 8, fontSize: 10, fontFamily: 'monospace',
+        color: '#2b6cb0', background: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: 4,
+      }}>
+        P08 · Deep-Shell · Refresh-Gate (app-seitig)
+      </div>
+      <p style={{ fontSize: 12, color: '#4a5568', lineHeight: 1.55, margin: '2px 0 12px' }}>
+        Die App kennt das <strong>Alter</strong> des Snapshots (aus <code>t</code>) und <strong>drosselt sich
+        selbst</strong>: nicht jede Interaktion fordert an — eine neue Anforderung ist erst erlaubt, wenn der
+        Snapshot <strong>stale</strong> ist (Alter ≥ <strong>{ANTHEM_STALE_AFTER_MIN} Min</strong>, knapp über dem
+        5-Min-Producer-Takt). Ein Schwung Interaktionen → höchstens <strong>eine</strong> Anforderung pro Fenster.
+      </p>
+
+      {/* Live-Zustand des Gates. */}
+      <div style={{
+        border: `1px solid ${live.allowed ? '#9ae6b4' : '#fbd38d'}`,
+        background: live.allowed ? '#f0fff4' : '#fffaf0', borderRadius: 8, padding: '10px 12px', marginBottom: 12,
+      }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: live.allowed ? '#22543d' : '#7b341e' }}>
+          {lastSnapshotMin == null ? '○ kein Snapshot gehalten — erster Bezug frei'
+            : live.allowed ? '● stale → Anforderung erlaubt'
+            : '● frisch → Anforderung blockiert'}
+        </div>
+        <div style={{ fontSize: 11.5, fontFamily: 'ui-monospace, Menlo, monospace', color: '#4a5568', lineHeight: 1.7, marginTop: 6 }}>
+          <div>sim-zeit: {fmtClock(nowMin)}{lastSnapshotMin != null ? ` · snapshot-t: ${fmtClock(lastSnapshotMin)}` : ''}</div>
+          <div>alter: {live.ageMin == null ? '—' : fmtMin(live.ageMin)} · schwelle: {ANTHEM_STALE_AFTER_MIN} min</div>
+          <div>restzeit bis erlaubt: <strong>{live.nextEligibleInMin === 0 ? 'jetzt' : fmtMin(live.nextEligibleInMin)}</strong></div>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+        <button onClick={onInteract} style={{
+          fontSize: 12, padding: '5px 12px', borderRadius: 4, cursor: 'pointer', fontWeight: 600,
+          border: '1px solid #4299e1', background: '#ebf8ff', color: '#2b6cb0',
+        }}>User-Interaktion (z. B. Karte bewegen)</button>
+        <button onClick={advance} style={{
+          fontSize: 12, padding: '5px 12px', borderRadius: 4, cursor: 'pointer',
+          border: '1px solid #cbd5e0', background: '#f7fafc', color: '#4a5568',
+        }}>⏩ +5 Sim-Min</button>
+      </div>
+
+      <div style={{ fontSize: 11.5, fontFamily: 'ui-monospace, Menlo, monospace', color: '#4a5568', marginBottom: 12 }}>
+        Interaktionen: <strong>{interactions}</strong> · Anforderungen: <strong style={{ color: '#2f855a' }}>{requests}</strong> ·
+        gebündelt (geblockt): <strong style={{ color: '#c05621' }}>{coalesced}</strong>
+        {interactions > 0 && <span style={{ color: '#a0aec0' }}> ({Math.round((requests / interactions) * 100)} % durchgelassen)</span>}
+      </div>
+
+      {log.length > 0 && (
+        <div style={{ fontSize: 11, fontFamily: 'ui-monospace, Menlo, monospace', color: '#718096', lineHeight: 1.7, marginBottom: 12 }}>
+          {log.map((l, i) => <div key={i} style={{ opacity: 1 - i * 0.12 }}>{l}</div>)}
+        </div>
+      )}
+
+      <div style={{ fontSize: 11, color: '#718096', lineHeight: 1.6, borderTop: '1px solid #e2e8f0', paddingTop: 10 }}>
+        <strong>Warum hier?</strong> Das Gate ist <strong>Consumer-Sache</strong> (Shell-Engine, app-seitig) — der
+        Transmitter weiß nichts von Interaktionen, also limitiert sich die App selbst.
+        <div style={{ marginTop: 6, fontStyle: 'italic' }}>
+          Stand: <strong style={{ color: '#2f855a' }}>funktional</strong> = die Drossel-Logik (<code>evaluateGate</code>,
+          Alter aus <code>t</code>). <strong style={{ color: '#c05621' }}>Noch offen</strong> = an den echten
+          Anthem-Bezug (Worker <code>/api/anthem/:repId</code>) hängen → Phase 2b. Sim-Schritte sind 5 Min grob; in
+          realer (kontinuierlicher) Zeit greift die Schwelle bei {ANTHEM_STALE_AFTER_MIN} Min.
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function OriginCapsulerView() {
   const rep = useAuftraggeberRep();
   const { setInspectorAsset } = useRepresentationContext();
@@ -686,6 +791,8 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
   const panel = PANEL_REGISTRY.find((p) => p.id === activeId);
   if (!panel) return <div style={{ padding: 20, color: '#e53e3e' }}>Panel nicht gefunden: {activeId}</div>;
 
+  // P08 (Deep-Shell) t5: Refresh-Gate = app-seitige Selbst-Drosselung (anthemGate).
+  if (panel.id === 'P08' && activeTab === 't5') return <AnthemGateView />;
   // P08 (Deep-Shell): vier Engine-Prep-Artefakte (POI/Last/Mask/Move). M2: von P09.
   if (panel.id === 'P08') {
     const d = P09_DESCRIPTORS.find((x) => x.tabId === activeTab);

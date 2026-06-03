@@ -243,6 +243,7 @@ export const PANEL_REGISTRY: PanelDescriptor[] = [
       { id: 't2', label: 'Last', icon: '≋' },
       { id: 't3', label: 'Mask', icon: '⛉' },
       { id: 't4', label: 'Move', icon: '↝' },
+      { id: 't5', label: 'Refresh-Gate', icon: '⏱' },
     ],
   },
 
