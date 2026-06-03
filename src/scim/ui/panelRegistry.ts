@@ -418,20 +418,20 @@ export interface VersionenDescriptor {
 export const VERSIONEN_REGISTRY: VersionenDescriptor[] = [
   {
     kind: 'versionen', id: 'V01', icon: '⬡',
-    label: 'Pakete',
-    shortDescription: 'Alle veröffentlichten Pakete — Status, Version, Region',
+    label: 'All-Publications',
+    shortDescription: 'Versions-Bibliothek der ausgelieferten Maschine — alle veröffentlichten Pakete',
     tabs: [{ id: 'input', label: 'Übersicht', icon: 'ℹ' }],
   },
   {
     kind: 'versionen', id: 'V02', icon: '◫',
-    label: 'Region-Detail',
-    shortDescription: 'Versionshistorie und Aktivierung je Region',
+    label: 'Regions & Representations',
+    shortDescription: 'Regionale Dashboards (Mond-Extensions) — Versionshistorie/Aktivierung je Region',
     tabs: [{ id: 'input', label: 'Übersicht', icon: 'ℹ' }],
   },
   {
     kind: 'versionen', id: 'V03', icon: '◈',
-    label: 'Aktiv-Monitor',
-    shortDescription: 'Aktive Pakete je Region — CDN-URL und QR-Code',
+    label: 'Publishing-Monitor',
+    shortDescription: 'Beobachter der ausgelieferten Maschine — laufen die Pakete auf den User-Devices · CDN/QR',
     tabs: [{ id: 'input', label: 'Übersicht', icon: 'ℹ' }],
   },
 ];

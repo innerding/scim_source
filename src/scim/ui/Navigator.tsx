@@ -92,13 +92,16 @@ function NavItem({
 // Reihenfolge von oben (entsprechend den Controls): Mond → Transmitter →
 // Komposit-Tetraeder → Substrat. Dünne Zwischen-Labels als Trenner.
 const COSMO_GROUPS: { label: string; ids: string[]; sub?: string }[] = [
-  { label: 'Mond', ids: ['R01', 'V01'], sub: 'url: diesenpark.com' },
+  // Hexagon=V03 (Publishing-Monitor) · Scheibe=V01 (All-Publications) · Extensions=V02 (Regions).
+  { label: 'Mond', ids: ['V03', 'V01', 'V02'], sub: 'url: diesenpark.com' },
   { label: 'Transmitter', ids: ['P06', 'P01', 'P04', 'P02'] },
   { label: 'Komposit-Tetraeder', ids: ['P11', 'P07', 'P08', 'P09', 'workspace', 'geometry_editor', 'catalog'] },
   { label: 'Substrat', ids: ['ai_interface', 'P05', 'system'] },
+  // Grund (Brocken/Meta-Space): R01 ist hierher gesunken (klickbarer Brocken).
+  { label: 'Grund', ids: ['R01'] },
 ];
 // Der Rest — was bislang keinen Platz fand (flach, mit Icons).
-const REST_IDS = ['P03', 'P10', 'P12', 'P13', 'P14', 'R02', 'R03', 'R04', 'R05', 'R06', 'R07', 'R08', 'V02', 'V03'];
+const REST_IDS = ['P03', 'P10', 'P12', 'P13', 'P14', 'R02', 'R03', 'R04', 'R05', 'R06', 'R07', 'R08'];
 
 function descById(id: string): { id: string; icon: string; label: string } | null {
   const p = PANEL_REGISTRY.find((x) => x.id === id);
@@ -566,20 +569,19 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
               onClick={() => go('V01')}
               style={{ pointerEvents: 'fill', cursor: 'pointer' }}
             >
-              <title>Mond — R-Bibliothek (V01 Pakete)</title>
+              <title>Mond — All-Publications (V01)</title>
             </path>
-            {/* Hex-Polygon (pointy-top), r=9.5625 = 11.25 * 0.85,
-                Mittelpunkt (52.95, 30.35) — dort wo der visuelle Hex sitzt. */}
+            {/* Hex-Polygon — der Beobachter der ausgelieferten Maschine. */}
             <polygon
               points="52.95,20.79 61.23,25.57 61.23,35.13 52.95,39.91 44.67,35.13 44.67,25.57"
-              fill={activeId === 'R01' ? '#2b6cb0' : 'transparent'}
-              stroke={activeId === 'R01' ? '#63b3ed' : undefined}
-              strokeWidth={activeId === 'R01' ? 1.0 : undefined}
-              className={activeId === 'R01' ? 'scim-active-pulse' : undefined}
-              onClick={() => go('R01')}
+              fill={activeId === 'V03' ? '#2b6cb0' : 'transparent'}
+              stroke={activeId === 'V03' ? '#63b3ed' : undefined}
+              strokeWidth={activeId === 'V03' ? 1.0 : undefined}
+              className={activeId === 'V03' ? 'scim-active-pulse' : undefined}
+              onClick={() => go('V03')}
               style={{ pointerEvents: 'fill', cursor: 'pointer' }}
             >
-              <title>Hex — App-Shell + Engine (R01 Runtime Shell)</title>
+              <title>Hex — Publishing-Monitor (V03)</title>
             </polygon>
             {/* Mond-Auswuechse — vier echte Blob-Pfade direkt aus
                 logo-base-naked.svg uebernommen. Hitbox folgt exakt der
@@ -697,13 +699,13 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
 
       {/* Meta-Space — grobe Felsbrocken (Mondlandschaft) unter dem Substrat-Tetraeder.
           Echtes Flow-Element: nimmt Platz und schiebt Cosmo-Controls + alles darunter
-          nach unten. marginTop:-20 tuckt die Brocken unter die Substrat-Spitze;
-          zIndex:2 lässt das Substrat-Drahtgitter über die Brocken-Köpfe malen. */}
+          nach unten. zIndex:5 (über dem Substrat-Catcher), damit klickbare Brocken
+          erreichbar sind; Wrapper pointerEvents:none, nur klickbare Brocken fangen. */}
       <div style={{
         padding: '0 18px', flexShrink: 0, marginTop: -20,
-        position: 'relative', zIndex: 2, pointerEvents: 'none',
+        position: 'relative', zIndex: 5, pointerEvents: 'none',
       }}>
-        <NavMetaSpace />
+        <NavMetaSpace onPick={go} activeId={activeId} />
       </div>
 
       {/* Manual + Reader sitzen am Fuss der Kosmologie — unter der gesamten
