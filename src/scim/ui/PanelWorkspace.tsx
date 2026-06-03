@@ -824,10 +824,14 @@ function OriginCapsulerView({ tab }: { tab: TabId }) {
           <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
             <div style={{ flex: '0 0 auto' }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: '#1a365d', marginBottom: 4 }}>cap origin-asset-set <span style={{ fontSize: 10.5, fontWeight: 400, color: '#a0aec0' }}>· L2 · Identitäts-Assets (Ghosts)</span></div>
-              <p style={{ fontSize: 12, color: '#4a5568', lineHeight: 1.55, margin: '0 0 10px', maxWidth: 560 }}>
-                Die Identitäts-Icons der Representation — als <strong>Ghosts</strong> aus dem Katalog (Konvention
-                <code> rep-&lt;catalog&gt;</code> / <code>reg-&lt;region&gt;</code>). Bezug NUR über den Capsuler, nie direkt.
+              <p style={{ fontSize: 12, color: '#4a5568', lineHeight: 1.55, margin: '0 0 6px', maxWidth: 560 }}>
+                Die Identitäts-Icons der Representation — <strong>automatisch einfangende Ghosts</strong>, per Konvention
+                aus dem Katalog aufgelöst (kein manuelles Anlegen). Bezug NUR über den Capsuler, nie direkt.
               </p>
+              <ul style={{ margin: '0 0 10px', paddingLeft: 18, fontSize: 11.5, color: '#718096', lineHeight: 1.5 }}>
+                <li><code>rep-&lt;catalog&gt;</code> = <strong>Representations-Cluster-Ghost-Automat</strong> — fängt alle Cluster + freien POIs der Rep ein.</li>
+                <li><code>reg-&lt;region&gt;</code> = <strong>regionaler Cluster-Ghost-Automat</strong> — fängt alle rep-Ghosts der Region ein.</li>
+              </ul>
             </div>
             <div style={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 12, paddingTop: 4 }}>
               {/* rep-ghost */}
