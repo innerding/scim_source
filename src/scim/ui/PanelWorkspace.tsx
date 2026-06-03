@@ -627,6 +627,26 @@ function AnthemGateView() {
   );
 }
 
+// Eine Identitäts-Ghost-Zeile (rep-/reg-ghost) im asset-set-Cap.
+function GhostRow({ kind, id, svg, caption }: { kind: string; id: string; svg: string | null; caption: string }) {
+  const found = !!svg;
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 10px', border: '1px solid #e2e8f0', borderRadius: 8, background: found ? '#fff' : '#f7fafc' }}>
+      <div style={{ width: 48, height: 48, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #e2e8f0', borderRadius: 8, background: '#fff', overflow: 'hidden' }}>
+        {found ? <div style={{ width: 44, height: 44 }} dangerouslySetInnerHTML={{ __html: svg as string }} /> : <span style={{ fontSize: 18, color: '#cbd5e0' }}>○</span>}
+      </div>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontSize: 12.5, fontWeight: 700, color: found ? '#2d3748' : '#a0aec0' }}>
+          {kind}{id ? <> · <code style={{ fontSize: 11, color: '#718096' }}>{id}</code></> : null}
+        </div>
+        <div style={{ fontSize: 11, color: found ? '#718096' : '#c05621' }}>
+          {found ? caption : (id ? `Icon „${id}" noch nicht im Katalog` : caption)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // P09 · Origin-Capsuler — die committete Representation in Origin-Partikel („Caps")
 // gekapselt; ein Tab = ein Cap (boundary · mesh · asset-set · poi-set). Prinzip:
 // alles, was zur Representation gehört, kommt AUS dem Origin.
@@ -657,10 +677,27 @@ function OriginCapsulerView({ tab }: { tab: TabId }) {
     const ring = geo?.polygon ?? [];
     const cat = rep.catalog_id ? parseCatalogById(rep.catalog_id) : null;
     const pois = cat?.pois ?? [];
-    const iconIds = new Set<string>();
-    for (const p of pois) { const { iconId } = resolveIcon(p.icon); if (iconById(iconId)) iconIds.add(iconId); }
-    const icons = Array.from(iconIds).map((id) => ({ id, svg: iconById(id)?.svg_cleaned ?? '' }));
-    return { geo, ring, pois, icons };
+    const clusters = cat?.clusters ?? [];
+    const freePois = pois.filter((p) => !p.cluster);
+
+    // rep-ghost / reg-ghost per Konvention aus dem Katalog (Identitäts-Assets):
+    //   rep-ghost-Icon = rep-<catalog_id> · reg-ghost-Icon = reg-<region-slug>.
+    // „einfangen": rep = alle Cluster + freie POIs · reg = alle Reps der Region.
+    const regionSlug = geo?.region ? slugify(geo.region) : '';
+    const repGhostId = rep.catalog_id ? `rep-${rep.catalog_id}` : '';
+    const repGhost = repGhostId ? iconById(repGhostId) : undefined;
+    const regGhostId = regionSlug ? `reg-${regionSlug}` : '';
+    const regGhost = regGhostId ? iconById(regGhostId) : undefined;
+    const regReps = regionSlug
+      ? REPRESENTATIONS.filter((r) => slugify(geometryById(r.geometry_id)?.region ?? '') === regionSlug)
+      : [];
+
+    return {
+      geo, ring, pois, clusters, freePois,
+      repGhost: repGhost ? { id: repGhostId, svg: repGhost.svg_cleaned } : null,
+      regGhost: regGhost ? { id: regGhostId, svg: regGhost.svg_cleaned, region: geo?.region ?? '' } : null,
+      repGhostId, regGhostId, regReps,
+    };
   }, [rep.id]);
 
   return (
@@ -775,21 +812,23 @@ function OriginCapsulerView({ tab }: { tab: TabId }) {
         {tab === 't3' && (
           <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
             <div style={{ flex: '0 0 auto' }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#1a365d', marginBottom: 4 }}>cap origin-asset-set <span style={{ fontSize: 10.5, fontWeight: 400, color: '#a0aec0' }}>· L2 · eingebettete Icons</span></div>
-              <p style={{ fontSize: 12, color: '#4a5568', lineHeight: 1.55, margin: '0 0 8px', maxWidth: 560 }}>
-                Die distinkten Icon-Assets, die die POIs dieser Representation verwenden (SVG, bereinigt) — was die App
-                zur Darstellung der Marker braucht. Inhalt: <strong>{content.icons.length}</strong> Icons.
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#1a365d', marginBottom: 4 }}>cap origin-asset-set <span style={{ fontSize: 10.5, fontWeight: 400, color: '#a0aec0' }}>· L2 · Identitäts-Assets (Ghosts)</span></div>
+              <p style={{ fontSize: 12, color: '#4a5568', lineHeight: 1.55, margin: '0 0 10px', maxWidth: 560 }}>
+                Die Identitäts-Icons der Representation — als <strong>Ghosts</strong> aus dem Katalog (Konvention
+                <code> rep-&lt;catalog&gt;</code> / <code>reg-&lt;region&gt;</code>). Bezug NUR über den Capsuler, nie direkt.
               </p>
             </div>
-            <div style={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto', display: 'flex', flexWrap: 'wrap', gap: 10, alignContent: 'flex-start', paddingTop: 4 }}>
-              {content.icons.length === 0 && <span style={{ fontSize: 11.5, color: '#a0aec0', fontStyle: 'italic' }}>Kein Katalog/keine Icons an dieser Rep.</span>}
-              {content.icons.map((ic) => (
-                <div key={ic.id} title={ic.id} style={{ width: 76, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                  <div style={{ width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #e2e8f0', borderRadius: 6, background: '#fff', overflow: 'hidden' }}
-                    dangerouslySetInnerHTML={{ __html: ic.svg }} />
-                  <span style={{ fontSize: 9, color: '#718096', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%', whiteSpace: 'nowrap' }}>{ic.id}</span>
-                </div>
-              ))}
+            <div style={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 12, paddingTop: 4 }}>
+              {/* rep-ghost */}
+              <GhostRow
+                kind="rep-ghost" id={content.repGhostId} svg={content.repGhost?.svg ?? null}
+                caption={`fängt ein: ${content.clusters.length} Cluster + ${content.freePois.length} freie POIs`}
+              />
+              {/* reg-ghost */}
+              <GhostRow
+                kind="reg-ghost" id={content.regGhostId} svg={content.regGhost?.svg ?? null}
+                caption={content.regGhost ? `Region „${content.regGhost.region}" · fängt ein: ${content.regReps.length} Rep-Ghosts` : 'keine Region an dieser Rep'}
+              />
             </div>
             <div style={{ flex: '0 0 auto', fontSize: 10.5, color: '#a0aec0', fontStyle: 'italic', borderTop: '1px solid #e2e8f0', paddingTop: 6, marginTop: 6 }}>
               Cap — Publishing folgt: <code>origin/{rep.id}/asset-set.json</code>. Noch nicht gebaut.

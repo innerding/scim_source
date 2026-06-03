@@ -2,6 +2,7 @@
   "type": "Feature",
   "properties": {
     "name": "Lichtenberg",
+    "region": "Böhmerwald",
     "source": "Workspace-Commit (F7)",
     "drawn_at": "2026-05-31"
   },
