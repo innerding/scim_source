@@ -10,6 +10,8 @@ import { useState, type ReactNode } from 'react';
 import { SHELL_FUNCTIONS, TARGET_PLATFORMS, type ShellFunction, type TargetPlatform } from '../../shell-studio/shellStudio';
 import { useWorkspaceNav } from '../workspaceNav';
 import DeepShellMap from './DeepShellMap';
+import { colorize } from '../../sensus/loadColour';
+import { ColourGradientBar } from './ColourGradientBar';
 
 const FRAME_H = 300;
 
@@ -47,8 +49,29 @@ function Notes({ title, items, tone }: { title: string; items: string[]; tone: s
   );
 }
 
+// Surface „colorize" — die Farb-Schlüssel-Vorschau (Last → Farbe), echte colorize-Fn.
+function ColorizeSurface() {
+  const samples = [0.12, 0.38, 0.62, 0.88];
+  return (
+    <div style={{ padding: 12, height: '100%', display: 'flex', flexDirection: 'column', gap: 8, fontFamily: 'system-ui, sans-serif' }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: '#1a365d' }}>Auslastung</div>
+      <ColourGradientBar palette="green_violet" height={16} />
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: '#a0aec0' }}><span>ruhig</span><span>busy</span></div>
+      <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {samples.map((l, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ flex: 1, height: 5, borderRadius: 3, background: colorize(l) }} />
+            <span style={{ fontSize: 9, color: '#718096', fontFamily: 'ui-monospace, Menlo, monospace' }}>{l.toFixed(2)}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function Surface({ fn }: { fn: ShellFunction }) {
   if (fn.surface === 'map') return <DeepShellMap />;
+  if (fn.surface === 'colorize') return <ColorizeSurface />;
   return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: 11, color: '#a0aec0', fontStyle: 'italic', padding: 12, textAlign: 'center' }}>Oberfläche folgt</div>;
 }
 
