@@ -140,38 +140,6 @@ function CosmoItem({ id, label, isActive, onClick }: { id: string; label: string
   );
 }
 
-function SectionHeader({
-  title, count, isOpen, locked, onToggle,
-}: {
-  title: string;
-  count: number;
-  isOpen: boolean;
-  locked: boolean;       // true wenn aktive Sektion (kann nicht zu)
-  onToggle: () => void;
-}) {
-  // Stil des "Represent Build"-Labels (zentriert, monospace, #4a6a8a, fontSize 12.5).
-  // Plus Chevron + Count + Toggle-Verhalten. Locked = aktive Sektion bleibt
-  // visuell offen, der Toggle ist trotzdem klickbar (er aendert das manuell-
-  // offen-Set, was nach Verlassen der Sektion wirkt). Siehe ann_068.
-  return (
-    <button
-      onClick={onToggle}
-      style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-        width: '100%', background: 'transparent', border: 'none',
-        fontSize: 12.5, color: '#4a6a8a', textTransform: 'uppercase',
-        letterSpacing: '0.10em', fontFamily: 'monospace',
-        padding: '14px 12px 4px',
-        cursor: 'pointer', userSelect: 'none', flexShrink: 0,
-      }}
-    >
-      <span style={{ fontSize: 9, opacity: locked ? 0.5 : 0.85 }}>{isOpen ? '▾' : '▸'}</span>
-      <span>{title}</span>
-      <span style={{ opacity: 0.5 }}>({count})</span>
-    </button>
-  );
-}
-
 function SectionBody({ isOpen, children }: { isOpen: boolean; children: React.ReactNode }) {
   // max-height-Transition fuer ruhiges Auf- und Zuklappen. 800 px reicht fuer
   // jede Sektion (Pipeline ist die laengste mit 12 Items à ~38 px).
@@ -756,29 +724,22 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
           // sie wieder ueber das Substrat.
           position: 'relative', zIndex: 4,
         }}>
-        {/* Manual-Icon entfernt — Reader-Dot allein traegt die Geste. */}
-        <span aria-hidden style={{ width: 14, flexShrink: 0 }} />
-        {/* Cosmo-Controls — eigene typografische Insel (Italic-Serif),
-            zentriert in der Manual+Reader-Zeile (justify-content:
-            space-between sorgt fuer die Aufteilung). Default 6% white,
-            bei Hover auf der Zeile dimmt es gemuetlich auf 90%. */}
-        <span
+        {/* Links: Cosmo-Controls = Drop-Down-Kopf (Chevron + Titel + Count) —
+            ersetzt den separaten SectionHeader. Klick klappt das Drop-Down. */}
+        <div
+          onClick={() => toggleSection('cosmo')}
           style={{
-            fontFamily: 'Georgia, "Times New Roman", serif',
-            fontStyle: 'italic',
-            fontSize: 10,
-            fontWeight: 400,
-            letterSpacing: '0.02em',
-            color: readerRowHover
-              ? 'rgba(255, 255, 255, 0.9)'
-              : 'rgba(255, 255, 255, 0.06)',
-            transition: 'color 2100ms ease-out',
-            userSelect: 'none',
-            cursor: 'default',
-            position: 'relative',
-            top: 6,
+            display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer',
+            userSelect: 'none', position: 'relative', top: 6,
           }}
-        >Cosmo-Controls</span>
+        >
+          <span style={{ fontSize: 9, color: '#4a6a8a', opacity: 0.85 }}>{cosmoOpen ? '▾' : '▸'}</span>
+          <span style={{
+            fontFamily: 'Georgia, "Times New Roman", serif', fontStyle: 'italic',
+            fontSize: 11, letterSpacing: '0.02em', color: 'rgba(255, 255, 255, 0.55)',
+          }}>Cosmo Controls</span>
+          <span style={{ fontSize: 9, color: '#4a6a8a', opacity: 0.5, fontFamily: 'monospace' }}>({cosmoCount})</span>
+        </div>
         {/* Reader-Dot als blaue LED:
             - LED-Koerper mit Radialverlauf (heller Kern -> mittleres Blau ->
               dunkler Blau-Rand) wie ein echtes Diodengehaeuse.
@@ -812,7 +773,7 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
             </radialGradient>
           </defs>
           <g
-            opacity={readerRowHover ? undefined : 0.03}
+            opacity={readerRowHover ? undefined : 0.7}
             className={readerRowHover ? 'scim-reader-dot-pulse' : undefined}
             style={{ transition: 'opacity 1200ms ease-out' }}
           >
@@ -822,15 +783,7 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
         </svg>
       </div>
 
-      {/* ── Cosmo Controls — textlicher Spiegel der Kosmologie (ein Drop-Down) ── */}
-      <SectionDivider />
-      <SectionHeader
-        title="Cosmo Controls"
-        count={cosmoCount}
-        isOpen={cosmoOpen}
-        locked={false}
-        onToggle={() => toggleSection('cosmo')}
-      />
+      {/* ── Cosmo Controls — Drop-Down-Inhalt (Kopf ist die Zeile oben) ──────── */}
       <SectionBody isOpen={cosmoOpen}>
         {COSMO_GROUPS.map((g) => {
           const items = g.ids
