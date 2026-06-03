@@ -8,7 +8,8 @@
  *   DELETE /api/packages/:id             — Version archivieren
  *   GET    /api/packages/active/:region  — aktive Version einer Region
  *   PUT    /api/origin/:repId/net        — Origin-Netz veröffentlichen (für Anthem-Compute)
- *   POST   /api/anthem/:repId/presence   — App klopft: Presence + erster Snapshot
+ *   POST   /api/anthem/:repId/presence   — App klopft: Presence-Session + erster Snapshot
+ *   GET    /api/anthem/:repId/presence   — Presence-Status (read-only): present, firstSeen, lastSeen, durationMin
  *   GET    /api/anthem/:repId            — Worker rechnet aktuellen Anthem-Snapshot (presence-gegated)
  *   OPTIONS /*                           — CORS-Preflight
  *
@@ -46,14 +47,21 @@ async function readOriginNet(env: Env, repId: string): Promise<SegmentedNet | nu
   return await obj.json() as SegmentedNet;
 }
 
-async function readPresence(env: Env, repId: string): Promise<{ lastSeen: string } | null> {
+interface PresenceRec { firstSeen?: string; lastSeen: string }
+
+async function readPresence(env: Env, repId: string): Promise<PresenceRec | null> {
   const obj = await env.PACKAGES.get(`presence/${repId}.json`);
   if (!obj) return null;
-  return await obj.json() as { lastSeen: string };
+  return await obj.json() as PresenceRec;
 }
 
-function isWarm(presence: { lastSeen: string } | null): boolean {
+function isWarm(presence: PresenceRec | null): boolean {
   return !!presence && (Date.now() - Date.parse(presence.lastSeen)) <= PRESENCE_TTL_MS;
+}
+
+function sessionDurationMin(p: PresenceRec): number {
+  if (!p.firstSeen) return 0;
+  return Math.max(0, Math.round((Date.parse(p.lastSeen) - Date.parse(p.firstSeen)) / 60000));
 }
 
 export interface Env {
@@ -412,15 +420,34 @@ export default {
       const repId = pathname.split('/')[3];
       if (!KEY_PATTERN.test(repId)) return err('Invalid repId', 422);
 
+      // Session-Logik: läuft die Presence noch warm (Lücke ≤ TTL), bleibt firstSeen
+      // erhalten → Dauer wächst; sonst neue Session ab jetzt.
       const lastSeen = new Date().toISOString();
-      await env.PACKAGES.put(`presence/${repId}.json`, JSON.stringify({ lastSeen }), {
+      const prev = await readPresence(env, repId);
+      const continues = !!prev && prev.firstSeen != null && isWarm(prev);
+      const firstSeen = continues ? prev!.firstSeen! : lastSeen;
+      await env.PACKAGES.put(`presence/${repId}.json`, JSON.stringify({ firstSeen, lastSeen }), {
         httpMetadata: { contentType: 'application/json', cacheControl: 'no-store' },
       });
 
       const net = await readOriginNet(env, repId);
       if (!net) return err(`No published origin-net for "${repId}" — PUT /api/origin/${repId}/net first.`, 404);
       const snapshot = produceAnthem(net, repId, simMinFromUrl(url));
-      return json({ ok: true, repId, lastSeen, snapshot });
+      return json({ ok: true, repId, firstSeen, lastSeen, snapshot });
+    }
+
+    // ── GET /api/anthem/:repId/presence ──────────────────────────────────────
+    // Read-only fürs Publishing-Monitor (V03 t1) + den globalen Footer: wer ist
+    // gerade präsent (date/time/duration). Kein Key nötig.
+    if (request.method === 'GET' && pathname.match(/^\/api\/anthem\/[^/]+\/presence$/)) {
+      const repId = pathname.split('/')[3];
+      if (!KEY_PATTERN.test(repId)) return err('Invalid repId', 422);
+      const p = await readPresence(env, repId);
+      if (!p) return json({ repId, present: false, firstSeen: null, lastSeen: null, durationMin: 0 });
+      return json({
+        repId, present: isWarm(p),
+        firstSeen: p.firstSeen ?? null, lastSeen: p.lastSeen, durationMin: sessionDurationMin(p),
+      });
     }
 
     // ── GET /api/anthem/:repId ───────────────────────────────────────────────

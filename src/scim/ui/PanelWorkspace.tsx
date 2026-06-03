@@ -1,6 +1,6 @@
 import { useState, useEffect, type ReactNode } from 'react';
-import { useInspectorAsset, useRepresentationContext } from '../../runtime/repContext';
-import type { Representation } from '../workspace/workspace.types';
+import { useRepresentationContext } from '../../runtime/repContext';
+import { useAuftraggeberRep } from '../../runtime/useAuftraggeberRep';
 import type { TabId } from './panelRegistry';
 import {
   KOSMOLOGIE_IDS,
@@ -35,6 +35,7 @@ import { useRole } from './RoleContext';
 import V01PackagesPanel from './panels/V01PackagesPanel';
 import V02RegionDetailPanel from './panels/V02RegionDetailPanel';
 import V03ActiveMonitorPanel from './panels/V03ActiveMonitorPanel';
+import V03PresenceOriginPanel from './panels/V03PresenceOriginPanel';
 import WorkspacePanel from './panels/WorkspacePanel';
 import DrawerPanel from './panels/DrawerPanel';
 import { poiCompositeSvg } from '../poi-catalog/poiCatalog.composite';
@@ -377,20 +378,6 @@ const fmtBytes = (n: number) =>
 // Robuster Auftraggeber-Resolver: die im Inspector aktive Representation (Default
 // = letzte), NIE leer. Heilt das alte <xy>-Problem (useInspectorView war leer,
 // solange keine URL-/Compare-Rep gesetzt war).
-function useAuftraggeberRep(): Representation {
-  const asset = useInspectorAsset();
-  const demoRep = REPRESENTATIONS.find((r) => /lichtenberg/i.test(r.id) || /lichtenberg/i.test(r.name)) ?? REPRESENTATIONS[0];
-  if (asset?.kind === 'representation') {
-    const r = REPRESENTATIONS.find((x) => x.id === asset.id);
-    if (r) return r;
-  }
-  if (asset?.kind === 'geometry') {
-    const r = REPRESENTATIONS.find((x) => x.geometry_id === asset.id);
-    if (r) return r;
-  }
-  return demoRep;
-}
-
 // P09 · Origin-Capsuler — baut Origin: Auftraggeber wählen → kapseln (OriginManifest)
 // + Wegnetz-Sampling-Vorschau. M4: aus P11 hierher gezogen.
 // P02 · Coder — der Anthem-Encoder mit echtem (client-seitigem) Atemzyklus:
@@ -866,7 +853,8 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
 
   if (activeId === 'V01') return <V01PackagesPanel />;
   if (activeId === 'V02') return <V02RegionDetailPanel />;
-  if (activeId === 'V03') return <V03ActiveMonitorPanel />;
+  // V03 Publishing-Monitor: t1 Presence-Origin (Call-Log) · t2 Active-Monitor (CDN/QR).
+  if (activeId === 'V03') return activeTab === 't2' ? <V03ActiveMonitorPanel /> : <V03PresenceOriginPanel />;
 
   const versionenEntry = VERSIONEN_REGISTRY.find((v) => v.id === activeId);
   if (versionenEntry) {

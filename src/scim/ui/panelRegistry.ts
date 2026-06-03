@@ -432,8 +432,11 @@ export const VERSIONEN_REGISTRY: VersionenDescriptor[] = [
   {
     kind: 'versionen', id: 'V03', icon: '◈',
     label: 'Publishing-Monitor',
-    shortDescription: 'Beobachter der ausgelieferten Maschine — laufen die Pakete auf den User-Devices · CDN/QR',
-    tabs: [{ id: 'input', label: 'Übersicht', icon: 'ℹ' }],
+    shortDescription: 'Beobachter der ausgelieferten Maschine — wer ist präsent (presence-origin) · laufen die Pakete (CDN/QR)',
+    tabs: [
+      { id: 't1', label: 'Presence-Origin', icon: '◉' },
+      { id: 't2', label: 'Active-Monitor', icon: '◈' },
+    ],
   },
 ];
 

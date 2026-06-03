@@ -139,6 +139,12 @@ function AnthemCycleModal({ onClose }: { onClose: () => void }) {
                         border: '1px solid #bee3f8', background: '#ebf8ff', color: '#2b6cb0',
                       }}>öffnen ›</button>
                     )}
+                    {st.observeId && (
+                      <button onClick={() => jump(st.observeId, st.observeTab)} style={{
+                        marginLeft: 6, cursor: 'pointer', fontSize: 10, padding: '0 7px', borderRadius: 999,
+                        border: '1px solid #e2e8f0', background: '#f7fafc', color: '#718096',
+                      }} title={st.observeLabel}>👁 beobachten</button>
+                    )}
                   </div>
                   <div style={{ fontSize: 11.5, color: '#718096', lineHeight: 1.55, marginTop: 2 }}>{st.blurb}</div>
                 </div>

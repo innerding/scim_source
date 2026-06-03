@@ -28,6 +28,21 @@ export async function knockPresence(repId: string, t?: number) {
   return res.json() as Promise<{ ok: boolean; repId: string; lastSeen: string; snapshot: unknown }>;
 }
 
+export interface PresenceStatus {
+  repId: string;
+  present: boolean;
+  firstSeen: string | null;
+  lastSeen: string | null;
+  durationMin: number;
+}
+
+/** Presence-Status lesen (read-only, kein Key) — für V03 t1 + den Footer. */
+export async function fetchPresence(repId: string): Promise<PresenceStatus> {
+  const res = await fetch(`${WORKER_URL}/api/anthem/${repId}/presence`);
+  if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
+  return res.json() as Promise<PresenceStatus>;
+}
+
 /** Aktuellen Snapshot ziehen (presence-gegated; 425 wenn kalt). */
 export async function fetchAnthem(repId: string, t?: number) {
   const qs = t != null ? `?t=${Math.round(t)}` : '';

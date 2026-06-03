@@ -21,6 +21,10 @@ export interface AnthemStation {
   status: StationStatus;
   /** Erklärung der Rolle im Kreislauf (ganze Sätze). */
   blurb: string;
+  /** Optionaler Beobachter-Sprung (Monitor-Sicht, kein Transformations-Ort). */
+  observeId?: string;
+  observeTab?: string;
+  observeLabel?: string;
 }
 
 export const STATION_STATUS_META: Record<StationStatus, { icon: string; label: string; color: string }> = {
@@ -40,7 +44,8 @@ export const ANTHEM_STATIONS: AnthemStation[] = [
   {
     n: 1, word: 'klopfen', title: 'Presence', home: 'P04 · Presence', panelId: 'P04', tabId: 't1',
     status: 'partial',
-    blurb: 'Die App meldet beim ersten Upload nach Shell-Install ihren Aufenthalt (presence-origin: „ich bin in Boundary X"). Das startet den 5-Min-Zyklus (2 h-Hysterese). Gate/Konzept sind editor-seitig gebaut; das echte presence-Signal aus der App fehlt (Phase 2b).',
+    blurb: 'Die App meldet beim ersten Upload nach Shell-Install ihren Aufenthalt (presence-origin: „ich bin in Boundary X"). Das startet den 5-Min-Zyklus (2 h-Hysterese). P04 t1 ist das Intake/Gate (Producer-Seite); V03 t1 ist das Call-Log (Auslieferungs-Seite, beobachtet date/time/duration).',
+    observeId: 'V03', observeTab: 't1', observeLabel: 'V03 · Presence-Origin',
   },
   {
     n: 2, word: 'einatmen', title: 'Telco-Quelle', home: 'P04 · Sim-Telco', panelId: 'P04', tabId: 't2',
