@@ -7,6 +7,9 @@
  *   POST   /api/packages/:id/activate    — Version aktivieren, bisherige archivieren
  *   DELETE /api/packages/:id             — Version archivieren
  *   GET    /api/packages/active/:region  — aktive Version einer Region
+ *   PUT    /api/origin/:repId/net        — Origin-Netz veröffentlichen (für Anthem-Compute)
+ *   POST   /api/anthem/:repId/presence   — App klopft: Presence + erster Snapshot
+ *   GET    /api/anthem/:repId            — Worker rechnet aktuellen Anthem-Snapshot (presence-gegated)
  *   OPTIONS /*                           — CORS-Preflight
  *
  * Auth:
@@ -17,9 +20,41 @@
  *   ?overwrite=true   — Key in R2 überschreiben wenn bereits vorhanden (Standard: 409)
  */
 
+// Geteilte Producer-Engine (EINE Quelle, auch vom Editor genutzt) — „Worker rechnet
+// selbst": aus dem veröffentlichten Origin-Netz + (Sim-)Zeit → AnthemSnapshot.
+import { produceAnthem } from '../../src/scim/sensus/anthemProducer';
+import type { SegmentedNet } from '../../src/scim/sensus/anthemSim';
+
 const CDN_BASE      = 'https://cdn.diesenpark.com';
 const PACKAGES_PATH = 'packages';
 const KEY_PATTERN   = /^[a-z0-9][a-z0-9_-]*$/i;
+const PRESENCE_TTL_MS = 2 * 60 * 60 * 1000; // 2 h-Hysterese (Anthem-Lebenszyklus)
+
+// (Sim-)Zeit in Minuten: expliziter ?t= Override (Sim/Turbo), sonst echte
+// Tageszeit (UTC) ins Fenster 6–20 h geklemmt. Die echte App hat keinen Turbo.
+function simMinFromUrl(url: URL): number {
+  const t = url.searchParams.get('t');
+  if (t != null && t !== '') { const n = Number(t); if (Number.isFinite(n)) return Math.max(0, n); }
+  const d = new Date();
+  const mins = d.getUTCHours() * 60 + d.getUTCMinutes();
+  return Math.min(20 * 60, Math.max(6 * 60, mins));
+}
+
+async function readOriginNet(env: Env, repId: string): Promise<SegmentedNet | null> {
+  const obj = await env.PACKAGES.get(`origin/${repId}/net.json`);
+  if (!obj) return null;
+  return await obj.json() as SegmentedNet;
+}
+
+async function readPresence(env: Env, repId: string): Promise<{ lastSeen: string } | null> {
+  const obj = await env.PACKAGES.get(`presence/${repId}.json`);
+  if (!obj) return null;
+  return await obj.json() as { lastSeen: string };
+}
+
+function isWarm(presence: { lastSeen: string } | null): boolean {
+  return !!presence && (Date.now() - Date.parse(presence.lastSeen)) <= PRESENCE_TTL_MS;
+}
 
 export interface Env {
   PACKAGES: R2Bucket;
@@ -349,6 +384,58 @@ export default {
       } catch (e) {
         return err((e as Error).message, 502);
       }
+    }
+
+    // ── PUT /api/origin/:repId/net ───────────────────────────────────────────
+    // SCIM veröffentlicht das resampelte Origin-Netz (Station „adressieren"),
+    // damit der Worker den Anthem selbst rechnen kann. Body = ResampledNet.
+    if (request.method === 'PUT' && pathname.match(/^\/api\/origin\/[^/]+\/net$/)) {
+      if (!checkAuth(request, env)) return err('Unauthorized', 401);
+      const repId = pathname.split('/')[3];
+      if (!KEY_PATTERN.test(repId)) return err('Invalid repId', 422);
+
+      let body: unknown;
+      try { body = await request.json(); } catch { return err('Invalid JSON body', 400); }
+      const stretches = (body as { stretches?: unknown })?.stretches;
+      if (!Array.isArray(stretches)) return err('Expected ResampledNet with stretches[]', 422);
+
+      await env.PACKAGES.put(`origin/${repId}/net.json`, JSON.stringify(body), {
+        httpMetadata: { contentType: 'application/json', cacheControl: 'public, max-age=3600' },
+      });
+      return json({ ok: true, repId, stretches: stretches.length });
+    }
+
+    // ── POST /api/anthem/:repId/presence ─────────────────────────────────────
+    // Die App „klopft" (Station „klopfen"): registriert Presence (startet/erneuert
+    // die 2 h-Hysterese) und bekommt sofort den ersten Snapshot zurück.
+    if (request.method === 'POST' && pathname.match(/^\/api\/anthem\/[^/]+\/presence$/)) {
+      const repId = pathname.split('/')[3];
+      if (!KEY_PATTERN.test(repId)) return err('Invalid repId', 422);
+
+      const lastSeen = new Date().toISOString();
+      await env.PACKAGES.put(`presence/${repId}.json`, JSON.stringify({ lastSeen }), {
+        httpMetadata: { contentType: 'application/json', cacheControl: 'no-store' },
+      });
+
+      const net = await readOriginNet(env, repId);
+      if (!net) return err(`No published origin-net for "${repId}" — PUT /api/origin/${repId}/net first.`, 404);
+      const snapshot = produceAnthem(net, repId, simMinFromUrl(url));
+      return json({ ok: true, repId, lastSeen, snapshot });
+    }
+
+    // ── GET /api/anthem/:repId ───────────────────────────────────────────────
+    // „Worker rechnet selbst" (Station „senden"): aktueller Snapshot aus Origin-
+    // Netz + (Sim-)Zeit. Presence-gegated: kalt, wenn niemand seit 2 h geklopft hat.
+    if (request.method === 'GET' && pathname.match(/^\/api\/anthem\/[^/]+$/)) {
+      const repId = pathname.split('/')[3];
+      if (!KEY_PATTERN.test(repId)) return err('Invalid repId', 422);
+
+      if (!isWarm(await readPresence(env, repId))) {
+        return err(`Cold — no presence within 2 h. POST /api/anthem/${repId}/presence first.`, 425);
+      }
+      const net = await readOriginNet(env, repId);
+      if (!net) return err(`No published origin-net for "${repId}".`, 404);
+      return json(produceAnthem(net, repId, simMinFromUrl(url)));
     }
 
     return err('Not found', 404);

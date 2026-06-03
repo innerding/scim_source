@@ -44,12 +44,13 @@ import { buildOriginPackage, MVP_RESAMPLE_TARGET_METERS } from '../sensus/origin
 import { buildOriginManifest } from '../sensus/originManifest';
 import type { OriginManifest } from '../sensus/packageContract';
 import type { OriginPackage } from '../sensus/originPackage';
-import { buildAnthemSnapshot, nextAtFor } from '../sensus/anthemEncoder';
-import { simSegmentLoads, normalizeLoads } from '../sensus/anthemSim';
+import { nextAtFor } from '../sensus/anthemEncoder';
+import { produceAnthem } from '../sensus/anthemProducer';
 import { getSimHour, setSimHour, subscribeSimClock } from '../sensus/simClock';
 import { evaluateGate, ANTHEM_REFRESH_GAP_MIN, type HeldSnapshot } from '../sensus/anthemGate';
 import { ANTHEM_PERIOD_MIN } from '../sensus/packageContract';
 import { AnthemCycleBadge } from './AnthemCycleInfo';
+import { publishOriginNet, anthemPublishConfigured, knockPresence, anthemReadConfigured } from '../../runtime/anthemApi';
 import { resampleNet } from '../wegnetz/netResample';
 
 interface Props {
@@ -403,17 +404,30 @@ function CoderView() {
   const [cycles, setCycles] = useState(0);
   // Sim-Clock-Tick → re-render (= re-encode, wenn presence aktiv).
   useEffect(() => subscribeSimClock(() => { setSimHour(getSimHour()); setCycles((c) => c + 1); }), []);
+  // Phase 2b: echten Bezug übers Netz testen — App „klopft" am Worker (presence) und
+  // bekommt den vom Worker SELBST gerechneten Snapshot zurück.
+  const [wireBusy, setWireBusy] = useState(false);
+  const [wireMsg, setWireMsg] = useState<string | null>(null);
 
   const net = rep.wegnetz_id ? wegnetzById(rep.wegnetz_id) : undefined;
   const r = net ? resampleNet(net.edges, { targetMeters: MVP_RESAMPLE_TARGET_METERS }) : null;
   const tMin = simHour * 60;
   const fmtClock = (m: number) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(Math.round(m % 60)).padStart(2, '0')}`;
-  // Tageskurve (6–20 h): die Last „atmet" mit der Zeit → sichtbar je Tick.
-  const phase = (Math.sin(((Math.min(20, Math.max(6, simHour)) - 6) / 14) * Math.PI));
-  const base = r ? normalizeLoads(simSegmentLoads(r)) : [];
-  const loads = base.map((l) => Math.max(0, Math.min(1, l * (0.35 + 0.65 * phase))));
-  const snap = presence ? buildAnthemSnapshot(loads, rep.id, tMin) : null;
+  // EINE geteilte Pipeline (produceAnthem) — exakt dieselbe rechnet später der
+  // Worker. Sim-Telco → normalisieren → Tageskurve → packen.
+  const snap = presence && r ? produceAnthem(r, rep.id, tMin) : null;
   const jsonBytes = snap ? JSON.stringify(snap).length : 0;
+
+  const onWireTest = async () => {
+    setWireBusy(true); setWireMsg(null);
+    try {
+      const res = await knockPresence(rep.id, tMin);
+      const s = res.snapshot as { loads?: number[]; t?: string; nextAtMin?: number } | undefined;
+      setWireMsg(`✓ Worker: „${res.repId}" · t ${s?.t ?? '?'} · ${s?.loads?.length ?? 0} segs · nextAt ${s?.nextAtMin ?? '?'}`);
+    } catch (e) {
+      setWireMsg(`✗ ${(e as Error).message}`);
+    } finally { setWireBusy(false); }
+  };
 
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 600 }}>
@@ -441,6 +455,23 @@ function CoderView() {
             background: presence ? '#f0fff4' : '#f7fafc', color: presence ? '#22543d' : '#718096',
           }}
         >{presence ? '● presence aktiv — Atemzyklus läuft' : '○ presence aus (kalt) — klopfen'}</button>
+      </div>
+
+      {/* Phase 2b: echten Bezug übers Netz testen (klopfen → Worker rechnet → Snapshot zurück). */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+        <button
+          onClick={onWireTest}
+          disabled={wireBusy || !anthemReadConfigured()}
+          title={anthemReadConfigured() ? 'POST /api/anthem/:repId/presence' : 'VITE_WORKER_URL setzen'}
+          style={{
+            fontSize: 12, padding: '4px 12px', borderRadius: 4,
+            cursor: wireBusy || !anthemReadConfigured() ? 'not-allowed' : 'pointer',
+            border: '1px solid #4299e1', background: '#ebf8ff', color: '#2b6cb0',
+            opacity: anthemReadConfigured() ? 1 : 0.55,
+          }}
+        >{wireBusy ? '… klopfe' : '⇆ echten Bezug testen (Worker)'}</button>
+        {!anthemReadConfigured() && <span style={{ fontSize: 10.5, color: '#a0aec0', fontStyle: 'italic' }}>Worker nicht konfiguriert</span>}
+        {wireMsg && <span style={{ fontSize: 11, fontFamily: 'ui-monospace, Menlo, monospace', color: wireMsg.startsWith('✓') ? '#2f855a' : '#c05621' }}>{wireMsg}</span>}
       </div>
 
       {presence && snap ? (
@@ -594,6 +625,23 @@ function OriginCapsulerView() {
   const { setInspectorAsset } = useRepresentationContext();
   const [capsule, setCapsule] = useState<OriginManifest | null>(null);
   const capsuleFresh = capsule != null && capsule.repId === rep.id;
+  // Phase 2b: Origin-Netz nach R2 veröffentlichen, damit der Worker den Anthem
+  // selbst rechnen kann (Station „adressieren/senden").
+  const [publishing, setPublishing] = useState(false);
+  const [publishMsg, setPublishMsg] = useState<string | null>(null);
+  const onPublish = async () => {
+    const net = rep.wegnetz_id ? wegnetzById(rep.wegnetz_id) : undefined;
+    const r = net ? resampleNet(net.edges, { targetMeters: MVP_RESAMPLE_TARGET_METERS }) : null;
+    if (!r) { setPublishMsg('✗ Kein Wegnetz an dieser Representation.'); return; }
+    setPublishing(true); setPublishMsg(null);
+    try {
+      const payload = { stretches: r.stretches.map((s) => ({ id: s.id, points: s.points })) };
+      const res = await publishOriginNet(rep.id, payload);
+      setPublishMsg(`✓ veröffentlicht: ${res.stretches} Strecken → origin/${rep.id}/net.json`);
+    } catch (e) {
+      setPublishMsg(`✗ ${(e as Error).message}`);
+    } finally { setPublishing(false); }
+  };
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', fontFamily: 'system-ui, sans-serif' }}>
       <div style={{ flex: '0 0 auto' }}>
@@ -624,6 +672,26 @@ function OriginCapsulerView() {
               border: '1px solid #2f855a', background: '#f0fff4', color: '#22543d', fontWeight: 600,
             }}
           >▣ Origin auflösen &amp; kapseln</button>
+        </div>
+        {/* Phase 2b: Origin-Netz veröffentlichen → Worker rechnet daraus den Anthem. */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
+          <button
+            onClick={onPublish}
+            disabled={publishing || !anthemPublishConfigured()}
+            title={anthemPublishConfigured() ? 'PUT /api/origin/:repId/net' : 'VITE_WORKER_URL + VITE_UPLOAD_API_KEY setzen'}
+            style={{
+              fontSize: 12, padding: '4px 12px', borderRadius: 4,
+              cursor: publishing || !anthemPublishConfigured() ? 'not-allowed' : 'pointer',
+              border: '1px solid #4299e1', background: '#ebf8ff',
+              color: '#2b6cb0', fontWeight: 600, opacity: anthemPublishConfigured() ? 1 : 0.55,
+            }}
+          >{publishing ? '… veröffentliche' : '⇪ Origin-Netz veröffentlichen (→ Worker)'}</button>
+          {!anthemPublishConfigured() && (
+            <span style={{ fontSize: 10.5, color: '#a0aec0', fontStyle: 'italic' }}>Worker nicht konfiguriert</span>
+          )}
+          {publishMsg && (
+            <span style={{ fontSize: 11, fontFamily: 'ui-monospace, Menlo, monospace', color: publishMsg.startsWith('✓') ? '#2f855a' : '#c05621' }}>{publishMsg}</span>
+          )}
         </div>
         {capsuleFresh && capsule && (
           <div style={{ border: '1px solid #c6f6d5', background: '#f0fff4', borderRadius: 8, padding: '10px 12px', marginBottom: 12 }}>

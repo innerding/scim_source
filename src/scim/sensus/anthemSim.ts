@@ -8,8 +8,15 @@
 // load → Farbe ist die Colorist-Funktion `heatColor` (colour = G(load)),
 // hier als `loadColour` re-exportiert: EINE Farbwahrheit für Inspector + Mesh.
 
-import type { ResampledNet } from '../wegnetz/netResample';
 export { heatColor as loadColour } from './loadColour';
+
+// Minimale Netz-Form, die die Sim braucht — bewusst ENTKOPPELT vom schweren
+// netResample (das DOM/localStorage-lastige Module mitzieht), damit diese reine
+// Engine auch der Worker importieren kann. ResampledNet ist strukturell kompatibel.
+export type LatLng = [number, number];
+export interface SegmentedNet {
+  stretches: Array<{ id: string; points: LatLng[] }>;
+}
 
 const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
 
@@ -22,7 +29,7 @@ function fieldAt(lat: number, lng: number): number {
 
 // Ein Last-Wert (0..1) je Segment, in Strecken-/Segment-Reihenfolge des Netzes
 // (dieselbe Reihenfolge, in der man die Segmente zeichnet/indexiert).
-export function simSegmentLoads(net: ResampledNet): number[] {
+export function simSegmentLoads(net: SegmentedNet): number[] {
   const loads: number[] = [];
   for (const s of net.stretches) {
     for (let i = 1; i < s.points.length; i++) {
@@ -46,7 +53,7 @@ export interface StretchLoad {
 // Grundlage für Ausschluss/Degradierung (Umbauplan A1): die werden je STRECKE
 // über diese Ø-Last entschieden — nur an Kreuzungen schaltbar —, während die
 // Anzeige weiter pro Segment gefärbt wird.
-export function stretchAverages(net: ResampledNet, loads: number[]): StretchLoad[] {
+export function stretchAverages(net: SegmentedNet, loads: number[]): StretchLoad[] {
   const out: StretchLoad[] = [];
   let idx = 0;
   for (const s of net.stretches) {
