@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="SCIM3_POI_Icons" data-name="SCIM3 POI Icons" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <g id="salz-bottich">
+    <polyline id="fill" points="24 34 28.444 34 34 21.778 34 18.444 30.667 14 28.444 14 31.778 18.444 16.222 18.444 16.222 18.444 16.222 21.778 21.778 34 24 34" fill="#ffeb33"/>
+    <path id="stroke" d="M18.444,27.333h12.889M18.583,31.778h10.833M14,20.667h20M24,34h4.444l5.556-12.222v-3.333l-3.333-4.444h-2.222l3.333,4.444h-15.556l3.333-4.444h-2.222l-3.333,4.444v3.333l5.556,12.222h4.444M24,20.667v4.444M24,27.333v4.444" fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>
