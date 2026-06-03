@@ -2,6 +2,8 @@
 // aus (Ausatmen); die drei Bögen sind die Stationen des Atems. Erklär-/Übersichts-
 // Ansicht. Siehe docs/zielbild_ausbauplan.md (Plan T) · docs/begriffs_karte.md.
 
+import { AnthemCycleBadge } from '../AnthemCycleInfo';
+
 type Tone = 'ein' | 'deuten' | 'packen' | 'aus';
 const TONES: Record<Tone, [string, string]> = {
   ein: ['#f0fff4', '#38a169'],     // Telco — einatmen
@@ -27,11 +29,14 @@ const Arrow = () => <span style={{ color: '#cbd5e0', flexShrink: 0 }}>→</span>
 export default function TransmissionView() {
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 620 }}>
-      <div style={{
-        display: 'inline-block', padding: '2px 8px', marginBottom: 10, fontSize: 10, fontFamily: 'monospace',
-        color: '#2b6cb0', background: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: 4,
-      }}>
-        P06 · Transmitter · der Atem
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
+        <div style={{
+          display: 'inline-block', padding: '2px 8px', fontSize: 10, fontFamily: 'monospace',
+          color: '#2b6cb0', background: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: 4,
+        }}>
+          P06 · Transmitter · der Atem
+        </div>
+        <AnthemCycleBadge />
       </div>
       <div style={{ fontSize: 12.5, color: '#2d3748', lineHeight: 1.6, marginBottom: 12 }}>
         Der Transmitter <strong>atmet</strong> — er spielt das <strong>Anthem</strong> aus. Die drei Bögen sind die

@@ -49,6 +49,7 @@ import { simSegmentLoads, normalizeLoads } from '../sensus/anthemSim';
 import { getSimHour, setSimHour, subscribeSimClock } from '../sensus/simClock';
 import { evaluateGate, ANTHEM_REFRESH_GAP_MIN, type HeldSnapshot } from '../sensus/anthemGate';
 import { ANTHEM_PERIOD_MIN } from '../sensus/packageContract';
+import { AnthemCycleBadge } from './AnthemCycleInfo';
 import { resampleNet } from '../wegnetz/netResample';
 
 interface Props {
@@ -416,15 +417,18 @@ function CoderView() {
 
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 600 }}>
-      <div style={{
-        display: 'inline-block', padding: '2px 8px', marginBottom: 8, fontSize: 10, fontFamily: 'monospace',
-        color: '#2b6cb0', background: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: 4,
-      }}>
-        P02 · Coder · Anthem-Encoder
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+        <div style={{
+          display: 'inline-block', padding: '2px 8px', fontSize: 10, fontFamily: 'monospace',
+          color: '#2b6cb0', background: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: 4,
+        }}>
+          P02 · Coder · Anthem-Encoder
+        </div>
+        <AnthemCycleBadge />
       </div>
       <p style={{ fontSize: 12, color: '#4a5568', lineHeight: 1.55, margin: '2px 0 12px' }}>
-        Packt die normalisierte Last <strong>[0..1] je Segment</strong> in den <strong>Anthem-Snapshot</strong> —
-        ohne Koordinaten, Reihenfolge = Origin-Net-Segment-Index. Der Atemzyklus läuft hier <strong>real
+        Station <strong>„packen"</strong> im Anthem-Kreislauf: packt die normalisierte Last <strong>[0..1] je
+        Segment</strong> (ohne Koordinaten) in den Snapshot. Der Atemzyklus läuft hier <strong>real
         (client-seitig)</strong>: presence gated, Sim-Clock-getaktet (Time-Turbo in Telco).
       </p>
 
@@ -460,14 +464,9 @@ function CoderView() {
         </div>
       )}
 
-      <div style={{ fontSize: 11, color: '#718096', lineHeight: 1.6 }}>
-        <strong>Kette:</strong> Telco (einatmen) <em>normalisiert</em> → Thresholds (deuten) → Coder (packen, echter
-        Encoder) → Transmitter (ausatmen) sendet — auf Anfrage der Ziel-App — alle 5 Min einen aktualisierten Snapshot.
-        <div style={{ marginTop: 6, fontStyle: 'italic' }}>
-          Stand: <strong style={{ color: '#2f855a' }}>funktional</strong> = Encoder + Normalize + der presence-getaktete
-          5-Min-Loop (client-seitig, Sim-Clock). <strong style={{ color: '#c05621' }}>Noch offen</strong> = die echte
-          Auslieferung übers Netz (Worker <code>/api/anthem/:repId</code>) + presence aus der App → Phase 2b.
-        </div>
+      <div style={{ fontSize: 11, color: '#a0aec0', lineHeight: 1.6, fontStyle: 'italic' }}>
+        Wo „packen" im Atem zwischen <em>deuten</em> und <em>ausatmen</em> sitzt, und was noch offen ist →
+        siehe ⓘ Anthem-Kreislauf (oben).
       </div>
     </div>
   );
@@ -520,11 +519,14 @@ function AnthemGateView() {
   void tick;
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 600 }}>
-      <div style={{
-        display: 'inline-block', padding: '2px 8px', marginBottom: 8, fontSize: 10, fontFamily: 'monospace',
-        color: '#2b6cb0', background: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: 4,
-      }}>
-        P08 · Deep-Shell · Refresh-Gate (app-seitig)
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+        <div style={{
+          display: 'inline-block', padding: '2px 8px', fontSize: 10, fontFamily: 'monospace',
+          color: '#2b6cb0', background: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: 4,
+        }}>
+          P08 · Deep-Shell · Refresh-Gate (app-seitig)
+        </div>
+        <AnthemCycleBadge />
       </div>
       <p style={{ fontSize: 12, color: '#4a5568', lineHeight: 1.55, margin: '2px 0 12px' }}>
         Der Consumer <strong>liest die angekündigte <code>nextAt</code></strong> des gehaltenen Snapshots und fordert
@@ -576,15 +578,11 @@ function AnthemGateView() {
 
       <div style={{ fontSize: 11, color: '#718096', lineHeight: 1.6, borderTop: '1px solid #e2e8f0', paddingTop: 10 }}>
         <strong>Warum so?</strong> Nicht blind verstrichene Zeit zählen, sondern die <strong>ausgegebene Ansage</strong>
-        verarbeiten: der bezogene Snapshot ist evtl. schon mitten im Fenster erzeugt (sein <code>t</code> liegt vor
-        „jetzt"), darum hängt das Gate an <code>nextAt</code> statt am Empfangszeitpunkt → die Stale-Zeit bleibt eng
-        (≈ 1 Raster + Gap) und jedes Fenster wird genau einmal getroffen. Gate = Consumer-Sache (Shell-Engine,
-        app-seitig); der Transmitter weiß nichts von Interaktionen.
-        <div style={{ marginTop: 6, fontStyle: 'italic' }}>
-          Stand: <strong style={{ color: '#2f855a' }}>funktional</strong> = die fristbasierte Logik
-          (<code>evaluateGate</code> liest <code>nextAtMin</code>). <strong style={{ color: '#c05621' }}>Noch offen</strong>
-          = an den echten Anthem-Bezug (Worker <code>/api/anthem/:repId</code>, der das reale <code>nextAt</code>
-          liefert) hängen → Phase 2b. Im Sim treibt der Time-Turbo (Telco) bzw. „⏩ +5 Sim-Min".
+        verarbeiten: der bezogene Snapshot ist evtl. schon mitten im Fenster erzeugt, darum hängt das Gate an
+        <code> nextAt</code> statt am Empfangszeitpunkt → enge Stale-Zeit, jedes Fenster genau einmal.
+        <div style={{ marginTop: 6, fontStyle: 'italic', color: '#a0aec0' }}>
+          Rolle im Atem („drosseln") und Status der ganzen Kette → ⓘ Anthem-Kreislauf (oben). Im Sim treibt der
+          Time-Turbo (Telco) bzw. „⏩ +5 Sim-Min".
         </div>
       </div>
     </div>
@@ -599,11 +597,14 @@ function OriginCapsulerView() {
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', fontFamily: 'system-ui, sans-serif' }}>
       <div style={{ flex: '0 0 auto' }}>
-        <div style={{
-          display: 'inline-block', padding: '2px 8px', marginBottom: 8, fontSize: 10, fontFamily: 'monospace',
-          color: '#2b6cb0', background: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: 4,
-        }}>
-          P09 · Origin-Capsuler · committete Representation → Origin-Partikel
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
+          <div style={{
+            display: 'inline-block', padding: '2px 8px', fontSize: 10, fontFamily: 'monospace',
+            color: '#2b6cb0', background: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: 4,
+          }}>
+            P09 · Origin-Capsuler · committete Representation → Origin-Partikel
+          </div>
+          <AnthemCycleBadge />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, fontSize: 12, flexWrap: 'wrap' }}>
           <span style={{ fontWeight: 700, color: '#1a365d' }}>Auftraggeber:</span>
@@ -856,11 +857,14 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
     const ctx = result.success ? (result.context as unknown as Record<string, unknown>) : null;
     return (
       <div style={{ fontFamily: 'system-ui, sans-serif' }}>
-        <div style={{
-          display: 'inline-block', padding: '2px 8px', marginBottom: 10, fontSize: 10, fontFamily: 'monospace',
-          color: '#2b6cb0', background: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: 4,
-        }}>
-          P04 · Telco · Quelle (Einatmen)
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
+          <div style={{
+            display: 'inline-block', padding: '2px 8px', fontSize: 10, fontFamily: 'monospace',
+            color: '#2b6cb0', background: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: 4,
+          }}>
+            P04 · Telco · Quelle (Einatmen)
+          </div>
+          <AnthemCycleBadge />
         </div>
         {activeTab === 't1' && (
           <div style={{ fontSize: 12.5, color: '#2d3748', lineHeight: 1.6, maxWidth: 560 }}>

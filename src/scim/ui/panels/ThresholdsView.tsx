@@ -4,6 +4,7 @@
 // Horizont-Logik bleibt: System→Shell · Region→Origin · Load→Anthem.
 
 import ColourAdjust from './ColourAdjust';
+import { AnthemCycleBadge } from '../AnthemCycleInfo';
 
 const SECTIONS = [
   { id: 'P01', title: 'System', sub: 'langfristig → Shell' },
@@ -14,11 +15,14 @@ const SECTIONS = [
 export default function ThresholdsView() {
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 560 }}>
-      <div style={{
-        display: 'inline-block', padding: '2px 8px', marginBottom: 10, fontSize: 10, fontFamily: 'monospace',
-        color: '#2b6cb0', background: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: 4,
-      }}>
-        P01 · Thresholds · System · Region · Load (gestaffelt)
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
+        <div style={{
+          display: 'inline-block', padding: '2px 8px', fontSize: 10, fontFamily: 'monospace',
+          color: '#2b6cb0', background: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: 4,
+        }}>
+          P01 · Thresholds · System · Region · Load (gestaffelt)
+        </div>
+        <AnthemCycleBadge />
       </div>
       {SECTIONS.map((s, i) => (
         <div key={s.id} style={{

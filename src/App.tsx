@@ -9,6 +9,7 @@ import type { Role } from './scim/ui/RoleContext';
 import type { TabId } from './scim/ui/panelRegistry';
 import RepresentBuildManualModal from './scim/ui/RepresentBuildManualModal';
 import { RepresentationProvider } from './runtime/repContext';
+import { WorkspaceNavProvider } from './scim/ui/workspaceNav';
 
 export default function App() {
   const [role, setRole] = useState<Role | null>(null);
@@ -39,6 +40,7 @@ export default function App() {
   return (
     <RoleContext.Provider value={role}>
      <RepresentationProvider>
+      <WorkspaceNavProvider value={{ goStation: goTo, activeId, activeTab }}>
       <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', position: 'relative' }}>
         <Navigator
           activeId={activeId}
@@ -87,6 +89,7 @@ export default function App() {
         </div>
         {showManual && <RepresentBuildManualModal onClose={() => setShowManual(false)} />}
       </div>
+      </WorkspaceNavProvider>
      </RepresentationProvider>
     </RoleContext.Provider>
   );
