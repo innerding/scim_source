@@ -17,9 +17,12 @@ export default function App() {
   const result = useScimPipeline();
   const [activeId, setActiveId] = useState('P01');
   const [activeTab, setActiveTab] = useState<TabId>('input');
-  // Inspector startet eingeklappt — ScimMap wird nur montiert, wenn offen
-  // (kein Rendern/Rechnen off-screen). Öffnen via Navigator-Trapez.
+  // Inspector startet eingeklappt → ScimMap wird NICHT beim Start gemountet
+  // (kein Off-screen-Rechnen beim Kaltstart). Aber: nach dem 1. Öffnen bleibt sie
+  // gemountet (mapEverOpened) und wird nur per CSS versteckt → Wiederöffnen ohne
+  // Leaflet-Neuaufbau/Verzögerung. Öffnen via Navigator-Trapez.
   const [mapCollapsed, setMapCollapsed] = useState(true);
+  const [mapEverOpened, setMapEverOpened] = useState(false);
   const [showManual, setShowManual] = useState(false);
   // Beim Sprung in den Geometry-Editor optional die zu oeffnende Boundary mitgeben.
   const [pendingGeometryId, setPendingGeometryId] = useState<string | null>(null);
@@ -32,7 +35,10 @@ export default function App() {
     setActiveTab(tab);
   };
 
-  const toggleMap = () => setMapCollapsed((c) => !c);
+  const toggleMap = () => setMapCollapsed((c) => {
+    if (c) setMapEverOpened(true); // beim Öffnen einmalig scharfschalten
+    return !c;
+  });
 
   if (role === null) {
     return <IntroScreen onAuth={setRole} />;
@@ -76,7 +82,7 @@ export default function App() {
           overflow: 'hidden',
           position: 'relative',
         }}>
-          {!mapCollapsed && (
+          {mapEverOpened && (
             <ScimMap
               result={result}
               onCollapseToggle={toggleMap}

@@ -368,7 +368,15 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
     layerGroupRef.current = layerGroup;
     clusterLayerRef.current = clusterLayer;
 
+    // Die Karte bleibt nach dem ersten Öffnen gemountet (App hält sie am Leben),
+    // wird aber bei eingeklapptem Inspector auf Breite 0 versteckt. Leaflet muss
+    // beim Wiederauftauchen (0 → 420) neu vermessen, sonst grauer/verschobener
+    // Kartenausschnitt → ResizeObserver ruft invalidateSize().
+    const ro = new ResizeObserver(() => { if (el.clientWidth > 0) map.invalidateSize(); });
+    ro.observe(el);
+
     return () => {
+      ro.disconnect();
       map.remove();
       mapRef.current = null;
       layerGroupRef.current = null;
