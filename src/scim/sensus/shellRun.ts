@@ -41,7 +41,10 @@ export interface ShellStep {
 export const SHELL_RUN_INTRO =
   'shell-run ist die lineare Strecke, auf der eine Shell entsteht und transferiert wird — ' +
   'das Gegenstück zum zyklischen Anthem-Reigen. Funktion um Funktion wird geschmiedet: erst ' +
-  'die Surfaces (was der User sieht) und Engines (die kopflos rechnen). Dann die Eintritts-' +
+  'die Surfaces (was der User sieht) und Engines (die kopflos rechnen) — inklusive der User-' +
+  'Schleife: POIs antippen, EINE adaptive Linie rechnen (Route-Solver), Comfort + Dauer ' +
+  'einstellen, der BAK deeskaliert bei Andrang, Guidance führt. Leitsatz „Geh deinen Weg" — ' +
+  'KEINE Fixrouten (wir sind kein Routen-Shop). Dann die Eintritts-' +
   'Funktionen: der globe-switcher (QR ↔ diesenpark.com) entscheidet, ob der Launcher (globale ' +
   'Auswahl) gezeigt wird; der Collector-Path speist den Launcher mit dem Katalog (Nation → ' +
   'Region → Representation); der Lade-Kaskade-Treiber fährt den Download. Zuletzt wird die ' +
@@ -61,52 +64,72 @@ export const SHELL_RUN_STEPS: ShellStep[] = [
     blurb: 'Last [0..1] → Farbe, durchgehender Gradient (Schwellen nur als Marker, nie Schnitt). Läuft app-seitig auf den Anthem-loads; Palette/spectrum/bias kommen aus den Origin-colour-settings. Reine Funktion, nativ 1:1.',
   },
   {
-    n: 3, word: 'intro', title: 'Intro / Reveal', kind: 'surface', home: 'P07 · Shell-Studio', panelId: 'P07', tabId: 't5',
+    n: 3, word: 'intro', title: 'Intro / Reveal + Slogan', kind: 'surface', home: 'P07 · Shell-Studio', panelId: 'P07', tabId: 't5',
     status: 'done',
-    blurb: '„Stilles Einloggen": Boundary-Reveal als additives Overlay. Die Shell liefert NUR die Animation (generisch) — reg-Icon und Boundary sind gestempelter Inhalt (P11/Origin). Zugleich der Vorhang über der Lade-Latenz.',
+    blurb: '„Stilles Einloggen": Boundary-Reveal als additives Overlay. Die Shell liefert NUR die Animation (generisch) — reg-Icon und Boundary sind gestempelter Inhalt (P11/Origin). Zugleich der Vorhang über der Lade-Latenz. HIER erscheint als ERSTES der Slogan „Geh deinen Weg" — das Manifest in drei Worten, das Erste, was der User konsumiert. Schließt Fixrouten aus.',
   },
   {
-    n: 4, word: 'comfort', title: 'Comfort · BCK', kind: 'surface', home: 'P07 · Shell-Studio', panelId: 'P07', tabId: 't5',
-    status: 'done',
-    blurb: 'Broda Comfort Kernel: zwei Slider (Move/Rest) schränken das Netz crossing-gated ein/erweitern es über die Ø-Last je Strecke. Braucht origin-mesh (Geometrie) + Anthem-Last. Reine Funktionen, nativ 1:1.',
+    n: 4, word: 'container', title: 'Container-System', kind: 'engine', home: 'origin-poi-set · Container-Pfad (Katalog der akt. Rep)',
+    status: 'partial',
+    blurb: 'Geometrie + Farbe je POI-Bucket, Cluster-Ghosts (Ring → Heimat-Container, wächst mit Anzahl). Braucht einen Pfad aus dem Katalog der AKTUELLEN Representation (origin-poi-set → Container). Gebaut (clusterOverlay), aber noch nicht als Shell-Funktion filetiert.',
   },
   {
-    n: 5, word: 'drossler', title: 'Drossler · Refresh-Gate', kind: 'engine', home: 'P08 · Refresh-Gate', panelId: 'P08', tabId: 't5',
+    n: 5, word: 'poi-select', title: 'POI-Auswahl', kind: 'surface', home: '— · Surface, noch nicht filetiert',
+    status: 'open',
+    blurb: 'Treffsichere An-/Abwahl, keine Zweideutigkeit. tap = markieren (kein Modal). long-tap = Detail-Modal (Tagline · Short-Description · Auswahl-Check · Dropdown für Long-Description/Foto). KEINE eigene Wishlist-Fläche; die markierten POIs sind die Auswahl. Idee: Tooltip/Autofocus statt Mehrdeutigkeit.',
+  },
+  {
+    n: 6, word: 'comfort', title: 'Comfort + Dauer · BCK', kind: 'surface', home: 'P07 · Shell-Studio', panelId: 'P07', tabId: 't5',
+    status: 'partial',
+    blurb: 'Die PRIMÄRSTEUERUNG (kein Routenmenü): der User wird aufgefordert, seinen Comfort UND seine Wanderdauer einzustellen. Broda Comfort Kernel beobachtet, zwei Slider (Move/Rest) schränken das Netz crossing-gated ein über die Ø-Last je Strecke. BCK-Slider gebaut; die Dauer-Aufforderung als Entry-Prompt ist neu.',
+  },
+  {
+    n: 7, word: 'route-solver', title: 'Route-Solver', kind: 'engine', home: 'Deep-Shell · playbook.ts (ungetestet)',
+    status: 'partial',
+    blurb: 'Modell B: die App rechnet SELBST EINE adaptive Linie durch die markierten POIs auf dem Mesh-Graph (Kreuzungen=Knoten, Segmente=Kanten), comfort-beschränkt. Kein „wähle aus 3 Routen". Konzeptionell da (playbook.ts), technisch noch ungetestet.',
+  },
+  {
+    n: 8, word: 'via', title: 'Via / Trassierung (User)', kind: 'engine', home: '— · Trassier-Snap (Longpress-Via)',
+    status: 'open',
+    blurb: 'Die Operator-Trassierung für die User-Routenbildung: long-press pinnt einen Wunschpunkt, die App snappt ihn aufs Netz (gleiche Auto-Noding-Mechanik wie beim Netz-Bau). = Longpress-Via aus der Komfort-Kaskade. Comfort-Rahmen bleibt hart.',
+  },
+  {
+    n: 9, word: 'bak', title: 'Deeskalations-Kaskade · BAK', kind: 'engine', home: 'Deep-Shell · komfort_kaskade_spec.md',
+    status: 'partial',
+    blurb: 'Broda Avoidance Kernel: handelt, wenn der Comfort kippt — eine monotone Deeskalations-Leiter (je Stufe genau eine Sache lockern). 1 Ausweichroute (Pfad) → 2 Wegpunkte umgehen (mit Rückfrage!) → 3 Alternativroute (Ziel-POI tauschen, Comfort-Max). Stufe 1 gebaut, S2+S3 offen.',
+  },
+  {
+    n: 10, word: 'guidance', title: 'Guidance', kind: 'surface', home: '— · Surface (R07), Recherche ausstehend',
+    status: 'open',
+    blurb: 'Die Führung unterwegs: super einfach, treffsicher, „besser als das Beste". Next-Stop/Ankunft/Tour-Ende. Recherche („besser als das Beste") steht noch aus (später, Abgleich mit ChatGPT). Im MVP vernachlässigbar — das meiste Arbeit.',
+  },
+  {
+    n: 11, word: 'drossler', title: 'Drossler · Refresh-Gate', kind: 'engine', home: 'P08 · Refresh-Gate', panelId: 'P08', tabId: 't5',
     status: 'done',
     blurb: 'Der Consumer drosselt sich selbst: liest die angekündigte nextAt des Snapshots und fordert erst ab nextAt + Gap neu an. Bündelt viele Interaktionen zu höchstens einer Anforderung pro Fenster. Kein eigener Screen.',
   },
   {
-    n: 6, word: 'bak', title: 'Comfort-Kaskade · BAK', kind: 'engine', home: 'Deep-Shell · noch ohne Tab',
-    status: 'partial',
-    blurb: 'Broda Avoidance Kernel: Vermeidungs-Kaskade (Ausweichroute → Wegpunkte umgehen → Alternativroute mit Comfort-Maximierung). S6-Basis gebaut, Stufe 2+3 offen. Noch kein Shell-Studio-Block.',
-  },
-  {
-    n: 7, word: 'container', title: 'Container-System', kind: 'engine', home: 'poi-catalog · noch nicht filetiert',
-    status: 'partial',
-    blurb: 'Geometrie + Farbe je POI-Bucket, Cluster-Ghosts (Ring → Heimat-Container, wächst mit Anzahl). Gebaut (clusterOverlay), aber noch nicht als Shell-Funktion filetiert.',
-  },
-  {
-    n: 8, word: 'globe-switcher', title: 'globe-switcher', kind: 'edge', home: '— · Edge, vor Sensus Core',
+    n: 12, word: 'globe-switcher', title: 'globe-switcher', kind: 'edge', home: '— · Edge, vor Sensus Core',
     status: 'open',
     blurb: 'Die Eintritts-Weiche an der Request-Grenze: liest, WIE der User kommt. QR-Code → Launcher überspringen, direkt zur festen Rep (Liste nicht nötig). diesenpark.com nackt → den Launcher zeigen. Kein Engine-Stück, sondern Dispatcher; braucht höchstens eine rep-id-Auflösung, nicht den ganzen Katalog.',
   },
   {
-    n: 9, word: 'collector', title: 'Collector-Path', kind: 'feed', home: 'P11/V01-V02 · Publishing-Aggregat',
+    n: 13, word: 'collector', title: 'Collector-Path', kind: 'feed', home: 'P11/V01-V02 · Publishing-Aggregat',
     status: 'open',
-    blurb: 'Cross-Rep-Fan-in: aggregiert den Katalog Nation → Region → Representation aus den per-Rep-Fakten, die jeder Origin-Capsuler deklariert (Nation/Region/Icon). Wohnt auf dem Publishing-Layer (Sensus Core P / V01-V02-Kaskade), NICHT in der Deep-Shell (deren Animationen sind generisch). Speist den Launcher. Nation-Ebene fehlt noch in REGION_MAP.',
+    blurb: 'Cross-Rep-Fan-in: aggregiert den Katalog Nation → Region → Representation aus den per-Rep-Fakten, die jeder Origin-Capsuler deklariert (Nation/Region/Icon). Wohnt auf dem Publishing-Layer (Sensus Core P / V01-V02-Kaskade), NICHT in der Deep-Shell (deren Animationen sind generisch). Speist den Launcher. Nation-Ebene nur als Minimal-Pfad anlegen.',
   },
   {
-    n: 10, word: 'launcher', title: 'Launcher · globale Auswahl', kind: 'surface', home: '— · High-Shell-Surface, noch nicht filetiert',
+    n: 14, word: 'launcher', title: 'Launcher · globale Auswahl', kind: 'surface', home: '— · High-Shell-Surface, noch nicht filetiert',
     status: 'open',
     blurb: 'Die globale-Auswahl-Fassung: rendert die Kacheln Nation → Region → Representation und löst die Bundle-Auslieferung aus. Der EIGENTLICHE Konsument des Collector-Path. Generische High-Shell-Surface, publishing-gespeist, lebt AUSSERHALB des Rep-Bundles. Wird vom globe-switcher gezeigt (URL) oder übersprungen (QR).',
   },
   {
-    n: 11, word: 'lade-treiber', title: 'Lade-Kaskade-Treiber', kind: 'engine', home: 'Deep-Shell · DEPLOY_ORDER',
+    n: 15, word: 'lade-treiber', title: 'Lade-Kaskade-Treiber', kind: 'engine', home: 'Deep-Shell · DEPLOY_ORDER',
     status: 'open',
     blurb: 'Fährt die Lade-Kaskade auf dem Gerät: feuert den Bundle-Fetch, sobald die rep-id bekannt ist (eager), und deckt die Latenz mit Intro/Reveal — damit der User im Upload nicht hängt. Die deklarierte Reihenfolge steht in DEPLOY_ORDER.',
   },
   {
-    n: 12, word: 'transfer', title: 'Transfer → Sensus Core P', kind: 'transfer', home: 'P11 · Sensus Core', panelId: 'P11', tabId: 't1',
+    n: 16, word: 'transfer', title: 'Transfer → Sensus Core P', kind: 'transfer', home: 'P11 · Sensus Core', panelId: 'P11', tabId: 't1',
     status: 'partial',
     blurb: 'Die fertige, generische Shell wird an Sensus Core P transferiert. Dort wird geschnürt (Shell ⊕ Origin ⊕ Anthem), versioniert (V01) und die Identität gestempelt (reg-/rep-Icon, Boundary, globale Icons). Erst HIER wird aus der generischen Shell eine konkrete Auslieferung.',
   },
