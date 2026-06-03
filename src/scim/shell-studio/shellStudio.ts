@@ -19,8 +19,8 @@ export interface ShellFunction {
   id: string;
   title: string;
   subtitle?: string;
-  /** Surface-Renderer-Schlüssel (im Studio per switch auf id aufgelöst). */
-  surface: 'map' | 'colorize' | 'placeholder';
+  /** Surface-Renderer-Schlüssel. 'engine' = keine eigene Oberfläche (Vorschau bleibt leer). */
+  surface: 'map' | 'engine' | 'placeholder';
   /** High · Design-Notizen zur Oberfläche: so kann es sein · bewährt · Fallback · Ausbau. */
   highNotes: string[];
   /** Deep · Notizen zum Produktions-Code: was er tun muss · schneller weil · Budget · erneuert weil. */
@@ -64,8 +64,8 @@ new ResizeObserver(() => map.invalidateSize()).observe(el);`,
   {
     id: 'colorize',
     title: 'Colorize',
-    subtitle: 'Last → Farbe',
-    surface: 'colorize',
+    subtitle: 'Last → Farbe (Engine)',
+    surface: 'engine',
     highNotes: [
       'Durchgehender Gradient ruhig → busy; Schwellen NUR als Marker, nie geschnitten (§2a).',
       'Default-Palette green_violet (stetig); umschaltbar heat / calm.',

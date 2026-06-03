@@ -10,24 +10,22 @@ import { useState, type ReactNode } from 'react';
 import { SHELL_FUNCTIONS, TARGET_PLATFORMS, type ShellFunction, type TargetPlatform } from '../../shell-studio/shellStudio';
 import { useWorkspaceNav } from '../workspaceNav';
 import DeepShellMap from './DeepShellMap';
-import { colorize } from '../../sensus/loadColour';
-import { ColourGradientBar } from './ColourGradientBar';
 
 const FRAME_H = 300;
 
-function DeviceFrame({ children }: { children: ReactNode }) {
+// Vorschau-Spalte (SIM) — plain, OHNE Device-Frame, gleich hoch wie die Code-Frames.
+// Sitzt zwischen den Code-Spalten; darf leer sein (Engine-Funktionen ohne eigenen Screen).
+function PlainPreview({ children }: { children: ReactNode }) {
   return (
     <div style={{ flexShrink: 0 }}>
-      <div style={{ fontSize: 9.5, color: '#a0aec0', textAlign: 'center', marginBottom: 3 }}>Sim-Vorschau</div>
-      <div style={{
-        width: 150, height: FRAME_H, borderRadius: 22, border: '7px solid #1a202c',
-        background: '#000', overflow: 'hidden', position: 'relative', boxShadow: '0 8px 24px rgba(0,0,0,0.22)',
-      }}>
-        <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: 48, height: 11, background: '#1a202c', borderRadius: '0 0 8px 8px', zIndex: 5 }} />
-        <div style={{ width: '100%', height: '100%', background: '#fff' }}>{children}</div>
-      </div>
+      <div style={{ fontSize: 9.5, color: '#a0aec0', textAlign: 'center', marginBottom: 3 }}>Vorschau (SIM)</div>
+      <div style={{ width: 176, height: FRAME_H, borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', overflow: 'hidden' }}>{children}</div>
     </div>
   );
+}
+
+function FrameLabel({ children, tone }: { children: ReactNode; tone: string }) {
+  return <div style={{ fontSize: 9.5, color: tone, textAlign: 'center', marginBottom: 3, fontWeight: 700 }}>{children}</div>;
 }
 
 function CodeFrame({ code, w = 300, tone = '#9ecbff' }: { code: string; w?: number; tone?: string }) {
@@ -49,29 +47,13 @@ function Notes({ title, items, tone }: { title: string; items: string[]; tone: s
   );
 }
 
-// Surface „colorize" — die Farb-Schlüssel-Vorschau (Last → Farbe), echte colorize-Fn.
-function ColorizeSurface() {
-  const samples = [0.12, 0.38, 0.62, 0.88];
-  return (
-    <div style={{ padding: 12, height: '100%', display: 'flex', flexDirection: 'column', gap: 8, fontFamily: 'system-ui, sans-serif' }}>
-      <div style={{ fontSize: 11, fontWeight: 700, color: '#1a365d' }}>Auslastung</div>
-      <ColourGradientBar palette="green_violet" height={16} />
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: '#a0aec0' }}><span>ruhig</span><span>busy</span></div>
-      <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 6 }}>
-        {samples.map((l, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <div style={{ flex: 1, height: 5, borderRadius: 3, background: colorize(l) }} />
-            <span style={{ fontSize: 9, color: '#718096', fontFamily: 'ui-monospace, Menlo, monospace' }}>{l.toFixed(2)}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function Surface({ fn }: { fn: ShellFunction }) {
   if (fn.surface === 'map') return <DeepShellMap />;
-  if (fn.surface === 'colorize') return <ColorizeSurface />;
+  if (fn.surface === 'engine') {
+    // Engine ohne eigenen Screen → Vorschau bleibt (fast) leer. Der Effekt erscheint
+    // in einer Surface-Funktion (colorize z.B. färbt die Wege der Karte).
+    return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', padding: 12, textAlign: 'center', fontSize: 10, color: '#cbd5e0', fontStyle: 'italic', lineHeight: 1.4 }}>Engine · kein eigener Screen<br />(Effekt erscheint in einer Surface)</div>;
+  }
   return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: 11, color: '#a0aec0', fontStyle: 'italic', padding: 12, textAlign: 'center' }}>Oberfläche folgt</div>;
 }
 
@@ -116,18 +98,27 @@ export default function ShellStudio() {
 
               {isOpen && (
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, padding: 12, overflowX: 'auto' }}>
-                  {/* SIM-Lane */}
-                  <DeviceFrame><Surface fn={fn} /></DeviceFrame>
-                  <CodeFrame code={fn.simCode} w={290} />
-                  <Notes title="SIM · Oberfläche" items={fn.highNotes} tone="#2b6cb0" />
-                  <div style={{ width: 1, alignSelf: 'stretch', background: '#e2e8f0', flexShrink: 0 }} />
-                  {/* Produktion-Lane */}
-                  <CodeFrame
-                    w={290}
-                    tone="#a0aec0"
-                    code={`// Ziel-App-Code (${[...targets].join('+') || '—'})\n// Wird NICHT live codiert.\n// Unten Plattform wählen → „Generieren"\n// → erscheint hier je Block + als Summe.\n//\n// (Generator: Konzept, noch nicht gebaut.)`}
-                  />
-                  <Notes title="Produktion · Code-Intent" items={fn.deepNotes} tone="#805ad5" />
+                  {/* SIM-Code (links) */}
+                  <div style={{ flexShrink: 0 }}>
+                    <FrameLabel tone="#2b6cb0">SIM-Code</FrameLabel>
+                    <CodeFrame code={fn.simCode} w={290} />
+                  </div>
+                  {/* Vorschau-Spalte (plain, ohne Device-Frame) — zwischen den Code-Spalten */}
+                  <PlainPreview><Surface fn={fn} /></PlainPreview>
+                  {/* Produktions-Code (rechts) */}
+                  <div style={{ flexShrink: 0 }}>
+                    <FrameLabel tone="#805ad5">Produktion-Code (generiert)</FrameLabel>
+                    <CodeFrame
+                      w={290}
+                      tone="#a0aec0"
+                      code={`// Ziel-App-Code (${[...targets].join('+') || '—'})\n// Wird NICHT live codiert.\n// Unten Plattform wählen → „Generieren"\n// → erscheint hier je Block + als Summe.\n//\n// (Generator: Konzept, noch nicht gebaut.)`}
+                    />
+                  </div>
+                  {/* Notizen (ganz rechts, gestapelt) */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12, flexShrink: 0 }}>
+                    <Notes title="SIM · Oberfläche" items={fn.highNotes} tone="#2b6cb0" />
+                    <Notes title="Produktion · Code-Intent" items={fn.deepNotes} tone="#805ad5" />
+                  </div>
                 </div>
               )}
             </div>
