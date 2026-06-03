@@ -160,13 +160,18 @@ export const PANEL_REGISTRY: PanelDescriptor[] = [
     group: 1,
     order: 4,
     icon: '≋',
-    shortDescription: 'Load-Belastungsdaten/Schwellen · Grundparameter der Telco-Quelle (Mock-state)',
-    helpText: 'Importiert und kalibriert Mobilfunk-Belastungssignale als Proxy für Besucheraufkommen.',
+    shortDescription: 'Quelle/Einatmen: Presence-Intake · Sim-Telco · Normalization',
+    helpText: 'Die Last-Quelle des Transmitters: presence-Intake (Gate), die Sim-Telco und die Normalisierung der Rohlast auf die Boundary.',
     dependsOn: ['P01', 'P02'],
     inputMode: 'user_form',
     isBlocking: true,
     contextKey: 'telco_load',
-    tabs: THRESHOLD_TABS,
+    // T3: Telco-Tabs (Atem-Kette): Presence → Sim-Telco → Normalization.
+    tabs: [
+      { id: 't1', label: 'Presence', icon: '📥' },
+      { id: 't2', label: 'Sim-Telco', icon: '🎭' },
+      { id: 't3', label: 'Normalization', icon: '≈' },
+    ],
   },
   {
     id: 'P05',

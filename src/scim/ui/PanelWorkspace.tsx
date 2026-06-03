@@ -643,26 +643,52 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
 
   // T2: P04 = Telco, P02 = Coder. Die Schwellen-Regler leben jetzt im Thresholds-
   // Panel (P01); der echte Inhalt zieht in T3 (Telco) bzw. T4 (Coder) ein.
-  // T3: Telco = die Quelle (Einatmen). presence-Intake (Gate) + Normalization +
-  // die Sim-Telco (SimArchitecture · Sim-Clock/Time-Turbo · Sim-Form).
+  // T3: Telco = die Quelle (Einatmen). Drei Tabs (Atem-Kette): Presence (klopfen) →
+  // Sim-Telco (Quelle) → Normalization (Rohlast deuten).
   if (panel.id === 'P04') {
     const ctx = result.success ? (result.context as unknown as Record<string, unknown>) : null;
     return (
       <div style={{ fontFamily: 'system-ui, sans-serif' }}>
         <div style={{
-          display: 'inline-block', padding: '2px 8px', marginBottom: 8, fontSize: 10, fontFamily: 'monospace',
+          display: 'inline-block', padding: '2px 8px', marginBottom: 10, fontSize: 10, fontFamily: 'monospace',
           color: '#2b6cb0', background: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: 4,
         }}>
           P04 · Telco · Quelle (Einatmen)
         </div>
-        <p style={{ fontSize: 12, color: '#4a5568', lineHeight: 1.55, margin: '2px 0 14px', maxWidth: 560 }}>
-          Der <strong>Empfangsschirm</strong> des Transmitters: <strong>presence-Intake</strong> (Gate — welche
-          origin-boundary der User ist) + <strong>Normalization</strong> (rohe Last auf die Boundary normiert).
-          Quelle heute: <strong>Sim-Telco</strong> (echtes Telco später, gleicher Vertrag).
-        </p>
-        <SimArchitecture />
-        <SimClockControl />
-        <P06SimulationForm state={ctx?.telco_load as TelcoLoadState | undefined} />
+        {activeTab === 't1' && (
+          <div style={{ fontSize: 12.5, color: '#2d3748', lineHeight: 1.6, maxWidth: 560 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#1a365d', marginBottom: 4 }}>Presence · Intake / Gate</div>
+            Die App klopft beim <strong>1. Upload nach Shell-Install</strong>: <code>presence-origin</code> („ich bin in
+            origin-boundary X"). Das <strong>Gate</strong> wählt daraufhin das auszuspielende Origin. Echt gebaut,
+            kein Sim-Shortcut.
+            <div style={{ fontSize: 10.5, color: '#a0aec0', fontStyle: 'italic', marginTop: 8 }}>
+              Gegenstück zum Origin-Manifest-Builder (P09), der die <code>anthemEndpoint</code>-Adresse schreibt —
+              presence klopft daran. Echte Funktion: Plan-B-Phase-2.
+            </div>
+          </div>
+        )}
+        {activeTab === 't2' && (
+          <>
+            <p style={{ fontSize: 12, color: '#4a5568', lineHeight: 1.55, margin: '0 0 12px', maxWidth: 560 }}>
+              Die Last-<strong>Quelle</strong>. Heute <strong>Sim-Telco</strong> (echtes Telco später, gleicher Vertrag);
+              der <strong>Time-Turbo</strong> rafft die Sim-Zeit.
+            </p>
+            <SimArchitecture />
+            <SimClockControl />
+            <P06SimulationForm state={ctx?.telco_load as TelcoLoadState | undefined} />
+          </>
+        )}
+        {activeTab === 't3' && (
+          <div style={{ fontSize: 12.5, color: '#2d3748', lineHeight: 1.6, maxWidth: 560 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#1a365d', marginBottom: 4 }}>Normalization</div>
+            Rohe Telco-Last → <strong>normalisiert auf die Boundary</strong> → Last <strong>[0..1] je Segment</strong>
+            (<code>normalizeLoads</code>: spread + floor). Das „Deuten der Rohlast", bevor der <strong>Coder</strong> sie packt.
+            Passiert <strong>SCIM-seitig</strong>, bevor das Anthem rausgeht — die App bekommt schon [0..1] und färbt nur (colorize).
+            <div style={{ fontSize: 10.5, color: '#a0aec0', fontStyle: 'italic', marginTop: 8 }}>
+              <code>normalizeLoads</code> ist heute noch unter den Shell-Engines gelistet — eigentlich ein Telco-Schritt (spätere Aufräum-Notiz).
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -781,7 +807,7 @@ export default function PanelWorkspace({ activeId, activeTab, onTabChange, resul
     }}>
       <PanelHeader id={entry.id} title={entry.label} subtitle={subtitle} dimmed={KOSMOLOGIE_IDS.has(activeId)} />
       {/* P09 (Origin-Capsuler) rendert die Sampling-Pipeline als Vergleich — ohne Tabs. */}
-      {!['P01', 'P02', 'P04', 'P09'].includes(activeId) && <TabBar tabs={tabs} active={safeTab} onSelect={onTabChange} />}
+      {!['P01', 'P02', 'P09'].includes(activeId) && <TabBar tabs={tabs} active={safeTab} onSelect={onTabChange} />}
       {/* Geometry-Editor braucht volle Hoehe ohne Padding */}
       {activeId === DRAWER_DESCRIPTOR.id ? (
         <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
