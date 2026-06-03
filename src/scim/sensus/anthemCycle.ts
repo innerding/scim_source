@@ -59,8 +59,8 @@ export const ANTHEM_STATIONS: AnthemStation[] = [
   },
   {
     n: 4, word: 'schwellen', title: 'Thresholds', home: 'P01', panelId: 'P01',
-    status: 'partial',
-    blurb: 'System/Region/Load-Schwellen bestimmen, wie die Last gespreizt und ab wann sie „rot" wird. Greifen heute im Karten-Render; in den Snapshot-Pfad des Coders sind sie noch nicht verdrahtet (nimmt Default-Parameter).',
+    status: 'done',
+    blurb: 'System/Region/Load-Schwellen bestimmen, wie die Last gespreizt und ab wann sie „rot" wird. Jetzt im Snapshot-Pfad verdrahtet: die Load-Threshold-Parameter (spread/floor der Rep-Region) gehen in produceAnthem ein — im Coder-Preview UND mit dem Origin veröffentlicht, sodass der Worker bit-gleich normalisiert. (Threshold geändert → Origin neu veröffentlichen.)',
   },
   {
     n: 5, word: 'packen', title: 'Coder', home: 'P02', panelId: 'P02',
@@ -69,8 +69,8 @@ export const ANTHEM_STATIONS: AnthemStation[] = [
   },
   {
     n: 6, word: 'ausatmen', title: 'Transmitter', home: 'P06 · Atem', panelId: 'P06', tabId: 't1',
-    status: 'partial',
-    blurb: 'Spielt den Snapshot aus — auf Anfrage der Ziel-App, nicht von sich aus. Die Atem-Anatomie/UI ist gebaut; die echte Auslieferung übers Netz hängt am Worker (offen).',
+    status: 'done',
+    blurb: 'Spielt den Snapshot aus — auf Anfrage der Ziel-App, nicht von sich aus. Die Ausspielung erfüllt der deployte Worker-GET (presence-gegated, siehe „senden"); P06 ist die Atem-Anatomie/Erklärung dazu. Funktional erfüllt.',
   },
   {
     n: 7, word: 'adressieren', title: 'Adresse (anthemEndpoint)', home: 'P09 · Origin-Manifest', panelId: 'P09',

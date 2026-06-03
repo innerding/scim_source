@@ -25,7 +25,11 @@
 // Geteilte Producer-Engine (EINE Quelle, auch vom Editor genutzt) — „Worker rechnet
 // selbst": aus dem veröffentlichten Origin-Netz + (Sim-)Zeit → AnthemSnapshot.
 import { produceAnthem } from '../../src/scim/sensus/anthemProducer';
-import type { SegmentedNet } from '../../src/scim/sensus/anthemSim';
+import type { SegmentedNet, NormalizeParams } from '../../src/scim/sensus/anthemSim';
+
+// Veröffentlichtes Origin-Netz: Geometrie + (optional) die mitgelieferten Load-
+// Thresholds, damit der Worker bit-gleich zum Editor normalisiert.
+type PublishedNet = SegmentedNet & { norm?: NormalizeParams };
 
 const CDN_BASE      = 'https://cdn.diesenpark.com';
 const PACKAGES_PATH = 'packages';
@@ -42,10 +46,10 @@ function simMinFromUrl(url: URL): number {
   return Math.min(20 * 60, Math.max(6 * 60, mins));
 }
 
-async function readOriginNet(env: Env, repId: string): Promise<SegmentedNet | null> {
+async function readOriginNet(env: Env, repId: string): Promise<PublishedNet | null> {
   const obj = await env.PACKAGES.get(`origin/${repId}/net.json`);
   if (!obj) return null;
-  return await obj.json() as SegmentedNet;
+  return await obj.json() as PublishedNet;
 }
 
 interface PresenceRec { firstSeen?: string; lastSeen: string }
@@ -458,7 +462,7 @@ export default {
 
       const net = await readOriginNet(env, repId);
       if (!net) return err(`No published origin-net for "${repId}" — PUT /api/origin/${repId}/net first.`, 404);
-      const snapshot = produceAnthem(net, repId, simMinFromUrl(url));
+      const snapshot = produceAnthem(net, repId, simMinFromUrl(url), net.norm ?? {});
       return json({ ok: true, repId, firstSeen, lastSeen, snapshot });
     }
 
@@ -488,7 +492,7 @@ export default {
       }
       const net = await readOriginNet(env, repId);
       if (!net) return err(`No published origin-net for "${repId}".`, 404);
-      return json(produceAnthem(net, repId, simMinFromUrl(url)));
+      return json(produceAnthem(net, repId, simMinFromUrl(url), net.norm ?? {}));
     }
 
     return err('Not found', 404);

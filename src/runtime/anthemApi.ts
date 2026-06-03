@@ -9,8 +9,8 @@ const UPLOAD_API_KEY = import.meta.env.VITE_UPLOAD_API_KEY as string | undefined
 export const anthemPublishConfigured = () => !!(WORKER_URL && UPLOAD_API_KEY);
 export const anthemReadConfigured    = () => !!WORKER_URL;
 
-/** Origin-Netz (minimal: stretches[{id,points}]) nach R2 veröffentlichen. */
-export async function publishOriginNet(repId: string, net: { stretches: Array<{ id: string; points: [number, number][] }> }) {
+/** Origin-Netz (minimal: stretches[{id,points}]) + Load-Thresholds nach R2 veröffentlichen. */
+export async function publishOriginNet(repId: string, net: { stretches: Array<{ id: string; points: [number, number][] }>; norm?: { spread: number; floor: number } }) {
   const res = await fetch(`${WORKER_URL}/api/origin/${repId}/net`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', 'X-Scim-Key': UPLOAD_API_KEY ?? '' },
