@@ -44,6 +44,8 @@ import { buildOriginPackage, MVP_RESAMPLE_TARGET_METERS } from '../sensus/origin
 import { buildOriginManifest } from '../sensus/originManifest';
 import type { OriginManifest } from '../sensus/packageContract';
 import type { OriginPackage } from '../sensus/originPackage';
+import { buildAnthemSnapshot } from '../sensus/anthemEncoder';
+import { simSegmentLoads, normalizeLoads } from '../sensus/anthemSim';
 import { resampleNet } from '../wegnetz/netResample';
 
 interface Props {
@@ -692,12 +694,45 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
       </div>
     );
   }
+  // T4: Coder = der Anthem-Encoder. Packt die normalisierte Last [0..1] je Segment
+  // live in den AnthemSnapshot (ohne Koordinaten) — Gegenstück zum Origin-Manifest-Builder.
   if (panel.id === 'P02') {
+    const rep = inspectedRep; // useAuftraggeberRep (oben)
+    const net = rep.wegnetz_id ? wegnetzById(rep.wegnetz_id) : undefined;
+    const r = net ? resampleNet(net.edges, { targetMeters: MVP_RESAMPLE_TARGET_METERS }) : null;
+    const loads = r ? normalizeLoads(simSegmentLoads(r)) : [];
+    const t = '12:00 · Sim';
+    const snap = buildAnthemSnapshot(loads, rep.id, t);
+    const jsonBytes = JSON.stringify(snap).length;
     return (
-      <div style={{ fontSize: 12, color: '#4a5568', lineHeight: 1.6, maxWidth: 560 }}>
-        <strong style={{ color: '#1a365d' }}>Coder</strong> — der Anthem-Encoder: Last → segId-Snapshot
-        (<code>buildAnthemSnapshot</code>).
-        <div style={{ fontSize: 10.5, color: '#a0aec0', fontStyle: 'italic', marginTop: 6 }}>Entsteht in T4 hier.</div>
+      <div style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 600 }}>
+        <div style={{
+          display: 'inline-block', padding: '2px 8px', marginBottom: 8, fontSize: 10, fontFamily: 'monospace',
+          color: '#2b6cb0', background: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: 4,
+        }}>
+          P02 · Coder · Anthem-Encoder
+        </div>
+        <p style={{ fontSize: 12, color: '#4a5568', lineHeight: 1.55, margin: '2px 0 12px' }}>
+          Packt die normalisierte Last <strong>[0..1] je Segment</strong> in den <strong>Anthem-Snapshot</strong> —
+          <strong> ohne Koordinaten</strong>, Reihenfolge = Origin-Net-Segment-Index. Die App mappt Index → Geometrie
+          übers Origin-Netz und färbt (colorize). Gegenstück zum Origin-Manifest-Builder (P09).
+        </p>
+        <div style={{ border: '1px solid #d6bcfa', background: '#faf5ff', borderRadius: 8, padding: '10px 12px', marginBottom: 12 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#553c9a' }}>
+            Snapshot · {snap.kind} · „{rep.name}" · t {snap.t}
+          </div>
+          <div style={{ fontSize: 11.5, fontFamily: 'ui-monospace, Menlo, monospace', color: '#44337a', lineHeight: 1.7, marginTop: 6 }}>
+            <div>segments: {snap.loads.length}{r ? ` (origin-net @${MVP_RESAMPLE_TARGET_METERS} m)` : ''}</div>
+            <div>size: ~{fmtBytes(snap.loads.length)} (1 B/Segment, Wire) · JSON {fmtBytes(jsonBytes)}</div>
+            <div style={{ color: '#718096', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              loads[0..15]: {snap.loads.slice(0, 16).map((v) => v.toFixed(2)).join(' ')}{snap.loads.length > 16 ? ' …' : ''}
+            </div>
+          </div>
+        </div>
+        <div style={{ fontSize: 11, color: '#718096', lineHeight: 1.55 }}>
+          Kette: <strong>Telco</strong> normalisiert → <strong>Coder</strong> packt → <strong>Transmitter</strong> sendet (alle 5 Min).
+          Quelle: <code>anthemEncoder.buildAnthemSnapshot</code> · Last heute Sim (<code>simSegmentLoads → normalizeLoads</code>).
+        </div>
       </div>
     );
   }
