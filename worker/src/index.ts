@@ -8,6 +8,7 @@
  *   DELETE /api/packages/:id             — Version archivieren
  *   GET    /api/packages/active/:region  — aktive Version einer Region
  *   PUT    /api/origin/:repId/net        — Origin-Netz veröffentlichen (für Anthem-Compute)
+ *   GET    /api/origin/:repId/net        — Origin-Geometrie (read-only): die Ziel-App holt das Netz
  *   GET    /api/origin/:repId            — Origin-Schicht-Status (read-only): published, stretches, bytes, uploadedAt
  *   POST   /api/anthem/:repId/presence   — App klopft: Presence-Session + erster Snapshot
  *   GET    /api/anthem/:repId/presence   — Presence-Status (read-only): present, firstSeen, lastSeen, durationMin
@@ -423,6 +424,19 @@ export default {
         httpMetadata: { contentType: 'application/json', cacheControl: 'no-store' },
       });
       return json({ ok: true, repId, ...meta });
+    }
+
+    // ── GET /api/origin/:repId/net ───────────────────────────────────────────
+    // Read-only: die Ziel-App holt die Origin-Geometrie (Netz) — Modell B, statisch
+    // einmal geladen, indexgleich zu den Anthem-loads. Kein Key nötig.
+    if (request.method === 'GET' && pathname.match(/^\/api\/origin\/[^/]+\/net$/)) {
+      const repId = pathname.split('/')[3];
+      if (!KEY_PATTERN.test(repId)) return err('Invalid repId', 422);
+      const obj = await env.PACKAGES.get(`origin/${repId}/net.json`);
+      if (!obj) return err(`No published origin-net for "${repId}".`, 404);
+      return new Response(obj.body, {
+        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=3600' },
+      });
     }
 
     // ── GET /api/origin/:repId ───────────────────────────────────────────────
