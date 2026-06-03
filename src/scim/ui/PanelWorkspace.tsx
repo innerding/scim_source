@@ -19,7 +19,7 @@ import RuntimeFlowExplainer from './panels/RuntimeFlowExplainer';
 import SensusCoreReigen from './panels/SensusCoreReigen';
 import { BoundaryView, WegnetzCompareView, IntroView } from './panels/SichelViews';
 import HighShellIconAssets from './panels/HighShellIconAssets';
-import DeepShellMap from './panels/DeepShellMap';
+import ShellStudio from './panels/ShellStudio';
 import RuntimeShellView from './panels/RuntimeShellView';
 import TransmissionView from './panels/TransmissionView';
 import ThresholdsView from './panels/ThresholdsView';
@@ -1040,8 +1040,6 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
 
   // P08 (Deep-Shell) t5: Refresh-Gate = app-seitige Selbst-Drosselung (anthemGate).
   if (panel.id === 'P08' && activeTab === 't5') return <AnthemGateView />;
-  // P08 t6: Engine-Funktion 1 = Karten-Engine (Leaflet + OSM).
-  if (panel.id === 'P08' && activeTab === 't6') return <DeepShellMap />;
   // P08 (Deep-Shell): vier Engine-Prep-Artefakte (POI/Last/Mask/Move). M2: von P09.
   if (panel.id === 'P08') {
     const d = P09_DESCRIPTORS.find((x) => x.tabId === activeTab);
@@ -1150,6 +1148,9 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
 
   // P07 t4: High-Shell Icon-Assets (eigener Speicher data/icons-shell, NICHT via Capsuler).
   if (panel.id === 'P07' && activeTab === 't4') return <HighShellIconAssets />;
+
+  // P07 t5: Shell-Studio (Dual-Lane: High=Oberfläche | Deep=Code, je Funktion ein Block).
+  if (panel.id === 'P07' && activeTab === 't5') return <ShellStudio />;
 
   // P07 t1: Boundary-View (Ring). Notiz ist entfernt; falls wieder gesetzt,
   // erscheint sie darunter.

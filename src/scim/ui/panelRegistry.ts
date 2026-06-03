@@ -223,6 +223,7 @@ export const PANEL_REGISTRY: PanelDescriptor[] = [
         'Rep-Junction (Future-Function): Darstellung des Grenzbereichs einer benachbarten Representation / Anschlussfähigkeit der Gate-POIs inner-/outer-translate.',
       ] },
       { id: 't4', label: 'Icon-Assets', icon: '⊞' },
+      { id: 't5', label: 'Shell-Studio', icon: '▥' },
     ],
   },
   {
@@ -245,7 +246,6 @@ export const PANEL_REGISTRY: PanelDescriptor[] = [
       { id: 't3', label: 'Mask', icon: '⛉' },
       { id: 't4', label: 'Move', icon: '↝' },
       { id: 't5', label: 'Refresh-Gate', icon: '⏱' },
-      { id: 't6', label: 'Karte (OSM)', icon: '◰' },
     ],
   },
 

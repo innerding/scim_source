@@ -1,7 +1,7 @@
-// P08 · Deep-Shell · Engine-Funktion 1 — die Karten-Engine (Leaflet + OSM).
-// Die erste SICHTBARE Engine-Funktion der Deep-Shell: OSM-Tiles via Leaflet,
-// fokussiert auf die Boundary der Auftraggeber-Rep. Laufzeit liegt auf der Ziel-App
-// (R07 Karte & Guidance); hier die Build-/Vorschau-Seite. Reveal/Intro = Funktion 2.
+// Karten-Oberfläche (Leaflet + OSM) — die SURFACE der Funktion „Karte" im Shell-
+// Studio (High-Lane, im Device-Frame). OSM-Tiles, fokussiert auf die Boundary der
+// Auftraggeber-Rep. Laufzeit liegt auf der Ziel-App (R07). Der zugehörige CODE steht
+// in der Deep-Lane des Studios. Reveal/Intro = nächste Funktion.
 import { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -44,22 +44,7 @@ export default function DeepShellMap() {
     }
   }, [rep.id, rep.geometry_id]);
 
-  return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', fontFamily: 'system-ui, sans-serif' }}>
-      <div style={{ flex: '0 0 auto', marginBottom: 8 }}>
-        <div style={{
-          display: 'inline-block', padding: '2px 8px', fontSize: 10, fontFamily: 'monospace',
-          color: '#2b6cb0', background: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: 4,
-        }}>
-          P08 · Deep-Shell · Engine-Funktion 1 · Karte (Leaflet + OSM)
-        </div>
-        <p style={{ fontSize: 12, color: '#4a5568', lineHeight: 1.5, margin: '6px 0 0', maxWidth: 580 }}>
-          Die erste sichtbare <strong>Engine-Funktion</strong> der Deep-Shell: die <strong>Karten-Engine</strong>
-          (Leaflet + OSM-Tiles), fokussiert auf „{rep.name}". Laufzeit liegt auf der Ziel-App (R07 Karte &amp; Guidance);
-          hier die Build-/Vorschau-Seite. <em>Funktion 2 folgt: Intro/Boundary-Reveal.</em>
-        </p>
-      </div>
-      <div ref={containerRef} style={{ flex: '1 1 auto', minHeight: 0, borderRadius: 8, overflow: 'hidden', border: '1px solid #e2e8f0' }} />
-    </div>
-  );
+  // Bare Karten-Oberfläche — füllt ihren Container (z.B. ein Device-Frame im
+  // Shell-Studio). Kontext/Titel liefert der Studio-Block drumherum.
+  return <div ref={containerRef} style={{ width: '100%', height: '100%' }} />;
 }
