@@ -20,6 +20,7 @@ import SensusCoreReigen from './panels/SensusCoreReigen';
 import { BoundaryView, WegnetzCompareView, IntroView } from './panels/SichelViews';
 import RuntimeShellView from './panels/RuntimeShellView';
 import TransmissionView from './panels/TransmissionView';
+import ThresholdsView from './panels/ThresholdsView';
 import PanelResult from './panels/PanelResult';
 import PanelValidation from './panels/PanelValidation';
 import PanelRaw from './panels/PanelRaw';
@@ -637,10 +638,13 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
     );
   }
 
-  // P01/P02/P04 (Threshold-Bögen, gleiche Tabs): Adjust zeigt NUR die Slider;
+  // P01 (Thresholds · T1): die drei Schwellen gestaffelt (System/Region/Load), ohne Tabs.
+  if (panel.id === 'P01') return <ThresholdsView />;
+
+  // P02/P04 (Threshold-Bögen, gleiche Tabs): Adjust zeigt NUR die Slider;
   // die Konzept-Notizen erscheinen unauffällig (gedämpfte Zeilen) in den anderen
   // Tabs. P01-bauKonzept nur einmal (Signal Intake), nicht doppelt auf jedem Tab.
-  if (panel.id === 'P01' || panel.id === 'P02' || panel.id === 'P04') {
+  if (panel.id === 'P02' || panel.id === 'P04') {
     if (activeTab === 'adjust') return <ColourAdjust panelId={panel.id} />;
     const td = panel.tabs.find((t) => t.id === activeTab);
     const lines = [...(td?.body ?? [])];
@@ -770,7 +774,7 @@ export default function PanelWorkspace({ activeId, activeTab, onTabChange, resul
     }}>
       <PanelHeader id={entry.id} title={entry.label} subtitle={subtitle} dimmed={KOSMOLOGIE_IDS.has(activeId)} />
       {/* P09 (Origin-Capsuler) rendert die Sampling-Pipeline als Vergleich — ohne Tabs. */}
-      {activeId !== 'P09' && <TabBar tabs={tabs} active={safeTab} onSelect={onTabChange} />}
+      {activeId !== 'P09' && activeId !== 'P01' && <TabBar tabs={tabs} active={safeTab} onSelect={onTabChange} />}
       {/* Geometry-Editor braucht volle Hoehe ohne Padding */}
       {activeId === DRAWER_DESCRIPTOR.id ? (
         <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>

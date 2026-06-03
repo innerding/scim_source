@@ -107,7 +107,7 @@ export const PANEL_REGISTRY: PanelDescriptor[] = [
   // ── Gruppe 1: Benutzereingaben ─────────────────────────────────────────────
   {
     id: 'P01',
-    label: 'System Thresholds',
+    label: 'Thresholds',
     kurzLabel: 'sys',
     group: 1,
     order: 1,

@@ -82,6 +82,32 @@ Label/Inhalt-Mismatches) → Inhalt wandert mit dem Label.
 Querschnitt: Origin gestaffelt (Manifest-first), Segment-Adjazenz in Origin; deferred:
 Logo/„Lichtenberg"-Header-Animation im Reveal.
 
+## Plan T — Transmission-Umbau (Konsens 2026-06-03)
+
+Der **Transmitter atmet**; die drei Bögen sind seine Anatomie. ID-Strategie:
+die drei Threshold-IDs werden die drei Transmitter-Bögen (IDs eingefroren, Rollen
+wandern).
+
+| Bogen | Position | ID | Rolle |
+|---|---|---|---|
+| **Thresholds** | oben links | **P01** | System → Region → Load gestaffelt |
+| **Telco** | oben rechts | **P04** | Quelle: Simulation · Sim-Clock/Turbo · presence-Intake · Normalization |
+| **Coder** | unten | **P02** | Anthem-Encoder (`buildAnthemSnapshot`) |
+| **Transmitter** | Mesh | **P06** | Ausatmen: Anthem-Auslieferung |
+
+Atem-Flow: **Telco (ein) → Thresholds (deuten) → Coder (packen) → Transmitter (aus → Runtime).**
+
+**Zuordnungen (geklärt):** presence-origin-intake = Telco (Empfangsschirm; Gegenstück
+zum Origin-Manifest-Builder in P09 — dieser schreibt die `anthemEndpoint`-Adresse,
+presence klopft daran). Sim-Clock/Time-Turbo + Simulation = Telco. Anthem-Auslieferung
+= Transmitter. Runtime = Empfänger/Decoder. Bibliothek = Versionen (Mond).
+
+**Schritte:** T1 Thresholds vereinen (P01, gestaffelt) · T2 Bögen ummappen + Glyphen
+(LL→P01, OR→P04, unten→P02; Labels Telco/Coder) · T3 Simulation→Telco (P04) +
+presence/Normalization · T5 Transmitter (P06) = Ausspielung, Atem-Anatomie-View ·
+**T4 Coder = Anthem-Encoder** (`buildAnthemSnapshot`, = Plan-B-Phase-1, substanziell).
+Reihenfolge: T1 → T2 → T3 → T5 → T4.
+
 ## Leitplanken (unverändert)
 
 Mock-Erbe ist schön gebaut — **keine verwirrende Dopplung**: neu ersetzt/konvergiert,
