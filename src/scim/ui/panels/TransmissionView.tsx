@@ -1,13 +1,28 @@
-// P06 · Transmission Schwellen — die Heimat des Anthem-Atems: Transmitter +
-// Thresholds + Anthem-Encoder. Erklär-/Ordnungs-Ansicht (zum „bei der Hand haben").
-// Konsens 2026-06-02: in der Praxis spielt Anthem ALLE Thresholds aus, auch wenn
-// System/Region thematisch zu Shell/Origin gehören → Kapitel „Transmission Schwellen".
+// P06 · Transmitter — der Atem (Plan T · T5). Der Transmitter spielt das Anthem
+// aus (Ausatmen); die drei Bögen sind die Stationen des Atems. Erklär-/Übersichts-
+// Ansicht. Siehe docs/zielbild_ausbauplan.md (Plan T) · docs/begriffs_karte.md.
 
-import type { ReactNode } from 'react';
+type Tone = 'ein' | 'deuten' | 'packen' | 'aus';
+const TONES: Record<Tone, [string, string]> = {
+  ein: ['#f0fff4', '#38a169'],     // Telco — einatmen
+  deuten: ['#fffaf0', '#dd6b20'],  // Thresholds — deuten
+  packen: ['#faf5ff', '#9f7aea'],  // Coder — packen
+  aus: ['#ebf8ff', '#3182ce'],     // Transmitter — ausatmen
+};
 
-function Tone({ c, children }: { c: string; children: ReactNode }) {
-  return <span style={{ color: c, fontWeight: 700 }}>{children}</span>;
+function Chip({ label, sub, tone }: { label: string; sub: string; tone: Tone }) {
+  const [bg, bd] = TONES[tone];
+  return (
+    <span style={{
+      display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-start', flexShrink: 0,
+      fontSize: 11, fontFamily: 'monospace', padding: '3px 8px', borderRadius: 4,
+      background: bg, border: `1px solid ${bd}`, color: '#2d3748', whiteSpace: 'nowrap',
+    }}>
+      {label}<span style={{ fontSize: 9.5, color: '#a0aec0' }}>{sub}</span>
+    </span>
+  );
 }
+const Arrow = () => <span style={{ color: '#cbd5e0', flexShrink: 0 }}>→</span>;
 
 export default function TransmissionView() {
   return (
@@ -16,41 +31,36 @@ export default function TransmissionView() {
         display: 'inline-block', padding: '2px 8px', marginBottom: 10, fontSize: 10, fontFamily: 'monospace',
         color: '#2b6cb0', background: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: 4,
       }}>
-        P06 · Transmission Schwellen · Atem (Anthem)
+        P06 · Transmitter · der Atem
       </div>
-
       <div style={{ fontSize: 12.5, color: '#2d3748', lineHeight: 1.6, marginBottom: 12 }}>
-        Der <strong>Transmitter</strong> baut <strong>Anthem</strong> (den Atem). In der Praxis ist es
-        <strong> Anthem, der alle Schwellen ausspielt</strong> — auch wenn System/Region thematisch zu
-        Shell/Origin gehören. Darum hier zusammengefasst.
+        Der Transmitter <strong>atmet</strong> — er spielt das <strong>Anthem</strong> aus. Die drei Bögen sind die
+        Stationen des Atems.
       </div>
 
-      <div style={{ fontSize: 12, fontWeight: 700, color: '#1a365d', marginBottom: 4 }}>Was zur Transmission gehört</div>
-      <ul style={{ margin: '0 0 12px', paddingLeft: 18, fontSize: 12, color: '#2d3748', lineHeight: 1.6 }}>
-        <li><strong>Transmitter (P06)</strong> — Atem-Macher, baut Anthem.</li>
-        <li><strong>Anthem-Encoder</strong> (neu) — serialisiert Last → segId-Snapshot. Wohnt bei P06.</li>
-        <li><strong>presence-origin-Intake</strong> — Einatmen/Gate (Uplink „ich bin in origin-boundary X").</li>
-        <li><strong>5-Min-Sim-Clock / Time-Turbo</strong> — der Takt der Snapshots.</li>
-        <li><em>später:</em> <strong>Anthem-Auslieferung / Scheduling</strong> (Worker <code>/api/anthem/:repId</code>).</li>
-      </ul>
-
-      <div style={{ fontSize: 12, fontWeight: 700, color: '#1a365d', marginBottom: 4 }}>Die drei Schwellen ↔ drei Horizonte</div>
-      <div style={{ fontSize: 11.5, color: '#2d3748', lineHeight: 1.7, marginBottom: 10, fontFamily: 'ui-monospace, Menlo, monospace' }}>
-        <div><Tone c="#38a169">Load (P04)</Tone> · kurz → <strong>Anthem</strong> (Telco-Quelle, die der Transmitter liest)</div>
-        <div><Tone c="#3182ce">Region (P02)</Tone> · mittel → <strong>Origin</strong></div>
-        <div><Tone c="#718096">System (P01)</Tone> · lang → <strong>Shell</strong></div>
+      {/* Atem-Kette — einzeilig (nowrap), bei Bedarf horizontal scrollbar. */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'nowrap', overflowX: 'auto', marginBottom: 14, paddingBottom: 2 }}>
+        <Chip label="Telco" sub="einatmen · P04" tone="ein" />
+        <Arrow />
+        <Chip label="Thresholds" sub="deuten · P01" tone="deuten" />
+        <Arrow />
+        <Chip label="Coder" sub="packen · P02" tone="packen" />
+        <Arrow />
+        <Chip label="Transmitter" sub="ausatmen · P06" tone="aus" />
       </div>
+
+      <div style={{ fontSize: 12, fontWeight: 700, color: '#1a365d', marginBottom: 4 }}>Die Stationen</div>
+      <div style={{ fontSize: 11.5, color: '#2d3748', lineHeight: 1.7, marginBottom: 12 }}>
+        <div><span style={{ color: TONES.ein[1], fontWeight: 700 }}>Telco (P04)</span> · einatmen — presence-Intake (Gate) · Sim-Telco · Normalization (Rohlast → [0..1]).</div>
+        <div><span style={{ color: TONES.deuten[1], fontWeight: 700 }}>Thresholds (P01)</span> · deuten — System → Region → Load (Schwellen).</div>
+        <div><span style={{ color: TONES.packen[1], fontWeight: 700 }}>Coder (P02)</span> · packen — Anthem-Encoder: Last → <strong>segId-Snapshot</strong>.</div>
+        <div><span style={{ color: TONES.aus[1], fontWeight: 700 }}>Transmitter (P06)</span> · ausatmen — <strong>Anthem-Auslieferung</strong> (alle 5 Min) an die Runtime. Scheduling lebt hier.</div>
+      </div>
+
       <div style={{ fontSize: 11, color: '#718096', lineHeight: 1.55 }}>
-        Schnitt gewählt: <strong>weit</strong> — alle Thresholds unter dem Anthem-Dach (Empfangsschirme + Sender),
-        weil Anthem sie ausspielt. Die Horizont-Zuordnung bleibt als innere Logik erhalten.
+        Nach dem Atem: <strong>Runtime</strong> dekodiert + lebt · <strong>Bibliothek</strong> erinnert (Versionen).
+        Shell/Origin/Anthem sind Publishing-Begriffe — der Atem trägt das <em>Anthem</em> hinaus.
       </div>
-
-      <div style={{ fontSize: 12, fontWeight: 700, color: '#1a365d', margin: '14px 0 4px' }}>Row-Ordnung — noch anzudenken (nicht gebaut)</div>
-      <ul style={{ margin: 0, paddingLeft: 18, fontSize: 11.5, color: '#a0aec0', lineHeight: 1.6 }}>
-        <li>Eigenes Navigator-Kapitel „Transmission Schwellen": Transmitter · Thresholds (P01/P02/P04) · Anthem-Encoder.</li>
-        <li><strong>TargetAppUI (P03)</strong> gehört wohl zu <strong>P07 High-Shell</strong> — Inhalts-Bewertung später.</li>
-        <li><strong>Route + Layer (P10)</strong> → vermutlich in Thresholds / geht in Engine-Prep auf — offen.</li>
-      </ul>
     </div>
   );
 }
