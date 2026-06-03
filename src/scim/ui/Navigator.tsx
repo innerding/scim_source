@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { PanelDescriptor, StatusColor } from './panelRegistry';
+import type { StatusColor } from './panelRegistry';
 import {
   KOSMOLOGIE_IDS,
   PANEL_REGISTRY, SYSTEM_DESCRIPTOR, AI_INTERFACE_DESCRIPTOR,
@@ -88,11 +88,55 @@ function NavItem({
   );
 }
 
-function Divider() {
+// ─── Cosmo Controls Row (textlicher Spiegel der Kosmologie) ──────────────────
+// Reihenfolge von oben (entsprechend den Controls): Mond → Transmitter →
+// Komposit-Tetraeder → Substrat. Dünne Zwischen-Labels als Trenner.
+const COSMO_GROUPS: { label: string; ids: string[] }[] = [
+  { label: 'Mond', ids: ['R01', 'V01'] },
+  { label: 'Transmitter', ids: ['P06', 'P01', 'P04', 'P02'] },
+  { label: 'Komposit-Tetraeder', ids: ['P11', 'P07', 'P08', 'P09', 'workspace', 'geometry_editor', 'catalog'] },
+  { label: 'Substrat', ids: ['ai_interface', 'P05', 'system'] },
+];
+// Der Rest — was bislang keinen Platz fand (flach, mit Icons).
+const REST_IDS = ['P03', 'P10', 'P12', 'P13', 'P14', 'R02', 'R03', 'R04', 'R05', 'R06', 'R07', 'R08', 'V02', 'V03'];
+
+function descById(id: string): { id: string; icon: string; label: string } | null {
+  const p = PANEL_REGISTRY.find((x) => x.id === id);
+  if (p) return { id, icon: p.icon, label: p.label };
+  for (const d of [WORKSPACE_DESCRIPTOR, DRAWER_DESCRIPTOR, CATALOG_DESCRIPTOR, SYSTEM_DESCRIPTOR, AI_INTERFACE_DESCRIPTOR]) {
+    if (d.id === id) return { id, icon: d.icon, label: d.label };
+  }
+  const r = RUNTIME_BUILDER_REGISTRY.find((x) => x.id === id);
+  if (r) return { id, icon: r.icon, label: r.label };
+  const v = VERSIONEN_REGISTRY.find((x) => x.id === id);
+  if (v) return { id, icon: v.icon, label: v.label };
+  return null;
+}
+
+function CosmoSubLabel({ text }: { text: string }) {
   return (
     <div style={{
-      height: 1, background: '#1e2d40', margin: '4px 8px',
-    }} />
+      fontSize: 8.5, color: '#3d556f', textTransform: 'uppercase', letterSpacing: '0.10em',
+      fontFamily: 'monospace', padding: '6px 12px 2px 12px', userSelect: 'none',
+    }}>{text}</div>
+  );
+}
+
+function CosmoItem({ id, label, isActive, onClick }: { id: string; label: string; isActive: boolean; onClick: () => void }) {
+  return (
+    <div
+      onClick={onClick}
+      data-id={id}
+      style={{
+        padding: '2.5px 12px 2.5px 22px', cursor: 'pointer', borderRadius: 3,
+        background: isActive ? '#1e3a5f' : 'transparent',
+        color: isActive ? '#e0eeff' : '#8b97a8',
+        fontSize: 11, fontFamily: 'monospace', whiteSpace: 'nowrap',
+        overflow: 'hidden', textOverflow: 'ellipsis', userSelect: 'none', transition: 'background 0.1s',
+      }}
+      onMouseEnter={(e) => { if (!isActive) (e.currentTarget as HTMLDivElement).style.background = '#1a2535'; }}
+      onMouseLeave={(e) => { if (!isActive) (e.currentTarget as HTMLDivElement).style.background = 'transparent'; }}
+    >{label}</div>
   );
 }
 
@@ -244,7 +288,6 @@ function sickleFromActive(activeId: string): RepresentBuildSickle | undefined {
 
 export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggle, inspectorActive = false, onManualOpen, panelStatus = {} }: Props) {
   const go = onGoTo ?? ((id: string) => onSelect(id));
-  const pipelineGroups = [1, 2, 3, 4] as const;
   const role = useRole();
 
   // Transmitter-Pulse: kurzfristiger Input-Modus des Tetraeder-Schwingungs-
@@ -358,26 +401,13 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
     return () => window.removeEventListener('scim:v02:region-changed', onChanged);
   }, []);
 
-  // Vier kollabierbare Sektionen — siehe ann_068.
-  const SECTION_DEFS: { id: string; title: string; ids: readonly string[] }[] = [
-    { id: 'represent_build', title: 'Represent Build',
-      ids: ['workspace', 'geometry_editor', 'catalog', 'P01', 'P02'] },
-    { id: 'package_pipeline', title: 'Package Pipeline',
-      ids: ['P03', 'P04', 'P05', 'P06', 'P07', 'P08', 'P09', 'P10', 'P11', 'P12', 'P13', 'P14'] },
-    { id: 'runtime_builder', title: 'Runtime Builder',
-      ids: RUNTIME_BUILDER_REGISTRY.map((m) => m.id) },
-    { id: 'versionen', title: 'Versionen',
-      ids: VERSIONEN_REGISTRY.map((v) => v.id) },
-  ];
-  const [manuallyOpen, setManuallyOpen] = useState<Set<string>>(() => loadOpenSections());
-  // Kapitel = reiner Manual-Zustand: nur das Substrat und die Listen-Koepfe
-  // oeffnen/schliessen sie (beide schreiben manuallyOpen). Navigation/Controls
-  // (oberer Tetraeder, aktives Panel) oeffnen KEIN Kapitel mehr — kein Auto-Open
-  // ueber activeId, daher auch kein manuallyClosed-Override noetig.
-  // sectionContainsActive bleibt nur fuer den (rein visuellen) locked-Hinweis am
-  // Kopf: zeigt, in welchem (evtl. zugeklappten) Kapitel das aktive Panel sitzt.
-  const sectionContainsActive = (ids: readonly string[]) => ids.includes(activeId);
-  const isSectionOpen = (sectionId: string, _ids: readonly string[]) => manuallyOpen.has(sectionId);
+  // Cosmo-Controls-Drop-Down: Manual-Zustand (persistiert), beim ersten Laden offen.
+  const [manuallyOpen, setManuallyOpen] = useState<Set<string>>(() => {
+    const s = loadOpenSections();
+    if (localStorage.getItem(SECTION_STORAGE_KEY) === null) s.add('cosmo');
+    return s;
+  });
+  const cosmoOpen = manuallyOpen.has('cosmo');
   const toggleSection = (sectionId: string) => {
     setManuallyOpen((prev) => {
       const next = new Set(prev);
@@ -387,6 +417,9 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
       return next;
     });
   };
+  // Anzahl sichtbarer Cosmo-Items (Rolle: catalog/ai_interface nur Operator).
+  const cosmoCount = COSMO_GROUPS.reduce((n, g) => n + g.ids.filter((id) =>
+    descById(id) && !((id === 'catalog' || id === 'ai_interface') && role !== 'operator')).length, 0);
 
   return (
     <nav style={{
@@ -789,194 +822,55 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
         </svg>
       </div>
 
-      {/* ── Vier kollabierbare Sektionen (siehe ann_068) ──────────────────── */}
-
-      {/* 1. Represent Build — Workspace, Geometry-Editor, Katalog, P01, P02.
-            Default zu, weil Tetraeder die Inhalte schon zeigt. */}
-      {(() => {
-        const sec = SECTION_DEFS[0];
-        const visibleCount = sec.ids.filter((id) => id !== 'catalog' || role === 'operator').length;
-        const isOpen = isSectionOpen(sec.id, sec.ids);
-        return (
-          <>
-            <SectionDivider />
-            <SectionHeader
-              title={sec.title}
-              count={visibleCount}
-              isOpen={isOpen}
-              locked={sectionContainsActive(sec.ids)}
-              onToggle={() => toggleSection(sec.id)}
-            />
-            <SectionBody isOpen={isOpen}>
-              <NavItem
-                id={WORKSPACE_DESCRIPTOR.id}
-                icon={WORKSPACE_DESCRIPTOR.icon}
-                label={WORKSPACE_DESCRIPTOR.label}
-                status="blue"
-                isActive={activeId === WORKSPACE_DESCRIPTOR.id}
-                onClick={() => onSelect(WORKSPACE_DESCRIPTOR.id)}
-              />
-              <NavItem
-                id={DRAWER_DESCRIPTOR.id}
-                icon={DRAWER_DESCRIPTOR.icon}
-                label={DRAWER_DESCRIPTOR.label}
-                status="blue"
-                isActive={activeId === DRAWER_DESCRIPTOR.id}
-                onClick={() => onSelect(DRAWER_DESCRIPTOR.id)}
-              />
-              {role === 'operator' && (
-                <NavItem
-                  id={CATALOG_DESCRIPTOR.id}
-                  icon={CATALOG_DESCRIPTOR.icon}
-                  label={CATALOG_DESCRIPTOR.label}
-                  status="blue"
-                  isActive={activeId === CATALOG_DESCRIPTOR.id}
-                  onClick={() => onSelect(CATALOG_DESCRIPTOR.id)}
-                />
-              )}
-              {(['P01', 'P02'] as const).map((pid) => {
-                const p = PANEL_REGISTRY.find((x) => x.id === pid);
-                if (!p) return null;
-                return (
-                  <NavItem
-                    key={p.id}
-                    id={p.id}
-                    icon={p.icon}
-                    label={p.label}
-                    status={panelStatus[p.id] ?? 'grey'}
-                    isActive={activeId === p.id}
-                    onClick={() => onSelect(p.id)}
-                  />
-                );
-              })}
-            </SectionBody>
-          </>
-        );
-      })()}
-
-      {/* 2. Package Pipeline (P03..P14, P01+P02 leben in Represent Build) */}
-      {(() => {
-        const sec = SECTION_DEFS[1];
-        const isOpen = isSectionOpen(sec.id, sec.ids);
-        return (
-          <>
-            <SectionDivider />
-            <SectionHeader
-              title={sec.title}
-              count={sec.ids.length}
-              isOpen={isOpen}
-              locked={sectionContainsActive(sec.ids)}
-              onToggle={() => toggleSection(sec.id)}
-            />
-            <SectionBody isOpen={isOpen}>
-              {pipelineGroups.map((g, gi) => {
-                const panels = PANEL_REGISTRY.filter((p: PanelDescriptor) => p.group === g && p.id !== 'P01' && p.id !== 'P02');
-                if (panels.length === 0) return null;
-                return (
-                  <div key={g}>
-                    {gi > 0 && <Divider />}
-                    {panels.map((p: PanelDescriptor) => (
-                      <NavItem
-                        key={p.id}
-                        id={p.id}
-                        icon={p.icon}
-                        label={p.label}
-                        status={panelStatus[p.id] ?? 'grey'}
-                        isActive={activeId === p.id}
-                        onClick={() => onSelect(p.id)}
-                      />
-                    ))}
-                  </div>
-                );
-              })}
-            </SectionBody>
-          </>
-        );
-      })()}
-
-      {/* 3. Runtime Builder */}
-      {(() => {
-        const sec = SECTION_DEFS[2];
-        const isOpen = isSectionOpen(sec.id, sec.ids);
-        return (
-          <>
-            <SectionDivider />
-            <SectionHeader
-              title={sec.title}
-              count={sec.ids.length}
-              isOpen={isOpen}
-              locked={sectionContainsActive(sec.ids)}
-              onToggle={() => toggleSection(sec.id)}
-            />
-            <SectionBody isOpen={isOpen}>
-              {RUNTIME_BUILDER_REGISTRY.map((m) => (
-                <NavItem
-                  key={m.id}
-                  id={m.id}
-                  icon={m.icon}
-                  label={m.label}
-                  status="grey"
-                  isActive={activeId === m.id}
-                  onClick={() => onSelect(m.id)}
-                />
-              ))}
-            </SectionBody>
-          </>
-        );
-      })()}
-
-      {/* 4. Versionen */}
-      {(() => {
-        const sec = SECTION_DEFS[3];
-        const isOpen = isSectionOpen(sec.id, sec.ids);
-        return (
-          <>
-            <SectionDivider />
-            <SectionHeader
-              title={sec.title}
-              count={sec.ids.length}
-              isOpen={isOpen}
-              locked={sectionContainsActive(sec.ids)}
-              onToggle={() => toggleSection(sec.id)}
-            />
-            <SectionBody isOpen={isOpen}>
-              {VERSIONEN_REGISTRY.map((v) => (
-                <NavItem
-                  key={v.id}
-                  id={v.id}
-                  icon={v.icon}
-                  label={v.label}
-                  status="grey"
-                  isActive={activeId === v.id}
-                  onClick={() => onSelect(v.id)}
-                />
-              ))}
-            </SectionBody>
-          </>
-        );
-      })()}
-
-      {/* ── Meta — System + KI-Schnittstelle, immer sichtbar (ann_068) ─────── */}
+      {/* ── Cosmo Controls — textlicher Spiegel der Kosmologie (ein Drop-Down) ── */}
       <SectionDivider />
-
-      <NavItem
-        id={SYSTEM_DESCRIPTOR.id}
-        icon={SYSTEM_DESCRIPTOR.icon}
-        label={SYSTEM_DESCRIPTOR.label}
-        status="orange"
-        isActive={activeId === SYSTEM_DESCRIPTOR.id}
-        onClick={() => onSelect(SYSTEM_DESCRIPTOR.id)}
+      <SectionHeader
+        title="Cosmo Controls"
+        count={cosmoCount}
+        isOpen={cosmoOpen}
+        locked={false}
+        onToggle={() => toggleSection('cosmo')}
       />
-      {role === 'operator' && (
-        <NavItem
-          id={AI_INTERFACE_DESCRIPTOR.id}
-          icon={AI_INTERFACE_DESCRIPTOR.icon}
-          label={AI_INTERFACE_DESCRIPTOR.label}
-          status="grey"
-          isActive={activeId === AI_INTERFACE_DESCRIPTOR.id}
-          onClick={() => onSelect(AI_INTERFACE_DESCRIPTOR.id)}
-        />
-      )}
+      <SectionBody isOpen={cosmoOpen}>
+        {COSMO_GROUPS.map((g) => {
+          const items = g.ids
+            .map(descById)
+            .filter((d): d is { id: string; icon: string; label: string } => d !== null)
+            .filter((d) => !((d.id === 'catalog' || d.id === 'ai_interface') && role !== 'operator'));
+          if (items.length === 0) return null;
+          return (
+            <div key={g.label}>
+              <CosmoSubLabel text={g.label} />
+              {items.map((d) => (
+                <CosmoItem
+                  key={d.id}
+                  id={d.id}
+                  label={d.label}
+                  isActive={activeId === d.id}
+                  onClick={() => onSelect(d.id)}
+                />
+              ))}
+            </div>
+          );
+        })}
+      </SectionBody>
+
+      {/* ── Rest — was bislang keinen Platz fand (flach, ohne Titel, mit Icons) ── */}
+      <SectionDivider />
+      {REST_IDS
+        .map(descById)
+        .filter((d): d is { id: string; icon: string; label: string } => d !== null)
+        .map((d) => (
+          <NavItem
+            key={d.id}
+            id={d.id}
+            icon={d.icon}
+            label={d.label}
+            status={panelStatus[d.id] ?? 'grey'}
+            isActive={activeId === d.id}
+            onClick={() => onSelect(d.id)}
+          />
+        ))}
     </nav>
   );
 }
