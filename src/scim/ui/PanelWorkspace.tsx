@@ -44,10 +44,11 @@ import { buildOriginPackage, MVP_RESAMPLE_TARGET_METERS } from '../sensus/origin
 import { buildOriginManifest } from '../sensus/originManifest';
 import type { OriginManifest } from '../sensus/packageContract';
 import type { OriginPackage } from '../sensus/originPackage';
-import { buildAnthemSnapshot } from '../sensus/anthemEncoder';
+import { buildAnthemSnapshot, nextAtFor } from '../sensus/anthemEncoder';
 import { simSegmentLoads, normalizeLoads } from '../sensus/anthemSim';
 import { getSimHour, setSimHour, subscribeSimClock } from '../sensus/simClock';
-import { evaluateGate, ANTHEM_STALE_AFTER_MIN } from '../sensus/anthemGate';
+import { evaluateGate, ANTHEM_REFRESH_GAP_MIN, type HeldSnapshot } from '../sensus/anthemGate';
+import { ANTHEM_PERIOD_MIN } from '../sensus/packageContract';
 import { resampleNet } from '../wegnetz/netResample';
 
 interface Props {
@@ -404,13 +405,13 @@ function CoderView() {
 
   const net = rep.wegnetz_id ? wegnetzById(rep.wegnetz_id) : undefined;
   const r = net ? resampleNet(net.edges, { targetMeters: MVP_RESAMPLE_TARGET_METERS }) : null;
-  const pad = (n: number) => String(Math.max(0, Math.floor(n))).padStart(2, '0');
-  const t = `${pad(simHour)}:${pad((simHour % 1) * 60)} · Sim`;
+  const tMin = simHour * 60;
+  const fmtClock = (m: number) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(Math.round(m % 60)).padStart(2, '0')}`;
   // Tageskurve (6–20 h): die Last „atmet" mit der Zeit → sichtbar je Tick.
   const phase = (Math.sin(((Math.min(20, Math.max(6, simHour)) - 6) / 14) * Math.PI));
   const base = r ? normalizeLoads(simSegmentLoads(r)) : [];
   const loads = base.map((l) => Math.max(0, Math.min(1, l * (0.35 + 0.65 * phase))));
-  const snap = presence ? buildAnthemSnapshot(loads, rep.id, t) : null;
+  const snap = presence ? buildAnthemSnapshot(loads, rep.id, tMin) : null;
   const jsonBytes = snap ? JSON.stringify(snap).length : 0;
 
   return (
@@ -444,6 +445,7 @@ function CoderView() {
             Snapshot · {snap.kind} · „{rep.name}" · t {snap.t} · Zyklus #{cycles}
           </div>
           <div style={{ fontSize: 11.5, fontFamily: 'ui-monospace, Menlo, monospace', color: '#44337a', lineHeight: 1.7, marginTop: 6 }}>
+            <div>nextAt: {fmtClock(snap.nextAtMin)} (angekündigt · +{ANTHEM_PERIOD_MIN} min-Raster) — der Consumer fordert erst dann neu an</div>
             <div>segments: {snap.loads.length}{r ? ` (origin-net @${MVP_RESAMPLE_TARGET_METERS} m)` : ''}</div>
             <div>size: ~{fmtBytes(snap.loads.length)} (1 B/Segment, Wire) · JSON {fmtBytes(jsonBytes)}</div>
             <div style={{ color: '#718096', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -473,32 +475,42 @@ function CoderView() {
 
 // P08 · Deep-Shell · Refresh-Gate — die app-seitige Selbst-Drosselung. Macht die
 // Engine (anthemGate) sichtbar, BEVOR sie untergeht: nicht jede Interaktion löst eine
-// Anforderung aus; eine neue ist erst erlaubt, wenn der Snapshot stale ist (≥ 5,1 Min).
+// Anforderung aus; der Consumer LIEST die angekündigte `nextAt` des gehaltenen
+// Snapshots und fordert erst ab `nextAt + Gap` neu an — er rät keine verstrichene Zeit.
 function AnthemGateView() {
   const [tick, setTick] = useState(0);
   useEffect(() => subscribeSimClock(() => setTick((c) => c + 1)), []);
-  const [lastSnapshotMin, setLastSnapshotMin] = useState<number | null>(null);
+  const [held, setHeld] = useState<HeldSnapshot | null>(null);
   const [interactions, setInteractions] = useState(0);
   const [requests, setRequests] = useState(0);
   const [log, setLog] = useState<string[]>([]);
 
   const nowMin = getSimHour() * 60;
-  const live = evaluateGate({ lastSnapshotMin }, nowMin);
+  const live = evaluateGate({ held }, nowMin);
   const fmtClock = (m: number) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(Math.round(m % 60)).padStart(2, '0')}`;
   const fmtMin = (m: number) => `${m.toFixed(1)} min`;
   const push = (line: string) => setLog((l) => [line, ...l].slice(0, 6));
 
+  // „Empfange" einen Snapshot, wie ihn der Producer JETZT ausliefert: seine
+  // Erzeugungs-Zeit ist das aktuelle Producer-Epoch (≤ jetzt, NICHT „jetzt"!),
+  // und er kündigt sein nextAt selbst an. Genau dieses nextAt liest das Gate.
+  const receiveSnapshot = (n: number): HeldSnapshot => {
+    const epoch = Math.floor(n / ANTHEM_PERIOD_MIN) * ANTHEM_PERIOD_MIN;
+    return { tMin: epoch, nextAtMin: nextAtFor(epoch) };
+  };
+
   // Eine beliebige User-Interaktion VERSUCHT eine Anforderung — das Gate entscheidet.
   const onInteract = () => {
     const n = getSimHour() * 60;
-    const dec = evaluateGate({ lastSnapshotMin }, n);
+    const dec = evaluateGate({ held }, n);
     setInteractions((i) => i + 1);
     if (dec.allowed) {
-      setLastSnapshotMin(n); // Anforderung raus → frischer Snapshot empfangen (t = jetzt)
+      const fresh = receiveSnapshot(n);
+      setHeld(fresh);
       setRequests((r) => r + 1);
-      push(`✅ ${fmtClock(n)} · erlaubt (${dec.reason}) → Anthem angefordert`);
+      push(`✅ ${fmtClock(n)} · erlaubt (${dec.reason}) → Anthem bezogen · t ${fmtClock(fresh.tMin)} · nextAt ${fmtClock(fresh.nextAtMin)}`);
     } else {
-      push(`⛔ ${fmtClock(n)} · blockiert · frisch (Alter ${fmtMin(dec.ageMin ?? 0)}) · nächste in ${fmtMin(dec.nextEligibleInMin)}`);
+      push(`⛔ ${fmtClock(n)} · blockiert · gültig bis nextAt ${fmtClock((held?.nextAtMin ?? 0))} · neu in ${fmtMin(dec.dueInMin)}`);
     }
   };
   // Sim-Zeit selbst vorspulen (sonst über den Time-Turbo in Telco/P04).
@@ -515,10 +527,11 @@ function AnthemGateView() {
         P08 · Deep-Shell · Refresh-Gate (app-seitig)
       </div>
       <p style={{ fontSize: 12, color: '#4a5568', lineHeight: 1.55, margin: '2px 0 12px' }}>
-        Die App kennt das <strong>Alter</strong> des Snapshots (aus <code>t</code>) und <strong>drosselt sich
-        selbst</strong>: nicht jede Interaktion fordert an — eine neue Anforderung ist erst erlaubt, wenn der
-        Snapshot <strong>stale</strong> ist (Alter ≥ <strong>{ANTHEM_STALE_AFTER_MIN} Min</strong>, knapp über dem
-        5-Min-Producer-Takt). Ein Schwung Interaktionen → höchstens <strong>eine</strong> Anforderung pro Fenster.
+        Der Consumer <strong>liest die angekündigte <code>nextAt</code></strong> des gehaltenen Snapshots und fordert
+        erst ab <strong><code>nextAt</code> + Gap</strong> ({ANTHEM_REFRESH_GAP_MIN} min) einen neuen an — er
+        <strong> schätzt keine verstrichene Zeit</strong>. Bis dahin ist der Snapshot gültig und ein Schwung
+        Interaktionen (Karte bewegen, POI tippen) wird zu <strong>keiner</strong> Anforderung gebündelt. So hängt die
+        App am <strong>{ANTHEM_PERIOD_MIN}-Min-Raster des Producers</strong> und trifft jedes Fenster genau einmal.
       </p>
 
       {/* Live-Zustand des Gates. */}
@@ -527,14 +540,14 @@ function AnthemGateView() {
         background: live.allowed ? '#f0fff4' : '#fffaf0', borderRadius: 8, padding: '10px 12px', marginBottom: 12,
       }}>
         <div style={{ fontSize: 12, fontWeight: 700, color: live.allowed ? '#22543d' : '#7b341e' }}>
-          {lastSnapshotMin == null ? '○ kein Snapshot gehalten — erster Bezug frei'
-            : live.allowed ? '● stale → Anforderung erlaubt'
-            : '● frisch → Anforderung blockiert'}
+          {held == null ? '○ kein Snapshot gehalten — erster Bezug frei'
+            : live.allowed ? '● nextAt erreicht → Anforderung erlaubt'
+            : '● gültig → Anforderung blockiert'}
         </div>
         <div style={{ fontSize: 11.5, fontFamily: 'ui-monospace, Menlo, monospace', color: '#4a5568', lineHeight: 1.7, marginTop: 6 }}>
-          <div>sim-zeit: {fmtClock(nowMin)}{lastSnapshotMin != null ? ` · snapshot-t: ${fmtClock(lastSnapshotMin)}` : ''}</div>
-          <div>alter: {live.ageMin == null ? '—' : fmtMin(live.ageMin)} · schwelle: {ANTHEM_STALE_AFTER_MIN} min</div>
-          <div>restzeit bis erlaubt: <strong>{live.nextEligibleInMin === 0 ? 'jetzt' : fmtMin(live.nextEligibleInMin)}</strong></div>
+          <div>sim-zeit: {fmtClock(nowMin)}{held != null ? ` · snapshot-t: ${fmtClock(held.tMin)} · nextAt: ${fmtClock(held.nextAtMin)}` : ''}</div>
+          <div>alter: {live.ageMin == null ? '—' : fmtMin(live.ageMin)} · gap: {ANTHEM_REFRESH_GAP_MIN} min</div>
+          <div>frist bis erlaubt: <strong>{live.dueInMin === 0 ? 'jetzt' : fmtMin(live.dueInMin)}</strong></div>
         </div>
       </div>
 
@@ -562,13 +575,16 @@ function AnthemGateView() {
       )}
 
       <div style={{ fontSize: 11, color: '#718096', lineHeight: 1.6, borderTop: '1px solid #e2e8f0', paddingTop: 10 }}>
-        <strong>Warum hier?</strong> Das Gate ist <strong>Consumer-Sache</strong> (Shell-Engine, app-seitig) — der
-        Transmitter weiß nichts von Interaktionen, also limitiert sich die App selbst.
+        <strong>Warum so?</strong> Nicht blind verstrichene Zeit zählen, sondern die <strong>ausgegebene Ansage</strong>
+        verarbeiten: der bezogene Snapshot ist evtl. schon mitten im Fenster erzeugt (sein <code>t</code> liegt vor
+        „jetzt"), darum hängt das Gate an <code>nextAt</code> statt am Empfangszeitpunkt → die Stale-Zeit bleibt eng
+        (≈ 1 Raster + Gap) und jedes Fenster wird genau einmal getroffen. Gate = Consumer-Sache (Shell-Engine,
+        app-seitig); der Transmitter weiß nichts von Interaktionen.
         <div style={{ marginTop: 6, fontStyle: 'italic' }}>
-          Stand: <strong style={{ color: '#2f855a' }}>funktional</strong> = die Drossel-Logik (<code>evaluateGate</code>,
-          Alter aus <code>t</code>). <strong style={{ color: '#c05621' }}>Noch offen</strong> = an den echten
-          Anthem-Bezug (Worker <code>/api/anthem/:repId</code>) hängen → Phase 2b. Sim-Schritte sind 5 Min grob; in
-          realer (kontinuierlicher) Zeit greift die Schwelle bei {ANTHEM_STALE_AFTER_MIN} Min.
+          Stand: <strong style={{ color: '#2f855a' }}>funktional</strong> = die fristbasierte Logik
+          (<code>evaluateGate</code> liest <code>nextAtMin</code>). <strong style={{ color: '#c05621' }}>Noch offen</strong>
+          = an den echten Anthem-Bezug (Worker <code>/api/anthem/:repId</code>, der das reale <code>nextAt</code>
+          liefert) hängen → Phase 2b. Im Sim treibt der Time-Turbo (Telco) bzw. „⏩ +5 Sim-Min".
         </div>
       </div>
     </div>

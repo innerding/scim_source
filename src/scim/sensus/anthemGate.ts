@@ -1,54 +1,60 @@
-// Anthem-Refresh-Gate (Shell-Engine, APP-SEITIG) — Request-Coalescing per Snapshot-Alter.
+// Anthem-Refresh-Gate (Shell-Engine, APP-SEITIG) — fristbasierte Selbst-Drosselung.
 //
-// Der Producer (Transmitter) re-encodet alle 5 Min; er weiß aber NICHTS von
-// User-Interaktionen. Also drosselt sich die Ziel-App SELBST: nicht jede Interaktion
-// (Karte bewegen, POI tippen, …) darf eine Snapshot-Anforderung auslösen. Eine neue
-// Anforderung ist erst erlaubt, wenn der gehaltene Snapshot „stale" ist
-// (Alter ≥ Schwelle). Ein Schwung Interaktionen wird so zu HÖCHSTENS EINER
-// Anforderung pro Fenster zusammengefasst.
+// Der Producer (Transmitter) re-encodet in einem festen Raster; er weiß aber NICHTS
+// von User-Interaktionen. Also drosselt sich die Ziel-App SELBST — und zwar NICHT
+// über geschätzte verstrichene Zeit, sondern über die ANGEKÜNDIGTE Nachfolge-Zeit
+// des gehaltenen Snapshots: `snapshot.nextAtMin`. Der Consumer liest die Ansage und
+// fordert erst ab `nextAtMin + Gap` einen neuen an. Bis dahin sind alle Interaktionen
+// (Karte bewegen, POI tippen, …) zu KEINER Anforderung gebündelt.
 //
-// Voraussetzung: die App kennt das ALTER des Snapshots — der Anthem-Snapshot trägt
-// seine Erzeugungs-Zeit `t` (siehe packageContract.AnthemSnapshot). Alter = jetzt − t.
+// Warum nextAt statt Alter-seit-Bezug? Der Snapshot, den wir bekommen, ist evtl.
+// schon mitten in seinem Fenster erzeugt — sein `tMin` liegt vor „jetzt". Würden wir
+// ab Empfang eine feste Spanne zählen, hielten wir Daten bis ~2× Periode. Indem wir
+// an `nextAtMin` (Producer-Raster) hängen, treffen wir jedes neue Fenster genau
+// einmal und die Stale-Zeit bleibt eng (≈ 1 Periode + Gap).
 //
-// Schwelle bewusst > 5.0 Min: der Producer arbeitet im 5-Min-Takt; fordert die App
-// exakt bei 5.0 an, riskiert sie ein Rennen und bekommt evtl. denselben Snapshot.
-// 5.1 Min Sicherheitsabstand → der nächste ist garantiert ein frischer.
-export const ANTHEM_STALE_AFTER_MIN = 5.1;
+// Der Gap (klein) deckt das Publish-Rennen: erst kurz NACH der angekündigten Zeit
+// ist der neue Snapshot sicher bereit.
+export const ANTHEM_REFRESH_GAP_MIN = 0.1;
 
-export type GateState = {
-  /** Erzeugungs-Zeit (Sim-Minuten) des aktuell gehaltenen Snapshots; null = noch keiner. */
-  lastSnapshotMin: number | null;
+export type HeldSnapshot = {
+  /** Erzeugungs-Zeit des gehaltenen Snapshots (Sim-Min). */
+  tMin: number;
+  /** Vom Snapshot ANGEKÜNDIGTE Zeit des nächsten (Sim-Min). */
+  nextAtMin: number;
 };
 
-export type GateReason = 'no-snapshot' | 'stale' | 'fresh';
+export type GateState = {
+  /** Aktuell gehaltener Snapshot; null = noch keiner bezogen. */
+  held: HeldSnapshot | null;
+};
+
+export type GateReason = 'no-snapshot' | 'valid' | 'expired';
 
 export type GateDecision = {
   /** Darf jetzt eine Snapshot-Anforderung raus? */
   allowed: boolean;
   /** Alter des gehaltenen Snapshots in Min (null = keiner gehalten). */
   ageMin: number | null;
-  /** Restzeit bis zur nächsten erlaubten Anforderung in Min (0 = jetzt). */
-  nextEligibleInMin: number;
+  /** Frist bis zur nächsten erlaubten Anforderung in Min (0 = jetzt). */
+  dueInMin: number;
   reason: GateReason;
 };
 
 /**
  * Entscheidet, ob eine (durch eine beliebige User-Interaktion ausgelöste)
- * Snapshot-Anforderung durchgelassen oder geblockt wird. Reine Funktion.
+ * Snapshot-Anforderung durchgelassen oder geblockt wird — anhand der vom Snapshot
+ * angekündigten `nextAtMin` (+ Gap). Reine Funktion.
  */
 export function evaluateGate(state: GateState, nowMin: number): GateDecision {
-  if (state.lastSnapshotMin == null) {
+  if (state.held == null) {
     // Noch kein Snapshot gehalten → der erste Bezug ist immer erlaubt.
-    return { allowed: true, ageMin: null, nextEligibleInMin: 0, reason: 'no-snapshot' };
+    return { allowed: true, ageMin: null, dueInMin: 0, reason: 'no-snapshot' };
   }
-  const ageMin = Math.max(0, nowMin - state.lastSnapshotMin);
-  if (ageMin >= ANTHEM_STALE_AFTER_MIN) {
-    return { allowed: true, ageMin, nextEligibleInMin: 0, reason: 'stale' };
+  const ageMin = Math.max(0, nowMin - state.held.tMin);
+  const dueAt = state.held.nextAtMin + ANTHEM_REFRESH_GAP_MIN;
+  if (nowMin >= dueAt) {
+    return { allowed: true, ageMin, dueInMin: 0, reason: 'expired' };
   }
-  return {
-    allowed: false,
-    ageMin,
-    nextEligibleInMin: ANTHEM_STALE_AFTER_MIN - ageMin,
-    reason: 'fresh',
-  };
+  return { allowed: false, ageMin, dueInMin: dueAt - nowMin, reason: 'valid' };
 }

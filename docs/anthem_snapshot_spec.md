@@ -42,7 +42,9 @@ ist das *Ergebnis*, nicht der *Übertragungswert*.
 {
   "kind": "anthem_snapshot_v1",
   "repId": "rep-lichtenberg",
-  "t": "<ISO-Zeit, 5-Min-Raster (Sim-Zeit im MVP)>",
+  "t": "<Anzeige-Zeit, 5-Min-Raster (Sim-Zeit im MVP)>",
+  "tMin": 570,            // maschinenlesbare Erzeugungs-Zeit (Sim-Min) — Basis fürs Alter
+  "nextAtMin": 575,       // ANGEKÜNDIGTE Zeit des nächsten Snapshots (= tMin aufs Raster + 5)
   "loads": [0.0 .. 1.0]   // normalisierte Last je Segment, Reihenfolge = Origin-Net-Index
   // segmentIds[] nur, falls die Index-Reihenfolge nicht garantiert werden kann
 }
@@ -52,6 +54,11 @@ ist das *Ergebnis*, nicht der *Übertragungswert*.
   Netz** (einmal statisch geladen).
 - **Größe:** ~1 Byte/Segment (vgl. `ResampledNet.loadArrayBytes`) — im Datengrößen-
   Budget.
+- **`nextAtMin` = die Selbst-Ansage.** Der Consumer rät keine verstrichene Zeit, sondern
+  liest `nextAtMin` und fordert erst ab `nextAtMin + Gap` (klein, Publish-Rennen) neu an
+  (**Refresh-Gate**, app-seitig, `src/scim/sensus/anthemGate.ts`, sichtbar P08 t5). So
+  hängt die App am Producer-Raster, trifft jedes Fenster genau einmal, Stale-Zeit eng.
+  Bursts von User-Interaktionen → höchstens **eine** Anforderung pro Fenster (Coalescing).
 
 ---
 

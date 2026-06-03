@@ -10,6 +10,11 @@
 // Format '<stretchId>#<segIndex>', z.B. '5.0#2'. Quelle: netRoute.netSegments.
 export type SegmentId = string;
 
+// ── Producer-Takt ───────────────────────────────────────────────────────────
+// Der Transmitter re-encodet in diesem Raster (Min). Der Snapshot KÜNDIGT seine
+// Nachfolge an (`nextAtMin`), damit der Consumer nicht raten muss.
+export const ANTHEM_PERIOD_MIN = 5;
+
 // ── Anthem — der ausgelieferte 5-Min-Snapshot ───────────────────────────────
 // Trägt die NORMALISIERTE LAST [0..1] je Segment, NICHT Farbe (Farbe rechnet die
 // Shell-Engine `colorize` app-seitig). Keine Koordinaten — die App mappt
@@ -17,8 +22,16 @@ export type SegmentId = string;
 export interface AnthemSnapshot {
   kind: 'anthem_snapshot_v1';
   repId: string;
-  /** ISO-Zeit im 5-Min-Raster (Sim-Zeit im MVP, globale Sim-Tageszeit). */
+  /** Anzeige-Zeit im 5-Min-Raster (Sim-Zeit im MVP, globale Sim-Tageszeit). */
   t: string;
+  /** Maschinenlesbare Erzeugungs-Zeit in (Sim-)Minuten — Basis fürs Alter. */
+  tMin: number;
+  /**
+   * ANGEKÜNDIGTE Zeit des nächsten Snapshots in (Sim-)Minuten (= `tMin` aufs
+   * Producer-Raster + ANTHEM_PERIOD_MIN). Der Consumer fordert erst ab hier (+Gap)
+   * neu an — er liest die Ansage, statt verstrichene Zeit zu schätzen.
+   */
+  nextAtMin: number;
   /** Last [0..1] je Segment; Reihenfolge = Origin-Net-Segment-Index. */
   loads: number[];
   /**
