@@ -9,9 +9,12 @@
 import { useState, type ReactNode } from 'react';
 import { SHELL_FUNCTIONS, TARGET_PLATFORMS, type ShellFunction, type TargetPlatform } from '../../shell-studio/shellStudio';
 import { useWorkspaceNav } from '../workspaceNav';
-import DeepShellMap from './DeepShellMap';
 import { colorize } from '../../sensus/loadColour';
 import { ColourGradientBar } from './ColourGradientBar';
+
+// Die echte, veröffentlichte erste Demo der Ziel-App. Surface-Blöcke zeigen SIE
+// (inkl. Expand/Collapse/Positionierung) — keine erfundene Nachbildung.
+const APP_URL = 'https://diesenpark.com';
 
 const FRAME_H = 300;
 
@@ -23,7 +26,7 @@ function FrameLabel({ children, tone }: { children: ReactNode; tone: string }) {
 function DeviceFrame({ children }: { children: ReactNode }) {
   return (
     <div style={{ flexShrink: 0 }}>
-      <FrameLabel tone="#2b6cb0">Sim-Vorschau</FrameLabel>
+      <FrameLabel tone="#2b6cb0">Vorschau · diesenpark.com (live)</FrameLabel>
       <div style={{
         width: 150, height: FRAME_H, borderRadius: 22, border: '7px solid #1a202c',
         background: '#000', overflow: 'hidden', position: 'relative', boxShadow: '0 8px 24px rgba(0,0,0,0.22)',
@@ -64,51 +67,15 @@ function Notes({ title, items, tone }: { title: string; items: string[]; tone: s
   );
 }
 
-// Intro-Surface — GENERISCH: nur die Animation. reg-Icon UND boundary sind Inhalt,
-// gestempelt von P11/Origin → hier als Slots dargestellt (nicht der echte Inhalt).
-function IntroSurface() {
-  return (
-    <div style={{ position: 'relative', height: '100%', background: '#fff', overflow: 'hidden' }}>
-      {/* reg-Icon-Slot — links oben (Inhalt beim Stempeln). */}
-      <div style={{ position: 'absolute', top: 14, left: 14, width: 40, height: 40, border: '1.5px dashed #cbd5e0', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, color: '#a0aec0', textAlign: 'center', lineHeight: 1.1 }}>reg-icon</div>
-      {/* boundary-Slot + Hinweis. */}
-      <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, padding: 8 }}>
-        <div style={{ width: 92, height: 78, border: '1.5px dashed #bee3f8', borderRadius: '42% 50% 46% 54%', background: '#f0f8ff' }} />
-        <span style={{ fontSize: 8.5, color: '#a0aec0', textAlign: 'center', lineHeight: 1.35 }}>Reveal-Animation<br />Inhalt gestempelt (P11/Origin)</span>
-      </div>
-    </div>
-  );
+// Die echte, live laufende Ziel-App im Device-Frame (statt Nachbildung).
+function AppIframe() {
+  return <iframe src={APP_URL} title="Ziel-App · diesenpark.com" loading="lazy" style={{ width: '100%', height: '100%', border: 'none', display: 'block' }} />;
 }
 
-// Comfort-Surface — Move-Slider schränkt das Netz live ein/erweitert es (Last-Dämpfung).
-function ComfortSurface() {
-  const [move, setMove] = useState(0.4);
-  const segs = [0.15, 0.34, 0.5, 0.66, 0.82, 0.94];
-  const threshold = 1 - move;
-  const live = segs.filter((l) => l <= threshold).length;
-  return (
-    <div style={{ padding: 10, height: '100%', display: 'flex', flexDirection: 'column', gap: 8, fontFamily: 'system-ui, sans-serif' }}>
-      <div style={{ fontSize: 10, fontWeight: 700, color: '#1a365d' }}>Comfort · Netz</div>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6, justifyContent: 'center' }}>
-        {segs.map((l, i) => (
-          <div key={i} style={{ height: 7, borderRadius: 3, background: colorize(l), opacity: l > threshold ? 0.25 : 1, transition: 'opacity 120ms' }} />
-        ))}
-      </div>
-      <div>
-        <div style={{ fontSize: 8.5, color: '#718096', display: 'flex', justifyContent: 'space-between' }}><span>Move</span><span>{Math.round(move * 100)}%</span></div>
-        <input type="range" min={0} max={1} step={0.05} value={move} onChange={(e) => setMove(parseFloat(e.target.value))} style={{ width: '100%' }} />
-        <div style={{ fontSize: 8, color: '#a0aec0', marginTop: 2 }}>{live}/{segs.length} Strecken aktiv · höher → mehr raus</div>
-        <div style={{ fontSize: 8, color: '#cbd5e0', marginTop: 4 }}>Rest (Aufenthalt) → ruhige POIs</div>
-      </div>
-    </div>
-  );
-}
-
-// Spalte 1 · Sim-Vorschau (im Device-Frame): der echte App-Screen.
+// Spalte 1 · Vorschau (im Device-Frame): die ECHTE App. Surface-Funktionen zeigen sie;
+// Engine-Funktionen haben keinen Screen (bleiben leer).
 function Surface({ fn }: { fn: ShellFunction }) {
-  if (fn.surface === 'map') return <DeepShellMap />;
-  if (fn.surface === 'intro') return <IntroSurface />;
-  if (fn.surface === 'comfort') return <ComfortSurface />;
+  if (fn.surface === 'map' || fn.surface === 'intro' || fn.surface === 'comfort') return <AppIframe />;
   if (fn.surface === 'engine') {
     return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', padding: 12, textAlign: 'center', fontSize: 10, color: '#cbd5e0', fontStyle: 'italic', lineHeight: 1.4 }}>Engine · kein eigener Screen<br />(Effekt erscheint in einer Surface)</div>;
   }

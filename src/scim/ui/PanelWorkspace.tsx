@@ -17,7 +17,7 @@ import UserExclusionControl from './panels/UserExclusionControl';
 import TestRouteControl from './panels/TestRouteControl';
 import RuntimeFlowExplainer from './panels/RuntimeFlowExplainer';
 import SensusCoreReigen from './panels/SensusCoreReigen';
-import { BoundaryView, WegnetzCompareView, IntroView } from './panels/SichelViews';
+import { BoundaryView, WegnetzCompareView, IntroView, RingSvg } from './panels/SichelViews';
 import HighShellIconAssets from './panels/HighShellIconAssets';
 import ShellStudio from './panels/ShellStudio';
 import RuntimeShellView from './panels/RuntimeShellView';
@@ -898,16 +898,18 @@ function ShellIdView() {
   const id = regEntry ? { kind: 'reg', name: `reg-${regSlug}`, svg: regEntry.svg_cleaned, label: region }
     : repEntry ? { kind: 'rep', name: `rep-${rep.catalog_id}`, svg: repEntry.svg_cleaned, label: rep.name }
     : null;
+  // origin-boundary (L0) — die zweite Hälfte der Shell-ID, aus dem Origin anforderbar.
+  const ring = (geo?.polygon ?? []) as [number, number][];
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 600 }}>
       <div style={{ display: 'inline-block', padding: '2px 8px', marginBottom: 8, fontSize: 10, fontFamily: 'monospace', color: '#2b6cb0', background: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: 4 }}>
         P11 · Shell-ID · Stamping
       </div>
       <p style={{ fontSize: 12.5, color: '#2d3748', lineHeight: 1.6, margin: '0 0 12px' }}>
-        Die Shell ist <strong>generisch</strong> (representation-unabhängig). Beim Publishing wird ihr <strong>EINE
-        Identität gestempelt</strong> = das Icon der <strong>größten vorhandenen Geometry</strong> (Region &gt; Rep).
-        Inhalt aus dem <strong>origin-asset-set</strong>; die Bindung passiert <strong>hier</strong>, nicht in der Shell.
-        Das Intro zeigt das gestempelte Icon dann an.
+        Die Shell ist <strong>generisch</strong>. Beim Publishing wird ihr eine <strong>Identität gestempelt</strong> =
+        <strong> reg-/rep-Icon</strong> (aus origin-asset-set) <strong>+ Boundary</strong> (aus origin-boundary), je nach
+        größter vorhandener Geometry (Region &gt; Rep). Hier nur <strong>als Platzhalter</strong> dargestellt — denn
+        <strong> Sensus Core hat noch keinen Auftrag erteilt</strong>; gestempelt wird erst beim echten Bezug.
       </p>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, fontSize: 12, flexWrap: 'wrap' }}>
         <span style={{ fontWeight: 700, color: '#1a365d' }}>Auftraggeber:</span>
@@ -916,17 +918,28 @@ function ShellIdView() {
           {REPRESENTATIONS.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
         </select>
       </div>
-      {id ? (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, border: '1px solid #c6f6d5', background: '#f0fff4', borderRadius: 8, padding: '12px 14px' }}>
-          <div style={{ width: 48, height: 48, flexShrink: 0 }} dangerouslySetInnerHTML={{ __html: id.svg }} />
-          <div style={{ fontSize: 12, color: '#22543d', lineHeight: 1.6 }}>
-            <div><strong>Shell-ID</strong> = {id.kind}-Icon · <code>{id.name}</code> · „{id.label}"</div>
-            <div style={{ color: '#2f855a', fontSize: 11 }}>{id.kind === 'reg' ? 'Region vorhanden → reg-Icon (größte Geometry).' : 'keine Region → rep-Icon (Fallback).'} Wird auf die Shell gestempelt.</div>
-          </div>
+      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+        {/* Icon-Asset (Platzhalter) */}
+        <div style={{ border: '1.5px dashed #cbd5e0', borderRadius: 8, padding: '10px 12px', minWidth: 150 }}>
+          <div style={{ fontSize: 10, color: '#a0aec0', marginBottom: 6 }}>Platzhalter · reg-/rep-Icon</div>
+          {id ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ width: 44, height: 44, flexShrink: 0, opacity: 0.85 }} dangerouslySetInnerHTML={{ __html: id.svg }} />
+              <div style={{ fontSize: 11, color: '#4a5568', lineHeight: 1.5 }}><code>{id.name}</code><br /><span style={{ color: '#a0aec0' }}>{id.kind}-Icon · „{id.label}"</span></div>
+            </div>
+          ) : <span style={{ fontSize: 11, color: '#c05621', fontStyle: 'italic' }}>kein reg-/rep-Icon im Katalog</span>}
         </div>
-      ) : (
-        <div style={{ fontSize: 11.5, color: '#c05621', fontStyle: 'italic' }}>Kein reg-/rep-Icon im Katalog für diese Rep (Konvention rep-&lt;catalog&gt; / reg-&lt;region&gt;).</div>
-      )}
+        {/* Boundary-Asset (Platzhalter) */}
+        <div style={{ border: '1.5px dashed #cbd5e0', borderRadius: 8, padding: '10px 12px', minWidth: 150 }}>
+          <div style={{ fontSize: 10, color: '#a0aec0', marginBottom: 6 }}>Platzhalter · origin-boundary (L0)</div>
+          {ring.length >= 3
+            ? <div style={{ opacity: 0.85 }}><RingSvg ring={ring} size={120} /></div>
+            : <span style={{ fontSize: 11, color: '#c05621', fontStyle: 'italic' }}>keine Boundary an dieser Rep</span>}
+        </div>
+      </div>
+      <p style={{ fontSize: 10.5, color: '#a0aec0', fontStyle: 'italic', marginTop: 10 }}>
+        Beim echten Auftrag (Bezug) werden diese zwei Assets fest an die Shell gestempelt; das Intro zeigt sie dann an.
+      </p>
     </div>
   );
 }
