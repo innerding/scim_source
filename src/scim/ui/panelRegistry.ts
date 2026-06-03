@@ -70,7 +70,7 @@ const STANDARD_TABS: TabDescriptor[] = [
 const P06_TABS: TabDescriptor[] = [
   { id: 't1',         label: 'Transmission Schwellen', icon: '📡' },
   { id: 'input',      label: 'Eingabe',     icon: '✎' },
-  { id: 'simulation', label: 'Simulation',  icon: '🎭' },
+  // 'simulation' entfernt (T3): Sim-Telco wohnt jetzt in P04 Telco.
   { id: 'result',     label: 'Ergebnis',    icon: '◎' },
   { id: 'validation', label: 'Validierung', icon: '⚑' },
   { id: 'raw',        label: 'Rohdaten',    icon: '{}' },

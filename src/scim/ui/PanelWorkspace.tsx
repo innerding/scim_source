@@ -643,12 +643,26 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
 
   // T2: P04 = Telco, P02 = Coder. Die Schwellen-Regler leben jetzt im Thresholds-
   // Panel (P01); der echte Inhalt zieht in T3 (Telco) bzw. T4 (Coder) ein.
+  // T3: Telco = die Quelle (Einatmen). presence-Intake (Gate) + Normalization +
+  // die Sim-Telco (SimArchitecture · Sim-Clock/Time-Turbo · Sim-Form).
   if (panel.id === 'P04') {
+    const ctx = result.success ? (result.context as unknown as Record<string, unknown>) : null;
     return (
-      <div style={{ fontSize: 12, color: '#4a5568', lineHeight: 1.6, maxWidth: 560 }}>
-        <strong style={{ color: '#1a365d' }}>Telco</strong> — die Quelle (Einatmen): Simulation · Sim-Clock/Time-Turbo ·
-        presence-Intake · Normalization.
-        <div style={{ fontSize: 10.5, color: '#a0aec0', fontStyle: 'italic', marginTop: 6 }}>Inhalt zieht in T3 hier ein.</div>
+      <div style={{ fontFamily: 'system-ui, sans-serif' }}>
+        <div style={{
+          display: 'inline-block', padding: '2px 8px', marginBottom: 8, fontSize: 10, fontFamily: 'monospace',
+          color: '#2b6cb0', background: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: 4,
+        }}>
+          P04 · Telco · Quelle (Einatmen)
+        </div>
+        <p style={{ fontSize: 12, color: '#4a5568', lineHeight: 1.55, margin: '2px 0 14px', maxWidth: 560 }}>
+          Der <strong>Empfangsschirm</strong> des Transmitters: <strong>presence-Intake</strong> (Gate — welche
+          origin-boundary der User ist) + <strong>Normalization</strong> (rohe Last auf die Boundary normiert).
+          Quelle heute: <strong>Sim-Telco</strong> (echtes Telco später, gleicher Vertrag).
+        </p>
+        <SimArchitecture />
+        <SimClockControl />
+        <P06SimulationForm state={ctx?.telco_load as TelcoLoadState | undefined} />
       </div>
     );
   }
@@ -702,20 +716,8 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
           ? <ColourAdjust panelId={panel.id} />
           : <PanelInputForm panel={panel} result={result} />;
         break;
-      case 'simulation': {
-        // Heute nur fuer P06 implementiert (Pattern-Klassifikator-Sandbox, ann_064).
-        if (panel.id === 'P06') {
-          const ctx = result.success ? (result.context as unknown as Record<string, unknown>) : null;
-          tabContent = (
-            <>
-              <SimArchitecture />
-              <SimClockControl />
-              <P06SimulationForm state={ctx?.telco_load as TelcoLoadState | undefined} />
-            </>
-          );
-        }
-        break;
-      }
+      // 'simulation'-Tab gibt es nicht mehr — Sim-Telco ist in T3 nach P04 (Telco)
+      // gewandert (SimArchitecture · Sim-Clock · Sim-Form).
       case 'result':     tabContent = <PanelResult panel={panel} result={result} />; break;
       case 'validation': tabContent = <PanelValidation panel={panel} result={result} />; break;
       case 'raw':        tabContent = <PanelRaw panel={panel} result={result} />; break;
