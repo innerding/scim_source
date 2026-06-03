@@ -1,0 +1,5 @@
+# data/icons-shell/ — High-Shell Icon-Assets (Ziel-App-Buttons u.ä.).
+# Eigener Speicher, NICHT über origin-capsuler (representation-unabhängig).
+# Inhalt läuft durch den (Drawer-icon-)Cleaner. Heute manuell befüllt;
+# Drawer-icon-Speisung = Zukunft. Geschwister: data/icons (Katalog/POI/Rep),
+# data/icons-scim/custom (SCIM-Editor-eigene Icons inkl. packages).

@@ -222,6 +222,7 @@ export const PANEL_REGISTRY: PanelDescriptor[] = [
       { id: 't2', label: 'Rep-Junction', icon: '⇄', body: [
         'Rep-Junction (Future-Function): Darstellung des Grenzbereichs einer benachbarten Representation / Anschlussfähigkeit der Gate-POIs inner-/outer-translate.',
       ] },
+      { id: 't4', label: 'Icon-Assets', icon: '⊞' },
     ],
   },
   {

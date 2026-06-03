@@ -18,6 +18,7 @@ import TestRouteControl from './panels/TestRouteControl';
 import RuntimeFlowExplainer from './panels/RuntimeFlowExplainer';
 import SensusCoreReigen from './panels/SensusCoreReigen';
 import { BoundaryView, WegnetzCompareView, IntroView } from './panels/SichelViews';
+import HighShellIconAssets from './panels/HighShellIconAssets';
 import RuntimeShellView from './panels/RuntimeShellView';
 import TransmissionView from './panels/TransmissionView';
 import ThresholdsView from './panels/ThresholdsView';
@@ -1139,6 +1140,9 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
 
   // P07 t3: Intro (reveal-engine, High-Shell). M3.
   if (panel.id === 'P07' && activeTab === 't3') return <IntroView />;
+
+  // P07 t4: High-Shell Icon-Assets (eigener Speicher data/icons-shell, NICHT via Capsuler).
+  if (panel.id === 'P07' && activeTab === 't4') return <HighShellIconAssets />;
 
   // P07 t1: Boundary-View (Ring). Notiz ist entfernt; falls wieder gesetzt,
   // erscheint sie darunter.
