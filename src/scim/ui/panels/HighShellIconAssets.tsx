@@ -86,6 +86,23 @@ export default function HighShellIconAssets() {
       >⊞ Icon-Assets öffnen ({SHELL_ICONS.length})</button>
 
       {open && <ShellIconModal onClose={() => setOpen(false)} />}
+
+      <div style={{ ...H, marginTop: 20 }}>Shell-Identität (erste Gedanken — nicht gebaut)</div>
+      <p style={P}>
+        Die Shell ist generisch, trägt aber für den <strong>Intro</strong> eine <strong>Identität</strong>. Vereinfacht
+        (Konsens): die Shell trägt <strong>EIN Icon</strong> (nicht zwei) — und zwar das der <strong>größten vorhandenen
+        Geometry</strong>, die die Shell tragen kann (Region &gt; Rep). Das reg-Icon wird in der Shell <em>gespart</em>,
+        wenn keine Region da ist → das vereinfacht das Ganze.
+      </p>
+      <p style={P}>
+        Perspektive: die Shell wird vermutlich die <strong>Instanz zur Koordination von Regionen &amp; Representationen</strong>.
+        Erste Gedanken, nicht weiter ausgearbeitet.
+      </p>
+      <p style={{ ...P, color: '#a0aec0', fontStyle: 'italic' }}>
+        Offene Intro-Fragen (notiert, ungelöst): Bezieht das Intro die Icons aus dem <em>Origin</em> (origin-asset-set
+        via Capsuler) oder trägt die Shell sie selbst? Hat <em>jedes Origin</em> seine eigene Intro? Was beim
+        Origin-Wechsel auf dem Gerät? Und: zeigt die Shell zunächst die <em>Region</em> (die hier noch keine Boundary hat)?
+      </p>
     </div>
   );
 }

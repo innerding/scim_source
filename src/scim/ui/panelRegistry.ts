@@ -11,7 +11,7 @@ export type TabId =
   | 'icon'
   // generische, stabile Tab-Handles (id fix, Label trägt die Bedeutung) für
   // panel-eigene Tab-Gliederungen (P07/P08/P09)
-  | 't1' | 't2' | 't3' | 't4' | 't5';
+  | 't1' | 't2' | 't3' | 't4' | 't5' | 't6';
 
 export interface TabDescriptor {
   id: TabId;
@@ -245,6 +245,7 @@ export const PANEL_REGISTRY: PanelDescriptor[] = [
       { id: 't3', label: 'Mask', icon: '⛉' },
       { id: 't4', label: 'Move', icon: '↝' },
       { id: 't5', label: 'Refresh-Gate', icon: '⏱' },
+      { id: 't6', label: 'Karte (OSM)', icon: '◰' },
     ],
   },
 

@@ -19,6 +19,7 @@ import RuntimeFlowExplainer from './panels/RuntimeFlowExplainer';
 import SensusCoreReigen from './panels/SensusCoreReigen';
 import { BoundaryView, WegnetzCompareView, IntroView } from './panels/SichelViews';
 import HighShellIconAssets from './panels/HighShellIconAssets';
+import DeepShellMap from './panels/DeepShellMap';
 import RuntimeShellView from './panels/RuntimeShellView';
 import TransmissionView from './panels/TransmissionView';
 import ThresholdsView from './panels/ThresholdsView';
@@ -72,7 +73,7 @@ interface Props {
   onCatalogConsumed?: () => void;
 }
 
-const TAB_ORDER: TabId[] = ['catalog', 't1', 't2', 't3', 't4', 't5', 'signal_intake', 'analysis', 'adjust', 'input', 'icon', 'simulation', 'result', 'validation', 'leistungsblatt', 'raw'];
+const TAB_ORDER: TabId[] = ['catalog', 't1', 't2', 't3', 't4', 't5', 't6', 'signal_intake', 'analysis', 'adjust', 'input', 'icon', 'simulation', 'result', 'validation', 'leistungsblatt', 'raw'];
 
 function TabBar({
   tabs, active, onSelect,
@@ -1039,6 +1040,8 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
 
   // P08 (Deep-Shell) t5: Refresh-Gate = app-seitige Selbst-Drosselung (anthemGate).
   if (panel.id === 'P08' && activeTab === 't5') return <AnthemGateView />;
+  // P08 t6: Engine-Funktion 1 = Karten-Engine (Leaflet + OSM).
+  if (panel.id === 'P08' && activeTab === 't6') return <DeepShellMap />;
   // P08 (Deep-Shell): vier Engine-Prep-Artefakte (POI/Last/Mask/Move). M2: von P09.
   if (panel.id === 'P08') {
     const d = P09_DESCRIPTORS.find((x) => x.tabId === activeTab);
