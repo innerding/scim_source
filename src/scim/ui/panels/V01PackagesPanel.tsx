@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { usePackagesApi, type PackageEntry } from './usePackagesApi';
+import { AppManifestBadge } from '../AppManifestInfo';
 import packagesIcon    from '../../../assets/Packages.svg';
 import skgIcon         from '../../../assets/SKG.svg';
 import gruenbergIcon   from '../../../assets/Grünberg.svg';
@@ -93,6 +94,7 @@ export default function V01PackagesPanel() {
           <div style={{ fontSize: 14, fontWeight: 600, color: '#1a365d' }}>Alle Pakete</div>
           <div style={{ fontSize: 11, color: '#718096' }}>Region · Representation · Version · Status</div>
         </div>
+        <AppManifestBadge />
         <button onClick={() => void reload()} disabled={loading} style={{
           marginLeft: 'auto', padding: '5px 12px', fontSize: 11,
           background: '#fff', border: '1px solid #e2e8f0', borderRadius: 5,
