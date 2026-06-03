@@ -1,6 +1,6 @@
 // Anthem-API — der SCIM-seitige Draht zum Worker (Phase 2b, „senden"-Station).
 // Spiegelt das Muster von usePackagesApi: WORKER_URL + UPLOAD_API_KEY aus Env.
-// Publish (PUT origin-net) ist auth-gegated; klopfen/lesen sind öffentlich.
+// Publish (PUT origin-mesh) ist auth-gegated; klopfen/lesen sind öffentlich.
 
 const WORKER_URL     = import.meta.env.VITE_WORKER_URL     as string | undefined;
 const UPLOAD_API_KEY = import.meta.env.VITE_UPLOAD_API_KEY as string | undefined;
@@ -9,9 +9,9 @@ const UPLOAD_API_KEY = import.meta.env.VITE_UPLOAD_API_KEY as string | undefined
 export const anthemPublishConfigured = () => !!(WORKER_URL && UPLOAD_API_KEY);
 export const anthemReadConfigured    = () => !!WORKER_URL;
 
-/** Origin-Netz (minimal: stretches[{id,points}]) + Load-Thresholds nach R2 veröffentlichen. */
-export async function publishOriginNet(repId: string, net: { stretches: Array<{ id: string; points: [number, number][] }>; norm?: { spread: number; floor: number } }) {
-  const res = await fetch(`${WORKER_URL}/api/origin/${repId}/net`, {
+/** Origin-Mesh (minimal: stretches[{id,points}]) + Load-Thresholds nach R2 veröffentlichen. */
+export async function publishOriginMesh(repId: string, net: { stretches: Array<{ id: string; points: [number, number][] }>; norm?: { spread: number; floor: number } }) {
+  const res = await fetch(`${WORKER_URL}/api/origin/${repId}/mesh`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', 'X-Scim-Key': UPLOAD_API_KEY ?? '' },
     body: JSON.stringify(net),

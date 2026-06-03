@@ -53,7 +53,7 @@ import { getSimHour, setSimHour, subscribeSimClock } from '../sensus/simClock';
 import { evaluateGate, ANTHEM_REFRESH_GAP_MIN, type HeldSnapshot } from '../sensus/anthemGate';
 import { ANTHEM_PERIOD_MIN } from '../sensus/packageContract';
 import { AnthemCycleBadge } from './AnthemCycleInfo';
-import { publishOriginNet, anthemPublishConfigured, knockPresence, anthemReadConfigured } from '../../runtime/anthemApi';
+import { publishOriginMesh, anthemPublishConfigured, knockPresence, anthemReadConfigured } from '../../runtime/anthemApi';
 import { resampleNet } from '../wegnetz/netResample';
 
 interface Props {
@@ -228,28 +228,28 @@ const P09_DESCRIPTORS: P09Descriptor[] = [
   },
   {
     tabId: 't2', no: 2, name: 'load-colorist', actions: 'segment-gradient',
-    source: 'representation <xy> v.<x> · origin-net (Segment-ids)',
+    source: 'representation <xy> v.<x> · origin-mesh (Segment-ids)',
     horizon: 'long', pkg: 'Shell',
     produces: ['colorize · normalizeLoads (engine) → Shell · long', 'load-values (je Segment) → Anthem · short'],
-    dependsMid: 'origin-net (P08): Segment-Geometrie + id · colour-settings (Origin)',
+    dependsMid: 'origin-mesh (P08): Segment-Geometrie + id · colour-settings (Origin)',
     dependsShort: 'telco-load je Segment · presence-origin (Gate: welche origin-boundary)',
     fn: 'colour = colorize(normalizeLoads(load))', rescueFrom: 'sensus/loadColour.colorize + anthemSim.normalizeLoads (GEBAUT)',
   },
   {
     tabId: 't3', no: 3, name: 'comfort-masker', actions: 'segment-filter (BCK)',
-    source: 'representation <xy> v.<x> · origin-net + User-Comfort',
+    source: 'representation <xy> v.<x> · origin-mesh + User-Comfort',
     horizon: 'long', pkg: 'Shell',
     produces: ['comfort-masker / BCK (engine) → Shell · long'],
-    dependsMid: 'origin-net',
+    dependsMid: 'origin-mesh',
     dependsShort: 'User-Comfort-Einstellung (Farbschwelle) — Laufzeit, kein Anthem-Particle',
     fn: 'state = classifyStretches(Ø-Last/Strecke)', rescueFrom: 'anthemSim.classifyStretches + stretchAverages (GEBAUT)',
   },
   {
     tabId: 't4', no: 4, name: 'bak-router', actions: 'route-build + rest-detect (BAK)',
-    source: 'representation <xy> v.<x> · origin-net + origin-poi-set + User-Auswahl',
+    source: 'representation <xy> v.<x> · origin-mesh + origin-poi-set + User-Auswahl',
     horizon: 'long', pkg: 'Shell',
     produces: ['bak-router / BAK (engine) → Shell · long'],
-    dependsMid: 'origin-net + origin-poi-set',
+    dependsMid: 'origin-mesh + origin-poi-set',
     dependsShort: 'User-Auswahl (POIs · Farbe · Dauer) — Laufzeit, kein Anthem-Particle',
     fn: 'route = buildRoutePath(net, a, b) · Ausweich folgt', rescueFrom: 'pathEngine.buildRoutePath + sensus/netRoute (GEBAUT) · Ausweich-Routing folgt (S5)',
   },
@@ -357,7 +357,7 @@ function P09Artifact({ d, rep, origin }: { d: P09Descriptor; rep?: { name: strin
 // in die drei Pakete. Statische Modell-Sicht.
 const SCS_PACKAGES: { name: string; horizon: string; version: string; particles: string[] }[] = [
   { name: 'Shell', horizon: 'long-term', version: 'eigene App-Shell-Version', particles: ['dompteur', 'Farb-Engine: colorize · normalizeLoads', 'BCK: classifyStretches · stretchAverages', 'BAK: buildRoutePath · netRoute', 'reveal-engine: boundary-intro (verbraucht origin-boundary)', 'container-system'] },
-  { name: 'Origin', horizon: 'mid-term', version: '= Representation-Version', particles: ['origin-boundary', 'origin-net (wegnetz-sample)', 'origin-asset-set', 'origin-poi-set', 'origin-pixel-images', 'colour-settings (spectrum/bias/safety/degradier)'] },
+  { name: 'Origin', horizon: 'mid-term', version: '= Representation-Version', particles: ['origin-boundary', 'origin-mesh (wegnetz-sample)', 'origin-asset-set', 'origin-poi-set', 'origin-pixel-images', 'colour-settings (spectrum/bias/safety/degradier)'] },
   { name: 'Anthem', horizon: 'short-term', version: 'Load-Zyklus (flüchtig)', particles: ['presence-origin (Einatmen · Gate)', 'load-values (Ausatmen)', 'user-exclusion (Runtime)'] },
 ];
 // Deploy-Reihenfolge: quer über die Pakete (nicht Paket-für-Paket). presence-origin
@@ -485,7 +485,7 @@ function CoderView() {
           </div>
           <div style={{ fontSize: 11.5, fontFamily: 'ui-monospace, Menlo, monospace', color: '#44337a', lineHeight: 1.7, marginTop: 6 }}>
             <div>nextAt: {fmtClock(snap.nextAtMin)} (angekündigt · +{ANTHEM_PERIOD_MIN} min-Raster) — der Consumer fordert erst dann neu an</div>
-            <div>segments: {snap.loads.length}{r ? ` (origin-net @${MVP_RESAMPLE_TARGET_METERS} m)` : ''}</div>
+            <div>segments: {snap.loads.length}{r ? ` (origin-mesh @${MVP_RESAMPLE_TARGET_METERS} m)` : ''}</div>
             <div>size: ~{fmtBytes(snap.loads.length)} (1 B/Segment, Wire) · JSON {fmtBytes(jsonBytes)}</div>
             <div style={{ color: '#718096', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               loads[0..15]: {snap.loads.slice(0, 16).map((v) => v.toFixed(2)).join(' ')}{snap.loads.length > 16 ? ' …' : ''}
@@ -629,7 +629,7 @@ function OriginCapsulerView() {
   const { setInspectorAsset } = useRepresentationContext();
   const [capsule, setCapsule] = useState<OriginManifest | null>(null);
   const capsuleFresh = capsule != null && capsule.repId === rep.id;
-  // Phase 2b: Origin-Netz nach R2 veröffentlichen, damit der Worker den Anthem
+  // Phase 2b: Origin-Mesh nach R2 veröffentlichen, damit der Worker den Anthem
   // selbst rechnen kann (Station „adressieren/senden").
   const [publishing, setPublishing] = useState(false);
   const [publishMsg, setPublishMsg] = useState<string | null>(null);
@@ -641,7 +641,7 @@ function OriginCapsulerView() {
     try {
       // Load-Thresholds mit veröffentlichen → der Worker normalisiert bit-gleich.
       const payload = { stretches: r.stretches.map((s) => ({ id: s.id, points: s.points })), norm: repLoadNorm(rep) };
-      const res = await publishOriginNet(rep.id, payload);
+      const res = await publishOriginMesh(rep.id, payload);
       setPublishMsg(`✓ veröffentlicht: ${res.stretches} Strecken → origin/${rep.id}/net.json`);
     } catch (e) {
       setPublishMsg(`✗ ${(e as Error).message}`);
@@ -678,7 +678,7 @@ function OriginCapsulerView() {
             }}
           >▣ Origin auflösen &amp; kapseln</button>
         </div>
-        {/* Phase 2b: Origin-Netz veröffentlichen → Worker rechnet daraus den Anthem. */}
+        {/* Phase 2b: Origin-Mesh veröffentlichen → Worker rechnet daraus den Anthem. */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
           <button
             onClick={onPublish}
@@ -690,7 +690,7 @@ function OriginCapsulerView() {
               border: '1px solid #4299e1', background: '#ebf8ff',
               color: '#2b6cb0', fontWeight: 600, opacity: anthemPublishConfigured() ? 1 : 0.55,
             }}
-          >{publishing ? '… veröffentliche' : '⇪ Origin-Netz veröffentlichen (→ Worker)'}</button>
+          >{publishing ? '… veröffentliche' : '⇪ Origin-Mesh veröffentlichen (→ Worker)'}</button>
           {!anthemPublishConfigured() && (
             <span style={{ fontSize: 10.5, color: '#a0aec0', fontStyle: 'italic' }}>Worker nicht konfiguriert</span>
           )}
@@ -784,7 +784,7 @@ function SensusCorePackages() {
       {resampleVariants.length > 0 && (
         <div style={{ marginTop: 14 }}>
           <div style={{ fontSize: 11, color: '#718096', marginBottom: 6 }}>
-            origin-net Resample-Trade-off (Netz {Math.round(resampleVariants[0].r.totalMeters)} m) — Zielsegmentlänge ist der Hebel:
+            origin-mesh Resample-Trade-off (Netz {Math.round(resampleVariants[0].r.totalMeters)} m) — Zielsegmentlänge ist der Hebel:
           </div>
           <table style={{ fontSize: 11.5, borderCollapse: 'collapse', fontFamily: 'ui-monospace, Menlo, monospace' }}>
             <thead>
@@ -807,7 +807,7 @@ function SensusCorePackages() {
             </tbody>
           </table>
           <p style={{ fontSize: 10.5, color: '#a0aec0', margin: '6px 0 0' }}>
-            origin-net wird als <strong>@{MVP_RESAMPLE_TARGET_METERS} m-Resample</strong> ausgespielt (s. Origin-Karte) — die Tabelle zeigt den Zielsegmentlängen-Trade-off (3 m = Detail-Untergrenze, Geometrie explodiert).
+            origin-mesh wird als <strong>@{MVP_RESAMPLE_TARGET_METERS} m-Resample</strong> ausgespielt (s. Origin-Karte) — die Tabelle zeigt den Zielsegmentlängen-Trade-off (3 m = Detail-Untergrenze, Geometrie explodiert).
           </p>
         </div>
       )}

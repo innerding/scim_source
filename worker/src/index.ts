@@ -7,8 +7,8 @@
  *   POST   /api/packages/:id/activate    — Version aktivieren, bisherige archivieren
  *   DELETE /api/packages/:id             — Version archivieren
  *   GET    /api/packages/active/:region  — aktive Version einer Region
- *   PUT    /api/origin/:repId/net        — Origin-Netz veröffentlichen (für Anthem-Compute)
- *   GET    /api/origin/:repId/net        — Origin-Geometrie (read-only): die Ziel-App holt das Netz
+ *   PUT    /api/origin/:repId/mesh       — Origin-Mesh veröffentlichen (für Anthem-Compute)
+ *   GET    /api/origin/:repId/mesh       — Origin-Mesh (read-only): die Ziel-App holt das Mesh
  *   GET    /api/origin/:repId            — Origin-Schicht-Status (read-only): published, stretches, bytes, uploadedAt
  *   POST   /api/anthem/:repId/presence   — App klopft: Presence-Session + erster Snapshot
  *   GET    /api/anthem/:repId/presence   — Presence-Status (read-only): present, firstSeen, lastSeen, durationMin
@@ -24,13 +24,13 @@
  */
 
 // Geteilte Producer-Engine (EINE Quelle, auch vom Editor genutzt) — „Worker rechnet
-// selbst": aus dem veröffentlichten Origin-Netz + (Sim-)Zeit → AnthemSnapshot.
+// selbst": aus dem veröffentlichten Origin-Mesh + (Sim-)Zeit → AnthemSnapshot.
 import { produceAnthem } from '../../src/scim/sensus/anthemProducer';
 import type { SegmentedNet, NormalizeParams } from '../../src/scim/sensus/anthemSim';
 
-// Veröffentlichtes Origin-Netz: Geometrie + (optional) die mitgelieferten Load-
+// Veröffentlichtes Origin-Mesh: Segment-Geometrie + (optional) die mitgelieferten Load-
 // Thresholds, damit der Worker bit-gleich zum Editor normalisiert.
-type PublishedNet = SegmentedNet & { norm?: NormalizeParams };
+type PublishedMesh = SegmentedNet & { norm?: NormalizeParams };
 
 const CDN_BASE      = 'https://cdn.diesenpark.com';
 const PACKAGES_PATH = 'packages';
@@ -47,10 +47,10 @@ function simMinFromUrl(url: URL): number {
   return Math.min(20 * 60, Math.max(6 * 60, mins));
 }
 
-async function readOriginNet(env: Env, repId: string): Promise<PublishedNet | null> {
-  const obj = await env.PACKAGES.get(`origin/${repId}/net.json`);
+async function readOriginMesh(env: Env, repId: string): Promise<PublishedMesh | null> {
+  const obj = await env.PACKAGES.get(`origin/${repId}/mesh.json`);
   if (!obj) return null;
-  return await obj.json() as PublishedNet;
+  return await obj.json() as PublishedMesh;
 }
 
 interface PresenceRec { firstSeen?: string; lastSeen: string }
@@ -400,10 +400,10 @@ export default {
       }
     }
 
-    // ── PUT /api/origin/:repId/net ───────────────────────────────────────────
-    // SCIM veröffentlicht das resampelte Origin-Netz (Station „adressieren"),
+    // ── PUT /api/origin/:repId/mesh ───────────────────────────────────────────
+    // SCIM veröffentlicht das resampelte Origin-Mesh (Station „adressieren"),
     // damit der Worker den Anthem selbst rechnen kann. Body = ResampledNet.
-    if (request.method === 'PUT' && pathname.match(/^\/api\/origin\/[^/]+\/net$/)) {
+    if (request.method === 'PUT' && pathname.match(/^\/api\/origin\/[^/]+\/mesh$/)) {
       if (!checkAuth(request, env)) return err('Unauthorized', 401);
       const repId = pathname.split('/')[3];
       if (!KEY_PATTERN.test(repId)) return err('Invalid repId', 422);
@@ -414,7 +414,7 @@ export default {
       if (!Array.isArray(stretches)) return err('Expected ResampledNet with stretches[]', 422);
 
       const netJson = JSON.stringify(body);
-      await env.PACKAGES.put(`origin/${repId}/net.json`, netJson, {
+      await env.PACKAGES.put(`origin/${repId}/mesh.json`, netJson, {
         httpMetadata: { contentType: 'application/json', cacheControl: 'public, max-age=3600' },
       });
       // Kleines Meta-Objekt für den Publishing-Monitor (V03 t2): ohne das ganze Netz
@@ -426,14 +426,14 @@ export default {
       return json({ ok: true, repId, ...meta });
     }
 
-    // ── GET /api/origin/:repId/net ───────────────────────────────────────────
-    // Read-only: die Ziel-App holt die Origin-Geometrie (Netz) — Modell B, statisch
+    // ── GET /api/origin/:repId/mesh ───────────────────────────────────────────
+    // Read-only: die Ziel-App holt das Origin-Mesh — Modell B, statisch
     // einmal geladen, indexgleich zu den Anthem-loads. Kein Key nötig.
-    if (request.method === 'GET' && pathname.match(/^\/api\/origin\/[^/]+\/net$/)) {
+    if (request.method === 'GET' && pathname.match(/^\/api\/origin\/[^/]+\/mesh$/)) {
       const repId = pathname.split('/')[3];
       if (!KEY_PATTERN.test(repId)) return err('Invalid repId', 422);
-      const obj = await env.PACKAGES.get(`origin/${repId}/net.json`);
-      if (!obj) return err(`No published origin-net for "${repId}".`, 404);
+      const obj = await env.PACKAGES.get(`origin/${repId}/mesh.json`);
+      if (!obj) return err(`No published origin-mesh for "${repId}".`, 404);
       return new Response(obj.body, {
         headers: { ...CORS_HEADERS, 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=3600' },
       });
@@ -452,7 +452,7 @@ export default {
         return json({ repId, published: true, ...m, anthemEndpoint });
       }
       // Fallback: Netz da, aber (älter) ohne meta → Größe via head.
-      const head = await env.PACKAGES.head(`origin/${repId}/net.json`);
+      const head = await env.PACKAGES.head(`origin/${repId}/mesh.json`);
       if (head) return json({ repId, published: true, stretches: null, bytes: head.size, uploadedAt: null, anthemEndpoint });
       return json({ repId, published: false, stretches: null, bytes: null, uploadedAt: null, anthemEndpoint });
     }
@@ -474,8 +474,8 @@ export default {
         httpMetadata: { contentType: 'application/json', cacheControl: 'no-store' },
       });
 
-      const net = await readOriginNet(env, repId);
-      if (!net) return err(`No published origin-net for "${repId}" — PUT /api/origin/${repId}/net first.`, 404);
+      const net = await readOriginMesh(env, repId);
+      if (!net) return err(`No published origin-mesh for "${repId}" — PUT /api/origin/${repId}/mesh first.`, 404);
       const snapshot = produceAnthem(net, repId, simMinFromUrl(url), net.norm ?? {});
       return json({ ok: true, repId, firstSeen, lastSeen, snapshot });
     }
@@ -504,8 +504,8 @@ export default {
       if (!isWarm(await readPresence(env, repId))) {
         return err(`Cold — no presence within 2 h. POST /api/anthem/${repId}/presence first.`, 425);
       }
-      const net = await readOriginNet(env, repId);
-      if (!net) return err(`No published origin-net for "${repId}".`, 404);
+      const net = await readOriginMesh(env, repId);
+      if (!net) return err(`No published origin-mesh for "${repId}".`, 404);
       return json(produceAnthem(net, repId, simMinFromUrl(url), net.norm ?? {}));
     }
 

@@ -75,12 +75,12 @@ export const ANTHEM_STATIONS: AnthemStation[] = [
   {
     n: 7, word: 'adressieren', title: 'Adresse (anthemEndpoint)', home: 'P09 · Origin-Manifest', panelId: 'P09',
     status: 'done',
-    blurb: 'Das Origin-Manifest schreibt die Adresse, an der die App den Snapshot zieht (anthemEndpoint = /api/anthem/:repId), und bindet sie an die repId. Der „Origin-Netz veröffentlichen"-Button (P09) PUTet das resampelte Netz nach R2 — der Worker liest es und rechnet daraus. Round-Trip live verifiziert.',
+    blurb: 'Das Origin-Manifest schreibt die Adresse, an der die App den Snapshot zieht (anthemEndpoint = /api/anthem/:repId), und bindet sie an die repId. Der „Origin-Mesh veröffentlichen"-Button (P09) PUTet das resampelte Netz nach R2 — der Worker liest es und rechnet daraus. Round-Trip live verifiziert.',
   },
   {
     n: 8, word: 'senden', title: 'Auslieferung (Worker)', home: 'Worker /api/anthem/:repId',
     status: 'done',
-    blurb: 'Der Übertragungsweg: der Worker rechnet den Snapshot SELBST aus dem veröffentlichten Origin-Netz + (Sim-)Zeit (geteilte produceAnthem-Engine, keine Dopplung) und liefert ihn presence-gegated aus (GET /api/anthem/:repId + POST .../presence). Deployed und end-to-end verifiziert: Daten verlassen den Editor-RAM, reisen durch R2/Worker und kommen zurück.',
+    blurb: 'Der Übertragungsweg: der Worker rechnet den Snapshot SELBST aus dem veröffentlichten Origin-Mesh + (Sim-)Zeit (geteilte produceAnthem-Engine, keine Dopplung) und liefert ihn presence-gegated aus (GET /api/anthem/:repId + POST .../presence). Deployed und end-to-end verifiziert: Daten verlassen den Editor-RAM, reisen durch R2/Worker und kommen zurück.',
   },
   {
     n: 9, word: 'drosseln', title: 'Refresh-Gate', home: 'P08 · t5', panelId: 'P08', tabId: 't5',
@@ -90,6 +90,6 @@ export const ANTHEM_STATIONS: AnthemStation[] = [
   {
     n: 10, word: 'konsumieren', title: 'Konsum (färben & routen)', home: 'Ziel-App R06/R07',
     status: 'open',
-    blurb: 'Die App mappt segId → Geometrie übers Origin-Netz, färbt (colorize) und routet die Komfort-Kaskade (BCK/BAK) mit der Live-Last. Dann beginnt der Kreis von vorn (nächste Anforderung). App-Konsum ist noch Gerüst (Phase 3/4).',
+    blurb: 'Die App mappt segId → Geometrie übers Origin-Mesh, färbt (colorize) und routet die Komfort-Kaskade (BCK/BAK) mit der Live-Last. Dann beginnt der Kreis von vorn (nächste Anforderung). App-Konsum ist noch Gerüst (Phase 3/4).',
   },
 ];
