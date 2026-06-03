@@ -884,6 +884,53 @@ function OriginCapsulerView({ tab }: { tab: TabId }) {
   );
 }
 
+// P11 · Shell-ID · Stamping — die generische Shell wird beim Publishing mit EINER
+// Identität gestempelt = das Icon der größten vorhandenen Geometry (Region > Rep).
+// Inhalt aus dem origin-asset-set; die Bindung passiert HIER, nicht in der Shell.
+function ShellIdView() {
+  const rep = useAuftraggeberRep();
+  const { setInspectorAsset } = useRepresentationContext();
+  const geo = geometryById(rep.geometry_id);
+  const region = geo?.region ?? '';
+  const regSlug = region ? slugify(region) : '';
+  const regEntry = regSlug ? iconById(`reg-${regSlug}`) : undefined;
+  const repEntry = rep.catalog_id ? iconById(`rep-${rep.catalog_id}`) : undefined;
+  const id = regEntry ? { kind: 'reg', name: `reg-${regSlug}`, svg: regEntry.svg_cleaned, label: region }
+    : repEntry ? { kind: 'rep', name: `rep-${rep.catalog_id}`, svg: repEntry.svg_cleaned, label: rep.name }
+    : null;
+  return (
+    <div style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 600 }}>
+      <div style={{ display: 'inline-block', padding: '2px 8px', marginBottom: 8, fontSize: 10, fontFamily: 'monospace', color: '#2b6cb0', background: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: 4 }}>
+        P11 · Shell-ID · Stamping
+      </div>
+      <p style={{ fontSize: 12.5, color: '#2d3748', lineHeight: 1.6, margin: '0 0 12px' }}>
+        Die Shell ist <strong>generisch</strong> (representation-unabhängig). Beim Publishing wird ihr <strong>EINE
+        Identität gestempelt</strong> = das Icon der <strong>größten vorhandenen Geometry</strong> (Region &gt; Rep).
+        Inhalt aus dem <strong>origin-asset-set</strong>; die Bindung passiert <strong>hier</strong>, nicht in der Shell.
+        Das Intro zeigt das gestempelte Icon dann an.
+      </p>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, fontSize: 12, flexWrap: 'wrap' }}>
+        <span style={{ fontWeight: 700, color: '#1a365d' }}>Auftraggeber:</span>
+        <select value={rep.id} onChange={(e) => setInspectorAsset({ kind: 'representation', id: e.target.value })}
+          style={{ fontSize: 12, padding: '3px 6px', borderRadius: 4, border: '1px solid #cbd5e0', color: '#1a365d' }}>
+          {REPRESENTATIONS.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+        </select>
+      </div>
+      {id ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, border: '1px solid #c6f6d5', background: '#f0fff4', borderRadius: 8, padding: '12px 14px' }}>
+          <div style={{ width: 48, height: 48, flexShrink: 0 }} dangerouslySetInnerHTML={{ __html: id.svg }} />
+          <div style={{ fontSize: 12, color: '#22543d', lineHeight: 1.6 }}>
+            <div><strong>Shell-ID</strong> = {id.kind}-Icon · <code>{id.name}</code> · „{id.label}"</div>
+            <div style={{ color: '#2f855a', fontSize: 11 }}>{id.kind === 'reg' ? 'Region vorhanden → reg-Icon (größte Geometry).' : 'keine Region → rep-Icon (Fallback).'} Wird auf die Shell gestempelt.</div>
+          </div>
+        </div>
+      ) : (
+        <div style={{ fontSize: 11.5, color: '#c05621', fontStyle: 'italic' }}>Kein reg-/rep-Icon im Katalog für diese Rep (Konvention rep-&lt;catalog&gt; / reg-&lt;region&gt;).</div>
+      )}
+    </div>
+  );
+}
+
 function SensusCorePackages() {
   // M4: Publishing baut nichts mehr — der Auftraggeber wird im Origin-Capsuler (P09)
   // bzw. Inspector gewählt; hier nur lesen + die drei Pakete schnüren/anzeigen.
@@ -1064,6 +1111,8 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
   }
   // P11 Sensus Core Service: die drei Horizont-Pakete (Eingabe-Tab).
   if (panel.id === 'P11' && activeTab === 'input') return <SensusCorePackages />;
+  // P11 t1: Shell-ID-Stamping (reg-/rep-Icon an die generische Shell binden).
+  if (panel.id === 'P11' && activeTab === 't1') return <ShellIdView />;
 
   // P07 t2 Rep-Junction: Notiz unauffällig halten (gedämpfte Zeile statt gelbem
   // Konzept-Kasten) — Future-Function, soll nicht ablenken.

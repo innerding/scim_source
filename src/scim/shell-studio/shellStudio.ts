@@ -121,7 +121,7 @@ seg.color = colorize(anthem.loads[i], origin.colourSettings);`,
     ],
     deepNotes: [
       'Reine DOM/SVG-Maske als additives Overlay — rührt die Karten-Layer nicht an.',
-      'Verbraucht origin-boundary (L0); das reg-Icon kommt aus dem capsulated origin-asset-set.',
+      'Verbraucht origin-boundary (L0). Das reg-Icon ist die Shell-ID — Inhalt aus origin-asset-set, an die generische Shell GESTEMPELT in Sensus Core Publishing (P11), NICHT in der Shell selbst.',
       'Nativ: gleiche zwei Phasen mit Plattform-Masking (CALayer-Mask / Canvas-Clip).',
     ],
     simCode: `// reveal-engine — Boundary-Reveal („stilles Einloggen"). Additives SVG-Overlay

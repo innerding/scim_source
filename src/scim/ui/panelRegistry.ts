@@ -300,7 +300,10 @@ export const PANEL_REGISTRY: PanelDescriptor[] = [
     inputMode: 'auto_computed',
     isBlocking: true,
     contextKey: 'sensus_core_package',
-    tabs: STANDARD_TABS,
+    tabs: [
+      { id: 'input', label: 'Publishing', icon: '▣' },
+      { id: 't1', label: 'Shell-ID', icon: '⬡' },
+    ],
     // bauKonzept entfernt — die live gebaute Sicht (Reigen · Auftraggeber · Kapsel ·
     // Partikel-Kacheln) sagt das jetzt selbst.
   },
