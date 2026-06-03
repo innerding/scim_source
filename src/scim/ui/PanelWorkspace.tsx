@@ -371,6 +371,13 @@ const SCS_PACKAGES: { name: string; horizon: string; version: string; particles:
 // Netz), dann der Origin-Rest. MVP (origin via URL): kein Gate, kein Load → 1 → 3
 // → 5. Scheduling gehört später dem Transmitter (SCS-nachgelagert); SCS deklariert
 // die Reihenfolge hier.
+//
+// Zwei Enden DERSELBEN Sequenz:
+//   · Sende-Ende  = Deploy-Reihenfolge (Transmitter pusht in dieser Folge).
+//   · Lade-Ende   = LADE-KASKADE — die Shell LÄDT auf dem Gerät in genau dieser
+//                   Folge und macht daraus das Upload-Erlebnis. Ihr Treiber (eager
+//                   fetch + Intro/Reveal-Vorhang über der Latenz) ist eine Deep-
+//                   Shell-Funktion (noch nicht gebaut).
 const DEPLOY_ORDER: string[] = [
   '1 · Shell           — Engine-Suite (die App lebt)',
   '2 · presence-origin — Einatmen · Gate: welche boundary → welches origin   [entfällt im MVP]',
