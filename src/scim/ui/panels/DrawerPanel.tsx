@@ -216,8 +216,17 @@ function IconBuildNotiz() {
       <div style={H}>Inspector-Kopplung (später)</div>
       <p style={P}>Der Inspector zeigt im Icon-Build das Icon im Umfeld der verschiedenen Icon-Container sichtbar — und, sobald vorhanden, deren Animationen.</p>
 
-      <div style={H}>Speicher &amp; Katalog-Zugriff</div>
-      <p style={P}>Der <strong>Drawer bekommt einen Speicher</strong>, der vorher über den <strong>Drawer-icon-Cleaner</strong> gelaufen ist. Der <strong>Katalog darf auf diesen zugreifen</strong> — der Drawer ist die Quelle der gecleanten Icons, der Katalog bezieht nur von dort.</p>
+      <div style={H}>Speicher (Ziele des Drawer-icon-Cleaners)</div>
+      <p style={P}>Der <strong>Drawer ist die Quelle</strong> der gecleanten Icons. Alles läuft erst durch den
+        <strong> Drawer-icon-Cleaner</strong>, dann in einen Speicher; jeder Konsument bezieht <strong>nur von dort</strong>.
+        <strong> Drei getrennte Plätze</strong>, alle durch <em>denselben</em> Cleaner — heute manuell befüllt,
+        künftig vom Drawer-Icon:</p>
+      <ul style={{ margin: 0, paddingLeft: 18 }}>
+        <li style={LI}><strong><code>data/icons/</code></strong> → Katalog/POI/Rep-Icons. <em>Konsument:</em> der <strong>Katalog</strong> (Icon-Such-Maschine).</li>
+        <li style={LI}><strong><code>data/icons-shell/</code></strong> → <strong>High-Shell-Assets</strong> (Ziel-App-Buttons). Representation-<strong>un</strong>abhängig, <strong>NICHT</strong> über den origin-capsuler. <em>Konsument:</em> <strong>High-Shell</strong> (P07, Button→Modal).</li>
+        <li style={LI}><strong><code>data/icons-scim/custom/(packages/)</code></strong> → <strong>SCIM-Editor-eigene Icons</strong> inkl. der <strong>Package-Icons</strong>. <em>Konsument:</em> die SCIM3-UI direkt; heute manuell von uns befüllt (nicht vom Drawer).</li>
+      </ul>
+      <p style={P}>System-/in-Verwendung-Icons (z.B. die Package-Icons) sind im Drawer als <strong>unlöschbar / „in Verwendung"</strong> zu markieren — dieses Schutz-Konzept gibt es im Drawer <em>noch nicht</em> (zu bauen).</p>
     </div>
   );
 }
