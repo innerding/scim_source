@@ -16,23 +16,27 @@ import { ColourGradientBar } from './ColourGradientBar';
 // (inkl. Expand/Collapse/Positionierung) — keine erfundene Nachbildung.
 const APP_URL = 'https://diesenpark.com';
 
-const FRAME_H = 300;
+const FRAME_H = 460;
+const DEV_W = 230;
+const DEV_BORDER = 9;
+const CONTENT_W = DEV_W - 2 * DEV_BORDER;   // sichtbare Frame-Innenbreite
+const CONTENT_H = FRAME_H - 2 * DEV_BORDER;
 
 function FrameLabel({ children, tone }: { children: ReactNode; tone: string }) {
   return <div style={{ fontSize: 9.5, color: tone, textAlign: 'center', marginBottom: 3, fontWeight: 700 }}>{children}</div>;
 }
 
-// Spalte 1 · Sim-Vorschau — der echte App-Screen im Mobile-Device-Frame.
+// Spalte 1 · Vorschau — die echte App im Mobile-Device-Frame.
 function DeviceFrame({ children }: { children: ReactNode }) {
   return (
     <div style={{ flexShrink: 0 }}>
       <FrameLabel tone="#2b6cb0">Vorschau · diesenpark.com (live)</FrameLabel>
       <div style={{
-        width: 150, height: FRAME_H, borderRadius: 22, border: '7px solid #1a202c',
+        width: DEV_W, height: FRAME_H, borderRadius: 28, border: `${DEV_BORDER}px solid #1a202c`,
         background: '#000', overflow: 'hidden', position: 'relative', boxShadow: '0 8px 24px rgba(0,0,0,0.22)',
       }}>
-        <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: 48, height: 11, background: '#1a202c', borderRadius: '0 0 8px 8px', zIndex: 5 }} />
-        <div style={{ width: '100%', height: '100%', background: '#fff' }}>{children}</div>
+        <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: 64, height: 13, background: '#1a202c', borderRadius: '0 0 10px 10px', zIndex: 5 }} />
+        <div style={{ width: '100%', height: '100%', background: '#fff', overflow: 'hidden' }}>{children}</div>
       </div>
     </div>
   );
@@ -43,7 +47,7 @@ function VizBox({ children }: { children: ReactNode }) {
   return (
     <div style={{ flexShrink: 0 }}>
       <FrameLabel tone="#718096">Funktions-Visualisierung</FrameLabel>
-      <div style={{ width: 176, height: FRAME_H, borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', overflow: 'hidden' }}>{children}</div>
+      <div style={{ width: 200, height: FRAME_H, borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', overflow: 'hidden' }}>{children}</div>
     </div>
   );
 }
@@ -67,9 +71,23 @@ function Notes({ title, items, tone }: { title: string; items: string[]; tone: s
   );
 }
 
-// Die echte, live laufende Ziel-App im Device-Frame (statt Nachbildung).
+// Die echte, live laufende Ziel-App im Device-Frame. Sie rendert in echter Mobil-
+// Breite (390 px) und wird auf die Frame-Breite herunterskaliert → ganze App sichtbar,
+// nicht nur ein Ausschnitt.
 function AppIframe() {
-  return <iframe src={APP_URL} title="Ziel-App · diesenpark.com" loading="lazy" style={{ width: '100%', height: '100%', border: 'none', display: 'block' }} />;
+  const VW = 390;
+  const scale = CONTENT_W / VW;
+  return (
+    <iframe
+      src={APP_URL}
+      title="Ziel-App · diesenpark.com"
+      loading="lazy"
+      style={{
+        width: VW, height: CONTENT_H / scale, border: 'none', display: 'block',
+        transform: `scale(${scale})`, transformOrigin: 'top left',
+      }}
+    />
+  );
 }
 
 // Spalte 1 · Vorschau (im Device-Frame): die ECHTE App. Surface-Funktionen zeigen sie;
@@ -219,7 +237,7 @@ export default function ShellStudio() {
                   {/* 2 · SIM-Code */}
                   <div style={{ flexShrink: 0 }}>
                     <FrameLabel tone="#2b6cb0">SIM-Code</FrameLabel>
-                    <CodeFrame code={fn.simCode} w={280} />
+                    <CodeFrame code={fn.simCode} w={330} />
                   </div>
                   {/* 3 · Funktions-Visualisierung (rahmenlos) */}
                   <VizBox><Viz fn={fn} /></VizBox>
@@ -227,7 +245,7 @@ export default function ShellStudio() {
                   <div style={{ flexShrink: 0 }}>
                     <FrameLabel tone="#805ad5">Produktion-Code (generiert)</FrameLabel>
                     <CodeFrame
-                      w={280}
+                      w={330}
                       tone="#a0aec0"
                       code={`// Ziel-App-Code (${[...targets].join('+') || '—'})\n// Wird NICHT live codiert.\n// Unten Plattform wählen → „Generieren"\n// → erscheint hier je Block + als Summe.\n//\n// (Generator: Konzept, noch nicht gebaut.)`}
                     />
