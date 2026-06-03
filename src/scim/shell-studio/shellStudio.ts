@@ -20,9 +20,9 @@ export interface ShellFunction {
   title: string;
   subtitle?: string;
   /** Sim-Vorschau (Device-Frame) = echter App-Screen. 'engine' = kein eigener Screen → leer. */
-  surface: 'map' | 'intro' | 'engine' | 'placeholder';
+  surface: 'map' | 'intro' | 'comfort' | 'engine' | 'placeholder';
   /** Funktions-Visualisierung (rahmenlos) = analytische Sicht der Funktion. 'none' = keine. */
-  viz: 'colorize' | 'reveal' | 'gate' | 'none';
+  viz: 'colorize' | 'reveal' | 'gate' | 'comfort' | 'none';
   /** High · Design-Notizen zur Oberfläche: so kann es sein · bewährt · Fallback · Ausbau. */
   highNotes: string[];
   /** Deep · Notizen zum Produktions-Code: was er tun muss · schneller weil · Budget · erneuert weil. */
@@ -167,5 +167,44 @@ export function evaluateGate(state, nowMin) {
   return { allowed: false, reason: 'valid', dueInMin: dueAt - nowMin };  // halten
 }
 // jede User-Interaktion fragt das Gate; nur 'expired' → echte Anforderung.`,
+  },
+  {
+    id: 'bck',
+    title: 'Comfort',
+    subtitle: 'BCK · Move + Rest',
+    surface: 'comfort',
+    viz: 'comfort',
+    highNotes: [
+      'Zwei Slider: Move (Bewegung) schränkt das Netz ein/erweitert es · Rest (Aufenthalt) wählt ruhige POIs.',
+      'Move hoch → stark belastete Strecken gedämpft/ausgeschlossen; runter → mehr Netz.',
+      'Crossing-gated: ganze Strecken (Kreuzung→Kreuzung), nie einzelne Segmente.',
+    ],
+    deepNotes: [
+      'Braucht origin-mesh (Geometrie, Origin) + Anthem-Last (Colour-Mesh-Daten) → Ø-Last je Strecke.',
+      'classifyStretches: User-Comfort (Move) = ausschluss-Schwelle · Operator = degradier.',
+      'Reine Funktionen (stretchAverages/classifyStretches) → nativ 1:1 portierbar.',
+    ],
+    simCode: `// BCK — Broda Comfort Kernel. Crossing-gated: klassifiziert je STRECKE
+// (Kreuzung→Kreuzung) über die Ø-Last — nie einzelne Segmente.
+export function stretchAverages(mesh, loads) {        // Ø-Last je Strecke
+  let i = 0;
+  return mesh.stretches.map(s => {
+    const segs = s.points.length - 1;
+    let sum = 0; for (let k = 0; k < segs; k++) sum += loads[i++];
+    return { id: s.id, average: segs ? sum / segs : 0 };
+  });
+}
+
+export function classifyStretches(stretches, { degradier, ausschluss }) {
+  return stretches.map(s => {
+    let state = 'normal';
+    if (ausschluss != null && s.average >= ausschluss) state = 'excluded'; // User (Move)
+    else if (degradier != null && s.average >= degradier) state = 'degraded'; // Operator
+    return { ...s, state };
+  });
+}
+
+// Comfort-Slider Move → ausschluss = 1 - movementComfort:
+//   hoch → mehr Strecken raus (Netz EINGESCHRÄNKT) · runter → mehr drin (ERWEITERT).`,
   },
 ];

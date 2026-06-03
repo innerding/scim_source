@@ -80,10 +80,35 @@ function IntroSurface() {
   );
 }
 
+// Comfort-Surface — Move-Slider schränkt das Netz live ein/erweitert es (Last-Dämpfung).
+function ComfortSurface() {
+  const [move, setMove] = useState(0.4);
+  const segs = [0.15, 0.34, 0.5, 0.66, 0.82, 0.94];
+  const threshold = 1 - move;
+  const live = segs.filter((l) => l <= threshold).length;
+  return (
+    <div style={{ padding: 10, height: '100%', display: 'flex', flexDirection: 'column', gap: 8, fontFamily: 'system-ui, sans-serif' }}>
+      <div style={{ fontSize: 10, fontWeight: 700, color: '#1a365d' }}>Comfort · Netz</div>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6, justifyContent: 'center' }}>
+        {segs.map((l, i) => (
+          <div key={i} style={{ height: 7, borderRadius: 3, background: colorize(l), opacity: l > threshold ? 0.25 : 1, transition: 'opacity 120ms' }} />
+        ))}
+      </div>
+      <div>
+        <div style={{ fontSize: 8.5, color: '#718096', display: 'flex', justifyContent: 'space-between' }}><span>Move</span><span>{Math.round(move * 100)}%</span></div>
+        <input type="range" min={0} max={1} step={0.05} value={move} onChange={(e) => setMove(parseFloat(e.target.value))} style={{ width: '100%' }} />
+        <div style={{ fontSize: 8, color: '#a0aec0', marginTop: 2 }}>{live}/{segs.length} Strecken aktiv · höher → mehr raus</div>
+        <div style={{ fontSize: 8, color: '#cbd5e0', marginTop: 4 }}>Rest (Aufenthalt) → ruhige POIs</div>
+      </div>
+    </div>
+  );
+}
+
 // Spalte 1 · Sim-Vorschau (im Device-Frame): der echte App-Screen.
 function Surface({ fn }: { fn: ShellFunction }) {
   if (fn.surface === 'map') return <DeepShellMap />;
   if (fn.surface === 'intro') return <IntroSurface />;
+  if (fn.surface === 'comfort') return <ComfortSurface />;
   if (fn.surface === 'engine') {
     return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', padding: 12, textAlign: 'center', fontSize: 10, color: '#cbd5e0', fontStyle: 'italic', lineHeight: 1.4 }}>Engine · kein eigener Screen<br />(Effekt erscheint in einer Surface)</div>;
   }
@@ -151,11 +176,33 @@ function GateViz() {
   );
 }
 
+// Funktions-Visualisierung „comfort" — die drei Strecken-Zustände (crossing-gated).
+function ComfortViz() {
+  const rows = [
+    { c: '#2f855a', label: 'normal · unter Schwelle' },
+    { c: '#d69e2e', label: 'degraded · Operator-Schwelle' },
+    { c: '#a0aec0', label: 'excluded · Move-Schwelle (User)' },
+  ];
+  return (
+    <div style={{ padding: 12, height: '100%', display: 'flex', flexDirection: 'column', gap: 10, fontFamily: 'system-ui, sans-serif' }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: '#1a365d' }}>Klassifikation je Strecke</div>
+      {rows.map((r, i) => (
+        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ width: 18, height: 6, borderRadius: 3, background: r.c, flexShrink: 0 }} />
+          <span style={{ fontSize: 10, color: '#4a5568' }}>{r.label}</span>
+        </div>
+      ))}
+      <div style={{ marginTop: 4, fontSize: 9.5, color: '#718096', lineHeight: 1.4 }}>Ø-Last je Kreuzung→Kreuzung; Move-Slider setzt die Ausschluss-Schwelle.</div>
+    </div>
+  );
+}
+
 // Spalte 3 · Funktions-Visualisierung (rahmenlos): analytische Sicht.
 function Viz({ fn }: { fn: ShellFunction }) {
   if (fn.viz === 'colorize') return <ColorizeViz />;
   if (fn.viz === 'reveal') return <RevealViz />;
   if (fn.viz === 'gate') return <GateViz />;
+  if (fn.viz === 'comfort') return <ComfortViz />;
   return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', padding: 12, textAlign: 'center', fontSize: 10, color: '#cbd5e0', fontStyle: 'italic' }}>—</div>;
 }
 
