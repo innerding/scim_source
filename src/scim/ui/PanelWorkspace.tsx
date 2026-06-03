@@ -692,8 +692,18 @@ function OriginCapsulerView({ tab }: { tab: TabId }) {
       ? REPRESENTATIONS.filter((r) => slugify(geometryById(r.geometry_id)?.region ?? '') === regionSlug)
       : [];
 
+    // POIs nach Icon gruppiert (keine doppelten Icon-Darstellungen → Anzahl davor).
+    const byIcon = new Map<string, { svg: string; texts: string[]; count: number }>();
+    for (const p of pois) {
+      const iconId = resolveIcon(p.icon).iconId;
+      const e = byIcon.get(iconId) ?? { svg: iconById(iconId)?.svg_cleaned ?? '', texts: [], count: 0 };
+      e.texts.push(p.text || p.id); e.count++;
+      byIcon.set(iconId, e);
+    }
+    const poiByIcon = Array.from(byIcon, ([iconId, e]) => ({ iconId, ...e })).sort((a, b) => b.count - a.count);
+
     return {
-      geo, ring, pois, clusters, freePois,
+      geo, ring, pois, clusters, freePois, poiByIcon,
       repGhost: repGhost ? { id: repGhostId, svg: repGhost.svg_cleaned } : null,
       regGhost: regGhost ? { id: regGhostId, svg: regGhost.svg_cleaned, region: geo?.region ?? '' } : null,
       repGhostId, regGhostId, regReps,
@@ -840,23 +850,23 @@ function OriginCapsulerView({ tab }: { tab: TabId }) {
             <div style={{ flex: '0 0 auto' }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: '#1a365d', marginBottom: 4 }}>cap origin-poi-set <span style={{ fontSize: 10.5, fontWeight: 400, color: '#a0aec0' }}>· L3 · POIs der Representation</span></div>
               <p style={{ fontSize: 12, color: '#4a5568', lineHeight: 1.55, margin: '0 0 8px', maxWidth: 560 }}>
-                Was die App als Marker/Ziele zeigt: Position, Tagline, Bucket. Inhalt: <strong>{content.pois.length}</strong> POIs.
+                Was die App als Marker zeigt — <strong>nach Icon gruppiert</strong> (Anzahl × Icon, keine Dopplung).
+                Inhalt: <strong>{content.pois.length}</strong> POIs · <strong>{content.poiByIcon.length}</strong> Icon-Typen.
               </p>
             </div>
             <div style={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto', paddingTop: 4 }}>
-              {content.pois.length === 0 && <span style={{ fontSize: 11.5, color: '#a0aec0', fontStyle: 'italic' }}>Kein Katalog/keine POIs an dieser Rep.</span>}
-              {content.pois.map((p) => {
-                const ic = iconById(resolveIcon(p.icon).iconId)?.svg_cleaned ?? '';
-                return (
-                  <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '5px 0', borderBottom: '1px solid #f0f4f8' }}>
-                    <div style={{ width: 24, height: 24, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }} dangerouslySetInnerHTML={{ __html: ic }} />
-                    <div style={{ minWidth: 0, flex: 1 }}>
-                      <div style={{ fontSize: 12, color: '#2d3748', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.text || p.id}</div>
-                      <div style={{ fontSize: 10, color: '#a0aec0', fontFamily: 'ui-monospace, Menlo, monospace' }}>{p.bucket} · {p.subcategory}{p.cluster ? ` · ⌖ ${p.cluster}` : ''}</div>
-                    </div>
+              {content.poiByIcon.length === 0 && <span style={{ fontSize: 11.5, color: '#a0aec0', fontStyle: 'italic' }}>Kein Katalog/keine POIs an dieser Rep.</span>}
+              {/* je Icon EINMAL · Anzahl davor · Namen dahinter (keine doppelten Icons). */}
+              {content.poiByIcon.map((g) => (
+                <div key={g.iconId} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 0', borderBottom: '1px solid #f0f4f8' }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: '#2d3748', width: 28, textAlign: 'right', flexShrink: 0 }}>{g.count}×</span>
+                  <div style={{ width: 26, height: 26, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }} dangerouslySetInnerHTML={{ __html: g.svg }} />
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontSize: 11, color: '#718096', fontFamily: 'ui-monospace, Menlo, monospace' }}>{g.iconId}</div>
+                    <div style={{ fontSize: 11, color: '#4a5568', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={g.texts.join(', ')}>{g.texts.join(' · ')}</div>
                   </div>
-                );
-              })}
+                </div>
+              ))}
             </div>
             <div style={{ flex: '0 0 auto', fontSize: 10.5, color: '#a0aec0', fontStyle: 'italic', borderTop: '1px solid #e2e8f0', paddingTop: 6, marginTop: 6 }}>
               Cap — Publishing folgt: <code>origin/{rep.id}/poi-set.json</code>. Noch nicht gebaut.
