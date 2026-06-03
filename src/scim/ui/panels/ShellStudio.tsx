@@ -1,41 +1,46 @@
-// Shell-Studio — die Dual-Lane-Ansicht: EINE Funktions-Liste, in zwei Lanes gerendert.
-// High (links) = Oberfläche im Device-Frame + Design-Notizen · Deep (rechts) = der
-// ausgespielte Code im Code-Frame + Code-Notizen. Je Funktion ein Block, per Drop-Down
-// expandierbar; beide Lanes teilen Zeile & Expand-Zustand → Frames stehen gegenüber.
+// Shell-Studio — Dual-Lane: EINE Funktions-Liste, zwei Lanes.
+//   SIM (links/High)  = Oberfläche (Sim-Vorschau im Device-Frame) + SIM-Code, der sie
+//                       in SCIM rendert + Design-Notizen. „Was SCIM simuliert."
+//   PRODUKTION (rechts/Deep) = der Ziel-App-Code, der WIRKLICH ausgespielt wird —
+//                       NICHT live mitcodiert, sondern auf Anforderung generiert
+//                       (Footer: Plattform wählen → rechnen → Code je Block + Summe →
+//                       Sensus Core Publishing packt). SIM-Code ≠ Produktions-Code.
 // Das ist NICHT SCIM3 selbst, sondern was SCIM3 in die Ziel-App bringt.
 import { useState, type ReactNode } from 'react';
-import { SHELL_FUNCTIONS, type ShellFunction } from '../../shell-studio/shellStudio';
+import { SHELL_FUNCTIONS, TARGET_PLATFORMS, type ShellFunction, type TargetPlatform } from '../../shell-studio/shellStudio';
 import { useWorkspaceNav } from '../workspaceNav';
 import DeepShellMap from './DeepShellMap';
 
-const FRAME_H = 360;
+const FRAME_H = 300;
 
-// Mobile-Device-Mockup um die Oberfläche.
 function DeviceFrame({ children }: { children: ReactNode }) {
   return (
-    <div style={{
-      width: 184, height: FRAME_H, flexShrink: 0, borderRadius: 26, border: '8px solid #1a202c',
-      background: '#000', overflow: 'hidden', position: 'relative', boxShadow: '0 8px 24px rgba(0,0,0,0.22)',
-    }}>
-      <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: 58, height: 13, background: '#1a202c', borderRadius: '0 0 9px 9px', zIndex: 5 }} />
-      <div style={{ width: '100%', height: '100%', background: '#fff' }}>{children}</div>
+    <div style={{ flexShrink: 0 }}>
+      <div style={{ fontSize: 9.5, color: '#a0aec0', textAlign: 'center', marginBottom: 3 }}>Sim-Vorschau</div>
+      <div style={{
+        width: 150, height: FRAME_H, borderRadius: 22, border: '7px solid #1a202c',
+        background: '#000', overflow: 'hidden', position: 'relative', boxShadow: '0 8px 24px rgba(0,0,0,0.22)',
+      }}>
+        <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: 48, height: 11, background: '#1a202c', borderRadius: '0 0 8px 8px', zIndex: 5 }} />
+        <div style={{ width: '100%', height: '100%', background: '#fff' }}>{children}</div>
+      </div>
     </div>
   );
 }
 
-function CodeFrame({ code }: { code: string }) {
+function CodeFrame({ code, w = 300, tone = '#9ecbff' }: { code: string; w?: number; tone?: string }) {
   return (
-    <div style={{ width: 380, height: FRAME_H, flexShrink: 0, overflow: 'auto', background: '#0d1117', borderRadius: 10, border: '1px solid #1a2535' }}>
-      <pre style={{ margin: 0, padding: '10px 12px', fontSize: 11, lineHeight: 1.55, color: '#9ecbff', fontFamily: 'ui-monospace, Menlo, monospace', whiteSpace: 'pre' }}>{code}</pre>
+    <div style={{ width: w, height: FRAME_H, flexShrink: 0, overflow: 'auto', background: '#0d1117', borderRadius: 10, border: '1px solid #1a2535' }}>
+      <pre style={{ margin: 0, padding: '10px 12px', fontSize: 11, lineHeight: 1.55, color: tone, fontFamily: 'ui-monospace, Menlo, monospace', whiteSpace: 'pre' }}>{code}</pre>
     </div>
   );
 }
 
 function Notes({ title, items, tone }: { title: string; items: string[]; tone: string }) {
   return (
-    <div style={{ width: 200, flexShrink: 0 }}>
+    <div style={{ width: 165, flexShrink: 0 }}>
       <div style={{ fontSize: 11, fontWeight: 700, color: tone, marginBottom: 4 }}>{title}</div>
-      <ul style={{ margin: 0, paddingLeft: 15, fontSize: 11, color: '#4a5568', lineHeight: 1.5 }}>
+      <ul style={{ margin: 0, paddingLeft: 15, fontSize: 10.5, color: '#4a5568', lineHeight: 1.45 }}>
         {items.map((t, i) => <li key={i} style={{ marginBottom: 3 }}>{t}</li>)}
       </ul>
     </div>
@@ -50,7 +55,9 @@ function Surface({ fn }: { fn: ShellFunction }) {
 export default function ShellStudio() {
   const { goStation } = useWorkspaceNav();
   const [open, setOpen] = useState<Record<string, boolean>>({ map: true });
+  const [targets, setTargets] = useState<Set<TargetPlatform>>(new Set(['web']));
   const toggle = (id: string) => setOpen((o) => ({ ...o, [id]: !o[id] }));
+  const toggleTarget = (p: TargetPlatform) => setTargets((s) => { const n = new Set(s); n.has(p) ? n.delete(p) : n.add(p); return n; });
 
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -59,11 +66,12 @@ export default function ShellStudio() {
           display: 'inline-block', padding: '2px 8px', fontSize: 10, fontFamily: 'monospace',
           color: '#2b6cb0', background: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: 4,
         }}>
-          Shell-Studio · Dual-Lane · <span style={{ color: '#2b6cb0' }}>High = Oberfläche</span> | <span style={{ color: '#805ad5' }}>Deep = Code</span>
+          Shell-Studio · <span style={{ color: '#2b6cb0' }}>SIM = Oberfläche + Code</span> | <span style={{ color: '#805ad5' }}>Produktion = Ziel-App-Code (generiert)</span>
         </div>
-        <p style={{ fontSize: 11.5, color: '#718096', lineHeight: 1.5, margin: '6px 0 0', maxWidth: 620 }}>
-          Was SCIM3 in die Ziel-App bringt — je Funktion ein Block: links die Oberfläche (Device-Frame), rechts der
-          ausgespielte Code; daneben die Notizen. Frames stehen gegenüber. Am Ende: Paket/Bindung in Sensus Core Publishing.
+        <p style={{ fontSize: 11.5, color: '#718096', lineHeight: 1.5, margin: '6px 0 0', maxWidth: 640 }}>
+          Was SCIM3 in die Ziel-App bringt — je Funktion ein Block. Links die <strong>SIM</strong> (Vorschau + der Code,
+          der sie in SCIM rendert), rechts die <strong>Produktion</strong> (der ausgespielte Ziel-App-Code; nicht live
+          codiert, sondern unten <em>auf Anforderung generiert</em>). <strong>SIM-Code ≠ Produktions-Code.</strong>
         </p>
       </div>
 
@@ -72,7 +80,6 @@ export default function ShellStudio() {
           const isOpen = !!open[fn.id];
           return (
             <div key={fn.id} style={{ border: '1px solid #e2e8f0', borderRadius: 10, marginBottom: 12, overflow: 'hidden' }}>
-              {/* Block-Kopf */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', background: '#f7fafc', cursor: 'pointer' }} onClick={() => toggle(fn.id)}>
                 <span style={{ fontSize: 13, color: '#718096', width: 14 }}>{isOpen ? '▾' : '▸'}</span>
                 <span style={{ fontSize: 13, fontWeight: 700, color: '#1a365d' }}>{fn.title}</span>
@@ -84,25 +91,48 @@ export default function ShellStudio() {
                 >⊞ Icon-Assets</button>
               </div>
 
-              {/* Dual-Lane-Inhalt */}
               {isOpen && (
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, padding: '12px', overflowX: 'auto' }}>
-                  {/* High-Lane */}
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, flexShrink: 0 }}>
-                    <DeviceFrame><Surface fn={fn} /></DeviceFrame>
-                    <Notes title="High · Oberfläche" items={fn.highNotes} tone="#2b6cb0" />
-                  </div>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, padding: 12, overflowX: 'auto' }}>
+                  {/* SIM-Lane */}
+                  <DeviceFrame><Surface fn={fn} /></DeviceFrame>
+                  <CodeFrame code={fn.simCode} w={290} />
+                  <Notes title="SIM · Oberfläche" items={fn.highNotes} tone="#2b6cb0" />
                   <div style={{ width: 1, alignSelf: 'stretch', background: '#e2e8f0', flexShrink: 0 }} />
-                  {/* Deep-Lane */}
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, flexShrink: 0 }}>
-                    <CodeFrame code={fn.code} />
-                    <Notes title="Deep · Code" items={fn.deepNotes} tone="#805ad5" />
-                  </div>
+                  {/* Produktion-Lane */}
+                  <CodeFrame
+                    w={290}
+                    tone="#a0aec0"
+                    code={`// Ziel-App-Code (${[...targets].join('+') || '—'})\n// Wird NICHT live codiert.\n// Unten Plattform wählen → „Generieren"\n// → erscheint hier je Block + als Summe.\n//\n// (Generator: Konzept, noch nicht gebaut.)`}
+                  />
+                  <Notes title="Produktion · Code-Intent" items={fn.deepNotes} tone="#805ad5" />
                 </div>
               )}
             </div>
           );
         })}
+      </div>
+
+      {/* Ausspielungs-Footer — ganz unten: Plattform wählen → rechnen → Summe → SCS packt. */}
+      <div style={{ flex: '0 0 auto', borderTop: '1px solid #e2e8f0', paddingTop: 10, marginTop: 4 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 12, fontWeight: 700, color: '#1a365d' }}>Ausspielung:</span>
+          {TARGET_PLATFORMS.map((p) => (
+            <label key={p.id} style={{ fontSize: 12, color: '#4a5568', display: 'inline-flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
+              <input type="checkbox" checked={targets.has(p.id)} onChange={() => toggleTarget(p.id)} /> {p.label}
+            </label>
+          ))}
+          <button
+            disabled
+            title="Generator = Konzept, noch nicht gebaut"
+            style={{ fontSize: 12, padding: '4px 12px', borderRadius: 4, border: '1px dashed #cbd5e0', background: '#f7fafc', color: '#a0aec0', cursor: 'not-allowed' }}
+          >⚙ Generieren (folgt)</button>
+        </div>
+        <p style={{ fontSize: 10.5, color: '#a0aec0', fontStyle: 'italic', lineHeight: 1.5, margin: '6px 0 0', maxWidth: 720 }}>
+          Konzept (gehalten): Plattform(en) wählen → SCIM <strong>rechnet</strong> den Ziel-App-Code → erscheint je Block
+          <strong> und als Summe</strong> → fertig, von <strong>Sensus Core Publishing</strong> anforderbar &amp; packbar.
+          Ausbau: Snapshots verschiedener Zoom-Stufen als Storyboard (wenn die Surface App-Inhalt trägt) · echte
+          Zwei-Panel-Split-Ansicht + Cosmo-Paar „High+Deep" · Inspector = Bewegtbild der Live-App.
+        </p>
       </div>
     </div>
   );

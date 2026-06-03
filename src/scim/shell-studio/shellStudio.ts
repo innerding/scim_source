@@ -1,7 +1,19 @@
-// Shell-Studio — die Funktions-Registry. Jede Funktion = EIN Block, in zwei Lanes
-// dargestellt: High (Oberfläche, was der User sieht, im Device-Frame + Design-Notizen)
-// und Deep (der ausgespielte Code + Code-Notizen). EINE Liste, zwei Lanes → die Frames
-// stehen automatisch gegenüber. Inhalt wächst Funktion für Funktion.
+// Shell-Studio — die Funktions-Registry. Jede Funktion = EIN Block, in zwei Lanes:
+//   · SIM (High): die Oberfläche (Sim-Vorschau im Device-Frame) + der SIM-Code, der
+//     sie in SCIM rendert + Design-Notizen. „Was wir simulieren."
+//   · PRODUKTION (Deep): der Ziel-App-Code, der wirklich ausgespielt wird — NICHT live
+//     mitcodiert, sondern auf Anforderung GENERIERT (Plattform wählen → SCIM rechnet →
+//     Code je Block + Summe → von Sensus Core Publishing anforderbar/packbar).
+// SIM-Code ≠ Produktions-Code (nativer App-Store-Code kann ganz anders aussehen).
+// EINE Liste, zwei Lanes → die Frames stehen gegenüber. Inhalt wächst je Funktion.
+
+export type TargetPlatform = 'web' | 'android' | 'ios';
+
+export const TARGET_PLATFORMS: { id: TargetPlatform; label: string }[] = [
+  { id: 'web', label: 'Web' },
+  { id: 'android', label: 'Android' },
+  { id: 'ios', label: 'iOS' },
+];
 
 export interface ShellFunction {
   id: string;
@@ -9,12 +21,12 @@ export interface ShellFunction {
   subtitle?: string;
   /** Surface-Renderer-Schlüssel (im Studio per switch auf id aufgelöst). */
   surface: 'map' | 'placeholder';
-  /** High · Design-Notizen: so kann es sein · bewährt · Fallback · Ausbau. */
+  /** High · Design-Notizen zur Oberfläche: so kann es sein · bewährt · Fallback · Ausbau. */
   highNotes: string[];
-  /** Deep · Code-Notizen: schneller weil · Budget weil · erneuert weil. */
+  /** Deep · Notizen zum Produktions-Code: was er tun muss · schneller weil · Budget · erneuert weil. */
   deepNotes: string[];
-  /** Deep · der ausgespielte Code (Auszug). */
-  code: string;
+  /** High · der SIM-Code, der die Oberfläche in SCIM rendert (Auszug). */
+  simCode: string;
 }
 
 export const SHELL_FUNCTIONS: ShellFunction[] = [
@@ -29,11 +41,11 @@ export const SHELL_FUNCTIONS: ShellFunction[] = [
       'Ausbau: Dark-Tiles als Stil-Variante (Mesh-Look) umschaltbar.',
     ],
     deepNotes: [
-      'Leaflet einmal mounten + ResizeObserver → invalidateSize — sonst grauer Ausschnitt im Frame.',
-      'preferCanvas:true → schneller bei vielen Segmenten, spart Render-Budget.',
-      'fitBounds auf die Origin-Boundary statt fixem Zoom — passt sich jeder Rep an.',
+      'Produktion kann nativ rendern (Android/iOS Map-SDK) — SIM-Leaflet ist nur Vorschau.',
+      'preferCanvas/invalidateSize sind SIM-Belange; nativ entfallen sie.',
+      'fitBounds auf die Origin-Boundary bleibt plattformübergreifend gleich gemeint.',
     ],
-    code: `const map = L.map(el, { zoomControl: true, preferCanvas: true });
+    simCode: `const map = L.map(el, { zoomControl: true, preferCanvas: true });
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '© OpenStreetMap', maxZoom: 19,
