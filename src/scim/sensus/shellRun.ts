@@ -41,11 +41,13 @@ export interface ShellStep {
 export const SHELL_RUN_INTRO =
   'shell-run ist die lineare Strecke, auf der eine Shell entsteht und transferiert wird — ' +
   'das Gegenstück zum zyklischen Anthem-Reigen. Funktion um Funktion wird geschmiedet: erst ' +
-  'die Surfaces (was der User sieht) und Engines (die kopflos rechnen), dann wird die Shell ' +
-  'mit dem Katalog gespeist (Collector-Path), mit dem Lade-Kaskade-Treiber gerüstet und an ' +
-  'Sensus Core P transferiert — dort wird sie geschnürt, versioniert und mit der Identität ' +
-  'gestempelt. An der Request-Grenze entscheidet der globe-switcher (QR ↔ diesenpark.com). ' +
-  'Die Shell ist generisch; alles Rep-/Regions-Spezifische wird erst beim Transfer gestempelt.';
+  'die Surfaces (was der User sieht) und Engines (die kopflos rechnen). Dann die Eintritts-' +
+  'Funktionen: der globe-switcher (QR ↔ diesenpark.com) entscheidet, ob der Launcher (globale ' +
+  'Auswahl) gezeigt wird; der Collector-Path speist den Launcher mit dem Katalog (Nation → ' +
+  'Region → Representation); der Lade-Kaskade-Treiber fährt den Download. Zuletzt wird die ' +
+  'generische Shell an Sensus Core P transferiert — dort wird sie geschnürt, versioniert und ' +
+  'mit der Identität gestempelt. Die Shell ist generisch; alles Rep-/Regions-Spezifische wird ' +
+  'erst beim Transfer gestempelt.';
 
 export const SHELL_RUN_STEPS: ShellStep[] = [
   {
@@ -84,22 +86,27 @@ export const SHELL_RUN_STEPS: ShellStep[] = [
     blurb: 'Geometrie + Farbe je POI-Bucket, Cluster-Ghosts (Ring → Heimat-Container, wächst mit Anzahl). Gebaut (clusterOverlay), aber noch nicht als Shell-Funktion filetiert.',
   },
   {
-    n: 8, word: 'collector', title: 'Collector-Path', kind: 'feed', home: '— · Quelle: V01/V02-Kaskade',
+    n: 8, word: 'globe-switcher', title: 'globe-switcher', kind: 'edge', home: '— · Edge, vor Sensus Core',
     status: 'open',
-    blurb: 'Sammelt Nation → Region → Representation und stellt es der Deep-Shell bereit (speist die globale-Auswahl-Fassung). Quelle ist die kaskadierende Liste im SCIM-UI (REGION_MAP / V02RegionDetail). Nation-Ebene fehlt noch.',
+    blurb: 'Die Eintritts-Weiche an der Request-Grenze: liest, WIE der User kommt. QR-Code → Launcher überspringen, direkt zur festen Rep (Liste nicht nötig). diesenpark.com nackt → den Launcher zeigen. Kein Engine-Stück, sondern Dispatcher; braucht höchstens eine rep-id-Auflösung, nicht den ganzen Katalog.',
   },
   {
-    n: 9, word: 'lade-treiber', title: 'Lade-Kaskade-Treiber', kind: 'engine', home: 'Deep-Shell · DEPLOY_ORDER',
+    n: 9, word: 'collector', title: 'Collector-Path', kind: 'feed', home: 'P11/V01-V02 · Publishing-Aggregat',
+    status: 'open',
+    blurb: 'Cross-Rep-Fan-in: aggregiert den Katalog Nation → Region → Representation aus den per-Rep-Fakten, die jeder Origin-Capsuler deklariert (Nation/Region/Icon). Wohnt auf dem Publishing-Layer (Sensus Core P / V01-V02-Kaskade), NICHT in der Deep-Shell (deren Animationen sind generisch). Speist den Launcher. Nation-Ebene fehlt noch in REGION_MAP.',
+  },
+  {
+    n: 10, word: 'launcher', title: 'Launcher · globale Auswahl', kind: 'surface', home: '— · High-Shell-Surface, noch nicht filetiert',
+    status: 'open',
+    blurb: 'Die globale-Auswahl-Fassung: rendert die Kacheln Nation → Region → Representation und löst die Bundle-Auslieferung aus. Der EIGENTLICHE Konsument des Collector-Path. Generische High-Shell-Surface, publishing-gespeist, lebt AUSSERHALB des Rep-Bundles. Wird vom globe-switcher gezeigt (URL) oder übersprungen (QR).',
+  },
+  {
+    n: 11, word: 'lade-treiber', title: 'Lade-Kaskade-Treiber', kind: 'engine', home: 'Deep-Shell · DEPLOY_ORDER',
     status: 'open',
     blurb: 'Fährt die Lade-Kaskade auf dem Gerät: feuert den Bundle-Fetch, sobald die rep-id bekannt ist (eager), und deckt die Latenz mit Intro/Reveal — damit der User im Upload nicht hängt. Die deklarierte Reihenfolge steht in DEPLOY_ORDER.',
   },
   {
-    n: 10, word: 'globe-switcher', title: 'globe-switcher', kind: 'edge', home: '— · Edge, vor Sensus Core',
-    status: 'open',
-    blurb: 'Die Eintritts-Weiche: liest, wie der User kommt. QR-Code → globale-Auswahl raus, direkt in den Lade-Kaskade-Treiber (eine Rep steht fest). diesenpark.com nackt → globale-Auswahl durchreichen (Region → Rep). Kein Engine-Stück, sondern Dispatcher an der Request-Grenze.',
-  },
-  {
-    n: 11, word: 'transfer', title: 'Transfer → Sensus Core P', kind: 'transfer', home: 'P11 · Sensus Core', panelId: 'P11', tabId: 't1',
+    n: 12, word: 'transfer', title: 'Transfer → Sensus Core P', kind: 'transfer', home: 'P11 · Sensus Core', panelId: 'P11', tabId: 't1',
     status: 'partial',
     blurb: 'Die fertige, generische Shell wird an Sensus Core P transferiert. Dort wird geschnürt (Shell ⊕ Origin ⊕ Anthem), versioniert (V01) und die Identität gestempelt (reg-/rep-Icon, Boundary, globale Icons). Erst HIER wird aus der generischen Shell eine konkrete Auslieferung.',
   },
