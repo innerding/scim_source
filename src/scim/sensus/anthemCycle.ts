@@ -74,13 +74,13 @@ export const ANTHEM_STATIONS: AnthemStation[] = [
   },
   {
     n: 7, word: 'adressieren', title: 'Adresse (anthemEndpoint)', home: 'P09 · Origin-Manifest', panelId: 'P09',
-    status: 'partial',
-    blurb: 'Das Origin-Manifest schreibt die Adresse, an der die App den Snapshot zieht (anthemEndpoint = /api/anthem/:repId), und bindet sie an die repId. Neu: ein „Origin-Netz veröffentlichen"-Button (P09) PUTet das resampelte Netz nach R2, damit der Worker daraus rechnen kann. Offen bleibt der Operator-seitige wrangler deploy.',
+    status: 'done',
+    blurb: 'Das Origin-Manifest schreibt die Adresse, an der die App den Snapshot zieht (anthemEndpoint = /api/anthem/:repId), und bindet sie an die repId. Der „Origin-Netz veröffentlichen"-Button (P09) PUTet das resampelte Netz nach R2 — der Worker liest es und rechnet daraus. Round-Trip live verifiziert.',
   },
   {
     n: 8, word: 'senden', title: 'Auslieferung (Worker)', home: 'Worker /api/anthem/:repId',
-    status: 'partial',
-    blurb: 'Der Übertragungsweg: der Worker rechnet den Snapshot SELBST aus dem veröffentlichten Origin-Netz + (Sim-)Zeit (geteilte produceAnthem-Engine, keine Dopplung) und liefert ihn presence-gegated aus. Endpoints GET /api/anthem/:repId + POST .../presence sind gebaut, typgeprüft und bundeln — aber noch nicht per wrangler deployed (Phase 2b-Abschluss).',
+    status: 'done',
+    blurb: 'Der Übertragungsweg: der Worker rechnet den Snapshot SELBST aus dem veröffentlichten Origin-Netz + (Sim-)Zeit (geteilte produceAnthem-Engine, keine Dopplung) und liefert ihn presence-gegated aus (GET /api/anthem/:repId + POST .../presence). Deployed und end-to-end verifiziert: Daten verlassen den Editor-RAM, reisen durch R2/Worker und kommen zurück.',
   },
   {
     n: 9, word: 'drosseln', title: 'Refresh-Gate', home: 'P08 · t5', panelId: 'P08', tabId: 't5',

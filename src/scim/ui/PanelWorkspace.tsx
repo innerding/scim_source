@@ -444,21 +444,26 @@ function CoderView() {
         >{presence ? '● presence aktiv — Atemzyklus läuft' : '○ presence aus (kalt) — klopfen'}</button>
       </div>
 
-      {/* Phase 2b: echten Bezug übers Netz testen (klopfen → Worker rechnet → Snapshot zurück). */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+      {/* Diagnose (kein Produktiv-Konsum): SCIM spielt die Ziel-App und klopft am
+          Worker → der Worker rechnet → Snapshot zurück. Der echte Konsum zieht in
+          Phase 3 in die sensus-core-runtime; dieser Knopf bleibt als Test-Werkzeug. */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
         <button
           onClick={onWireTest}
           disabled={wireBusy || !anthemReadConfigured()}
-          title={anthemReadConfigured() ? 'POST /api/anthem/:repId/presence' : 'VITE_WORKER_URL setzen'}
+          title={anthemReadConfigured() ? 'Diagnose · POST /api/anthem/:repId/presence (SCIM spielt die App)' : 'VITE_WORKER_URL setzen'}
           style={{
             fontSize: 12, padding: '4px 12px', borderRadius: 4,
             cursor: wireBusy || !anthemReadConfigured() ? 'not-allowed' : 'pointer',
-            border: '1px solid #4299e1', background: '#ebf8ff', color: '#2b6cb0',
+            border: '1px dashed #a0aec0', background: '#f7fafc', color: '#4a5568',
             opacity: anthemReadConfigured() ? 1 : 0.55,
           }}
-        >{wireBusy ? '… klopfe' : '⇆ echten Bezug testen (Worker)'}</button>
+        >{wireBusy ? '… simuliere' : '⚗ Diagnose: App-Bezug simulieren'}</button>
         {!anthemReadConfigured() && <span style={{ fontSize: 10.5, color: '#a0aec0', fontStyle: 'italic' }}>Worker nicht konfiguriert</span>}
         {wireMsg && <span style={{ fontSize: 11, fontFamily: 'ui-monospace, Menlo, monospace', color: wireMsg.startsWith('✓') ? '#2f855a' : '#c05621' }}>{wireMsg}</span>}
+      </div>
+      <div style={{ fontSize: 10, color: '#a0aec0', fontStyle: 'italic', marginBottom: 12 }}>
+        Stellvertreter: SCIM klopft hier selbst als Ziel-App. Der echte Konsum kommt in Phase 3 (sensus-core-runtime).
       </div>
 
       {presence && snap ? (
