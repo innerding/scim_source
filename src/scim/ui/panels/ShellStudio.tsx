@@ -12,11 +12,6 @@ import { useWorkspaceNav } from '../workspaceNav';
 import DeepShellMap from './DeepShellMap';
 import { colorize } from '../../sensus/loadColour';
 import { ColourGradientBar } from './ColourGradientBar';
-import { RingSvg } from './SichelViews';
-import { useAuftraggeberRep } from '../../../runtime/useAuftraggeberRep';
-import { geometryById } from '../../workspace/workspace.registry';
-import { iconById } from '../../poi-catalog/iconRegistry';
-import { slugify } from '../../../runtime/router';
 
 const FRAME_H = 300;
 
@@ -69,26 +64,17 @@ function Notes({ title, items, tone }: { title: string; items: string[]; tone: s
   );
 }
 
-// Intro-Surface — Standbild des Boundary-Reveals: das reg-Icon (aus dem capsulated
-// origin-asset-set, links oben, luftig) + die Boundary auf weißem Screen.
+// Intro-Surface — GENERISCH: nur die Animation. reg-Icon UND boundary sind Inhalt,
+// gestempelt von P11/Origin → hier als Slots dargestellt (nicht der echte Inhalt).
 function IntroSurface() {
-  const rep = useAuftraggeberRep();
-  const geo = geometryById(rep.geometry_id);
-  const ring = (geo?.polygon ?? []) as [number, number][];
-  const regSlug = geo?.region ? slugify(geo.region) : '';
-  const regIcon = regSlug ? iconById(`reg-${regSlug}`)?.svg_cleaned : undefined;
   return (
     <div style={{ position: 'relative', height: '100%', background: '#fff', overflow: 'hidden' }}>
-      {/* reg-Icon — links oben, relativ groß, luftig (aus capsulated origin-asset-set). */}
-      {regIcon && (
-        <div style={{ position: 'absolute', top: 14, left: 14, width: 40, height: 40 }} dangerouslySetInnerHTML={{ __html: regIcon }} />
-      )}
-      {/* Boundary auf weißem Screen (Reveal-Endbild). */}
-      <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, padding: 8 }}>
-        {ring.length >= 3
-          ? <RingSvg ring={ring} size={104} />
-          : <span style={{ fontSize: 10, color: '#cbd5e0' }}>keine Boundary</span>}
-        <span style={{ fontSize: 9, color: '#a0aec0' }}>{geo?.region ?? 'Region'} · „{rep.name}"</span>
+      {/* reg-Icon-Slot — links oben (Inhalt beim Stempeln). */}
+      <div style={{ position: 'absolute', top: 14, left: 14, width: 40, height: 40, border: '1.5px dashed #cbd5e0', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, color: '#a0aec0', textAlign: 'center', lineHeight: 1.1 }}>reg-icon</div>
+      {/* boundary-Slot + Hinweis. */}
+      <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, padding: 8 }}>
+        <div style={{ width: 92, height: 78, border: '1.5px dashed #bee3f8', borderRadius: '42% 50% 46% 54%', background: '#f0f8ff' }} />
+        <span style={{ fontSize: 8.5, color: '#a0aec0', textAlign: 'center', lineHeight: 1.35 }}>Reveal-Animation<br />Inhalt gestempelt (P11/Origin)</span>
       </div>
     </div>
   );
@@ -145,10 +131,31 @@ function RevealViz() {
   );
 }
 
+// Funktions-Visualisierung „gate" — der Gate-Zustand + das Bündeln.
+function GateViz() {
+  return (
+    <div style={{ padding: 12, height: '100%', display: 'flex', flexDirection: 'column', gap: 10, fontFamily: 'system-ui, sans-serif' }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: '#1a365d' }}>Refresh-Gate</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ width: 14, height: 14, borderRadius: 3, background: '#fefcbf', border: '2px solid #d69e2e' }} />
+        <span style={{ fontSize: 10, color: '#4a5568' }}>gültig → <strong>blockiert</strong> (halten)</span>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ width: 14, height: 14, borderRadius: 3, background: '#c6f6d5', border: '2px solid #2f855a' }} />
+        <span style={{ fontSize: 10, color: '#4a5568' }}>nextAt erreicht → <strong>erlaubt</strong></span>
+      </div>
+      <div style={{ marginTop: 4, padding: '6px 8px', background: '#f7fafc', borderRadius: 6, fontSize: 10, color: '#718096', lineHeight: 1.4 }}>
+        viele Interaktionen<br />→ höchstens <strong>1 Anforderung</strong> / Fenster
+      </div>
+    </div>
+  );
+}
+
 // Spalte 3 · Funktions-Visualisierung (rahmenlos): analytische Sicht.
 function Viz({ fn }: { fn: ShellFunction }) {
   if (fn.viz === 'colorize') return <ColorizeViz />;
   if (fn.viz === 'reveal') return <RevealViz />;
+  if (fn.viz === 'gate') return <GateViz />;
   return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', padding: 12, textAlign: 'center', fontSize: 10, color: '#cbd5e0', fontStyle: 'italic' }}>—</div>;
 }
 

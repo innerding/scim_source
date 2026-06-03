@@ -22,7 +22,7 @@ export interface ShellFunction {
   /** Sim-Vorschau (Device-Frame) = echter App-Screen. 'engine' = kein eigener Screen → leer. */
   surface: 'map' | 'intro' | 'engine' | 'placeholder';
   /** Funktions-Visualisierung (rahmenlos) = analytische Sicht der Funktion. 'none' = keine. */
-  viz: 'colorize' | 'reveal' | 'none';
+  viz: 'colorize' | 'reveal' | 'gate' | 'none';
   /** High · Design-Notizen zur Oberfläche: so kann es sein · bewährt · Fallback · Ausbau. */
   highNotes: string[];
   /** Deep · Notizen zum Produktions-Code: was er tun muss · schneller weil · Budget · erneuert weil. */
@@ -111,17 +111,17 @@ seg.color = colorize(anthem.loads[i], origin.colourSettings);`,
   {
     id: 'intro',
     title: 'Intro',
-    subtitle: 'reveal-engine · Boundary-Reveal',
+    subtitle: 'reveal-engine · Animation (generisch)',
     surface: 'intro',
     viz: 'reveal',
     highNotes: [
-      'Stilles Einloggen: weißer Screen mit dem reg-Icon (links oben, luftig) vor der fokussierten Karte.',
-      'Boundary-Fenster wächst langsam (f0.5) und legt die OSM frei — kein Ausdimmen dabei.',
-      'Danach: Fill aus + Boundary blendet ein und bleibt. Ausbau: zusätzlich Region-Name/Logo.',
+      'Stilles Einloggen: weißer Screen, reg-Icon links oben (luftig), dann Boundary-Reveal.',
+      'Die Shell liefert NUR die Animation (generisch) — reg-Icon UND boundary sind Inhalt, gestempelt (P11/Origin).',
+      'Fenster wächst (f0.5, kein Dim) → Fill aus + Boundary bleibt. Ausbau: Region-Name/Logo.',
     ],
     deepNotes: [
       'Reine DOM/SVG-Maske als additives Overlay — rührt die Karten-Layer nicht an.',
-      'Verbraucht origin-boundary (L0). Das reg-Icon ist die Shell-ID — Inhalt aus origin-asset-set, an die generische Shell GESTEMPELT in Sensus Core Publishing (P11), NICHT in der Shell selbst.',
+      'Inhalt wohnt NICHT in der Shell: origin-boundary (L0) + reg-Icon (Shell-ID) werden in Sensus Core Publishing (P11) bzw. aus dem Origin gestempelt. Die Deep-Shell hat nur die Animations-Funktionen.',
       'Nativ: gleiche zwei Phasen mit Plattform-Masking (CALayer-Mask / Canvas-Clip).',
     ],
     simCode: `// reveal-engine — Boundary-Reveal („stilles Einloggen"). Additives SVG-Overlay
@@ -138,5 +138,34 @@ export function playBoundaryReveal(container, map, ringLatLng) {
   // 2) danach: Fill aus + Boundary blendet ein und bleibt (~1400 ms).
   then(DIM_MS, t => { fillOpacity(1 - t); strokeOpacity(t); });
 }`,
+  },
+  {
+    id: 'drossler',
+    title: 'Drossler',
+    subtitle: 'Refresh-Gate (Engine)',
+    surface: 'engine',
+    viz: 'gate',
+    highNotes: [
+      'Kein eigener Screen — wirkt unsichtbar: weniger Netz-Anfragen, ruhigeres Verhalten.',
+      'Schützt vor Anfrage-Fluten bei vielen User-Interaktionen.',
+    ],
+    deepNotes: [
+      'App-seitig: nicht jede Interaktion fordert an — gebündelt pro nextAt-Fenster.',
+      'Liest die ANGEKÜNDIGTE nextAt (rät keine verstrichene Zeit) → trifft jedes Fenster genau einmal.',
+      'Reine Funktion (state, nowMin) → Verdikt; nativ 1:1 portierbar.',
+    ],
+    simCode: `// Refresh-Gate — der Consumer drosselt sich SELBST: liest die angekündigte
+// nextAt des gehaltenen Snapshots und fordert erst ab nextAt + Gap neu an.
+// Bündelt viele Interaktionen zu höchstens EINER Anforderung pro Fenster.
+export function evaluateGate(state, nowMin) {
+  if (!state.held) return { allowed: true, reason: 'no-snapshot', dueInMin: 0 };
+
+  const dueAt = state.held.nextAtMin + REFRESH_GAP_MIN;   // kleiner Gap (Publish-Rennen)
+  if (nowMin >= dueAt)
+    return { allowed: true,  reason: 'expired', dueInMin: 0 };          // neu anfordern
+
+  return { allowed: false, reason: 'valid', dueInMin: dueAt - nowMin };  // halten
+}
+// jede User-Interaktion fragt das Gate; nur 'expired' → echte Anforderung.`,
   },
 ];
