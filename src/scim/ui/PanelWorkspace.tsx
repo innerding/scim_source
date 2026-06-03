@@ -1,4 +1,4 @@
-import { useState, useEffect, type ReactNode } from 'react';
+import { useState, useEffect, useMemo, type ReactNode } from 'react';
 import { useRepresentationContext } from '../../runtime/repContext';
 import { useAuftraggeberRep } from '../../runtime/useAuftraggeberRep';
 import type { TabId } from './panelRegistry';
@@ -44,6 +44,9 @@ import { REPRESENTATIONS, wegnetzById, geometryById } from '../workspace/workspa
 import { loadColourSettings } from '../sensus/colourSettings';
 import { slugify } from '../../runtime/router';
 import { buildOriginPackage, MVP_RESAMPLE_TARGET_METERS } from '../sensus/originPackage';
+import { parseCatalogById } from '../poi-catalog/catalogRegistry';
+import { iconById } from '../poi-catalog/iconRegistry';
+import { resolveIcon } from '../poi-catalog/poiCatalog.composite';
 import { buildOriginManifest } from '../sensus/originManifest';
 import type { OriginManifest } from '../sensus/packageContract';
 import type { OriginPackage } from '../sensus/originPackage';
@@ -624,20 +627,6 @@ function AnthemGateView() {
   );
 }
 
-// Ein noch nicht gebauter Cap — ehrlicher Stub (beschreibt, was er einkapseln wird).
-function CapStub({ title, schicht, was, key_ }: { title: string; schicht: string; was: string; key_: string }) {
-  return (
-    <div style={{ fontSize: 12, color: '#4a5568', lineHeight: 1.6, maxWidth: 560 }}>
-      <div style={{ fontSize: 13, fontWeight: 700, color: '#1a365d' }}>{title} <span style={{ fontSize: 10.5, fontWeight: 400, color: '#a0aec0' }}>· {schicht}</span></div>
-      <p style={{ margin: '6px 0' }}>{was}</p>
-      <div style={{ fontSize: 11, color: '#a0aec0', fontStyle: 'italic', borderTop: '1px solid #e2e8f0', paddingTop: 8 }}>
-        Cap — Publishing folgt: kapselt diesen Partikel aus der committeten Representation → R2
-        (<code>{key_}</code>), Worker serviert ihn, App lädt ihn aus dem Origin. Noch nicht gebaut.
-      </div>
-    </div>
-  );
-}
-
 // P09 · Origin-Capsuler — die committete Representation in Origin-Partikel („Caps")
 // gekapselt; ein Tab = ein Cap (boundary · mesh · asset-set · poi-set). Prinzip:
 // alles, was zur Representation gehört, kommt AUS dem Origin.
@@ -661,6 +650,18 @@ function OriginCapsulerView({ tab }: { tab: TabId }) {
       setPublishMsg(`✗ ${(e as Error).message}`);
     } finally { setPublishing(false); }
   };
+
+  // Woraus die Caps bestehen — aufgelöst AUS der Representation (Darstellungs-Funktion).
+  const content = useMemo(() => {
+    const geo = rep.geometry_id ? geometryById(rep.geometry_id) : undefined;
+    const ring = geo?.polygon ?? [];
+    const cat = rep.catalog_id ? parseCatalogById(rep.catalog_id) : null;
+    const pois = cat?.pois ?? [];
+    const iconIds = new Set<string>();
+    for (const p of pois) { const { iconId } = resolveIcon(p.icon); if (iconById(iconId)) iconIds.add(iconId); }
+    const icons = Array.from(iconIds).map((id) => ({ id, svg: iconById(id)?.svg_cleaned ?? '' }));
+    return { geo, ring, pois, icons };
+  }, [rep.id]);
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', fontFamily: 'system-ui, sans-serif' }}>
@@ -698,13 +699,28 @@ function OriginCapsulerView({ tab }: { tab: TabId }) {
               Die Boundary rahmt OSM (bbox) und verlinkt die übrigen Caps + den Anthem-Endpoint. „Origin auflösen" baut
               das Manifest (lokal); das <em>Publizieren</em> des Boundary-Caps folgt.
             </p>
-            <button
-              onClick={() => setCapsule(buildOriginManifest(rep))}
-              style={{
-                fontSize: 12, padding: '4px 12px', borderRadius: 4, cursor: 'pointer', marginBottom: 10,
-                border: '1px solid #2f855a', background: '#f0fff4', color: '#22543d', fontWeight: 600,
-              }}
-            >▣ Origin auflösen (Manifest)</button>
+            {/* Inhalt: der Außenring der Representation. */}
+            <div style={{ fontSize: 11.5, fontFamily: 'ui-monospace, Menlo, monospace', color: '#4a5568', marginBottom: 8 }}>
+              Inhalt: <strong>{content.ring.length}</strong> Boundary-Punkte{content.geo?.region ? ` · Region ${content.geo.region}` : ''}
+              {content.ring.length === 0 && <span style={{ color: '#c05621' }}> — keine Geometrie an dieser Rep</span>}
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
+              <button
+                onClick={() => rep.geometry_id && setInspectorAsset({ kind: 'geometry', id: rep.geometry_id })}
+                disabled={!rep.geometry_id}
+                style={{
+                  fontSize: 12, padding: '4px 12px', borderRadius: 4, cursor: rep.geometry_id ? 'pointer' : 'not-allowed',
+                  border: '1px solid #4299e1', background: '#ebf8ff', color: '#2b6cb0', fontWeight: 600,
+                }}
+              >👁 auf Karte zeigen (Inspector)</button>
+              <button
+                onClick={() => setCapsule(buildOriginManifest(rep))}
+                style={{
+                  fontSize: 12, padding: '4px 12px', borderRadius: 4, cursor: 'pointer',
+                  border: '1px solid #2f855a', background: '#f0fff4', color: '#22543d', fontWeight: 600,
+                }}
+              >▣ Origin auflösen (Manifest)</button>
+            </div>
             {capsuleFresh && capsule && (
               <div style={{ border: '1px solid #c6f6d5', background: '#f0fff4', borderRadius: 8, padding: '10px 12px', marginBottom: 8 }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: '#22543d' }}>Manifest · „{capsule.repName}" v{capsule.version}</div>
@@ -757,12 +773,56 @@ function OriginCapsulerView({ tab }: { tab: TabId }) {
         )}
 
         {tab === 't3' && (
-          <CapStub title="cap origin-asset-set" schicht="L2" key_={`origin/${rep.id}/asset-set.json`}
-            was="Die Assets der Representation (Container-/Icon-Geometrien, später POI-Sheet-Pixel-Bilder), die die App zur Darstellung braucht." />
+          <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+            <div style={{ flex: '0 0 auto' }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#1a365d', marginBottom: 4 }}>cap origin-asset-set <span style={{ fontSize: 10.5, fontWeight: 400, color: '#a0aec0' }}>· L2 · eingebettete Icons</span></div>
+              <p style={{ fontSize: 12, color: '#4a5568', lineHeight: 1.55, margin: '0 0 8px', maxWidth: 560 }}>
+                Die distinkten Icon-Assets, die die POIs dieser Representation verwenden (SVG, bereinigt) — was die App
+                zur Darstellung der Marker braucht. Inhalt: <strong>{content.icons.length}</strong> Icons.
+              </p>
+            </div>
+            <div style={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto', display: 'flex', flexWrap: 'wrap', gap: 10, alignContent: 'flex-start', paddingTop: 4 }}>
+              {content.icons.length === 0 && <span style={{ fontSize: 11.5, color: '#a0aec0', fontStyle: 'italic' }}>Kein Katalog/keine Icons an dieser Rep.</span>}
+              {content.icons.map((ic) => (
+                <div key={ic.id} title={ic.id} style={{ width: 76, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                  <div style={{ width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #e2e8f0', borderRadius: 6, background: '#fff', overflow: 'hidden' }}
+                    dangerouslySetInnerHTML={{ __html: ic.svg }} />
+                  <span style={{ fontSize: 9, color: '#718096', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%', whiteSpace: 'nowrap' }}>{ic.id}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{ flex: '0 0 auto', fontSize: 10.5, color: '#a0aec0', fontStyle: 'italic', borderTop: '1px solid #e2e8f0', paddingTop: 6, marginTop: 6 }}>
+              Cap — Publishing folgt: <code>origin/{rep.id}/asset-set.json</code>. Noch nicht gebaut.
+            </div>
+          </div>
         )}
         {tab === 't4' && (
-          <CapStub title="cap origin-poi-set" schicht="L3" key_={`origin/${rep.id}/poi-set.json`}
-            was="Das POI-Set der Representation (Katalog-POIs + Gate-POIs): Position, Typ, Container — was die App als Marker/Ziele zeigt." />
+          <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+            <div style={{ flex: '0 0 auto' }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#1a365d', marginBottom: 4 }}>cap origin-poi-set <span style={{ fontSize: 10.5, fontWeight: 400, color: '#a0aec0' }}>· L3 · POIs der Representation</span></div>
+              <p style={{ fontSize: 12, color: '#4a5568', lineHeight: 1.55, margin: '0 0 8px', maxWidth: 560 }}>
+                Was die App als Marker/Ziele zeigt: Position, Tagline, Bucket. Inhalt: <strong>{content.pois.length}</strong> POIs.
+              </p>
+            </div>
+            <div style={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto', paddingTop: 4 }}>
+              {content.pois.length === 0 && <span style={{ fontSize: 11.5, color: '#a0aec0', fontStyle: 'italic' }}>Kein Katalog/keine POIs an dieser Rep.</span>}
+              {content.pois.map((p) => {
+                const ic = iconById(resolveIcon(p.icon).iconId)?.svg_cleaned ?? '';
+                return (
+                  <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '5px 0', borderBottom: '1px solid #f0f4f8' }}>
+                    <div style={{ width: 24, height: 24, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }} dangerouslySetInnerHTML={{ __html: ic }} />
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ fontSize: 12, color: '#2d3748', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.text || p.id}</div>
+                      <div style={{ fontSize: 10, color: '#a0aec0', fontFamily: 'ui-monospace, Menlo, monospace' }}>{p.bucket} · {p.subcategory}{p.cluster ? ` · ⌖ ${p.cluster}` : ''}</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{ flex: '0 0 auto', fontSize: 10.5, color: '#a0aec0', fontStyle: 'italic', borderTop: '1px solid #e2e8f0', paddingTop: 6, marginTop: 6 }}>
+              Cap — Publishing folgt: <code>origin/{rep.id}/poi-set.json</code>. Noch nicht gebaut.
+            </div>
+          </div>
         )}
       </div>
     </div>
