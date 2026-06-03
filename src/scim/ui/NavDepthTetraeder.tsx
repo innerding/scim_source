@@ -27,13 +27,11 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-export type DepthFaceSection = 'package_pipeline' | 'runtime_builder' | 'versionen';
-
 interface Props {
-  /** IDs der offenen Sektionen — pro Face wird daraus der Stroke-Stand. */
-  openSections: ReadonlySet<string>;
-  /** Toggle-Callback fuer eine Section-ID. */
-  onToggleSection: (id: DepthFaceSection) => void;
+  /** Aktives Panel — hebt die zugeordnete Face hervor. */
+  activeId: string;
+  /** Klick auf eine Face navigiert zum zugeordneten Panel. */
+  onFaceClick: (panelId: string) => void;
   size?: number;
 }
 
@@ -53,14 +51,12 @@ function tilt(p: { x: number; y: number; z: number }) {
   };
 }
 
-// Position-basiertes Section-Mapping fuer die 3 sichtbaren 2D-Regionen
-// (siehe ann_060 / ann_051). Beim Locken zeigt der Tetraeder im Wireframe
-// drei umschlossene Regionen — Upper (oben, kleiner) + Lower-Left + Lower-Right.
-// Die Zuordnung bleibt ueber alle Lock-Winkel konstant; der 3D-Face-Index
-// ist dafuer irrelevant.
-const REGION_UPPER_SECTION:      DepthFaceSection = 'versionen';
-const REGION_LOWER_LEFT_SECTION: DepthFaceSection = 'package_pipeline';
-const REGION_LOWER_RIGHT_SECTION: DepthFaceSection = 'runtime_builder';
+// Position-basiertes Panel-Mapping fuer die 3 sichtbaren 2D-Regionen — die
+// Heimat des Operators (vom Row-Open/Close entbunden). Upper (oben) = AI-Interface,
+// Lower-Left = Operator-Zonen (P05), Lower-Right = System.
+const REGION_UPPER_PANEL = 'ai_interface';
+const REGION_LOWER_LEFT_PANEL = 'P05';
+const REGION_LOWER_RIGHT_PANEL = 'system';
 
 // Der Voll-Frontal-Winkel pro Face (in Grad). Empirisch: die Face zeigt
 // am stillsten zur Kamera, wenn der Mittel-Azimut zwischen ihren beiden
@@ -107,7 +103,7 @@ function nextFaceLock(currentTheta: number): HoverState {
   };
 }
 
-export default function NavDepthTetraeder({ openSections, onToggleSection, size = 208 }: Props) {
+export default function NavDepthTetraeder({ activeId, onFaceClick, size = 208 }: Props) {
   const [rotation, setRotation] = useState(0);
   const [hover, setHover] = useState<HoverState | null>(null);
   const [isLocked, setIsLocked] = useState(false);
@@ -255,9 +251,9 @@ export default function NavDepthTetraeder({ openSections, onToggleSection, size 
     const rightTop = tops[otherIdx[1]];
     const backTop  = tops[backIdx];
     return [
-      { vertices: [leftTop, rightTop, backTop], sectionId: REGION_UPPER_SECTION,       label: 'Versionen (Upper)' },
-      { vertices: [apex,    leftTop,  backTop], sectionId: REGION_LOWER_LEFT_SECTION,  label: 'Package Pipeline (Lower-Left)' },
-      { vertices: [apex,    rightTop, backTop], sectionId: REGION_LOWER_RIGHT_SECTION, label: 'Runtime Builder (Lower-Right)' },
+      { vertices: [leftTop, rightTop, backTop], panelId: REGION_UPPER_PANEL,       label: 'AI-Interface (oben)' },
+      { vertices: [apex,    leftTop,  backTop], panelId: REGION_LOWER_LEFT_PANEL,  label: 'Operator-Zonen (links)' },
+      { vertices: [apex,    rightTop, backTop], panelId: REGION_LOWER_RIGHT_PANEL, label: 'System (rechts)' },
     ];
   })();
 
@@ -304,16 +300,16 @@ export default function NavDepthTetraeder({ openSections, onToggleSection, size 
           des Tetraeder-Wireframes, jede zur Sektion gemappt. Tint im Fill,
           wenn die Sektion offen ist; transparent sonst. Klick toggelt. */}
       {lockRegions !== null && lockRegions.map((r) => {
-        const isOpen = openSections.has(r.sectionId);
+        const isActive = activeId === r.panelId;
         return (
           <polygon
-            key={`region-${r.sectionId}`}
+            key={`region-${r.panelId}`}
             points={polyPoints(r.vertices)}
-            fill={isOpen ? 'rgba(99, 179, 237, 0.28)' : 'transparent'}
+            fill={isActive ? 'rgba(99, 179, 237, 0.28)' : 'transparent'}
             stroke="none"
-            onClick={() => onToggleSection(r.sectionId)}
+            onClick={() => onFaceClick(r.panelId)}
             style={{ pointerEvents: 'all', cursor: 'pointer' }}
-            className={isOpen ? 'rb-active-tile' : undefined}
+            className={isActive ? 'rb-active-tile' : undefined}
           >
             <title>{r.label}</title>
           </polygon>

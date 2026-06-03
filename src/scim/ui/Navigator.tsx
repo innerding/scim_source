@@ -681,10 +681,10 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
       }}>
         <NavDepthTetraeder
           size={208}
-          // Substrat spiegelt nur den manuellen Kapitel-Zustand — Navigation
-          // markiert hier nichts mehr (kein Auto-Open via aktivem Panel).
-          openSections={manuallyOpen}
-          onToggleSection={(secId) => toggleSection(secId)}
+          // Vom Row-Open/Close entbunden: die drei Faces steuern die Operator-
+          // Heimat-Panels an. Oben AI-Interface · links P05 · rechts System.
+          activeId={activeId}
+          onFaceClick={(panelId) => go(panelId)}
         />
       </div>
 
