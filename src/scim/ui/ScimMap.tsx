@@ -853,7 +853,7 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
       <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
         <div ref={containerRef} style={{ position: 'absolute', inset: 0 }} />
         <MeshToggles />
-        <style>{`@keyframes dpBreathe{0%,100%{opacity:1}50%{opacity:.72}} .dp-atmen .leaflet-dpMesh-pane{animation:dpBreathe 5s ease-in-out infinite;filter:blur(.5px)}`}</style>
+        <style>{`@keyframes dpBreathe{0%,100%{opacity:1}50%{opacity:.72}} .dp-atmen .leaflet-dpMesh-pane{animation:dpBreathe 5s ease-in-out infinite}`}</style>
       </div>
     </div>
   );
