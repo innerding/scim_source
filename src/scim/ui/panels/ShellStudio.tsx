@@ -217,6 +217,8 @@ export default function ShellStudio() {
           Was SCIM3 in die Ziel-App bringt — je Funktion ein Block. Links die <strong>SIM</strong> (Vorschau + der Code,
           der sie in SCIM rendert), rechts die <strong>Produktion</strong> (der ausgespielte Ziel-App-Code; nicht live
           codiert, sondern unten <em>auf Anforderung generiert</em>). <strong>SIM-Code ≠ Produktions-Code.</strong>
+          <br /><strong>Regel:</strong> die <em>Sim-Vorschau</em> (App-iframe) erscheint nur bei <strong>Surfaces</strong>,
+          die echten App-Inhalt tragen; <strong>Engines</strong> zeigen Code + Visualisierung + Beschreibung (kein leerer Frame).
         </p>
       </div>
 
@@ -238,8 +240,15 @@ export default function ShellStudio() {
 
               {isOpen && (
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, padding: 12, overflowX: 'auto' }}>
-                  {/* 1 · Sim-Vorschau (Device-Frame) — der echte App-Screen */}
-                  <DeviceFrame><Surface fn={fn} /></DeviceFrame>
+                  {/* 1 · Sim-Vorschau (Device-Frame) — NUR für echte Surfaces, die das App-iframe
+                       tragen. Engines/offene Posten zeigen Code + Viz + Beschreibung (kein leerer Frame). */}
+                  {(fn.surface === 'map' || fn.surface === 'intro' || fn.surface === 'comfort')
+                    ? <DeviceFrame><Surface fn={fn} /></DeviceFrame>
+                    : (
+                      <div style={{ flexShrink: 0, width: 96, alignSelf: 'stretch', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', fontSize: 10, color: '#cbd5e0', fontStyle: 'italic', lineHeight: 1.4, borderRight: '1px dashed #e2e8f0', paddingRight: 12 }}>
+                        Engine ·<br />kein eigener<br />Screen
+                      </div>
+                    )}
                   {/* 2 · SIM-Code */}
                   <div style={{ flexShrink: 0 }}>
                     <FrameLabel tone="#2b6cb0">SIM-Code</FrameLabel>
