@@ -17,7 +17,7 @@ import { ColourGradientBar } from './ColourGradientBar';
 // (inkl. Expand/Collapse/Positionierung) — keine erfundene Nachbildung.
 // ?k=… entriegelt das Zugangs-Gate der Runtime (Öffentlichkeit ist gesperrt) —
 // so behält das Studio seinen Vorab-Zugang. Passphrase in sensus-core-runtime/AccessGate.
-const APP_URL = 'https://diesenpark.com/?k=gehdeinenweg';
+const APP_URL = 'https://diesenpark.com/?k=geh-deinen-weg';
 
 const FRAME_H = 460;
 const DEV_W = 230;
