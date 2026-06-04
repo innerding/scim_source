@@ -232,17 +232,19 @@ export function mergeOverlapping(ents, swallow) { /* greedy fuse, anzahlgewichte
   {
     id: 'bck', device: 'planned',
     title: 'Comfort',
-    subtitle: 'BCK · Move + Rest (+ Dauer)',
+    subtitle: 'BCK · Move aktiv · Rest (Rast) noch aus',
     surface: 'comfort',
     viz: 'comfort',
     highNotes: [
       'Zwei Slider: Move (Bewegung) schränkt das Netz ein/erweitert es · Rest (Aufenthalt) wählt ruhige POIs.',
-      'Move hoch → stark belastete Strecken gedämpft/ausgeschlossen; runter → mehr Netz.',
+      'STAND: Aktuell erscheint NUR der Move-Slider — der Rest-Slider ist ausgeblendet, weil das System „Rast" noch nicht kann.',
+      'Move hoch → stark belastete Strecken gedämpft/ausgeschlossen (mehr Colour-Mesh anders dargestellt); runter → mehr Netz.',
       'Crossing-gated: ganze Strecken (Kreuzung→Kreuzung), nie einzelne Segmente.',
     ],
     deepNotes: [
       'Braucht origin-mesh (Geometrie, Origin) + Anthem-Last (Colour-Mesh-Daten) → Ø-Last je Strecke.',
       'classifyStretches: User-Comfort (Move) = ausschluss-Schwelle · Operator = degradier.',
+      'Rest-Gating: nur bei classification_mode === "movement_and_stay" sichtbar; sonst movement_only → RAST komplett ausgeblendet. Bis „Rast" existiert, läuft alles über Move.',
       'Reine Funktionen (stretchAverages/classifyStretches) → nativ 1:1 portierbar.',
     ],
     simCode: `// BCK — Broda Comfort Kernel. Crossing-gated: klassifiziert je STRECKE
