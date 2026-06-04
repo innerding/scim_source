@@ -309,7 +309,7 @@ export default function ShellStudio() {
                 <span style={{ color: '#718096', fontWeight: 700 }}>folgt:</span> intro · slogan · container · poi-select · route-solver · via · bak · guidance
               </div>
               <div style={{ fontSize: 10, color: '#cbd5e0', lineHeight: 1.5, marginTop: 3 }}>
-                <span style={{ fontWeight: 700 }}>kein Device-Beitrag:</span> drossler · globe-switcher · collector · launcher · lade-treiber · transfer
+                <span style={{ fontWeight: 700 }}>kein Device-Beitrag:</span> drossler · globe-switcher · collector · launcher · lade-treiber · install · transfer
               </div>
               <div style={{ fontSize: 9.5, color: '#a0aec0', marginTop: 6, fontStyle: 'italic' }}>Origin-Basis (Boundary + Mesh) hängt am Origin-Schalter oben.</div>
             </div>

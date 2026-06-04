@@ -63,6 +63,11 @@ export default function GlobeSwitcherView() {
         <span style={{ fontSize: 10.5, color: '#a0aec0' }}>oder URL <code style={{ fontFamily: 'monospace' }}>?k={ACCESS_KEY}</code></span>
       </div>
 
+      {/* Eintritts-Merkmal: PWA-Install-Shortcut (hängt am Eintritt; filetiert als Studio-Block 'install') */}
+      <div style={{ fontSize: 11, color: '#4a5568', background: '#fff', border: '1px dashed #cbd5e0', borderRadius: 8, padding: '8px 11px', marginBottom: 16, lineHeight: 1.5 }}>
+        <strong style={{ color: '#2b6cb0' }}>Eintritts-Merkmal · Shortcut:</strong> Die App kann sich am Device als <strong>PWA-Shortcut</strong> installieren (Banner „App installieren?" nach dem ersten echten Paketladen). Erscheint am Device, nicht im Studio-Monitor. Details: Shell-Studio-Block <code>install</code>.
+      </div>
+
       {/* On/Off */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderRadius: 8, marginBottom: 16, background: active ? '#f0fff4' : '#f7fafc', border: `1px solid ${active ? '#9ae6b4' : '#e2e8f0'}` }}>
         <button

@@ -354,6 +354,35 @@ export function evaluateGate(state, nowMin) {
     simCode: STUB,
   },
   {
+    id: 'install',
+    title: 'Install · Shortcut (PWA)',
+    subtitle: 'App in Browser/Startbildschirm hängen',
+    surface: 'engine',
+    viz: 'none',
+    highNotes: [
+      'Nach dem ersten ECHTEN Paketladen bietet die App an, sich als Shortcut zu installieren (PWA, standalone).',
+      'Dezenter Banner unten: „App installieren?" → Installieren; einmalig, wegklickbar.',
+      'Erscheint am DEVICE (Runtime), nicht im Studio-Monitor — kein Device-/Karten-Beitrag.',
+    ],
+    deepNotes: [
+      'Quelle (Runtime): public/manifest.json (display:standalone) + public/sw.js (Installierbarkeit/Cache) + App.tsx (beforeinstallprompt → showInstall → handleInstall).',
+      'Generisch in der Shell; Icon/Name kommen aus dem Manifest (gestempelte Identität).',
+      'Eintritts-nah: hängt am Eintritt (globe-switcher) — dort als Eintritts-Merkmal markiert.',
+    ],
+    simCode: `// Runtime: App installiert sich als Browser-/Startbildschirm-Shortcut (PWA).
+// public/manifest.json → "display": "standalone" (eigenes Fenster, kein Browser-UI)
+// public/sw.js         → Service Worker: Installierbarkeit + Cache-Invalidierung
+// src/App.tsx:
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  installPromptRef.current = e;            // Prompt aufheben
+});
+// nach erstem echten Paketladen:
+if (pkg && installPromptRef.current) setShowInstall(true);   // Banner zeigen
+// Klick „Installieren":
+installPromptRef.current.prompt();         // Browser-Install-Dialog`,
+  },
+  {
     id: 'render-features',
     title: 'Colour-Mesh-Render-Features',
     subtitle: 'High-Shell Render-Adjustments: Gradient · DP · Atmen',
