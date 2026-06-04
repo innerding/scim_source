@@ -5,6 +5,10 @@
 import { useState } from 'react';
 import { ShellRunBadge } from '../ShellRunInfo';
 
+// Eine Quelle: die Zugangs-Passphrase des Runtime-Gates (sensus-core-runtime/AccessGate).
+// Hier sichtbar gemacht; Knopf + Anzeige lesen denselben Wert.
+const ACCESS_KEY = 'geh-deinen-weg';
+
 function Branch({ tone, head, sub, body }: { tone: string; head: string; sub: string; body: string }) {
   return (
     <div style={{ flex: 1, border: `1px solid ${tone}40`, borderLeft: `3px solid ${tone}`, borderRadius: 8, padding: '11px 13px', background: `${tone}08` }}>
@@ -35,17 +39,29 @@ export default function GlobeSwitcherView() {
 
       {/* Eintritt: diesenpark.com schon entriegelt öffnen (Schlüssel in der URL) */}
       <a
-        href="https://diesenpark.com/?k=geh-deinen-weg"
+        href={`https://diesenpark.com/?k=${ACCESS_KEY}`}
         target="_blank"
         rel="noreferrer"
         style={{
-          display: 'inline-flex', alignItems: 'center', gap: 7, marginBottom: 16,
+          display: 'inline-flex', alignItems: 'center', gap: 7, marginBottom: 10,
           padding: '8px 14px', borderRadius: 8, fontSize: 12.5, fontWeight: 700,
           textDecoration: 'none', background: '#3182ce', color: '#fff',
         }}
       >
         ↗ diesenpark.com öffnen <span style={{ fontWeight: 400, opacity: 0.85 }}>(entriegelt)</span>
       </a>
+
+      {/* Passphrase sichtbar + kopierbar — der Schlüssel zum Zugangs-Gate der Runtime */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 16, fontSize: 12 }}>
+        <span style={{ color: '#718096' }}>Passphrase:</span>
+        <code style={{ padding: '3px 8px', borderRadius: 6, background: '#fffaf0', border: '1px solid #fbd38d', color: '#9c4221', fontWeight: 700, letterSpacing: 0.3 }}>{ACCESS_KEY}</code>
+        <button
+          onClick={() => navigator.clipboard?.writeText(ACCESS_KEY)}
+          title="Passphrase in die Zwischenablage kopieren"
+          style={{ fontSize: 11, padding: '3px 9px', borderRadius: 6, cursor: 'pointer', border: '1px solid #cbd5e0', background: '#fff', color: '#4a5568' }}
+        >kopieren</button>
+        <span style={{ fontSize: 10.5, color: '#a0aec0' }}>oder URL <code style={{ fontFamily: 'monospace' }}>?k={ACCESS_KEY}</code></span>
+      </div>
 
       {/* On/Off */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderRadius: 8, marginBottom: 16, background: active ? '#f0fff4' : '#f7fafc', border: `1px solid ${active ? '#9ae6b4' : '#e2e8f0'}` }}>
