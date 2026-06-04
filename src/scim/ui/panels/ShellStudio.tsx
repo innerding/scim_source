@@ -113,15 +113,6 @@ function AppIframe() {
   );
 }
 
-// Spalte 1 · Vorschau (im Device-Frame): die ECHTE App. Surface-Funktionen zeigen sie;
-// Engine-Funktionen haben keinen Screen (bleiben leer).
-function Surface({ fn }: { fn: ShellFunction }) {
-  if (fn.surface === 'map' || fn.surface === 'intro' || fn.surface === 'comfort') return <AppIframe />;
-  if (fn.surface === 'engine') {
-    return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', padding: 12, textAlign: 'center', fontSize: 10, color: '#cbd5e0', fontStyle: 'italic', lineHeight: 1.4 }}>Engine · kein eigener Screen<br />(Effekt erscheint in einer Surface)</div>;
-  }
-  return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: 11, color: '#a0aec0', fontStyle: 'italic', padding: 12, textAlign: 'center' }}>Oberfläche folgt</div>;
-}
 
 // Funktions-Visualisierung „colorize" — der Farb-Schlüssel (Last → Farbe), echte colorize-Fn.
 function ColorizeViz() {
@@ -277,7 +268,14 @@ export default function ShellStudio() {
         </div>
       </div>
 
-      <div style={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto' }}>
+      <div style={{ flex: '1 1 auto', minHeight: 0, display: 'flex', gap: 14 }}>
+        {/* LINKS: zwei fixe Devices (Vorschau live · Shell-Neu) — geteilt, nicht pro Block */}
+        <div style={{ flex: '0 0 auto', display: 'flex', gap: 12, alignSelf: 'flex-start' }}>
+          <DeviceFrame><AppIframe /></DeviceFrame>
+          <ShellNewMonitor rep={rep} originOn={originOn} originPkg={originPkg} loads={loads} height={FRAME_H} />
+        </div>
+        {/* RECHTS: scrollbare Blöcke (ohne eigene Devices) */}
+        <div style={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto' }}>
         {SHELL_FUNCTIONS.map((fn) => {
           const isOpen = !!open[fn.id];
           return (
@@ -295,20 +293,7 @@ export default function ShellStudio() {
 
               {isOpen && (
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, padding: 12, overflowX: 'auto' }}>
-                  {/* 1 · Sim-Vorschau (Device-Frame) — NUR für echte Surfaces, die das App-iframe
-                       tragen. Engines/offene Posten zeigen Code + Viz + Beschreibung (kein leerer Frame). */}
-                  {(fn.surface === 'map' || fn.surface === 'intro' || fn.surface === 'comfort')
-                    ? <DeviceFrame><Surface fn={fn} /></DeviceFrame>
-                    : (
-                      <div style={{ flexShrink: 0, width: 96, alignSelf: 'stretch', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', fontSize: 10, color: '#cbd5e0', fontStyle: 'italic', lineHeight: 1.4, borderRight: '1px dashed #e2e8f0', paddingRight: 12 }}>
-                        {fn.surface === 'engine'
-                          ? <>Engine ·<br />kein eigener<br />Screen</>
-                          : <>Oberfläche<br />folgt</>}
-                      </div>
-                    )}
-                  {/* Shell-Neu — direkt neben der „Vorschau · diesenpark.com (live)", gespeist aus Origin/Anthem */}
-                  <ShellNewMonitor rep={rep} originOn={originOn} originPkg={originPkg} loads={loads} height={FRAME_H} />
-                  {/* 2 · SIM-Code */}
+                  {/* SIM-Code (Devices stehen fix links — nicht mehr pro Block) */}
                   <div style={{ flexShrink: 0 }}>
                     <FrameLabel tone="#2b6cb0">SIM-Code</FrameLabel>
                     <CodeFrame code={fn.simCode} w={330} />
@@ -334,6 +319,7 @@ export default function ShellStudio() {
             </div>
           );
         })}
+        </div>
       </div>
 
       {/* Ausspielungs-Footer — ganz unten: Plattform wählen → rechnen → Summe → SCS packt. */}
