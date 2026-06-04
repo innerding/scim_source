@@ -7,7 +7,7 @@
 //                       Sensus Core Publishing packt). SIM-Code ≠ Produktions-Code.
 // Das ist NICHT SCIM3 selbst, sondern was SCIM3 in die Ziel-App bringt.
 import { useState, useMemo, useRef, useEffect, type ReactNode } from 'react';
-import { SHELL_FUNCTIONS, TARGET_PLATFORMS, type ShellFunction, type TargetPlatform } from '../../shell-studio/shellStudio';
+import { SHELL_FUNCTIONS, TARGET_PLATFORMS, STUB, type ShellFunction, type TargetPlatform } from '../../shell-studio/shellStudio';
 import { useWorkspaceNav } from '../workspaceNav';
 import { ShellRunBadge } from '../ShellRunInfo';
 import { useAuftraggeberRep } from '../../../runtime/useAuftraggeberRep';
@@ -303,6 +303,9 @@ export default function ShellStudio() {
         </div>
       </div>
 
+      <div style={{ flex: '0 0 auto', fontSize: 9.5, color: '#a0aec0', margin: '0 0 6px' }}>
+        Block-Rahmen: <b style={{ color: '#e53e3e' }}>rot</b> kein Sim-Inhalt · <b style={{ color: '#3182ce' }}>blau</b> Sim-Inhalt · <b style={{ color: '#38a169' }}>grün</b> Produktions-Code · <b style={{ color: '#805ad5' }}>lila Ring</b> aktiver Block
+      </div>
       <div style={{ flex: '1 1 auto', minHeight: 0, display: 'flex', gap: 14 }}>
         {/* LINKS: zwei fixe Devices (Vorschau live · Shell-Neu) — geteilt, nicht pro Block */}
         <div style={{ flex: '0 0 auto', display: 'flex', gap: 12, alignSelf: 'flex-start' }}>
@@ -340,8 +343,10 @@ export default function ShellStudio() {
         {SHELL_FUNCTIONS.map((fn, i) => {
           const isOpen = !!open[fn.id];
           const isActive = i === activeIdx;
+          // Rahmen-Ampel: rot = kein Sim-Inhalt · blau = Sim-Inhalt · grün = Produktions-Code (sobald Generator). Aktiver Block = lila Ring.
+          const frameColor = fn.simCode === STUB ? '#e53e3e' : '#3182ce';
           return (
-            <div key={fn.id} ref={(el) => { blockEls.current[i] = el; }} style={{ border: `1px solid ${isActive ? '#38a169' : '#e2e8f0'}`, borderRadius: 10, marginBottom: 12, overflow: 'hidden', boxShadow: isActive ? '0 0 0 1px #38a169' : 'none' }}>
+            <div key={fn.id} ref={(el) => { blockEls.current[i] = el; }} style={{ border: `1px solid ${frameColor}`, borderRadius: 10, marginBottom: 12, overflow: 'hidden', boxShadow: isActive ? '0 0 0 2px #805ad5' : 'none' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', background: '#f7fafc', cursor: 'pointer' }} onClick={() => toggle(fn.id)}>
                 <span style={{ fontSize: 13, color: '#718096', width: 14 }}>{isOpen ? '▾' : '▸'}</span>
                 <span style={{ fontSize: 13, fontWeight: 700, color: '#1a365d' }}>{fn.title}</span>

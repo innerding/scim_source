@@ -38,7 +38,7 @@ export interface ShellFunction {
   simCode: string;
 }
 
-const STUB = '// folgt — noch zu filetieren (live an diesenpark.com). Heimat/Reihenfolge: ⓘ shell-run.';
+export const STUB = '// folgt — noch zu filetieren (live an diesenpark.com). Heimat/Reihenfolge: ⓘ shell-run.';
 
 export const SHELL_FUNCTIONS: ShellFunction[] = [
   {
