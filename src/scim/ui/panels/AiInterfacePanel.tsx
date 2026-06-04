@@ -29,6 +29,25 @@ const CATEGORY_META: Record<AnnotationCategory, { label: string; color: string; 
 // Initial seed annotations — operator extends these in the UI
 const SEED_ANNOTATIONS: Annotation[] = [
 
+  // ── Plan & Stand (2026-06-04) ───────────────────────────────────────────────
+
+  {
+    id: 'ann_101',
+    category: 'next_intent',
+    label: 'Fertigstellungsplan + Studio-Test-Stand',
+    content: 'Ziel: (1) alles AUSSER Shell-Studio fertigbauen · (2) einen Test-Stand/Workflow finden, der das Studio bauen lässt · (3) das Studio bauen. REFRAME: der Test-Stand kommt ZUERST — er ist die Werkbank und hängt von (1) nicht ab. Test-Stand = zwei Switcher Origin/Anthem im Studio: Origin an → buildOriginPackage(rep) (echte Geometrie/POIs/asset-set, Container-Schlüssel) · Anthem an → produceAnthem / simSegmentLoads (Last-Array). Damit läuft jede Funktion mit realen Daten → man sieht, ob sie funktioniert (besser als iframe oder der aufgegebene Inspector). WO die Drähte hingehen: Origin = buildOriginPackage (per-Rep, tief) · Anthem = produceAnthem — NICHT der Collector. Offene Posten vor dem Studio: (B) Funktionen poi-select · via · guidance · comfort+Dauer (route-solver/reroute existiert, ungetestet); (C) Publishing/Edge: collector-Aggregator · launcher · lade-treiber · globe-switcher-Persistenz; (D) BAK Stufe 2+3 · Reviewer-Turbo-Slider · Live-App diesenpark.com. Werkbank-Voraussetzungen (Origin/Anthem-Taps) sind bereits erfüllt.',
+    related_panel: 'P07',
+    date: '2026-06-04',
+  },
+  {
+    id: 'ann_102',
+    category: 'vocabulary',
+    label: 'Collector-Path (Rolle, scharf)',
+    content: 'Der Cross-Rep-Fan-in auf dem PUBLISHING-Layer (P11). Sammelt NUR die Verzeichnis-Labels je publizierter Rep (Nation/Region/Name/Icon + Bundle-Zeiger) und reiht sie zum Baum Nation→Region→Rep. Er HOLT KEINE Pakete — das Bundle lädt später der Lade-Kaskade-Treiber, nur für die EINE gewählte Rep (Speisekarte vs. Kochen). Er ERFINDET nichts: Projektion der schon publizierten Fakten (Pakete + per-Rep-Geometrie nation/region) in die Form, die der LAUNCHER für seine Kacheln braucht. Abgrenzung zum Origin-Capsuler (P09): Capsuler = je Rep, TIEF, produziert die Tatsache (inkl. Zugehörigkeit); Collector = über alle Reps, FLACH, reiht nur die Labels. Nicht redundant — der Launcher kann vor der Rep-Auswahl nicht N Capsuler laufen lassen, er braucht den dünnen Index. NICHT die Datenquelle des Studio-Test-Stands (dafür Capsuler + Anthem). Stand: NICHT verdrahtet (Collector-Tab = nur Doku).',
+    related_panel: 'P11',
+    date: '2026-06-04',
+  },
+
   // ── Kernbegriffe ──────────────────────────────────────────────────────────────
 
   {

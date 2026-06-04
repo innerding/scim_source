@@ -6,10 +6,29 @@
 //                       (Footer: Plattform wählen → rechnen → Code je Block + Summe →
 //                       Sensus Core Publishing packt). SIM-Code ≠ Produktions-Code.
 // Das ist NICHT SCIM3 selbst, sondern was SCIM3 in die Ziel-App bringt.
-import { useState, type ReactNode } from 'react';
+import { useState, useMemo, type ReactNode } from 'react';
 import { SHELL_FUNCTIONS, TARGET_PLATFORMS, type ShellFunction, type TargetPlatform } from '../../shell-studio/shellStudio';
 import { useWorkspaceNav } from '../workspaceNav';
 import { ShellRunBadge } from '../ShellRunInfo';
+import { useAuftraggeberRep } from '../../../runtime/useAuftraggeberRep';
+import { buildOriginPackage } from '../../sensus/originPackage';
+import { simSegmentLoads } from '../../sensus/anthemSim';
+import { fmtBytes } from '../../sensus/formatBytes';
+
+// Test-Stand-Switch (Origin/Anthem): zapft echte Daten der aktiven Rep an.
+function HarnessSwitch({ on, label, tone, onClick }: { on: boolean; label: string; tone: string; onClick: () => void }) {
+  return (
+    <button onClick={onClick} style={{
+      display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer',
+      fontSize: 11, fontWeight: 700, padding: '3px 11px', borderRadius: 999,
+      border: `1px solid ${on ? tone : '#cbd5e0'}`,
+      background: on ? tone : '#fff', color: on ? '#fff' : '#718096',
+    }}>
+      <span style={{ width: 7, height: 7, borderRadius: '50%', background: on ? '#fff' : '#cbd5e0' }} />
+      {label}
+    </button>
+  );
+}
 import { colorize } from '../../sensus/loadColour';
 import { ColourGradientBar } from './ColourGradientBar';
 
@@ -201,6 +220,15 @@ export default function ShellStudio() {
   const toggle = (id: string) => setOpen((o) => ({ ...o, [id]: !o[id] }));
   const toggleTarget = (p: TargetPlatform) => setTargets((s) => { const n = new Set(s); n.has(p) ? n.delete(p) : n.add(p); return n; });
 
+  // Test-Stand: echte Daten der aktiven Rep an die Funktionen anlegen.
+  //   Origin → buildOriginPackage (per-Rep, tief) · Anthem → simSegmentLoads (Last).
+  // (NICHT der Collector — der ist die über-Rep-Liste.)
+  const rep = useAuftraggeberRep();
+  const [originOn, setOriginOn] = useState(false);
+  const [anthemOn, setAnthemOn] = useState(false);
+  const originPkg = useMemo(() => (originOn || anthemOn) ? buildOriginPackage(rep) : null, [originOn, anthemOn, rep]);
+  const loads = useMemo(() => (anthemOn && originPkg?.originNet) ? simSegmentLoads(originPkg.originNet) : null, [anthemOn, originPkg]);
+
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div style={{ flex: '0 0 auto', marginBottom: 8 }}>
@@ -220,6 +248,19 @@ export default function ShellStudio() {
           <br /><strong>Regel:</strong> die <em>Sim-Vorschau</em> (App-iframe) erscheint nur bei <strong>Surfaces</strong>,
           die echten App-Inhalt tragen; <strong>Engines</strong> zeigen Code + Visualisierung + Beschreibung (kein leerer Frame).
         </p>
+        {/* Test-Stand: echte Daten der aktiven Rep an die Funktionen anlegen */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginTop: 8, padding: '6px 10px', background: '#f7fafc', border: '1px solid #e2e8f0', borderRadius: 8 }}>
+          <span style={{ fontSize: 10, fontWeight: 800, color: '#718096', letterSpacing: 0.5 }}>TEST-STAND</span>
+          <HarnessSwitch on={originOn} label="Origin" tone="#3182ce" onClick={() => setOriginOn((v) => !v)} />
+          <HarnessSwitch on={anthemOn} label="Anthem" tone="#38a169" onClick={() => setAnthemOn((v) => !v)} />
+          <span style={{ fontSize: 10.5, color: '#a0aec0', fontFamily: 'monospace' }}>Rep: {rep.name}</span>
+          <span style={{ fontSize: 10.5, color: '#4a5568', flex: 1, minWidth: 180 }}>
+            {!originOn && !anthemOn && 'aus — Funktionen ohne echte Daten. Einschalten, um mit der aktiven Rep zu arbeiten.'}
+            {originOn && originPkg && `Origin: ${originPkg.particles.length} Partikel · ${originPkg.originNet?.segmentCount ?? 0} Segmente · ${fmtBytes(originPkg.totalBytes)}`}
+            {originOn && anthemOn && '  ·  '}
+            {anthemOn && (loads ? `Anthem: ${loads.length} Last-Werte` : 'Anthem: kein Netz (Wegnetz fehlt?)')}
+          </span>
+        </div>
       </div>
 
       <div style={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto' }}>
