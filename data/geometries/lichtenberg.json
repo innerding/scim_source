@@ -3,6 +3,7 @@
   "properties": {
     "name": "Lichtenberg",
     "region": "Böhmerwald",
+    "nation": "Österreich",
     "source": "Workspace-Commit (F7)",
     "drawn_at": "2026-05-31"
   },

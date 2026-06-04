@@ -23,6 +23,7 @@ export interface BoundaryGeometryFile {
   properties: {
     name: string;             // 'Grünberg' (display name, mehrfach verwendbar)
     region?: string;          // 'Gmunden' (groebere geografische Einordnung)
+    nation?: string;          // 'Österreich' (Minimal-Pfad: Ebene über region; speist Collector)
     source?: string;          // wie/wo wurde gezeichnet
     drawn_at?: string;        // ISO date
     note?: string;            // freier Text
@@ -38,6 +39,7 @@ export interface BoundaryGeometry {
   id: string;                 // 'gruenberg' (aus Dateinamen ohne .json)
   name: string;
   region?: string;
+  nation?: string;
   source?: string;
   drawn_at?: string;
   note?: string;

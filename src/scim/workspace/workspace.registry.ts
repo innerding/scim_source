@@ -28,6 +28,7 @@ function buildGeometry(id: string, file: BoundaryGeometryFile): BoundaryGeometry
     id,
     name: file.properties?.name ?? id,
     region: file.properties?.region,
+    nation: file.properties?.nation,
     source: file.properties?.source,
     drawn_at: file.properties?.drawn_at,
     note: file.properties?.note,
