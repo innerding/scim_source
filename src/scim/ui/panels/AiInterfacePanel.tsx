@@ -47,6 +47,14 @@ const SEED_ANNOTATIONS: Annotation[] = [
     related_panel: 'P11',
     date: '2026-06-04',
   },
+  {
+    id: 'ann_103',
+    category: 'invariant',
+    label: 'SHELL-Paket vs. shell-kit (einzige Quelle der Wahrheit)',
+    content: 'GESETZ: Das SHELL-PAKET kommt AUSSCHLIESSLICH aus shell-kit — shell-kit ist die EINZIGE Quelle der Wahrheit für den Shell-Teil. Struktur: shell-kit/app/ = die per-Rep-Shell, die ins Paket reist (Render-Kern, colorize, BCK/BAK, ComfortSliders, intro/reveal, guidance, drossler …) = „das Shell-Paket"; shell-kit/launcher/ = our-side-Flächen (Launcher/Kacheln „powered by diesenpark.com"), laufen auf unserer Seite und reisen NICHT per Rep mit. — (1) „Shell-Paket" = generischer CODE-Teil, NICHT die volle Auslieferung: Origin (per-Rep-Daten: Boundary/Netz/POIs/Icons) und Anthem (Live-Last) sind EIGENE Quellen, nicht aus shell-kit. Volle Auslieferung ans Gerät = Shell ⊕ Origin ⊕ Anthem; shell-kit ist alleinige Quelle nur des Shell-Teils (zwei Takte: Code vs. Daten). — (2) Identität wird GESTEMPELT, liegt nicht in shell-kit: shell-kit ist generisch/identitätsfrei; Rep-Icon/Boundary/Name kommen aus Origin und werden beim Publishing aufgestempelt. — (3) shell-kit ⊇ was per Rep ausgespielt wird: „Alles im Shell-Paket kommt aus shell-kit" ✓ (aus shell-kit/app/); „Alles in shell-kit reist in jedem Paket mit" ✗ — das per-Rep-Paket ist eine Teilmenge (app/), Launcher & Co. (launcher/) bleiben unsere Seite. — Rollen: Shell-Studio = Schaufenster/Prüfstand (Ansicht), shell-kit = Substanz (Quelle); das Studio rendert aus shell-kit → was geprüft wird, IST was ausgespielt wird. Stand: shell-kit noch nicht aufgestellt (geteilte, git-getaggte Bibliothek; Repo-Lift offen). Siehe docs/wege_und_begriffe.md.',
+    related_panel: 'P07',
+    date: '2026-06-05',
+  },
 
   // ── Kernbegriffe ──────────────────────────────────────────────────────────────
 
