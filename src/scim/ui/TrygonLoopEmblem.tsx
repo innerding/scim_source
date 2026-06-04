@@ -10,7 +10,7 @@
 const INK = '#2d3748';
 const FAINT = '#a0aec0';
 
-export function TrygonLoopEmblem({ size = 96, withLegend = true }: { size?: number; withLegend?: boolean }) {
+export function TrygonLoopEmblem({ size = 96, withLegend = true, animated = false }: { size?: number; withLegend?: boolean; animated?: boolean }) {
   const svg = (
     <svg width={size} height={size} viewBox="0 0 120 120" aria-label="Trygon-Loop (TL)" style={{ flexShrink: 0 }}>
       {/* Loop-Ring (Mittelpunkt 60,60) */}
@@ -28,6 +28,13 @@ export function TrygonLoopEmblem({ size = 96, withLegend = true }: { size?: numb
       {/* Zentrum: TL im Kreis (zentriert, statt Blitz) */}
       <circle cx="60" cy="60" r="13.5" fill="#fff" stroke={INK} strokeWidth="1.2" />
       <text x="60" y="64.5" textAnchor="middle" fontSize="13" fontWeight="700" letterSpacing="1" fill={INK} fontFamily="system-ui, sans-serif">TL</text>
+      {/* Loop-Animation: ein Punkt umkreist den Ring (AP → CK → AK → …) */}
+      {animated && (
+        <g>
+          <circle cx="60" cy="10" r="3.2" fill={INK} />
+          <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="7s" repeatCount="indefinite" />
+        </g>
+      )}
     </svg>
   );
 
