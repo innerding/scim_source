@@ -4,6 +4,7 @@
 // shell-run-Schritt 'globe-switcher' (Edge). Konsens 2026-06-04.
 import { useState } from 'react';
 import { ShellRunBadge } from '../ShellRunInfo';
+import { SHELL_FUNCTIONS } from '../../shell-studio/shellStudio';
 
 // Eine Quelle: die Zugangs-Passphrase des Runtime-Gates (sensus-core-runtime/AccessGate).
 // Hier sichtbar gemacht; Knopf + Anzeige lesen denselben Wert.
@@ -21,6 +22,8 @@ function Branch({ tone, head, sub, body }: { tone: string; head: string; sub: st
 
 export default function GlobeSwitcherView() {
   const [active, setActive] = useState(true);
+  // Was hängt am Eintritt? Der Globe-Switcher liest die entry-markierten Shell-Studio-Blöcke.
+  const entryFeatures = SHELL_FUNCTIONS.filter((f) => f.entry);
 
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 640 }}>
@@ -63,9 +66,10 @@ export default function GlobeSwitcherView() {
         <span style={{ fontSize: 10.5, color: '#a0aec0' }}>oder URL <code style={{ fontFamily: 'monospace' }}>?k={ACCESS_KEY}</code></span>
       </div>
 
-      {/* Eintritts-Merkmal: PWA-Install-Shortcut (hängt am Eintritt; filetiert als Studio-Block 'install') */}
+      {/* Eintritts-Merkmale — abgeleitet aus den Shell-Studio-Block-Markierungen (entry), eine Quelle */}
       <div style={{ fontSize: 11, color: '#4a5568', background: '#fff', border: '1px dashed #cbd5e0', borderRadius: 8, padding: '8px 11px', marginBottom: 16, lineHeight: 1.5 }}>
-        <strong style={{ color: '#2b6cb0' }}>Eintritts-Merkmal · Shortcut:</strong> Die App kann sich am Device als <strong>PWA-Shortcut</strong> installieren (Banner „App installieren?" nach dem ersten echten Paketladen). Erscheint am Device, nicht im Studio-Monitor. Details: Shell-Studio-Block <code>install</code>.
+        <strong style={{ color: '#2b6cb0' }}>Eintritts-Merkmale</strong> <span style={{ color: '#a0aec0' }}>(aus den Block-Markierungen)</span>: {entryFeatures.map((f) => f.title).join(' · ')}.
+        <br />Darunter der <strong>PWA-Shortcut</strong> (<code>install</code>): die App kann sich am Device installieren (Banner nach dem ersten echten Paketladen). Erscheint am Device, nicht im Studio-Monitor.
       </div>
 
       {/* On/Off */}

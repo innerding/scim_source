@@ -242,11 +242,15 @@ export default function ShellStudio() {
     setActiveIdx(idx);
   };
   useEffect(() => { recompute(); }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
-  const colorizeIdx = SHELL_FUNCTIONS.findIndex((f) => f.id === 'colorize');
-  // Schicht-Toggle übersteuert den Scroll-Default (undefined = folgt Scroll).
-  const [colorizeOverride, setColorizeOverride] = useState<boolean | undefined>(undefined);
-  const colorizeOn = colorizeOverride ?? (activeIdx >= colorizeIdx);
+  // Schicht-Toggles übersteuern den Scroll-Default (undefined = folgt Scroll). Pro Schicht ein Eintrag.
+  const [layerOverride, setLayerOverride] = useState<Record<string, boolean | undefined>>({});
+  const layerOn = (id: string) => layerOverride[id] ?? (activeIdx >= SHELL_FUNCTIONS.findIndex((f) => f.id === id));
+  const colorizeOn = layerOn('colorize');
   const activeLabel = SHELL_FUNCTIONS[activeIdx]?.title;
+  // Aus den Block-Markierungen (device) abgeleitet — eine Quelle, keine Hartcode-Listen:
+  const builtLayers = SHELL_FUNCTIONS.filter((f) => f.device === 'layer');
+  const plannedLayers = SHELL_FUNCTIONS.filter((f) => f.device === 'planned');
+  const noneLayers = SHELL_FUNCTIONS.filter((f) => f.device === 'none');
 
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -295,21 +299,27 @@ export default function ShellStudio() {
           <DeviceFrame><AppIframe /></DeviceFrame>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <ShellNewMonitor rep={rep} originOn={originOn} originPkg={originPkg} loads={loads} colorizeOn={colorizeOn} activeLabel={activeLabel} height={FRAME_H} />
-            {/* Schicht-Toggles — direkt unter dem Shell-Neu-Device */}
+            {/* Schicht-Toggles — direkt unter dem Shell-Neu-Device, aus den Block-Markierungen (device) abgeleitet */}
             <div style={{ width: 300, border: '1px solid #e2e8f0', borderRadius: 8, padding: '8px 10px', background: '#f7fafc' }}>
               <div style={{ fontSize: 9.5, fontWeight: 800, color: '#276749', letterSpacing: 0.4, marginBottom: 6 }}>SCHICHTEN · Shell-Neu</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                <HarnessSwitch on={colorizeOn} label="colorize · Last-Farbe" tone="#dd6b20" onClick={() => setColorizeOverride(!colorizeOn)} />
-                <span style={{ fontSize: 9.5, color: '#a0aec0' }}>{colorizeOverride == null ? '(folgt Scroll)' : 'manuell'}</span>
-                {colorizeOverride != null && (
-                  <button onClick={() => setColorizeOverride(undefined)} title="zurück auf Scroll-Automatik" style={{ fontSize: 9, padding: '1px 6px', borderRadius: 5, cursor: 'pointer', border: '1px solid #cbd5e0', background: '#fff', color: '#718096' }}>auto</button>
-                )}
-              </div>
+              {builtLayers.map((f) => {
+                const on = layerOn(f.id);
+                const overridden = layerOverride[f.id] != null;
+                return (
+                  <div key={f.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                    <HarnessSwitch on={on} label={f.id} tone="#dd6b20" onClick={() => setLayerOverride((o) => ({ ...o, [f.id]: !on }))} />
+                    <span style={{ fontSize: 9.5, color: '#a0aec0' }}>{overridden ? 'manuell' : '(folgt Scroll)'}</span>
+                    {overridden && (
+                      <button onClick={() => setLayerOverride((o) => ({ ...o, [f.id]: undefined }))} title="zurück auf Scroll-Automatik" style={{ fontSize: 9, padding: '1px 6px', borderRadius: 5, cursor: 'pointer', border: '1px solid #cbd5e0', background: '#fff', color: '#718096' }}>auto</button>
+                    )}
+                  </div>
+                );
+              })}
               <div style={{ fontSize: 10, color: '#a0aec0', lineHeight: 1.5 }}>
-                <span style={{ color: '#718096', fontWeight: 700 }}>folgt:</span> intro · slogan · container · poi-select · route-solver · via · bak · guidance
+                <span style={{ color: '#718096', fontWeight: 700 }}>folgt:</span> {plannedLayers.map((f) => f.id).join(' · ')}
               </div>
               <div style={{ fontSize: 10, color: '#cbd5e0', lineHeight: 1.5, marginTop: 3 }}>
-                <span style={{ fontWeight: 700 }}>kein Device-Beitrag:</span> drossler · globe-switcher · collector · launcher · lade-treiber · install · transfer
+                <span style={{ fontWeight: 700 }}>kein Device-Beitrag:</span> {noneLayers.map((f) => f.id).join(' · ')}
               </div>
               <div style={{ fontSize: 9.5, color: '#a0aec0', marginTop: 6, fontStyle: 'italic' }}>Origin-Basis (Boundary + Mesh) hängt am Origin-Schalter oben.</div>
             </div>

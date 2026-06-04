@@ -26,6 +26,10 @@ export interface ShellFunction {
   surface: 'map' | 'intro' | 'comfort' | 'engine' | 'placeholder';
   /** Funktions-Visualisierung (rahmenlos) = analytische Sicht der Funktion. 'none' = keine. */
   viz: 'colorize' | 'reveal' | 'gate' | 'comfort' | 'none';
+  /** Beitrag zum Shell-Neu-Monitor: base=Origin-Basis · layer=gebaute Schicht · planned=folgt · none=kein Device-Beitrag. */
+  device: 'base' | 'layer' | 'planned' | 'none';
+  /** true = eintritts-nahes Merkmal — der Globe-Switcher liest das, um zu wissen, was am Eintritt hängt. */
+  entry?: boolean;
   /** High · Design-Notizen zur Oberfläche: so kann es sein · bewährt · Fallback · Ausbau. */
   highNotes: string[];
   /** Deep · Notizen zum Produktions-Code: was er tun muss · schneller weil · Budget · erneuert weil. */
@@ -38,7 +42,7 @@ const STUB = '// folgt — noch zu filetieren (live an diesenpark.com). Heimat/R
 
 export const SHELL_FUNCTIONS: ShellFunction[] = [
   {
-    id: 'map',
+    id: 'map', device: 'base',
     title: 'Karte',
     subtitle: 'Leaflet + OSM',
     surface: 'map',
@@ -70,7 +74,7 @@ map.fitBounds(poly.getBounds(), { padding: [24, 24] });
 new ResizeObserver(() => map.invalidateSize()).observe(el);`,
   },
   {
-    id: 'colorize',
+    id: 'colorize', device: 'layer',
     title: 'Colorize',
     subtitle: 'Last → Farbe (Engine)',
     surface: 'engine',
@@ -114,7 +118,7 @@ export function colorize(load, { palette = 'green_violet', spectrum, bias } = {}
 seg.color = colorize(anthem.loads[i], origin.colourSettings);`,
   },
   {
-    id: 'intro',
+    id: 'intro', device: 'planned',
     title: 'Intro',
     subtitle: 'reveal-engine · Animation (generisch)',
     surface: 'intro',
@@ -145,7 +149,7 @@ export function playBoundaryReveal(container, map, ringLatLng) {
 }`,
   },
   {
-    id: 'slogan',
+    id: 'slogan', device: 'planned',
     title: 'Slogan · Erstkonsumat',
     subtitle: 'das Manifest in 3 Worten',
     surface: 'intro',
@@ -169,7 +173,7 @@ import { APP_SLOGAN } from '../sensus/appManifest';   // = 'Geh deinen Weg'
 // Geburtsort/Quelle: sensus/appManifest.ts · siehe System-Tab „Manifest".`,
   },
   {
-    id: 'container',
+    id: 'container', device: 'planned',
     title: 'Container-System',
     subtitle: 'POI-Buckets · Cluster-Ghosts (Engine)',
     surface: 'engine',
@@ -214,7 +218,7 @@ export function buildComposite({ geo, containerColor, size, iconInner, deco, ass
 export function mergeOverlapping(ents, swallow) { /* greedy fuse, anzahlgewichtet */ }`,
   },
   {
-    id: 'poi-select',
+    id: 'poi-select', device: 'planned',
     title: 'POI-Auswahl',
     subtitle: 'tap = markieren · long-tap = Modal',
     surface: 'placeholder',
@@ -224,7 +228,7 @@ export function mergeOverlapping(ents, swallow) { /* greedy fuse, anzahlgewichte
     simCode: STUB,
   },
   {
-    id: 'bck',
+    id: 'bck', device: 'planned',
     title: 'Comfort',
     subtitle: 'BCK · Move + Rest (+ Dauer)',
     surface: 'comfort',
@@ -263,7 +267,7 @@ export function classifyStretches(stretches, { degradier, ausschluss }) {
 //   hoch → mehr Strecken raus (Netz EINGESCHRÄNKT) · runter → mehr drin (ERWEITERT).`,
   },
   {
-    id: 'route-solver',
+    id: 'route-solver', device: 'planned',
     title: 'Route-Solver',
     subtitle: 'Modell B · eine adaptive Linie (Engine)',
     surface: 'engine',
@@ -273,7 +277,7 @@ export function classifyStretches(stretches, { degradier, ausschluss }) {
     simCode: STUB,
   },
   {
-    id: 'via',
+    id: 'via', device: 'planned',
     title: 'Via / Trassierung',
     subtitle: 'Longpress-Via · Trassier-Snap (Engine)',
     surface: 'engine',
@@ -283,7 +287,7 @@ export function classifyStretches(stretches, { degradier, ausschluss }) {
     simCode: STUB,
   },
   {
-    id: 'bak',
+    id: 'bak', device: 'planned',
     title: 'BAK · Deeskalations-Kaskade',
     subtitle: 'Broda Avoidance Kernel (Engine)',
     surface: 'engine',
@@ -293,7 +297,7 @@ export function classifyStretches(stretches, { degradier, ausschluss }) {
     simCode: STUB,
   },
   {
-    id: 'guidance',
+    id: 'guidance', device: 'planned',
     title: 'Guidance',
     subtitle: 'Führung unterwegs (ZULETZT)',
     surface: 'placeholder',
@@ -303,7 +307,7 @@ export function classifyStretches(stretches, { degradier, ausschluss }) {
     simCode: STUB,
   },
   {
-    id: 'drossler',
+    id: 'drossler', device: 'none',
     title: 'Drossler',
     subtitle: 'Refresh-Gate (Engine)',
     surface: 'engine',
@@ -334,7 +338,7 @@ export function evaluateGate(state, nowMin) {
   // globe-switcher · collector · transfer wohnen NICHT im Studio (kein Ziel-App-Code),
   // sondern als eigene Tabs in P11 (Publishing-/Edge-Layer). Siehe ⓘ shell-run.
   {
-    id: 'launcher',
+    id: 'launcher', device: 'none', entry: true,
     title: 'Launcher · globale Auswahl',
     subtitle: 'Kacheln Nation→Region→Rep',
     surface: 'placeholder',
@@ -344,7 +348,7 @@ export function evaluateGate(state, nowMin) {
     simCode: STUB,
   },
   {
-    id: 'lade-treiber',
+    id: 'lade-treiber', device: 'none', entry: true,
     title: 'Lade-Kaskade-Treiber',
     subtitle: 'eager fetch + Intro-Vorhang (Engine)',
     surface: 'engine',
@@ -354,7 +358,7 @@ export function evaluateGate(state, nowMin) {
     simCode: STUB,
   },
   {
-    id: 'install',
+    id: 'install', device: 'none', entry: true,
     title: 'Install · Shortcut (PWA)',
     subtitle: 'App in Browser/Startbildschirm hängen',
     surface: 'engine',
@@ -383,7 +387,7 @@ if (pkg && installPromptRef.current) setShowInstall(true);   // Banner zeigen
 installPromptRef.current.prompt();         // Browser-Install-Dialog`,
   },
   {
-    id: 'render-features',
+    id: 'render-features', device: 'none',
     title: 'Colour-Mesh-Render-Features',
     subtitle: 'High-Shell Render-Adjustments: Gradient · DP · Atmen',
     surface: 'engine',
