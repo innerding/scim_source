@@ -149,3 +149,49 @@ Globe-Switcher (Edge):  QR → direkt zur Rep (Launcher überspringen)  ·  dies
 > Was „echtes Lichtenberg-Paket" praktisch heißt, hängt an Bruchstelle 1+2: entweder den
 > alten ScimBundle-Weg pragmatisch nutzen, ODER zuerst Capsuler→Publish verbinden. Das ist
 > eine bewusste Entscheidung, kein Detail — siehe `ziel_app_umbauplan.md`.
+
+---
+
+## GESETZ: SHELL-Paket vs. shell-kit (einzige Quelle der Wahrheit)
+
+Konsens 2026-06-05. Auch als In-App-Invariante `ann_103` (AiInterfacePanel).
+
+**Das SHELL-PAKET kommt AUSSCHLIESSLICH aus `shell-kit`.** `shell-kit` ist die
+**einzige Quelle der Wahrheit** für den Shell-Teil — eine geteilte, git-getaggte
+Bibliothek (Empfehlung D, siehe oben), die Editor (Shell-Studio), Runtime und später
+Dashboards **referenzieren, nie kopieren**.
+
+### Struktur
+```
+shell-kit/
+  app/        ← die per-Rep-Shell, die ins Paket reist (Render-Kern, colorize,
+              BCK/BAK, ComfortSliders, intro/reveal, guidance, drossler …) = „das Shell-Paket"
+  launcher/   ← our-side-Flächen (Launcher, Kacheln „powered by diesenpark.com"),
+              laufen auf unserer Seite und reisen NICHT per Rep mit
+  shared/     ← (optional) Primitive, die beide brauchen — erst anlegen, wenn nötig
+```
+
+### Die drei Grenzen
+1. **„Shell-Paket" = generischer CODE-Teil, nicht die volle Auslieferung.** Origin
+   (per-Rep-Daten: Boundary/Netz/POIs/Icons) und Anthem (Live-Last) sind EIGENE
+   Quellen, nicht aus shell-kit. Volle Auslieferung ans Gerät = **Shell ⊕ Origin ⊕
+   Anthem**; shell-kit ist alleinige Quelle nur des Shell-Teils (zwei Takte: Code vs. Daten).
+2. **Identität wird gestempelt, liegt nicht in shell-kit.** shell-kit ist generisch/
+   identitätsfrei; Rep-Icon/Boundary/Name kommen aus Origin und werden beim Publishing
+   aufgestempelt.
+3. **shell-kit ⊇ was per Rep ausgespielt wird.** „Alles im Shell-Paket kommt aus
+   shell-kit" ✓ (aus `shell-kit/app/`). „Alles in shell-kit reist in jedem Paket mit" ✗
+   — das per-Rep-Paket ist eine Teilmenge (`app/`); Launcher & Co. (`launcher/`) bleiben
+   unsere Seite.
+
+### Rollen
+- **Shell-Studio = Schaufenster/Prüfstand** (die *Ansicht*: jede Funktion sehen +
+  prüfen, wie sie ins Paket geht).
+- **shell-kit = Substanz** (die *Quelle*: der ausspielbare Code).
+- Das Studio **rendert aus shell-kit** → was geprüft wird, **IST** was ausgespielt wird.
+  Ein UI-Panel kann nicht die Quelle SEIN (es stellt nur dar); die Quelle ist ein
+  Code-Modul, das der Build ins Paket bündelt.
+
+**Stand:** `shell-kit` noch nicht aufgestellt (Repo-Lift offen). Erster geplanter
+Schritt: shell-kit aufstellen, beginnend mit dem Comfort-Button (`ComfortSliders` +
+`brodaComfortKernel`) als erstem Mitglied in `shell-kit/app/`.
