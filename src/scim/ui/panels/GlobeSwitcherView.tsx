@@ -33,6 +33,20 @@ export default function GlobeSwitcherView() {
         Engine-Stück, sondern ein Dispatcher.
       </p>
 
+      {/* Eintritt: diesenpark.com schon entriegelt öffnen (Schlüssel in der URL) */}
+      <a
+        href="https://diesenpark.com/?k=geh-deinen-weg"
+        target="_blank"
+        rel="noreferrer"
+        style={{
+          display: 'inline-flex', alignItems: 'center', gap: 7, marginBottom: 16,
+          padding: '8px 14px', borderRadius: 8, fontSize: 12.5, fontWeight: 700,
+          textDecoration: 'none', background: '#3182ce', color: '#fff',
+        }}
+      >
+        ↗ diesenpark.com öffnen <span style={{ fontWeight: 400, opacity: 0.85 }}>(entriegelt)</span>
+      </a>
+
       {/* On/Off */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderRadius: 8, marginBottom: 16, background: active ? '#f0fff4' : '#f7fafc', border: `1px solid ${active ? '#9ae6b4' : '#e2e8f0'}` }}>
         <button
