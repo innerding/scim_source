@@ -39,8 +39,8 @@ import { ColourGradientBar } from './ColourGradientBar';
 // so behält das Studio seinen Vorab-Zugang. Passphrase in sensus-core-runtime/AccessGate.
 const APP_URL = 'https://diesenpark.com/?k=geh-deinen-weg';
 
-const FRAME_H = 600; // Block-Höhe darf wachsen (≈ f1.3, < f1.6) — mehr App/Render sichtbar
-const DEV_W = 300; // Seitenverhältnis halten: 0.5 × FRAME_H (war 230/460) → 300/600
+const FRAME_H = 649; // Handy-Proportion 390:844 bei fester Breite 300 → 300 × 844/390 ≈ 649
+const DEV_W = 300; // feste Breite; FRAME_H folgt der Handy-Proportion 390:844
 const DEV_BORDER = 9;
 const CONTENT_W = DEV_W - 2 * DEV_BORDER;   // sichtbare Frame-Innenbreite
 const CONTENT_H = FRAME_H - 2 * DEV_BORDER;

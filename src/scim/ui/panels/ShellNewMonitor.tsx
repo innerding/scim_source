@@ -16,7 +16,7 @@ export default function ShellNewMonitor({ rep, originOn, originPkg, loads, heigh
   rep: Representation; originOn: boolean; originPkg: OriginPackage | null; loads: number[] | null; height?: number;
 }) {
   const H = height;
-  const W = Math.round(H / 2); // Seitenverhältnis 0.5 wie das „Vorschau"-Device
+  const W = Math.round(H * 390 / 844); // Handy-Proportion 390:844 wie das „Vorschau"-Device
   const elRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const layerRef = useRef<L.LayerGroup | null>(null);
