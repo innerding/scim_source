@@ -1,10 +1,11 @@
 // Trygon-Loop (TL) — das Kernfunktions-Emblem. Sachlich, nüchtern, monochrom.
 // Trygon (Dreieck) der drei Funktionen, in der Mitte TL, umgeben vom Loop-Ring.
+// Alle Geometrien teilen den Mittelpunkt (60,60) → zentriert, mit Luft.
 //   AP = Anthem-Pulse      (misst die Last — Voraussetzung)
 //   CK = Comfort Kernel    (beobachtet den Comfort)
 //   AK = Avoidance Kernel  (handelt: Deeskalation)
 // Loop: AP → CK → AK → verändert das Aufkommen → AP misst neu.
-// designed by Dietmar Broda · 2025/2026. Konsens 2026-06-04 (Redesign).
+// © designed by Dietmar Broda · 2025/2026. Redesign 2026-06-04 (zentriert).
 
 const INK = '#2d3748';
 const FAINT = '#a0aec0';
@@ -12,21 +13,21 @@ const FAINT = '#a0aec0';
 export function TrygonLoopEmblem({ size = 96, withLegend = true }: { size?: number; withLegend?: boolean }) {
   const svg = (
     <svg width={size} height={size} viewBox="0 0 120 120" aria-label="Trygon-Loop (TL)" style={{ flexShrink: 0 }}>
-      {/* Loop-Ring */}
-      <circle cx="60" cy="60" r="54" fill="none" stroke={FAINT} strokeWidth="1" />
-      {/* Trygon */}
-      <polygon points="60,22 24,92 96,92" fill="none" stroke={INK} strokeWidth="1.4" strokeLinejoin="round" />
+      {/* Loop-Ring (Mittelpunkt 60,60) */}
+      <circle cx="60" cy="60" r="50" fill="none" stroke={FAINT} strokeWidth="1" />
+      {/* Trygon — Schwerpunkt = (60,60), Circumradius 34 */}
+      <polygon points="60,26 30.6,77 89.4,77" fill="none" stroke={INK} strokeWidth="1.4" strokeLinejoin="round" />
       {/* Ecken-Knoten */}
-      <circle cx="60" cy="22" r="2.6" fill={INK} />
-      <circle cx="24" cy="92" r="2.6" fill={INK} />
-      <circle cx="96" cy="92" r="2.6" fill={INK} />
-      {/* Kürzel an den Ecken */}
-      <text x="60" y="14" textAnchor="middle" fontSize="11" fontWeight="600" letterSpacing="1" fill={INK} fontFamily="system-ui, sans-serif">AP</text>
-      <text x="15" y="106" textAnchor="middle" fontSize="11" fontWeight="600" letterSpacing="1" fill={INK} fontFamily="system-ui, sans-serif">CK</text>
-      <text x="105" y="106" textAnchor="middle" fontSize="11" fontWeight="600" letterSpacing="1" fill={INK} fontFamily="system-ui, sans-serif">AK</text>
-      {/* Zentrum: TL im Kreis (statt Blitz) */}
-      <circle cx="60" cy="62" r="15" fill="#fff" stroke={INK} strokeWidth="1.2" />
-      <text x="60" y="67" textAnchor="middle" fontSize="14" fontWeight="700" letterSpacing="1" fill={INK} fontFamily="system-ui, sans-serif">TL</text>
+      <circle cx="60" cy="26" r="2.4" fill={INK} />
+      <circle cx="30.6" cy="77" r="2.4" fill={INK} />
+      <circle cx="89.4" cy="77" r="2.4" fill={INK} />
+      {/* Kürzel an den Ecken (mit Luft) */}
+      <text x="60" y="17" textAnchor="middle" fontSize="11" fontWeight="600" letterSpacing="1" fill={INK} fontFamily="system-ui, sans-serif">AP</text>
+      <text x="22" y="92" textAnchor="middle" fontSize="11" fontWeight="600" letterSpacing="1" fill={INK} fontFamily="system-ui, sans-serif">CK</text>
+      <text x="98" y="92" textAnchor="middle" fontSize="11" fontWeight="600" letterSpacing="1" fill={INK} fontFamily="system-ui, sans-serif">AK</text>
+      {/* Zentrum: TL im Kreis (zentriert, statt Blitz) */}
+      <circle cx="60" cy="60" r="13.5" fill="#fff" stroke={INK} strokeWidth="1.2" />
+      <text x="60" y="64.5" textAnchor="middle" fontSize="13" fontWeight="700" letterSpacing="1" fill={INK} fontFamily="system-ui, sans-serif">TL</text>
     </svg>
   );
 
@@ -40,7 +41,7 @@ export function TrygonLoopEmblem({ size = 96, withLegend = true }: { size?: numb
         <div style={{ color: '#4a5568' }}><strong>AP</strong> Anthem-Pulse — misst die Last</div>
         <div style={{ color: '#4a5568' }}><strong>CK</strong> Comfort Kernel — beobachtet den Comfort</div>
         <div style={{ color: '#4a5568' }}><strong>AK</strong> Avoidance Kernel — handelt (Deeskalation)</div>
-        <div style={{ color: '#718096', marginTop: 5, fontSize: 10 }}>designed by Dietmar Broda · 2025/2026</div>
+        <div style={{ color: '#718096', marginTop: 5, fontSize: 10 }}>designed by Dietmar Broda · © 2025/2026</div>
       </div>
     </div>
   );

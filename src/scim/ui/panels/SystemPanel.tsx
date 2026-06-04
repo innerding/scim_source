@@ -599,8 +599,15 @@ function LeistungsmessungKonzeptTab() {
       <ul style={{ margin: '0 0 16px', paddingLeft: 18, fontSize: 11.5, color: '#4a5568', lineHeight: 1.55 }}>
         <li><strong>Wanderer-Zahl</strong> (Default 100) — skaliert den Egress.</li>
         <li><strong>mit/ohne Icon-Assets</strong> — für Bundle-Größe / Codezeilen.</li>
+        <li><strong>mit/ohne px-Bilder</strong> — die Origin-Pixel-Bilder sind <em>exklusiv/optional</em> und schwer; die Paket-Größe wird <strong>primär ohne</strong> sie ausgewiesen.</li>
         <li><strong>Bytes/Segment + Refresh-Intervall</strong> — die Stellschrauben des Datengröße-Hebels.</li>
       </ul>
+
+      <div style={{ fontSize: 11.5, color: '#4a5568', background: '#f7fafc', border: '1px solid #e2e8f0', borderRadius: 6, padding: '9px 12px', marginBottom: 16, lineHeight: 1.55 }}>
+        <strong>Paket-Beispiel (Lichtenberg).</strong> Die Bundle-/Paket-Größe wird am Beispiel Lichtenberg ausgewiesen,
+        <strong> exklusive px-Bilder</strong>. Diese Zahl kommt über den <strong>Origin-Datengröße-Messer</strong> (+ Anthem-Pulse
+        aus der Transmission) — also nicht doppelt zu pflegen, sondern aus derselben Messung.
+      </div>
 
       <div style={{ background: '#fffbeb', border: '1px solid #f6e05e', borderRadius: 6, padding: '10px 14px', fontSize: 11.5, color: '#744210', lineHeight: 1.55 }}>
         So wird das Leistungsblatt zugleich das <strong>Schaufenster des Datengröße-Hebels</strong>: am mit/ohne-Assets- oder
