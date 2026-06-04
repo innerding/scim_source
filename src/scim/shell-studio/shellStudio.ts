@@ -328,8 +328,54 @@ export function evaluateGate(state, nowMin) {
     subtitle: 'High-Shell Render-Adjustments: Gradient · DP · Atmen',
     surface: 'engine',
     viz: 'none',
-    highNotes: ['Abschaltbare Darstellungs-Effekte zum Degradieren bei mangelnder Performance. Reine Render-Schicht.'],
-    deepNotes: ['Getrennt von der colorize-ENGINE (Deep-Shell). Gradient (Vertex-Blending, Kreuzungen hart) · DP (vereinfachen) · Atmen (geparkt — saubere Fassung später).'],
-    simCode: STUB,
+    highNotes: [
+      'Drei abschaltbare Effekte zum Degradieren bei mangelnder Performance — reine Render-Schicht (Last-Modell unberührt).',
+      'Gradient an/aus · DP (vereinfachen) · Atmen (geparkt). Default: Gradient an, Rest aus.',
+    ],
+    deepNotes: [
+      'Getrennt von der colorize-ENGINE (Deep-Shell). Gradient: Vertex-Blending, Kreuzungen HART. DP: K/Glow/subSteps. Atmen: eigene Canvas-Ebene nötig (Inspector-Lektion).',
+      'Aus dem Inspector zurückgebaut (2026-06-04) — hier nur dokumentiert, NICHT live. Traveling-Flow (Farbe weiterreichen) = CPU-Spike.',
+    ],
+    simCode: `// 3 abschaltbare Render-Adjustments (reine Darstellung; das Last-Modell bleibt
+// unberührt). Erst-Berechnungsfunktionen aus dem Inspector-Experiment — hier
+// dokumentiert, NICHT live im Inspector (Lektion 2026-06-04).
+
+// ── 1 · GRADIENT — Strecken-Verlauf statt harter Farb-Stufen ────────────────
+// Vertex-Last = Mittel der zwei angrenzenden Segment-Lasten → an den INNEREN
+// Stoßstellen gleicht sich die Farbe an. INVARIANTE: nur INNERHALB einer Strecke
+// (Kreuzung→Kreuzung); die Enden (Kreuzungen) nehmen die eigene End-Last → an
+// Kreuzungen bleibt es HART (sonst verwirrend & falsch).
+function drawStretchGradient(sub, points, segLoads, colorFn, weight, opacity, M) {
+  const n = segLoads.length; if (n === 0) return;
+  const vLoad = (i) => i <= 0 ? segLoads[0] : i >= n ? segLoads[n - 1]
+    : (segLoads[i - 1] + segLoads[i]) / 2;          // Enden hart, nur innen mitteln
+  for (let i = 1; i <= n; i++) {
+    const a = points[i - 1], b = points[i]; if (!a || !b) continue;
+    const la = vLoad(i - 1), lb = vLoad(i);
+    for (let m = 0; m < M; m++) {                    // Segment in M Stücke, Farbe gelerpt
+      const f0 = m / M, f1 = (m + 1) / M;
+      const p0 = [a[0] + (b[0] - a[0]) * f0, a[1] + (b[1] - a[1]) * f0];
+      const p1 = [a[0] + (b[0] - a[0]) * f1, a[1] + (b[1] - a[1]) * f1];
+      const lmid = la + (lb - la) * ((f0 + f1) / 2);
+      L.polyline([p0, p1], { color: colorFn(lmid), weight, opacity }).addTo(sub);
+    }
+  }
+}
+
+// ── 2 · DP — vereinfachen (entlastet, v.a. beim Rauszoomen) ─────────────────
+// Hebel: K (Gradient-Auflösung) · Glow weglassen (halbiert die Polyline-Zahl)
+// · gröbere Kurve (subSteps). Reine Render-Reduktion.
+const K        = gradients ? 6 : 1;                 // flach wenn Gradient aus
+const glow     = !dpZoom;                            // DP an → weißer Glow weg
+const subSteps = dpZoom ? 1 : 4;                     // DP an → gröber
+
+// ── 3 · ATMEN — sanftes Pulsieren (GEPARKT, mit Lektion) ───────────────────
+// MUSS auf eine EIGENE Canvas-Ebene (preferCanvas!), sonst pulst die ganze
+// Overlay-Canvas inkl. Route — und im Inspector brach das das Mesh (landete
+// unter der OSM-Heat). Saubere Fassung: eigener L.canvas-Renderer NUR fürs Mesh.
+//   map.createPane('mesh'); const r = L.canvas({ pane: 'mesh' });
+//   // Mesh-Polylines mit { renderer: r } → eigene Ebene
+//   // CSS:  .atmen .leaflet-mesh-pane { animation: breathe 5s ease-in-out infinite }
+//   //       @keyframes breathe { 0%,100% { opacity: 1 } 50% { opacity: .72 } }`,
   },
 ];

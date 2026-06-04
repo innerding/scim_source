@@ -7,7 +7,6 @@
 // Spaeter (Phase 2): echte Telco-Load.
 
 import L from 'leaflet';
-import { getMeshSettings } from './meshRenderSettings';
 // Eine Farbwahrheit (rein, ohne Leaflet) — geteilt mit dem Inspector-Last-Layer.
 import { heatColor } from '../sensus/loadColour';
 
@@ -156,8 +155,6 @@ function paintEdgeWithGradient(
   latLngs: [number, number][],
   hotspots: Hotspot[],
   K: number = 6,
-  glow: boolean = true,
-  subSteps: number = 4,
 ): void {
   if (latLngs.length < 2) return;
 
@@ -189,6 +186,7 @@ function paintEdgeWithGradient(
   for (let i = 0; i < K; i++) {
     const s0 = (i / K) * total;
     const s1 = ((i + 1) / K) * total;
+    const subSteps = 4;
     const pts: [number, number][] = [];
     for (let k = 0; k <= subSteps; k++) {
       pts.push(pointAt(s0 + (s1 - s0) * (k / subSteps)));
@@ -197,16 +195,14 @@ function paintEdgeWithGradient(
     const t = loadAt(mid[0], mid[1], hotspots);
     const color = heatColor(t);
 
-    // Glow (per DP-Schalter abschaltbar — halbiert die Polyline-Zahl)
-    if (glow) {
-      L.polyline(pts, {
-        color: '#ffffff',
-        weight: 7,
-        opacity: 0.38,
-        lineCap: 'round',
-        lineJoin: 'round',
-      }).addTo(group);
-    }
+    // Glow
+    L.polyline(pts, {
+      color: '#ffffff',
+      weight: 7,
+      opacity: 0.38,
+      lineCap: 'round',
+      lineJoin: 'round',
+    }).addTo(group);
 
     // Hauptlinie mit Heat-Farbe
     L.polyline(pts, {
@@ -239,18 +235,11 @@ export function addRoadHeatMesh(
     allEdges.push(...generateSyntheticEdges(bbox));
   }
 
-  // Degrade-Schalter (reine Render-Schicht, berührt das Last-Modell nicht):
-  //   gradients aus → flach (K=1) · dpZoom an → Glow weg + gröbere Kurve.
-  const s = getMeshSettings();
-  const K = s.gradients ? 6 : 1;
-  const glow = !s.dpZoom;
-  const subSteps = s.dpZoom ? 1 : 4;
-
   for (const edge of allEdges) {
     const coords = edge.geometry.coordinates;
     if (!coords || coords.length < 2) continue;
     const latLngs: [number, number][] = coords.map(([lon, lat]) => [lat, lon]);
-    paintEdgeWithGradient(group, latLngs, hotspots, K, glow, subSteps);
+    paintEdgeWithGradient(group, latLngs, hotspots, 6);
   }
 }
 

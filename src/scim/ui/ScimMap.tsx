@@ -12,8 +12,6 @@ import {
   addRoadHeatMesh, addPoiRoutes, fetchOsmEdges,
   TILE_OSM_URL, TILE_OSM_ATTR, TILE_MESH_URL, TILE_MESH_ATTR,
 } from './colourMeshOverlay';
-import { useMeshSettings } from './meshRenderSettings';
-import MeshToggles from './MeshToggles';
 import { useInspectorView, useInspectorAsset, useRepresentationContext } from '../../runtime/repContext';
 import type { InspectorAsset } from '../../runtime/repContext';
 import { slugify } from '../../runtime/router';
@@ -125,43 +123,6 @@ function layersForAsset(asset: InspectorAsset | null): LayerAvailability {
 
 // Resample-Vorschau (P08): Segmente abwechselnd blau/gelb (zeigt die Teilung).
 // Ohne Stützpunkt-Dots — die störten die Ansicht (User-Feedback).
-// Strecken-Gradient: statt harter Farbe je Segment über die Stützpunkte INTERPOLIEREN.
-// Vertex-Last = Mittel der zwei angrenzenden Segment-Lasten → an den INNEREN Stoßstellen
-// gleicht sich die Farbe an (keine Stufe). Jedes Segment in M Stücke geteilt und je
-// Stück die Farbe gelerpt. Reine Darstellung — das Last-Modell bleibt unberührt.
-//
-// INVARIANTE: NUR innerhalb einer Strecke (Kreuzung→Kreuzung). Die Strecken-ENDEN
-// (= Kreuzungen) nehmen die eigene End-Segment-Last (vLoad(0)/vLoad(n)) — NIE über
-// den Kreuzungs-Stoß hinweg gemischt. An Kreuzungen treffen die Strecken hart aufeinander.
-function drawStretchGradient(
-  sub: L.LayerGroup,
-  points: [number, number][],
-  segLoads: number[],
-  colorFn: (load: number) => string,
-  weight: number,
-  opacity: number,
-  M: number,
-  renderer?: L.Renderer,
-): void {
-  const n = segLoads.length;
-  if (n === 0) return;
-  const vLoad = (i: number): number =>
-    // Enden (Kreuzungen) hart: eigene End-Last, kein Misch über den Stoß. Nur innen mitteln.
-    i <= 0 ? segLoads[0] : i >= n ? segLoads[n - 1] : (segLoads[i - 1] + segLoads[i]) / 2;
-  for (let i = 1; i <= n; i++) {
-    const a = points[i - 1], b = points[i];
-    if (!a || !b) continue;
-    const la = vLoad(i - 1), lb = vLoad(i);
-    for (let m = 0; m < M; m++) {
-      const f0 = m / M, f1 = (m + 1) / M;
-      const p0: [number, number] = [a[0] + (b[0] - a[0]) * f0, a[1] + (b[1] - a[1]) * f0];
-      const p1: [number, number] = [a[0] + (b[0] - a[0]) * f1, a[1] + (b[1] - a[1]) * f1];
-      const lmid = la + (lb - la) * ((f0 + f1) / 2);
-      L.polyline([p0, p1], { color: colorFn(lmid), weight, opacity, lineCap: 'round', renderer }).addTo(sub);
-    }
-  }
-}
-
 function drawResampledNet(layer: L.LayerGroup, net: ResampledNet): void {
   const BLUE = '#2b6cb0', YELLOW = '#d69e2e';
   for (const s of net.stretches) {
@@ -204,7 +165,6 @@ function buildInspectedTarget(asset: InspectorAsset | null): InspectedTarget | n
 
 export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const mesh = useMeshSettings(); // 3 Degrade-Schalter (Gradient/DP/Atmen)
   const mapRef = useRef<L.Map | null>(null);
   const layerGroupRef = useRef<L.LayerGroup | null>(null);
   const clusterLayerRef = useRef<L.LayerGroup | null>(null);
@@ -396,7 +356,6 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
       baseTileRef.current = L.tileLayer(initialUrl, {
         attribution: initialAttr,
         maxZoom: 19,
-        opacity: 0.76,   // OSM-Netz generell abgedimmt, damit das Colour-Mesh trägt
       }).addTo(map);
     }
 
@@ -444,7 +403,6 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
     if (oldBase) map.removeLayer(oldBase);
     baseTileRef.current = L.tileLayer(wantUrl, {
       attribution: wantAttr, maxZoom: 19,
-      opacity: 0.76,   // OSM-Netz generell abgedimmt
     }).addTo(map);
   }, [vis.mapBase, vis.darkBase]);
 
@@ -601,40 +559,33 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
         }).map((c) => [c.id, c.state]),
       );
       const effBias = Math.max(-1, Math.min(1, colourCfg.bias + colourCfg.safety));
-      // Pass 1: Shadow-Halo je Strecke — per DP-Schalter weglassbar (spart 1 Polyline/Strecke).
-      if (!mesh.dpZoom) {
-        for (const s of simNet.stretches) {
-          if (s.points.length >= 2) {
-            L.polyline(s.points, {
-              color: '#ffffff', weight: 8, opacity: 1,
-              lineCap: 'round', lineJoin: 'round',
-            }).addTo(sub);
-          }
+      // Pass 1: Shadow-Halo je Strecke (dunkle, breite Unterlage), damit die
+      // Farbe — v. a. Grün — abhebt. Ein Polyline je Strecke (günstig).
+      for (const s of simNet.stretches) {
+        if (s.points.length >= 2) {
+          L.polyline(s.points, {
+            color: '#ffffff', weight: 8, opacity: 1,
+            lineCap: 'round', lineJoin: 'round',
+          }).addTo(sub);
         }
       }
-      // Pass 2: farbige Segmente. Gradient-Schalter an → über die Strecken-Stützpunkte
-      // INTERPOLIERT (weiche Übergänge), sonst harte Farbe je Segment. DP → gröber (M=1).
-      const gradM = mesh.dpZoom ? 1 : 4;
+      // Pass 2: farbige Segmente oben drauf.
       let idx = 0;
       for (const s of simNet.stretches) {
         const state = stateById.get(s.id) ?? 'normal';
-        const segCount = Math.max(0, s.points.length - 1);
-        const segLoads: number[] = [];
-        for (let i = 0; i < segCount; i++) segLoads.push(loads[idx++] ?? 0);
-
-        const gray = state === 'excluded';
-        const weight = state === 'normal' ? 4 : 2;
-        const opacity = state === 'excluded' ? 0.5 : state === 'degraded' ? 0.4 : 1;
-        const colorFn = (load: number): string =>
-          gray ? '#9aa5b1'
-            : colorize(load, { palette: colourCfg.palette, spectrum: colourCfg.spectrum, bias: effBias });
-
-        if (mesh.gradients && !gray && segCount > 0) {
-          drawStretchGradient(sub, s.points as [number, number][], segLoads, colorFn, weight, opacity, gradM);
-        } else {
-          for (let i = 1; i < s.points.length; i++) {
-            L.polyline([s.points[i - 1], s.points[i]], { color: colorFn(segLoads[i - 1] ?? 0), weight, opacity, lineCap: 'round' }).addTo(sub);
+        for (let i = 1; i < s.points.length; i++) {
+          const load = loads[idx++] ?? 0;
+          let color: string, weight: number, opacity: number;
+          if (state === 'excluded') {
+            color = '#9aa5b1'; weight = 2; opacity = 0.5;        // farblos neutralisiert
+          } else if (state === 'degraded') {
+            color = colorize(load, { palette: colourCfg.palette, spectrum: colourCfg.spectrum, bias: effBias });
+            weight = 2; opacity = 0.4;                            // entdrängt (behält Farbe)
+          } else {
+            color = colorize(load, { palette: colourCfg.palette, spectrum: colourCfg.spectrum, bias: effBias });
+            weight = 4; opacity = 1;
           }
+          L.polyline([s.points[i - 1], s.points[i]], { color, weight, opacity, lineCap: 'round' }).addTo(sub);
         }
       }
 
@@ -803,8 +754,7 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
         [Math.max(...lats), Math.max(...lons)],
       ]);
     }
-  }, [result, vis, osmEdges, repBbox, repPolygonLatLng, activeRep, repCatalog, availLayers, repWegnetz, wegnetzAsEdges, colourCfg, userExcl, simNet, simFlows, simHour, testSeed, mesh.gradients, mesh.dpZoom]);
-
+  }, [result, vis, osmEdges, repBbox, repPolygonLatLng, activeRep, repCatalog, availLayers, repWegnetz, wegnetzAsEdges, colourCfg, userExcl, simNet, simFlows, simHour, testSeed]);
 
   // Dynamisches Cluster-Overlay: bei jedem zoom/move neu rechnen (Pixel-Logik).
   // Eigener Layer, damit der Haupt-Render unberuehrt bleibt.
@@ -839,10 +789,7 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
   return (
     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
       <Header label="Inspector" detail="System-Build-Mirror" vis={vis} setVis={setVis} avail={availLayers} onNavigate={onNavigate} onCollapseToggle={onCollapseToggle} repCtx={repCtx} />
-      <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
-        <div ref={containerRef} style={{ position: 'absolute', inset: 0 }} />
-        <MeshToggles />
-      </div>
+      <div ref={containerRef} style={{ flex: 1, minHeight: 0 }} />
     </div>
   );
 }
