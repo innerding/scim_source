@@ -71,7 +71,7 @@ export const SHELL_RUN_STEPS: ShellStep[] = [
   {
     n: 4, word: 'container', title: 'Container-System', kind: 'engine', home: 'origin-poi-set · Container-Pfad (Katalog der akt. Rep)',
     status: 'partial',
-    blurb: 'Geometrie + Farbe je POI-Bucket, Cluster-Ghosts (Ring → Heimat-Container, wächst mit Anzahl). Die Engine ist GENERISCH und muss NICHT aus dem Capsulator kommen — die Deep-Shell BENUTZT den Origin-Capsulator aber als VEHIKEL: so bekommt sie Container, die mit den Origin-POIs schon ABGEGLICHEN sind (Container-Schlüssel im poi-set vorab aufgelöst), und spart sich den Abgleich-Weg. Die POIs kommen live (Lade-Kaskade, origin-rest) in die schon vorhandenen Container. Gebaut (clusterOverlay), noch nicht filetiert.',
+    blurb: 'Geometrie + Farbe je POI-Bucket, Cluster-Ghosts (Ring → Heimat-Container, wächst mit Anzahl). Die Engine ist GENERISCH und muss NICHT aus dem Capsulator kommen — die Deep-Shell BENUTZT den Origin-Capsulator aber als VEHIKEL: so bekommt sie Container, die mit den Origin-POIs schon ABGEGLICHEN sind (Container-Schlüssel im poi-set vorab aufgelöst), und spart sich den Abgleich-Weg. Die POIs kommen live (Lade-Kaskade, origin-rest) in die schon vorhandenen Container. Render-Kern editor-frei herausgeschält (sensus/shellRenderCore.ts — EINE Quelle, Assets via Dependency-Inversion); im Shell-Studio filetiert. Offen: in eigenes git-getaggtes Repo heben (docs/shell_katalog_zwei_takte.md).',
   },
   {
     n: 5, word: 'poi-select', title: 'POI-Auswahl', kind: 'surface', home: '— · Surface, noch nicht filetiert',

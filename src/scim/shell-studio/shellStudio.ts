@@ -150,9 +150,44 @@ export function playBoundaryReveal(container, map, ringLatLng) {
     subtitle: 'POI-Buckets · Cluster-Ghosts (Engine)',
     surface: 'engine',
     viz: 'none',
-    highNotes: ['Geometrie + Farbe je POI-Bucket; Cluster-Ghosts (Ring → Heimat-Container).'],
-    deepNotes: ['Generische Engine; der Origin-Capsulator liefert ABGEGLICHENE Container (Schlüssel {geometry_id,color} im poi-set) — Vehikel, spart den Abgleich.'],
-    simCode: STUB,
+    highNotes: [
+      'Sieben Container-Formen (Kreis/Quadrat/Tropfen/Rechteck hoch+quer/Dreieck/Hexagon-Ring); Farbe je POI-Bucket.',
+      'Icon liegt im Container; optional eine Deco-Leiste unten (Höhe „927 m", Baujahr „A° 1702", Sterne) — dann rückt das Icon an den Gipfel.',
+      'Cluster in zwei Phasen: Annäherung → blasser Hexagon-Ring (Ankündigung); Überlappung → Ghost-Container (Heimat), wächst mit der Anzahl.',
+    ],
+    deepNotes: [
+      'Render-Kern editor-frei herausgeschält: EINE Quelle sensus/shellRenderCore.ts (Container-SVG, Composite inkl. Summit/Deco, Cluster-Math).',
+      'Dependency-Inversion: Icons/Glyphen werden via RenderAssets HEREINGEREICHT — der Kern kennt keine Registry. Editor füttert aus data/, Runtime aus dem Origin-Paket.',
+      'Referenziert, nie kopiert (künftig git-getaggte Bibliothek, siehe docs/shell_katalog_zwei_takte.md). Der Origin-Capsulator liefert ABGEGLICHENE Container ({geometry_id,color} im poi-set) — Vehikel.',
+    ],
+    simCode: `// EINE Quelle: sensus/shellRenderCore.ts (editor-/Leaflet-frei).
+// Assets kommen HEREIN (Dependency-Inversion), nicht aus einer Registry:
+export interface RenderAssets {
+  glyphRaw(id: string): string | null;   // Glyph-SVG (z.B. 'meter','frame')
+  digitRaw(d: number): string | null;    // Ziffern-Glyph 0–9
+}
+
+// Container: Geometrie + Farbe → SVG (Füll-Form ODER stroke-Ring/Hexagon)
+export function buildContainerSvg(geo, color) {
+  const isStroke = geo.fill_role === 'stroke';
+  const fill   = isStroke ? 'none' : color;
+  const stroke = isStroke ? color : '#000';
+  // … circle | rect | polygon | path
+}
+
+// Composite: Container ⊕ Icon (⊕ Deco-Leiste unten = „Summit"-Layout)
+export function buildComposite({ geo, containerColor, size, iconInner, deco, assets }) {
+  const container = buildContainerSvg(geo, containerColor);
+  if (deco == null) {                     // Standard: Icon in den Bauch (icon_offset_y)
+    const o = geo.icon_offset_y ?? 0;
+    return wrap(container + (o ? g(iconInner, o) : iconInner));
+  }
+  const { inner, widthUnits } = buildGlyphRow(deco, assets); // Zifferncontainer
+  // … Frame + Glyph-Reihe unten platzieren, Icon am Gipfel
+}
+
+// Cluster: solange zwei Zentren näher als swallow liegen → verschmelzen
+export function mergeOverlapping(ents, swallow) { /* greedy fuse, anzahlgewichtet */ }`,
   },
   {
     id: 'poi-select',
