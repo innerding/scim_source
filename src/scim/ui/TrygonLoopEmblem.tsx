@@ -1,9 +1,10 @@
 // Trygon-Loop (TL) — das Kernfunktions-Emblem. Sachlich, nüchtern, monochrom.
 //   AP = Anthem-Pulse · CK = Comfort Kernel · AK = Avoidance Kernel · TL = der Loop.
 // Statisch (Default): Kürzel an den Trygon-Ecken, TL-Scheibe r 13,5.
-// animated=true: zwei UNABHÄNGIGE Ebenen —
-//   · Kürzel (mit eigener kleiner Scheibe) drehen kontinuierlich auf der Ring-Bahn (f0.6 ≈ 10 s/Umdrehung)
-//   · das Trygon springt alle 5 s um 180° weiter (gleiche Richtung)
+// animated=true: Newton's Cradle (5 s-Zyklus) —
+//   · gerichteter Impuls AP → CK → AK: jedes Kürzel (eigene kleine Scheibe) schwingt zum
+//     Nächsten und kommt zur Ruhe, stupst es an; das ist der TL-Signalfluss (messen→beobachten→handeln)
+//   · ist der Impuls einmal herum, rückt das Trygon 120° weiter (gleiche Richtung) = eine Schleife durch
 //   · TL-Scheibe 2 px kleiner (r 11,5)
 // © designed by Dietmar Broda · 2025/2026.
 
@@ -31,37 +32,43 @@ export function TrygonLoopEmblem({ size = 96, withLegend = true, animated = fals
       {/* Loop-Ring (statisch) */}
       <circle cx="60" cy="60" r="50" fill="none" stroke={FAINT} strokeWidth="1" />
 
-      {/* Trygon-Ebene: springt alle 5 s um 180° weiter (gleiche Richtung) */}
+      {/* Trygon-Ebene: NACH dem Knall-Lauf rückt das Trygon 120° weiter (gleiche Richtung).
+          „wenn AK wieder auf AP knallt, fährt das Triangle wieder mit." Wegen 3-Symmetrie
+          nahtloser Loop — die Drehung selbst ist sichtbar, Start/Ende sehen gleich aus. */}
       <g>
         <polygon points="60,26 30.6,77 89.4,77" fill="none" stroke={INK} strokeWidth="1.4" strokeLinejoin="round" />
         <circle cx="60" cy="26" r="2.4" fill={INK} />
         <circle cx="30.6" cy="77" r="2.4" fill={INK} />
         <circle cx="89.4" cy="77" r="2.4" fill={INK} />
         <animateTransform attributeName="transform" type="rotate"
-          values="0 60 60; 0 60 60; 180 60 60; 180 60 60; 360 60 60"
-          keyTimes="0; 0.4; 0.5; 0.9; 1"
-          dur="10s" repeatCount="indefinite" />
+          values="0 60 60; 0 60 60; -120 60 60" keyTimes="0; 0.65; 1"
+          dur="5s" repeatCount="indefinite" />
       </g>
 
-      {/* Kürzel-Ebene: AP/CK/AK mit eigener Scheibe (r 9) auf der Ring-Bahn, f0.6 ≈ 10 s/Umdrehung */}
+      {/* Kürzel-Ebene: Newton's Cradle — gerichteter Impuls AP → CK → AK. Jedes Kürzel
+          schwingt zum Nächsten und kommt zur Ruhe (stupst es an), dann der nächste. */}
       <g>
         <g>
           <circle cx="60" cy="10" r="9" fill="#fff" stroke={INK} strokeWidth="1" />
           <text x="60" y="13.4" textAnchor="middle" fontSize="9" fontWeight="600" letterSpacing="0.5" fill={INK} fontFamily="system-ui, sans-serif">AP</text>
-          <animateTransform attributeName="transform" type="rotate" from="0 60 10" to="-360 60 10" dur="12.5s" repeatCount="indefinite" />
+          <animateTransform attributeName="transform" type="rotate"
+            values="0 60 60; -22 60 60; 0 60 60; 0 60 60" keyTimes="0; 0.1; 0.2; 1"
+            dur="5s" repeatCount="indefinite" />
         </g>
         <g>
           <circle cx="16.7" cy="85" r="9" fill="#fff" stroke={INK} strokeWidth="1" />
           <text x="16.7" y="88.4" textAnchor="middle" fontSize="9" fontWeight="600" letterSpacing="0.5" fill={INK} fontFamily="system-ui, sans-serif">CK</text>
-          <animateTransform attributeName="transform" type="rotate" from="0 16.7 85" to="-360 16.7 85" dur="12.5s" repeatCount="indefinite" />
+          <animateTransform attributeName="transform" type="rotate"
+            values="0 60 60; 0 60 60; -22 60 60; 0 60 60; 0 60 60" keyTimes="0; 0.25; 0.3; 0.4; 1"
+            dur="5s" repeatCount="indefinite" />
         </g>
         <g>
           <circle cx="103.3" cy="85" r="9" fill="#fff" stroke={INK} strokeWidth="1" />
           <text x="103.3" y="88.4" textAnchor="middle" fontSize="9" fontWeight="600" letterSpacing="0.5" fill={INK} fontFamily="system-ui, sans-serif">AK</text>
-          <animateTransform attributeName="transform" type="rotate" from="0 103.3 85" to="-360 103.3 85" dur="12.5s" repeatCount="indefinite" />
+          <animateTransform attributeName="transform" type="rotate"
+            values="0 60 60; 0 60 60; -22 60 60; 0 60 60; 0 60 60" keyTimes="0; 0.45; 0.5; 0.6; 1"
+            dur="5s" repeatCount="indefinite" />
         </g>
-        {/* Bahn-Drehung der ganzen Kürzel-Ebene (f0.75 ≈ 12,5 s); Gegendrehung oben hält die Texte aufrecht */}
-        <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="12.5s" repeatCount="indefinite" />
       </g>
 
       {/* Zentrum: TL im Kreis — 2 px kleiner (r 11,5), statisch */}
