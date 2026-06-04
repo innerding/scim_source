@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { TabId } from '../panelRegistry';
-import { BrodaLoopEmblem } from '../BrodaLoopEmblem';
+import { TrygonLoopEmblem } from '../TrygonLoopEmblem';
 import type { ScimPipelineResult } from '../../pipeline/scimPipeline.types';
 
 interface Props {
@@ -635,17 +635,9 @@ function LeistungsblattTab({ result }: { result: ScimPipelineResult }) {
   );
   return (
     <div>
-      {/* Header-Emblem: BAP · BCK · BAK Innovations-Loop */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 12, maxWidth: 720 }}>
-        <BrodaLoopEmblem size={72} />
-        <div>
-          <div style={{ fontSize: 14, fontWeight: 800, color: '#1a365d' }}>BAP · BCK · BAK — Innovations-Loop</div>
-          <div style={{ fontSize: 11, color: '#718096', lineHeight: 1.5, marginTop: 2 }}>
-            <strong style={{ color: '#b7791f' }}>BAP</strong> misst die Last (Broda-Anthem-Pulse) ·
-            <strong style={{ color: '#2f855a' }}> BCK</strong> beobachtet den Comfort ·
-            <strong style={{ color: '#6b46c1' }}> BAK</strong> handelt (Deeskalation). Der Kern, der uns unterscheidet.
-          </div>
-        </div>
+      {/* Header-Emblem: Trygon-Loop (TL) — Kernfunktion */}
+      <div style={{ marginBottom: 14, maxWidth: 720, paddingBottom: 12, borderBottom: '1px solid #edf2f7' }}>
+        <TrygonLoopEmblem size={88} />
       </div>
       <div style={{
         display: 'flex', justifyContent: 'flex-end', alignItems: 'center',
