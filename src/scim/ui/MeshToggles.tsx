@@ -5,7 +5,7 @@ import { useMeshSettings, setMeshSetting, type MeshSettings } from './meshRender
 const ITEMS: { k: keyof MeshSettings; label: string; title: string }[] = [
   { k: 'gradients', label: 'Gradient', title: 'Glatter Farbverlauf je Kante (aus = flach, billiger)' },
   { k: 'dpZoom',    label: 'DP',       title: 'Mesh vereinfachen: Glow weg + gröbere Kurve — entlastet beim Rauszoomen' },
-  { k: 'atmen',     label: 'Atmen',    title: 'Sanftes Pulsieren des Overlays (aus = statisch)' },
+  // 'atmen' geparkt — der gescopte Canvas-Ansatz brach das Mesh; saubere Fassung später.
 ];
 
 export default function MeshToggles() {

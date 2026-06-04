@@ -208,7 +208,6 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
   const mapRef = useRef<L.Map | null>(null);
   const layerGroupRef = useRef<L.LayerGroup | null>(null);
   const clusterLayerRef = useRef<L.LayerGroup | null>(null);
-  const meshRendererRef = useRef<L.Canvas | null>(null); // eigener Canvas fürs Mesh (Atmen scoped)
   const baseTileRef = useRef<L.TileLayer | null>(null);
   const [vis, setVis] = useState<LayerVisibility>(DEFAULT_VISIBILITY);
 
@@ -390,12 +389,6 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
       wheelDebounceTime: 0,
       preferCanvas: true,
     });
-    // Eigene Canvas-Ebene fürs Colour-Mesh — damit „Atmen" NUR das Mesh betrifft
-    // (nicht Route/POIs) und unter den Routen liegt. preferCanvas → eigener Renderer.
-    map.createPane('dpMesh');
-    const meshPane = map.getPane('dpMesh');
-    if (meshPane) meshPane.style.zIndex = '360';
-    meshRendererRef.current = L.canvas({ pane: 'dpMesh', padding: 0.5 });
     // Initiale Base-Tile: nur wenn mapBase an; darkBase entscheidet den Stil.
     if (DEFAULT_VISIBILITY.mapBase) {
       const initialUrl = DEFAULT_VISIBILITY.darkBase ? TILE_MESH_URL : TILE_OSM_URL;
@@ -403,6 +396,7 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
       baseTileRef.current = L.tileLayer(initialUrl, {
         attribution: initialAttr,
         maxZoom: 19,
+        opacity: 0.76,   // OSM-Netz generell abgedimmt, damit das Colour-Mesh trägt
       }).addTo(map);
     }
 
@@ -450,6 +444,7 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
     if (oldBase) map.removeLayer(oldBase);
     baseTileRef.current = L.tileLayer(wantUrl, {
       attribution: wantAttr, maxZoom: 19,
+      opacity: 0.76,   // OSM-Netz generell abgedimmt
     }).addTo(map);
   }, [vis.mapBase, vis.darkBase]);
 
@@ -606,14 +601,13 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
         }).map((c) => [c.id, c.state]),
       );
       const effBias = Math.max(-1, Math.min(1, colourCfg.bias + colourCfg.safety));
-      const meshRenderer = meshRendererRef.current ?? undefined; // eigene Canvas-Ebene (Atmen scoped)
       // Pass 1: Shadow-Halo je Strecke — per DP-Schalter weglassbar (spart 1 Polyline/Strecke).
       if (!mesh.dpZoom) {
         for (const s of simNet.stretches) {
           if (s.points.length >= 2) {
             L.polyline(s.points, {
               color: '#ffffff', weight: 8, opacity: 1,
-              lineCap: 'round', lineJoin: 'round', renderer: meshRenderer,
+              lineCap: 'round', lineJoin: 'round',
             }).addTo(sub);
           }
         }
@@ -636,10 +630,10 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
             : colorize(load, { palette: colourCfg.palette, spectrum: colourCfg.spectrum, bias: effBias });
 
         if (mesh.gradients && !gray && segCount > 0) {
-          drawStretchGradient(sub, s.points as [number, number][], segLoads, colorFn, weight, opacity, gradM, meshRenderer);
+          drawStretchGradient(sub, s.points as [number, number][], segLoads, colorFn, weight, opacity, gradM);
         } else {
           for (let i = 1; i < s.points.length; i++) {
-            L.polyline([s.points[i - 1], s.points[i]], { color: colorFn(segLoads[i - 1] ?? 0), weight, opacity, lineCap: 'round', renderer: meshRenderer }).addTo(sub);
+            L.polyline([s.points[i - 1], s.points[i]], { color: colorFn(segLoads[i - 1] ?? 0), weight, opacity, lineCap: 'round' }).addTo(sub);
           }
         }
       }
@@ -811,11 +805,6 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
     }
   }, [result, vis, osmEdges, repBbox, repPolygonLatLng, activeRep, repCatalog, availLayers, repWegnetz, wegnetzAsEdges, colourCfg, userExcl, simNet, simFlows, simHour, testSeed, mesh.gradients, mesh.dpZoom]);
 
-  // Atmen — reine CSS-Deckkraft-Pulsation am Overlay-Pane (GPU-billig, kein Re-Render).
-  useEffect(() => {
-    const el = containerRef.current;
-    if (el) el.classList.toggle('dp-atmen', mesh.atmen);
-  }, [mesh.atmen]);
 
   // Dynamisches Cluster-Overlay: bei jedem zoom/move neu rechnen (Pixel-Logik).
   // Eigener Layer, damit der Haupt-Render unberuehrt bleibt.
@@ -853,7 +842,6 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
       <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
         <div ref={containerRef} style={{ position: 'absolute', inset: 0 }} />
         <MeshToggles />
-        <style>{`@keyframes dpBreathe{0%,100%{opacity:1}50%{opacity:.72}} .dp-atmen .leaflet-dpMesh-pane{animation:dpBreathe 5s ease-in-out infinite}`}</style>
       </div>
     </div>
   );
