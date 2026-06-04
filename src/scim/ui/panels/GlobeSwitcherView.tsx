@@ -79,10 +79,11 @@ export default function GlobeSwitcherView() {
         die globalen Icons. <strong>Nach</strong> der Weiche folgt erst das Publishing.
       </div>
 
-      <div style={{ marginTop: 10, fontSize: 11, color: '#744210', background: '#fffbeb', border: '1px solid #f6e05e', borderRadius: 6, padding: '9px 12px', lineHeight: 1.55 }}>
-        <strong>Ausbau (geplant): Allowlist.</strong> Statt nur an/aus — „nur bestimmte Adressen sehen es". Das sichert uns
-        zugleich den <strong>eigenen Vorab-Zugang</strong> (Shell-Studio, ungestempelte Inhalte), solange noch nichts öffentlich
-        dastehen muss.
+      <div style={{ marginTop: 10, fontSize: 11, color: '#276749', background: '#f0fff4', border: '1px solid #9ae6b4', borderRadius: 6, padding: '9px 12px', lineHeight: 1.55 }}>
+        <strong>LIVE (2026-06-04): Öffentlichkeit gesperrt.</strong> diesenpark.com hat ein <strong>Zugangs-Gate</strong>
+        (Passphrase ODER <code>?k=…</code>) + noindex. Die Öffentlichkeit ist draußen; wir kommen per Schlüssel rein — das
+        Shell-Studio-iframe trägt ihn. Das ist die erste, funktionale Stufe der Allowlist (heute eine Passphrase; später
+        je-Adresse / hart via Cloudflare Access).
       </div>
     </div>
   );

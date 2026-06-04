@@ -15,7 +15,9 @@ import { ColourGradientBar } from './ColourGradientBar';
 
 // Die echte, veröffentlichte erste Demo der Ziel-App. Surface-Blöcke zeigen SIE
 // (inkl. Expand/Collapse/Positionierung) — keine erfundene Nachbildung.
-const APP_URL = 'https://diesenpark.com';
+// ?k=… entriegelt das Zugangs-Gate der Runtime (Öffentlichkeit ist gesperrt) —
+// so behält das Studio seinen Vorab-Zugang. Passphrase in sensus-core-runtime/AccessGate.
+const APP_URL = 'https://diesenpark.com/?k=gehdeinenweg';
 
 const FRAME_H = 460;
 const DEV_W = 230;
