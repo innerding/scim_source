@@ -1,9 +1,11 @@
 # Lichtenberg POI-Plan v1
-**Stand:** 2026-05-31  ·  **24 POIs**  ·  ✓ 23 · ≈ 0 · ❓ 0
+**Stand:** 2026-06-04  ·  **24 POIs**  ·  ✓ 23 · ≈ 0 · ❓ 0
 **Token-Präfix:** boeh · lichtenberg
 
 Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 **✓** aus OSM/bestätigt · **≈** abgeleitet/geschätzt · **❓** fehlt
+
+---
 
 ---
 
@@ -39,7 +41,7 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 |---|---|---|---|---|---|---|
 | boeh-lichtenberg-pcck | aussichtswarte+ | Giselawarte 927 m | Steinblock-Aussichtswarte von 1857, 17,5 m hoch | 14.25445, 48.38515 | Lichtenberg *(Cluster-Icon)* | ✓ |
 | boeh-lichtenberg-e6e8 | aussichtspunkt | Kogl | Blick über die Koglerau ins Donautal und auf das Alpenpanorama | 14.23873, 48.38005 | — | ✓ |
-| boeh-lichtenberg-puxy | aussichtspunkt+ | Gipfel Lichtenberg 927m |  | 14.25434, 48.38534 | — | ✓ |
+| boeh-lichtenberg-puxy | aussichtspunkt+ | Gipfel Lichtenberg 927m |  | 14.25434, 48.38534 | Lichtenberg | ✓ |
 | boeh-lichtenberg-vwjr | aussichtspunkt | Steinfelsen Gipfel |  | 14.24210, 48.41206 | — | ✓ |
 
 ### Regenerate_Substanze
@@ -153,11 +155,13 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 
 ---
 
+---
+
 ## Cluster
 
-### Lichtenberg *(6 POIs)*
+### Lichtenberg *(7 POIs)*
 
-aussichtswarte+ Giselawarte 927 m *(Cluster-Icon)* · sender Sender · gasthaus+ zur Gis a° 1702 · gewaesser Pollack-Quelle · parkplatz Gisela Parkplatz · aussichtspunkt Gis 927 m
+aussichtswarte+ Giselawarte 927 m *(Cluster-Icon)* · sender Sender · aussichtspunkt+ Gipfel Lichtenberg 927m · gasthaus+ zur Gis a° 1702 · gewaesser Pollack-Quelle · parkplatz Gisela Parkplatz · aussichtspunkt Gis 927 m
 
 ---
 
