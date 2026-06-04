@@ -246,7 +246,9 @@ export default function ShellStudio() {
                     ? <DeviceFrame><Surface fn={fn} /></DeviceFrame>
                     : (
                       <div style={{ flexShrink: 0, width: 96, alignSelf: 'stretch', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', fontSize: 10, color: '#cbd5e0', fontStyle: 'italic', lineHeight: 1.4, borderRight: '1px dashed #e2e8f0', paddingRight: 12 }}>
-                        Engine ·<br />kein eigener<br />Screen
+                        {fn.surface === 'engine'
+                          ? <>Engine ·<br />kein eigener<br />Screen</>
+                          : <>Oberfläche<br />folgt</>}
                       </div>
                     )}
                   {/* 2 · SIM-Code */}

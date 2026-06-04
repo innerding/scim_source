@@ -6,6 +6,9 @@
 //     Code je Block + Summe → von Sensus Core Publishing anforderbar/packbar).
 // SIM-Code ≠ Produktions-Code (nativer App-Store-Code kann ganz anders aussehen).
 // EINE Liste, zwei Lanes → die Frames stehen gegenüber. Inhalt wächst je Funktion.
+//
+// Reihenfolge = shell-run (sensus/shellRun.ts). Stubs (simCode 'folgt') sind noch zu
+// filetieren: Funktion für Funktion, live an diesenpark.com (neuer Workflow 2026-06-04).
 
 export type TargetPlatform = 'web' | 'android' | 'ios';
 
@@ -30,6 +33,8 @@ export interface ShellFunction {
   /** High · der SIM-Code, der die Oberfläche in SCIM rendert (Auszug). */
   simCode: string;
 }
+
+const STUB = '// folgt — noch zu filetieren (live an diesenpark.com). Heimat/Reihenfolge: ⓘ shell-run.';
 
 export const SHELL_FUNCTIONS: ShellFunction[] = [
   {
@@ -140,38 +145,29 @@ export function playBoundaryReveal(container, map, ringLatLng) {
 }`,
   },
   {
-    id: 'drossler',
-    title: 'Drossler',
-    subtitle: 'Refresh-Gate (Engine)',
+    id: 'container',
+    title: 'Container-System',
+    subtitle: 'POI-Buckets · Cluster-Ghosts (Engine)',
     surface: 'engine',
-    viz: 'gate',
-    highNotes: [
-      'Kein eigener Screen — wirkt unsichtbar: weniger Netz-Anfragen, ruhigeres Verhalten.',
-      'Schützt vor Anfrage-Fluten bei vielen User-Interaktionen.',
-    ],
-    deepNotes: [
-      'App-seitig: nicht jede Interaktion fordert an — gebündelt pro nextAt-Fenster.',
-      'Liest die ANGEKÜNDIGTE nextAt (rät keine verstrichene Zeit) → trifft jedes Fenster genau einmal.',
-      'Reine Funktion (state, nowMin) → Verdikt; nativ 1:1 portierbar.',
-    ],
-    simCode: `// Refresh-Gate — der Consumer drosselt sich SELBST: liest die angekündigte
-// nextAt des gehaltenen Snapshots und fordert erst ab nextAt + Gap neu an.
-// Bündelt viele Interaktionen zu höchstens EINER Anforderung pro Fenster.
-export function evaluateGate(state, nowMin) {
-  if (!state.held) return { allowed: true, reason: 'no-snapshot', dueInMin: 0 };
-
-  const dueAt = state.held.nextAtMin + REFRESH_GAP_MIN;   // kleiner Gap (Publish-Rennen)
-  if (nowMin >= dueAt)
-    return { allowed: true,  reason: 'expired', dueInMin: 0 };          // neu anfordern
-
-  return { allowed: false, reason: 'valid', dueInMin: dueAt - nowMin };  // halten
-}
-// jede User-Interaktion fragt das Gate; nur 'expired' → echte Anforderung.`,
+    viz: 'none',
+    highNotes: ['Geometrie + Farbe je POI-Bucket; Cluster-Ghosts (Ring → Heimat-Container).'],
+    deepNotes: ['Generische Engine; der Origin-Capsulator liefert ABGEGLICHENE Container (Schlüssel {geometry_id,color} im poi-set) — Vehikel, spart den Abgleich.'],
+    simCode: STUB,
+  },
+  {
+    id: 'poi-select',
+    title: 'POI-Auswahl',
+    subtitle: 'tap = markieren · long-tap = Modal',
+    surface: 'placeholder',
+    viz: 'none',
+    highNotes: ['Treffsicher an-/abwählen, keine Zweideutigkeit. short-tap markiert, long-tap öffnet Detail-Modal. Keine eigene Wishlist-Fläche.'],
+    deepNotes: ['Die markierten POIs SIND die Auswahl; speist den Route-Solver.'],
+    simCode: STUB,
   },
   {
     id: 'bck',
     title: 'Comfort',
-    subtitle: 'BCK · Move + Rest',
+    subtitle: 'BCK · Move + Rest (+ Dauer)',
     surface: 'comfort',
     viz: 'comfort',
     highNotes: [
@@ -206,5 +202,134 @@ export function classifyStretches(stretches, { degradier, ausschluss }) {
 
 // Comfort-Slider Move → ausschluss = 1 - movementComfort:
 //   hoch → mehr Strecken raus (Netz EINGESCHRÄNKT) · runter → mehr drin (ERWEITERT).`,
+  },
+  {
+    id: 'route-solver',
+    title: 'Route-Solver',
+    subtitle: 'Modell B · eine adaptive Linie (Engine)',
+    surface: 'engine',
+    viz: 'none',
+    highNotes: ['Kein „wähle aus 3 Routen": die App zieht EINE adaptive Linie durch die markierten POIs.'],
+    deepNotes: ['Auf dem Mesh-Graph (Kreuzungen=Knoten, Segmente=Kanten), comfort-beschränkt. Konzeptionell da (playbook.ts), technisch ungetestet.'],
+    simCode: STUB,
+  },
+  {
+    id: 'via',
+    title: 'Via / Trassierung',
+    subtitle: 'Longpress-Via · Trassier-Snap (Engine)',
+    surface: 'engine',
+    viz: 'none',
+    highNotes: ['Long-press pinnt einen Wunschpunkt; die App snappt ihn aufs Netz (Operator-Trassierung für die User-Route).'],
+    deepNotes: ['Gleiche Auto-Noding-Mechanik wie beim Netz-Bau. Comfort-Rahmen bleibt hart.'],
+    simCode: STUB,
+  },
+  {
+    id: 'bak',
+    title: 'BAK · Deeskalations-Kaskade',
+    subtitle: 'Broda Avoidance Kernel (Engine)',
+    surface: 'engine',
+    viz: 'none',
+    highNotes: ['Handelt, wenn der Comfort kippt: 1 Ausweichroute → 2 Wegpunkte umgehen (Rückfrage) → 3 Alternativroute (Comfort-Max).'],
+    deepNotes: ['Monotone Leiter, je Stufe genau eine Sache lockern. Spec: docs/komfort_kaskade_spec.md. S1 gebaut, S2+S3 offen.'],
+    simCode: STUB,
+  },
+  {
+    id: 'guidance',
+    title: 'Guidance',
+    subtitle: 'Führung unterwegs (ZULETZT)',
+    surface: 'placeholder',
+    viz: 'none',
+    highNotes: ['Super einfach, treffsicher. Decision-Point statt Meter-für-Meter, Landmarken statt Distanz, calm/eyes-free.'],
+    deepNotes: ['Fehlweg-Warnung braucht OSM-Kreuzungen (nicht im gepruneten Mesh). Destillat liegt bereit; ZULETZT bauen, minimale Iteration.'],
+    simCode: STUB,
+  },
+  {
+    id: 'drossler',
+    title: 'Drossler',
+    subtitle: 'Refresh-Gate (Engine)',
+    surface: 'engine',
+    viz: 'gate',
+    highNotes: [
+      'Kein eigener Screen — wirkt unsichtbar: weniger Netz-Anfragen, ruhigeres Verhalten.',
+      'Schützt vor Anfrage-Fluten bei vielen User-Interaktionen.',
+    ],
+    deepNotes: [
+      'App-seitig: nicht jede Interaktion fordert an — gebündelt pro nextAt-Fenster.',
+      'Liest die ANGEKÜNDIGTE nextAt (rät keine verstrichene Zeit) → trifft jedes Fenster genau einmal.',
+      'Reine Funktion (state, nowMin) → Verdikt; nativ 1:1 portierbar.',
+    ],
+    simCode: `// Refresh-Gate — der Consumer drosselt sich SELBST: liest die angekündigte
+// nextAt des gehaltenen Snapshots und fordert erst ab nextAt + Gap neu an.
+// Bündelt viele Interaktionen zu höchstens EINER Anforderung pro Fenster.
+export function evaluateGate(state, nowMin) {
+  if (!state.held) return { allowed: true, reason: 'no-snapshot', dueInMin: 0 };
+
+  const dueAt = state.held.nextAtMin + REFRESH_GAP_MIN;   // kleiner Gap (Publish-Rennen)
+  if (nowMin >= dueAt)
+    return { allowed: true,  reason: 'expired', dueInMin: 0 };          // neu anfordern
+
+  return { allowed: false, reason: 'valid', dueInMin: dueAt - nowMin };  // halten
+}
+// jede User-Interaktion fragt das Gate; nur 'expired' → echte Anforderung.`,
+  },
+  {
+    id: 'globe-switcher',
+    title: 'globe-switcher',
+    subtitle: 'Eintritts-Weiche QR↔URL (Edge)',
+    surface: 'engine',
+    viz: 'none',
+    highNotes: ['QR → Launcher überspringen, direkt zur festen Rep. diesenpark.com nackt → Launcher zeigen.'],
+    deepNotes: ['Dispatcher an der Request-Grenze, vor Sensus Core. On/Off + Allowlist (P11-Tab). Kein Engine-Stück im engeren Sinn.'],
+    simCode: STUB,
+  },
+  {
+    id: 'collector',
+    title: 'Collector-Path',
+    subtitle: 'Nation→Region→Rep · Cross-Rep-Fan-in (Feed)',
+    surface: 'engine',
+    viz: 'none',
+    highNotes: ['Aggregiert den Katalog Nation → Region → Representation; speist den Launcher.'],
+    deepNotes: ['Wohnt auf dem Publishing-Layer (P11/V01-V02), NICHT Deep-Shell, NICHT Capsuler. Nation-Ebene = Minimal-Pfad.'],
+    simCode: STUB,
+  },
+  {
+    id: 'launcher',
+    title: 'Launcher · globale Auswahl',
+    subtitle: 'Kacheln Nation→Region→Rep',
+    surface: 'placeholder',
+    viz: 'none',
+    highNotes: ['Rendert die Kacheln und löst die Bundle-Auslieferung aus. Generische High-Shell-Surface, außerhalb des Rep-Bundles.'],
+    deepNotes: ['Der eigentliche Konsument des Collector-Path. Wird vom globe-switcher gezeigt (URL) oder übersprungen (QR).'],
+    simCode: STUB,
+  },
+  {
+    id: 'lade-treiber',
+    title: 'Lade-Kaskade-Treiber',
+    subtitle: 'eager fetch + Intro-Vorhang (Engine)',
+    surface: 'engine',
+    viz: 'none',
+    highNotes: ['Fährt die Lade-Kaskade auf dem Gerät — der User hängt nie im Upload.'],
+    deepNotes: ['Feuert den Bundle-Fetch, sobald rep-id bekannt; deckt die Latenz mit Intro/Reveal. Reihenfolge: DEPLOY_ORDER.'],
+    simCode: STUB,
+  },
+  {
+    id: 'transfer',
+    title: 'Transfer → Sensus Core P',
+    subtitle: 'geschnürt · versioniert · gestempelt',
+    surface: 'placeholder',
+    viz: 'none',
+    highNotes: ['Die fertige, generische Shell wird an Sensus Core P transferiert.'],
+    deepNotes: ['Dort geschnürt (Shell ⊕ Origin ⊕ Anthem), versioniert (V01), Identität gestempelt. Erst HIER wird aus generisch eine konkrete Auslieferung.'],
+    simCode: STUB,
+  },
+  {
+    id: 'render-features',
+    title: 'Colour-Mesh-Render-Features',
+    subtitle: 'High-Shell Render-Adjustments: Gradient · DP · Atmen',
+    surface: 'engine',
+    viz: 'none',
+    highNotes: ['Abschaltbare Darstellungs-Effekte zum Degradieren bei mangelnder Performance. Reine Render-Schicht.'],
+    deepNotes: ['Getrennt von der colorize-ENGINE (Deep-Shell). Gradient (Vertex-Blending, Kreuzungen hart) · DP (vereinfachen) · Atmen (geparkt — saubere Fassung später).'],
+    simCode: STUB,
   },
 ];
