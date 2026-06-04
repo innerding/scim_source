@@ -272,26 +272,8 @@ export function evaluateGate(state, nowMin) {
 }
 // jede User-Interaktion fragt das Gate; nur 'expired' → echte Anforderung.`,
   },
-  {
-    id: 'globe-switcher',
-    title: 'globe-switcher',
-    subtitle: 'Eintritts-Weiche QR↔URL (Edge)',
-    surface: 'engine',
-    viz: 'none',
-    highNotes: ['QR → Launcher überspringen, direkt zur festen Rep. diesenpark.com nackt → Launcher zeigen.'],
-    deepNotes: ['Dispatcher an der Request-Grenze, vor Sensus Core. On/Off + Allowlist (P11-Tab). Kein Engine-Stück im engeren Sinn.'],
-    simCode: STUB,
-  },
-  {
-    id: 'collector',
-    title: 'Collector-Path',
-    subtitle: 'Nation→Region→Rep · Cross-Rep-Fan-in (Feed)',
-    surface: 'engine',
-    viz: 'none',
-    highNotes: ['Aggregiert den Katalog Nation → Region → Representation; speist den Launcher.'],
-    deepNotes: ['Wohnt auf dem Publishing-Layer (P11/V01-V02), NICHT Deep-Shell, NICHT Capsuler. Nation-Ebene = Minimal-Pfad.'],
-    simCode: STUB,
-  },
+  // globe-switcher · collector · transfer wohnen NICHT im Studio (kein Ziel-App-Code),
+  // sondern als eigene Tabs in P11 (Publishing-/Edge-Layer). Siehe ⓘ shell-run.
   {
     id: 'launcher',
     title: 'Launcher · globale Auswahl',
@@ -310,16 +292,6 @@ export function evaluateGate(state, nowMin) {
     viz: 'none',
     highNotes: ['Fährt die Lade-Kaskade auf dem Gerät — der User hängt nie im Upload.'],
     deepNotes: ['Feuert den Bundle-Fetch, sobald rep-id bekannt; deckt die Latenz mit Intro/Reveal. Reihenfolge: DEPLOY_ORDER.'],
-    simCode: STUB,
-  },
-  {
-    id: 'transfer',
-    title: 'Transfer → Sensus Core P',
-    subtitle: 'geschnürt · versioniert · gestempelt',
-    surface: 'placeholder',
-    viz: 'none',
-    highNotes: ['Die fertige, generische Shell wird an Sensus Core P transferiert.'],
-    deepNotes: ['Dort geschnürt (Shell ⊕ Origin ⊕ Anthem), versioniert (V01), Identität gestempelt. Erst HIER wird aus generisch eine konkrete Auslieferung.'],
     simCode: STUB,
   },
   {

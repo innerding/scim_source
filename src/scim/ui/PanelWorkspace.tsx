@@ -18,6 +18,8 @@ import TestRouteControl from './panels/TestRouteControl';
 import RuntimeFlowExplainer from './panels/RuntimeFlowExplainer';
 import SensusCorePipeline from './panels/SensusCorePipeline';
 import GlobeSwitcherView from './panels/GlobeSwitcherView';
+import CollectorView from './panels/CollectorView';
+import TransferView from './panels/TransferView';
 import { BoundaryView, WegnetzCompareView, IntroView, RingSvg } from './panels/SichelViews';
 import HighShellIconAssets from './panels/HighShellIconAssets';
 import ShellStudio from './panels/ShellStudio';
@@ -75,7 +77,7 @@ interface Props {
   onCatalogConsumed?: () => void;
 }
 
-const TAB_ORDER: TabId[] = ['catalog', 't1', 't2', 't3', 't4', 't5', 't6', 'signal_intake', 'analysis', 'adjust', 'globe_switcher', 'input', 'icon', 'simulation', 'result', 'validation', 'leistungsblatt', 'raw'];
+const TAB_ORDER: TabId[] = ['catalog', 't1', 't2', 't3', 't4', 't5', 't6', 'signal_intake', 'analysis', 'adjust', 'globe_switcher', 'collector', 'transfer', 'input', 'icon', 'simulation', 'result', 'validation', 'leistungsblatt', 'raw'];
 
 function TabBar({
   tabs, active, onSelect,
@@ -1137,6 +1139,10 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
   }
   // P11 Globe-Switcher: die Eintritts-Weiche (QR ↔ URL) vor dem Publishing.
   if (panel.id === 'P11' && activeTab === 'globe_switcher') return <GlobeSwitcherView />;
+  // P11 Collector-Path: Cross-Rep-Fan-in Nation→Region→Rep (Publishing-Aggregat).
+  if (panel.id === 'P11' && activeTab === 'collector') return <CollectorView />;
+  // P11 Transfer: der Publishing-Handoff (schnüren · versionieren · stempeln · ausliefern).
+  if (panel.id === 'P11' && activeTab === 'transfer') return <TransferView />;
   // P11 Sensus Core Service: die drei Horizont-Pakete (Eingabe-Tab).
   if (panel.id === 'P11' && activeTab === 'input') return <SensusCorePackages />;
   // P11 t1: Shell-ID-Stamping (reg-/rep-Icon an die generische Shell binden).

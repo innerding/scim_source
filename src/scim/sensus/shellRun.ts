@@ -109,12 +109,12 @@ export const SHELL_RUN_STEPS: ShellStep[] = [
     blurb: 'Der Consumer drosselt sich selbst: liest die angekündigte nextAt des Snapshots und fordert erst ab nextAt + Gap neu an. Bündelt viele Interaktionen zu höchstens einer Anforderung pro Fenster. Kein eigener Screen.',
   },
   {
-    n: 12, word: 'globe-switcher', title: 'globe-switcher', kind: 'edge', home: '— · Edge, vor Sensus Core',
+    n: 12, word: 'globe-switcher', title: 'globe-switcher', kind: 'edge', home: 'P11 · Globe-Switcher', panelId: 'P11', tabId: 'globe_switcher',
     status: 'open',
     blurb: 'Die Eintritts-Weiche an der Request-Grenze: liest, WIE der User kommt. QR-Code → Launcher überspringen, direkt zur festen Rep (Liste nicht nötig). diesenpark.com nackt → den Launcher zeigen. Kein Engine-Stück, sondern Dispatcher; braucht höchstens eine rep-id-Auflösung, nicht den ganzen Katalog.',
   },
   {
-    n: 13, word: 'collector', title: 'Collector-Path', kind: 'feed', home: 'P11/V01-V02 · Publishing-Aggregat',
+    n: 13, word: 'collector', title: 'Collector-Path', kind: 'feed', home: 'P11 · Collector', panelId: 'P11', tabId: 'collector',
     status: 'open',
     blurb: 'Cross-Rep-Fan-in: aggregiert den Katalog Nation → Region → Representation aus den per-Rep-Fakten, die jeder Origin-Capsuler deklariert (Nation/Region/Icon). Wohnt auf dem Publishing-Layer (Sensus Core P / V01-V02-Kaskade), NICHT in der Deep-Shell (deren Animationen sind generisch). Speist den Launcher. Nation-Ebene nur als Minimal-Pfad anlegen.',
   },
@@ -129,7 +129,7 @@ export const SHELL_RUN_STEPS: ShellStep[] = [
     blurb: 'Fährt die Lade-Kaskade auf dem Gerät: feuert den Bundle-Fetch, sobald die rep-id bekannt ist (eager), und deckt die Latenz mit Intro/Reveal — damit der User im Upload nicht hängt. Die deklarierte Reihenfolge steht in DEPLOY_ORDER.',
   },
   {
-    n: 16, word: 'transfer', title: 'Transfer → Sensus Core P', kind: 'transfer', home: 'P11 · Sensus Core', panelId: 'P11', tabId: 't1',
+    n: 16, word: 'transfer', title: 'Transfer → Sensus Core P', kind: 'transfer', home: 'P11 · Transfer', panelId: 'P11', tabId: 'transfer',
     status: 'partial',
     blurb: 'Die fertige, generische Shell wird an Sensus Core P transferiert. Dort wird geschnürt (Shell ⊕ Origin ⊕ Anthem), versioniert (V01) und die Identität gestempelt (reg-/rep-Icon, Boundary, globale Icons). Erst HIER wird aus der generischen Shell eine konkrete Auslieferung.',
   },

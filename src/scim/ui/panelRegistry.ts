@@ -12,8 +12,8 @@ export type TabId =
   // generische, stabile Tab-Handles (id fix, Label trägt die Bedeutung) für
   // panel-eigene Tab-Gliederungen (P07/P08/P09)
   | 't1' | 't2' | 't3' | 't4' | 't5' | 't6'
-  // P11 · Eintritts-Weiche vor dem Publishing
-  | 'globe_switcher';
+  // P11 · Publishing-/Edge-Layer (eigene Tabs)
+  | 'globe_switcher' | 'collector' | 'transfer';
 
 export interface TabDescriptor {
   id: TabId;
@@ -304,6 +304,8 @@ export const PANEL_REGISTRY: PanelDescriptor[] = [
     contextKey: 'sensus_core_package',
     tabs: [
       { id: 'globe_switcher', label: 'Globe-Switcher', icon: '⤧' },
+      { id: 'collector', label: 'Collector', icon: '⇊' },
+      { id: 'transfer', label: 'Transfer', icon: '⏩' },
       { id: 'input', label: 'Publishing', icon: '▣' },
       { id: 't1', label: 'Shell-ID', icon: '⬡' },
     ],
