@@ -1,10 +1,12 @@
 // Trygon-Loop (TL) — das Kernfunktions-Emblem. Sachlich, nüchtern, monochrom.
 //   AP = Anthem-Pulse · CK = Comfort Kernel · AK = Avoidance Kernel · TL = der Loop.
 // Statisch (Default): Kürzel an den Trygon-Ecken, TL-Scheibe r 13,5.
-// animated=true: Newton's Cradle (5 s-Zyklus) —
-//   · gerichteter Impuls AP → CK → AK: jedes Kürzel (eigene kleine Scheibe) schwingt zum
-//     Nächsten und kommt zur Ruhe, stupst es an; das ist der TL-Signalfluss (messen→beobachten→handeln)
-//   · ist der Impuls einmal herum, rückt das Trygon 120° weiter (gleiche Richtung) = eine Schleife durch
+// animated=true: Staffel-Lauf / Newton's Cradle (9 s = 3 Runden) —
+//   · gerichteter Impuls AP → CK → AK: jede Kugel fährt VOLL bis auf die Position der nächsten
+//     und stupst sie an, die nächste startet im selben Moment; das ist der TL-Signalfluss
+//     (messen→beobachten→handeln), als wandernde Knall-Welle um den Ring
+//   · jede Kugel umrundet einmal komplett (3 Etappen) → nahtloser Loop; Texte bleiben aufrecht
+//   · das Trygon dreht langsam mit (−120°/Runde) — „der Orbiter dreht sich mit den Kugeln"
 //   · TL-Scheibe 2 px kleiner (r 11,5)
 // © designed by Dietmar Broda · 2025/2026.
 
@@ -32,42 +34,59 @@ export function TrygonLoopEmblem({ size = 96, withLegend = true, animated = fals
       {/* Loop-Ring (statisch) */}
       <circle cx="60" cy="60" r="50" fill="none" stroke={FAINT} strokeWidth="1" />
 
-      {/* Trygon-Ebene: NACH dem Knall-Lauf rückt das Trygon 120° weiter (gleiche Richtung).
-          „wenn AK wieder auf AP knallt, fährt das Triangle wieder mit." Wegen 3-Symmetrie
-          nahtloser Loop — die Drehung selbst ist sichtbar, Start/Ende sehen gleich aus. */}
+      {/* Trygon-Ebene: dreht langsam mit dem Staffel-Lauf mit (−360° über den vollen
+          3-Runden-Zyklus = −120°/Runde). „der Orbiter dreht sich mit den Kugeln." */}
       <g>
         <polygon points="60,26 30.6,77 89.4,77" fill="none" stroke={INK} strokeWidth="1.4" strokeLinejoin="round" />
         <circle cx="60" cy="26" r="2.4" fill={INK} />
         <circle cx="30.6" cy="77" r="2.4" fill={INK} />
         <circle cx="89.4" cy="77" r="2.4" fill={INK} />
-        <animateTransform attributeName="transform" type="rotate"
-          values="0 60 60; 0 60 60; -120 60 60" keyTimes="0; 0.65; 1"
-          dur="5s" repeatCount="indefinite" />
+        <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="-360 60 60" dur="9s" repeatCount="indefinite" />
       </g>
 
-      {/* Kürzel-Ebene: Newton's Cradle — gerichteter Impuls AP → CK → AK. Jedes Kürzel
-          schwingt zum Nächsten und kommt zur Ruhe (stupst es an), dann der nächste. */}
+      {/* Kürzel-Ebene: Staffel-Lauf (Newton's Cradle). Gerichteter Impuls AP → CK → AK:
+          jede Kugel fährt VOLL bis auf die Position der nächsten und stupst sie an, die
+          nächste startet im selben Moment. 9 Etappen (3 Runden) = ein nahtloser Loop;
+          jede Kugel umrundet einmal komplett. Innere Gegendrehung hält die Texte aufrecht. */}
       <g>
+        {/* AP — Etappen 1, 4, 7 */}
         <g>
           <circle cx="60" cy="10" r="9" fill="#fff" stroke={INK} strokeWidth="1" />
-          <text x="60" y="13.4" textAnchor="middle" fontSize="9" fontWeight="600" letterSpacing="0.5" fill={INK} fontFamily="system-ui, sans-serif">AP</text>
+          <g>
+            <text x="60" y="13.4" textAnchor="middle" fontSize="9" fontWeight="600" letterSpacing="0.5" fill={INK} fontFamily="system-ui, sans-serif">AP</text>
+            <animateTransform attributeName="transform" type="rotate"
+              values="0 60 10; 120 60 10; 120 60 10; 120 60 10; 240 60 10; 240 60 10; 240 60 10; 360 60 10; 360 60 10; 360 60 10"
+              keyTimes="0; 0.111; 0.222; 0.333; 0.444; 0.556; 0.667; 0.778; 0.889; 1" dur="9s" repeatCount="indefinite" />
+          </g>
           <animateTransform attributeName="transform" type="rotate"
-            values="0 60 60; -22 60 60; 0 60 60; 0 60 60" keyTimes="0; 0.1; 0.2; 1"
-            dur="5s" repeatCount="indefinite" />
+            values="0 60 60; -120 60 60; -120 60 60; -120 60 60; -240 60 60; -240 60 60; -240 60 60; -360 60 60; -360 60 60; -360 60 60"
+            keyTimes="0; 0.111; 0.222; 0.333; 0.444; 0.556; 0.667; 0.778; 0.889; 1" dur="9s" repeatCount="indefinite" />
         </g>
+        {/* CK — Etappen 2, 5, 8 */}
         <g>
           <circle cx="16.7" cy="85" r="9" fill="#fff" stroke={INK} strokeWidth="1" />
-          <text x="16.7" y="88.4" textAnchor="middle" fontSize="9" fontWeight="600" letterSpacing="0.5" fill={INK} fontFamily="system-ui, sans-serif">CK</text>
+          <g>
+            <text x="16.7" y="88.4" textAnchor="middle" fontSize="9" fontWeight="600" letterSpacing="0.5" fill={INK} fontFamily="system-ui, sans-serif">CK</text>
+            <animateTransform attributeName="transform" type="rotate"
+              values="0 16.7 85; 0 16.7 85; 120 16.7 85; 120 16.7 85; 120 16.7 85; 240 16.7 85; 240 16.7 85; 240 16.7 85; 360 16.7 85; 360 16.7 85"
+              keyTimes="0; 0.111; 0.222; 0.333; 0.444; 0.556; 0.667; 0.778; 0.889; 1" dur="9s" repeatCount="indefinite" />
+          </g>
           <animateTransform attributeName="transform" type="rotate"
-            values="0 60 60; 0 60 60; -22 60 60; 0 60 60; 0 60 60" keyTimes="0; 0.25; 0.3; 0.4; 1"
-            dur="5s" repeatCount="indefinite" />
+            values="0 60 60; 0 60 60; -120 60 60; -120 60 60; -120 60 60; -240 60 60; -240 60 60; -240 60 60; -360 60 60; -360 60 60"
+            keyTimes="0; 0.111; 0.222; 0.333; 0.444; 0.556; 0.667; 0.778; 0.889; 1" dur="9s" repeatCount="indefinite" />
         </g>
+        {/* AK — Etappen 3, 6, 9 */}
         <g>
           <circle cx="103.3" cy="85" r="9" fill="#fff" stroke={INK} strokeWidth="1" />
-          <text x="103.3" y="88.4" textAnchor="middle" fontSize="9" fontWeight="600" letterSpacing="0.5" fill={INK} fontFamily="system-ui, sans-serif">AK</text>
+          <g>
+            <text x="103.3" y="88.4" textAnchor="middle" fontSize="9" fontWeight="600" letterSpacing="0.5" fill={INK} fontFamily="system-ui, sans-serif">AK</text>
+            <animateTransform attributeName="transform" type="rotate"
+              values="0 103.3 85; 0 103.3 85; 0 103.3 85; 120 103.3 85; 120 103.3 85; 120 103.3 85; 240 103.3 85; 240 103.3 85; 240 103.3 85; 360 103.3 85"
+              keyTimes="0; 0.111; 0.222; 0.333; 0.444; 0.556; 0.667; 0.778; 0.889; 1" dur="9s" repeatCount="indefinite" />
+          </g>
           <animateTransform attributeName="transform" type="rotate"
-            values="0 60 60; 0 60 60; -22 60 60; 0 60 60; 0 60 60" keyTimes="0; 0.45; 0.5; 0.6; 1"
-            dur="5s" repeatCount="indefinite" />
+            values="0 60 60; 0 60 60; 0 60 60; -120 60 60; -120 60 60; -120 60 60; -240 60 60; -240 60 60; -240 60 60; -360 60 60"
+            keyTimes="0; 0.111; 0.222; 0.333; 0.444; 0.556; 0.667; 0.778; 0.889; 1" dur="9s" repeatCount="indefinite" />
         </g>
       </g>
 
