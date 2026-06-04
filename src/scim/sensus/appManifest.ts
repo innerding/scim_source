@@ -1,5 +1,5 @@
 // App-Manifest — die App-Spec für Marke & UX, an die sich jede Version hält.
-// Dritter Spec neben shell-run (Bau-Strecke) und Anthem-Reigen (Atem): der
+// Dritter Spec neben shell-run (Bau-Strecke) und Anthem-Pulse (Atem): der
 // Manifest-Spec. EINE Quelle; per ⓘ-Badge/Modal beheimatet in V01 (Mond-Scheibe,
 // Versions-Bibliothek). Wortlaut = Entwurf v1, jederzeit feilbar (eine Datei).
 // Konsens 2026-06-03. Hintergrund: project_ziel_app_ux.md.

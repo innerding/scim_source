@@ -2,7 +2,7 @@
 // Funktionen die Shell ausmachen, in welcher Reihenfolge und Art sie geschmiedet
 // werden, und wie die fertige Shell an Sensus Core P TRANSFERIERT wird.
 //
-// Pendant zum Anthem-Reigen (sensus/anthemCycle.ts): der Reigen ATMET (zyklisch,
+// Pendant zum Anthem-Pulse (sensus/anthemCycle.ts): der Pulse ATMET (zyklisch,
 // 5-Min-Last) — shell-run SCHMIEDET & TRANSFERIERT (linear, einmalig je Version).
 // Statt verstreuter Notizen (DEPLOY_ORDER, SCS_PACKAGES, Studio-Blöcke, Kommentare)
 // verweisen alle beteiligten Panels/Tabs über das ⓘ-Modal (ShellRunInfo) hierher.
@@ -40,7 +40,7 @@ export interface ShellStep {
 
 export const SHELL_RUN_INTRO =
   'shell-run ist die lineare Strecke, auf der eine Shell entsteht und transferiert wird — ' +
-  'das Gegenstück zum zyklischen Anthem-Reigen. Funktion um Funktion wird geschmiedet: erst ' +
+  'das Gegenstück zum zyklischen Anthem-Pulse. Funktion um Funktion wird geschmiedet: erst ' +
   'die Surfaces (was der User sieht) und Engines (die kopflos rechnen) — inklusive der User-' +
   'Schleife: POIs antippen, EINE adaptive Linie rechnen (Route-Solver), Comfort + Dauer ' +
   'einstellen, der BAK deeskaliert bei Andrang, Guidance führt. Leitsatz „Geh deinen Weg" — ' +

@@ -1,7 +1,7 @@
 // Leichter Navigations-Kontext: erlaubt beliebigen Panel-Views, zu einer Station
 // (Panel + Tab) zu springen und die eigene Position zu kennen („du bist hier").
 // Wird in App.tsx mit goTo() befüllt. Ermöglicht die Station-Shortcuts im
-// Anthem-Kreislauf-Modal, ohne Props durch jede View zu fädeln.
+// Anthem-Pulse-Modal, ohne Props durch jede View zu fädeln.
 import { createContext, useContext } from 'react';
 import type { TabId } from './panelRegistry';
 

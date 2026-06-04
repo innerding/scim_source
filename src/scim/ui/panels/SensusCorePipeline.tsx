@@ -1,4 +1,4 @@
-// Sensus-Core-Reigen (Erklärschritt, analog RuntimeFlowExplainer) — der Builder-
+// Sensus-Core-Pipeline (Erklärschritt, analog RuntimeFlowExplainer) — der Builder-
 // Plan: jede Rolle baut ihr Paket (Transmitter→Anthem · High/Deep-Shell→Shell ·
 // Origin-Capsuler→Origin), Sensus Core Publishing (P11) schnürt + spielt aus.
 // Shell/Origin/Anthem entstehen erst hier. Heimat P11. Reine Doku/Anzeige.
@@ -32,12 +32,12 @@ function Chip({ label, tone, sub }: { label: string; tone: Tone; sub?: string })
 
 const Arrow = () => <span style={{ color: '#cbd5e0', flexShrink: 0 }}>→</span>;
 
-export default function SensusCoreReigen({ origin }: { origin: OriginPackage | null }) {
+export default function SensusCorePipeline({ origin }: { origin: OriginPackage | null }) {
   const originCount = origin?.particles.length ?? 0;
 
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', marginBottom: 16 }}>
-      <div style={{ fontSize: 13, fontWeight: 700, color: '#1a365d' }}>Reigen — Bauer → Pakete → Publishing</div>
+      <div style={{ fontSize: 13, fontWeight: 700, color: '#1a365d' }}>Pipeline — Bauer → Pakete → Publishing</div>
       <div style={{ fontSize: 11, color: '#718096', margin: '2px 0 10px', lineHeight: 1.45 }}>
         Jede Rolle <strong>baut ihr Paket</strong>. <strong>Sensus Core Publishing</strong> (P11) schnürt
         <strong> Shell · Origin · Anthem</strong> und spielt aus — diese drei Begriffe entstehen erst hier.

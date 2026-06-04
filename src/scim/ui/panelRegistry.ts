@@ -304,7 +304,7 @@ export const PANEL_REGISTRY: PanelDescriptor[] = [
       { id: 'input', label: 'Publishing', icon: '▣' },
       { id: 't1', label: 'Shell-ID', icon: '⬡' },
     ],
-    // bauKonzept entfernt — die live gebaute Sicht (Reigen · Auftraggeber · Kapsel ·
+    // bauKonzept entfernt — die live gebaute Sicht (Pipeline · Auftraggeber · Kapsel ·
     // Partikel-Kacheln) sagt das jetzt selbst.
   },
   {

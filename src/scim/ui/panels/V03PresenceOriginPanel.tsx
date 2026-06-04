@@ -1,7 +1,7 @@
 // V03 · t1 · Presence-Origin — das Call-Log des Publishing-Monitors: wer (welche
 // Ziel-App in welcher Representation) ist gerade präsent — date · time · duration.
 // Read-only Beobachtung der ausgelieferten Maschine (pollt den Worker). Gegenstück
-// zum Producer-seitigen presence-Intake (P04 t1). Anthem-Kreislauf, Station „klopfen".
+// zum Producer-seitigen presence-Intake (P04 t1). Anthem-Pulse, Station „klopfen".
 import { useEffect, useState } from 'react';
 import { REPRESENTATIONS } from '../../workspace/workspace.registry';
 import { useRepresentationContext } from '../../../runtime/repContext';
@@ -57,7 +57,7 @@ export default function V03PresenceOriginPanel() {
         <strong>Publishing-Monitor · Beobachter</strong> der ausgelieferten Maschine. Dieser Tab beobachtet das
         <strong> presence-origin</strong>-Signal: klopft gerade eine Ziel-App in dieser Representation? Read-only
         Spiegel des Workers (alle {POLL_MS / 1000} s) — das Auslieferungs-seitige Gegenstück zum Intake in
-        <strong> P04 · Presence</strong> (Anthem-Kreislauf, Station „klopfen"). Nebenan <strong>t2 Active-Monitor</strong>:
+        <strong> P04 · Presence</strong> (Anthem-Pulse, Station „klopfen"). Nebenan <strong>t2 Active-Monitor</strong>:
         was ist installiert + live ausgespielt.
       </p>
 

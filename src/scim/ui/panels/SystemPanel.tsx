@@ -545,11 +545,79 @@ function LeistungsblattV03Tab({ result }: { result: ScimPipelineResult }) {
   );
 }
 
+// ─── Leistungsmessung (Konzept, bei Bedarf zu bauen) ─────────────────────────
+// Einleitung/Gedanken zur LIVE-Leistungsmessung (im Gegensatz zum statischen
+// Datenblatt oben). Muster: Hub + Messer. Konsens 2026-06-04.
+
+const MESSER = [
+  { label: 'Anthem-Pulse', heimat: 'P06 · Transmitter', metrik: 'Egress KB/h + Origin KB/h je Wanderer-Zahl', status: 'erster Messer' },
+  { label: 'Bundle / Codezeilen', heimat: 'P07 · Shell-Studio', metrik: 'ausgespielte Shell, mit/ohne Icon-Assets (Switcher)', status: 'geplant' },
+  { label: 'Origin-Datengröße', heimat: 'P09 · Origin-Capsuler', metrik: 'origin-mesh + poi-set Bytes (einmaliger Bundle-Anteil)', status: 'geplant' },
+  { label: 'Presence / Nutzung', heimat: 'V03 · Presence-Origin', metrik: 'real präsente Wanderer → speist die „100"-Annahme', status: 'geplant' },
+  { label: 'Inventar', heimat: 'div.', metrik: 'Segment-, POI-, Versions-Zahl', status: 'geplant' },
+];
+
+function LeistungsmessungKonzeptTab() {
+  return (
+    <div style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 720 }}>
+      <div style={{ background: 'linear-gradient(135deg,#975a16,#b7791f)', borderRadius: 8, padding: '16px 20px', marginBottom: 16, color: '#fff' }}>
+        <div style={{ fontSize: 17, fontWeight: 700 }}>Leistungsmessung — Konzept</div>
+        <div style={{ fontSize: 12, opacity: 0.85, marginTop: 4 }}>Live-Messung (nicht das statische Datenblatt) · bei Bedarf zu bauen</div>
+      </div>
+
+      <p style={{ fontSize: 12.5, color: '#4a5568', lineHeight: 1.6, margin: '0 0 14px' }}>
+        Muster <strong>Hub + Messer</strong>: Das <strong>Leistungsblatt</strong> (System ◈) ist der Hub, der alle
+        Zahlen sammelt. Jeder <strong>Leistungsmesser</strong> ist ein Tab in der Heimat seines Werts (z.B. Transmitter),
+        misst <em>dort</em>, wo die Daten leben, und schickt seine Zahl ans Blatt. Technisch wie unsere Info-Modale:
+        <strong> eine Quelle je Kennzahl</strong> (Registry mit reinen Rechen-Funktionen), zwei Sichten — Messer in der
+        Heimat, Aggregat im Blatt.
+      </p>
+
+      <div style={{ fontSize: 11.5, fontFamily: 'ui-monospace, Menlo, monospace', color: '#4a5568', background: '#fffaf0', border: '1px solid #fbd38d', borderRadius: 8, padding: '9px 11px', marginBottom: 16 }}>
+        Messer (in den Heimat-Panels) ⇊ ⇊ ⇊ → Leistungsblatt (Hub · System ◈)
+      </div>
+
+      <div style={{ fontSize: 12, fontWeight: 700, color: '#975a16', marginBottom: 8 }}>Kandidaten (Messer → Blatt)</div>
+      <div style={{ border: '1px solid #e2e8f0', borderRadius: 8, overflow: 'hidden', marginBottom: 18 }}>
+        {MESSER.map((m, i) => (
+          <div key={m.label} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 11px', borderTop: i === 0 ? 'none' : '1px solid #edf2f7' }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: '#2d3748', minWidth: 150 }}>{m.label}</span>
+            <span style={{ fontSize: 10.5, color: '#a0aec0', fontFamily: 'monospace', minWidth: 150 }}>{m.heimat}</span>
+            <span style={{ fontSize: 11, color: '#4a5568', flex: 1 }}>{m.metrik}</span>
+            <span style={{ fontSize: 9.5, color: m.status === 'erster Messer' ? '#975a16' : '#a0aec0', background: m.status === 'erster Messer' ? '#fffaf0' : '#f7fafc', border: '1px solid #e2e8f0', borderRadius: 999, padding: '1px 7px' }}>{m.status}</span>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ fontSize: 12, fontWeight: 700, color: '#975a16', marginBottom: 8 }}>Anthem-Pulse — Kostenmodell (erster Messer)</div>
+      <div style={{ background: '#f7fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '12px 14px', marginBottom: 16, fontSize: 11.5, color: '#4a5568', lineHeight: 1.6 }}>
+        Last-Array = N Segmente × ~1 Byte · 12 Snapshots/h · Wanderer. Die Geometrie reist <strong>nur einmal</strong> im Bundle, nicht pro Snapshot.
+        <div style={{ marginTop: 8 }}>
+          <strong>Egress</strong> (Bytes an die Geräte, skaliert mit Wanderern): bei ~800 Segmenten ≈ 9,6 KB/h pro Wanderer → <strong>~1 MB/h für 100</strong>.<br/>
+          <strong>Origin/Compute</strong> (1 Snapshot/5 min, CDN fächert auf): ≈ 9,6 KB/h — <strong>fast wanderer-unabhängig</strong>. Genau das ist die Pointe.
+        </div>
+      </div>
+
+      <div style={{ fontSize: 12, fontWeight: 700, color: '#975a16', marginBottom: 8 }}>Schalter / Parameter im Blatt</div>
+      <ul style={{ margin: '0 0 16px', paddingLeft: 18, fontSize: 11.5, color: '#4a5568', lineHeight: 1.55 }}>
+        <li><strong>Wanderer-Zahl</strong> (Default 100) — skaliert den Egress.</li>
+        <li><strong>mit/ohne Icon-Assets</strong> — für Bundle-Größe / Codezeilen.</li>
+        <li><strong>Bytes/Segment + Refresh-Intervall</strong> — die Stellschrauben des Datengröße-Hebels.</li>
+      </ul>
+
+      <div style={{ background: '#fffbeb', border: '1px solid #f6e05e', borderRadius: 6, padding: '10px 14px', fontSize: 11.5, color: '#744210', lineHeight: 1.55 }}>
+        So wird das Leistungsblatt zugleich das <strong>Schaufenster des Datengröße-Hebels</strong>: am mit/ohne-Assets- oder
+        Bytes/Segment-Schalter drehen → die KB/h fallen live. <strong>Bei Bedarf zu bauen</strong>; erster Messer = Anthem-Pulse im Transmitter (P06).
+      </div>
+    </div>
+  );
+}
+
 // ─── Wrapper mit Versions-Switcher ───────────────────────────────────────────
 
 function LeistungsblattTab({ result }: { result: ScimPipelineResult }) {
-  const [version, setVersion] = useState<'v03' | 'v02'>('v03');
-  const btn = (v: 'v03' | 'v02', label: string) => (
+  const [version, setVersion] = useState<'v03' | 'v02' | 'konzept'>('v03');
+  const btn = (v: 'v03' | 'v02' | 'konzept', label: string) => (
     <button
       onClick={() => setVersion(v)}
       style={{
@@ -570,11 +638,14 @@ function LeistungsblattTab({ result }: { result: ScimPipelineResult }) {
         display: 'flex', justifyContent: 'flex-end', alignItems: 'center',
         gap: 4, marginBottom: 10, maxWidth: 720,
       }}>
-        <span style={{ fontSize: 11, color: '#718096' }}>Version:</span>
+        <span style={{ fontSize: 11, color: '#718096' }}>Ansicht:</span>
         {btn('v03', 'v0.3 (aktuell)')}
         {btn('v02', 'v0.2 (archiviert)')}
+        {btn('konzept', 'Leistungsmessung (Konzept)')}
       </div>
-      {version === 'v03' ? <LeistungsblattV03Tab result={result} /> : <LeistungsblattV02Tab result={result} />}
+      {version === 'v03' ? <LeistungsblattV03Tab result={result} />
+        : version === 'v02' ? <LeistungsblattV02Tab result={result} />
+        : <LeistungsmessungKonzeptTab />}
     </div>
   );
 }

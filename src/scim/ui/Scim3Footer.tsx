@@ -2,7 +2,7 @@
 //  · „Operator online" (du bist eingeloggt, role gesetzt)
 //  · presence-origin (read-only Worker-Poll der Auftraggeber-Rep): ist gerade eine
 //    Ziel-App präsent? Eigentümer/Detail = V03 · Publishing-Monitor (t1).
-// Macht die sonst unsichtbare Presence global greifbar (Anthem-Kreislauf).
+// Macht die sonst unsichtbare Presence global greifbar (Anthem-Pulse).
 import { useContext, useEffect, useState } from 'react';
 import { RoleContext } from './RoleContext';
 import { useWorkspaceNav } from './workspaceNav';

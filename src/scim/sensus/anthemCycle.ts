@@ -1,4 +1,4 @@
-// Anthem-Kreislauf — die EINE Wahrheitsquelle (Beschreibung + Status) für den
+// Anthem-Pulse — die EINE Wahrheitsquelle (Beschreibung + Status) für den
 // „Atem" der Last-Ausspielung. Statt dass jeder Panel/Tab eine ähnliche Notiz trägt,
 // verweisen alle Stationen über das ⓘ-Modal (AnthemCycleInfo) hierher.
 //
@@ -19,7 +19,7 @@ export interface AnthemStation {
   panelId?: string;
   tabId?: string;
   status: StationStatus;
-  /** Erklärung der Rolle im Kreislauf (ganze Sätze). */
+  /** Erklärung der Rolle im Anthem-Pulse (ganze Sätze). */
   blurb: string;
   /** Optionaler Beobachter-Sprung (Monitor-Sicht, kein Transformations-Ort). */
   observeId?: string;
@@ -34,7 +34,7 @@ export const STATION_STATUS_META: Record<StationStatus, { icon: string; label: s
 };
 
 export const ANTHEM_INTRO =
-  'Der Anthem-Kreislauf ist der „Atem" der Last-Ausspielung: SCIM nimmt (sobald eine ' +
+  'Der Anthem-Pulse ist der „Atem" der Last-Ausspielung: SCIM nimmt (sobald eine ' +
   'App präsent ist) im 5-Min-Takt die Auslastung ab, deutet und packt sie zu einem ' +
   'koordinatenlosen Snapshot und sendet ihn auf Anfrage. Die App liest die angekündigte ' +
   'Nachfolge-Zeit, drosselt sich selbst und färbt/routet damit. Ein geschlossener Kreis: ' +

@@ -16,7 +16,7 @@ import ColourAdjust from './panels/ColourAdjust';
 import UserExclusionControl from './panels/UserExclusionControl';
 import TestRouteControl from './panels/TestRouteControl';
 import RuntimeFlowExplainer from './panels/RuntimeFlowExplainer';
-import SensusCoreReigen from './panels/SensusCoreReigen';
+import SensusCorePipeline from './panels/SensusCorePipeline';
 import { BoundaryView, WegnetzCompareView, IntroView, RingSvg } from './panels/SichelViews';
 import HighShellIconAssets from './panels/HighShellIconAssets';
 import ShellStudio from './panels/ShellStudio';
@@ -453,7 +453,7 @@ function CoderView() {
         <AnthemCycleBadge />
       </div>
       <p style={{ fontSize: 12, color: '#4a5568', lineHeight: 1.55, margin: '2px 0 12px' }}>
-        Station <strong>„packen"</strong> im Anthem-Kreislauf: packt die normalisierte Last <strong>[0..1] je
+        Station <strong>„packen"</strong> im Anthem-Pulse: packt die normalisierte Last <strong>[0..1] je
         Segment</strong> (ohne Koordinaten) in den Snapshot. Der Atemzyklus läuft hier <strong>real
         (client-seitig)</strong>: presence gated, Sim-Clock-getaktet (Time-Turbo in Telco).
       </p>
@@ -514,7 +514,7 @@ function CoderView() {
 
       <div style={{ fontSize: 11, color: '#a0aec0', lineHeight: 1.6, fontStyle: 'italic' }}>
         Wo „packen" im Atem zwischen <em>deuten</em> und <em>ausatmen</em> sitzt, und was noch offen ist →
-        siehe ⓘ Anthem-Kreislauf (oben).
+        siehe ⓘ Anthem-Pulse (oben).
       </div>
     </div>
   );
@@ -630,7 +630,7 @@ function AnthemGateView() {
         verarbeiten: der bezogene Snapshot ist evtl. schon mitten im Fenster erzeugt, darum hängt das Gate an
         <code> nextAt</code> statt am Empfangszeitpunkt → enge Stale-Zeit, jedes Fenster genau einmal.
         <div style={{ marginTop: 6, fontStyle: 'italic', color: '#a0aec0' }}>
-          Rolle im Atem („drosseln") und Status der ganzen Kette → ⓘ Anthem-Kreislauf (oben). Im Sim treibt der
+          Rolle im Atem („drosseln") und Status der ganzen Kette → ⓘ Anthem-Pulse (oben). Im Sim treibt der
           Time-Turbo (Telco) bzw. „⏩ +5 Sim-Min".
         </div>
       </div>
@@ -978,7 +978,7 @@ function SensusCorePackages() {
         Auftraggeber: <strong>„{auftraggeber.name}"{auftraggeber.version != null ? ` v${auftraggeber.version}` : ''}</strong>
         <span style={{ color: '#a0aec0' }}> — gewählt im Origin-Capsuler (P09) / Inspector.</span>
       </div>
-      <SensusCoreReigen origin={origin} />
+      <SensusCorePipeline origin={origin} />
       <p style={{ fontSize: 12.5, color: '#4a5568', lineHeight: 1.55, margin: '2px 0 14px' }}>
         Sensus Core ordert die atomaren particles von <strong>P07/P08/P09</strong> und stellt daraus
         <strong> Shell · Origin · Anthem</strong> zusammen. <strong>Origin erbt die Version der Representation.</strong>

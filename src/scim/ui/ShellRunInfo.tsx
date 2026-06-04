@@ -1,6 +1,6 @@
 // shell-run — das geteilte Info-Modal (eine Quelle) + ein kleiner ⓘ-Badge, der in
 // jedem Shell-bauenden Panel/Tab sitzt. Pendant zu AnthemCycleInfo. Inhalt kommt
-// aus sensus/shellRun.ts. Linear (Strecke) statt zyklisch (Reigen).
+// aus sensus/shellRun.ts. Linear (Strecke) statt zyklisch (Pulse).
 import { useEffect, useState } from 'react';
 import type { TabId } from './panelRegistry';
 import { useWorkspaceNav } from './workspaceNav';

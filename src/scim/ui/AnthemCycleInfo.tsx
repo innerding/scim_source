@@ -1,4 +1,4 @@
-// Anthem-Kreislauf — das geteilte Info-Modal (eine Quelle) + ein kleiner ⓘ-Knopf,
+// Anthem-Pulse — das geteilte Info-Modal (eine Quelle) + ein kleiner ⓘ-Knopf,
 // der in jedem beteiligten Panel/Tab sitzt. Statt dass jeder Tab eine ähnliche
 // Beschreibung trägt, verweist er hierher. Inhalt kommt aus sensus/anthemCycle.ts.
 //
@@ -16,7 +16,7 @@ export function AnthemCycleBadge({ compact = false }: { compact?: boolean }) {
     <>
       <button
         onClick={() => setOpen(true)}
-        title="Anthem-Kreislauf — Stationen, Funktion & Status"
+        title="Anthem-Pulse — Stationen, Funktion & Status"
         style={{
           display: 'inline-flex', alignItems: 'center', gap: 5, cursor: 'pointer',
           fontSize: compact ? 10.5 : 11, fontFamily: 'system-ui, sans-serif',
@@ -24,7 +24,7 @@ export function AnthemCycleBadge({ compact = false }: { compact?: boolean }) {
           border: '1px solid #bee3f8', background: '#ebf8ff', color: '#2b6cb0',
         }}
       >
-        <span aria-hidden>ⓘ</span> Anthem-Kreislauf
+        <span aria-hidden>ⓘ</span> Anthem-Pulse
       </button>
       {open && <AnthemCycleModal onClose={() => setOpen(false)} />}
     </>
@@ -65,14 +65,14 @@ function AnthemCycleModal({ onClose }: { onClose: () => void }) {
       >
         {/* Kopf */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-          <div style={{ fontSize: 16, fontWeight: 800, color: '#1a365d' }}>ⓘ Anthem-Kreislauf</div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: '#1a365d' }}>ⓘ Anthem-Pulse</div>
           <button onClick={onClose} style={{
             cursor: 'pointer', border: '1px solid #e2e8f0', background: '#f7fafc', borderRadius: 6,
             fontSize: 12, padding: '3px 9px', color: '#4a5568',
           }}>schließen ✕</button>
         </div>
 
-        {/* Was ist der Anthem-Kreislauf */}
+        {/* Was ist der Anthem-Pulse */}
         <p style={{ fontSize: 12.5, color: '#4a5568', lineHeight: 1.6, margin: '0 0 14px' }}>{ANTHEM_INTRO}</p>
 
         {/* Legende */}
