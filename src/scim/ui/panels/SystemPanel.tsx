@@ -2,6 +2,8 @@ import { useState } from 'react';
 import type { TabId } from '../panelRegistry';
 import { TrygonLoopEmblem } from '../TrygonLoopEmblem';
 import { LEISTUNGEN } from '../../sensus/leistungen';
+import { DESIGN_MANIFEST_INTRO, DESIGN_PRINCIPLES } from '../../sensus/designManifest';
+import { APP_SLOGAN, APP_MANIFEST_INTRO, MANIFEST_PRINCIPLES as APP_PRINCIPLES } from '../../sensus/appManifest';
 import type { ScimPipelineResult } from '../../pipeline/scimPipeline.types';
 
 interface Props {
@@ -153,6 +155,32 @@ const MANIFEST_PRINCIPLES = [
   },
 ];
 
+function ManifestSection({ title, intro, accent, principles }: {
+  title: string; intro?: string; accent: string;
+  principles: { id: string; label: string; content: string }[];
+}) {
+  return (
+    <div style={{ marginBottom: 22 }}>
+      {title && (
+        <div style={{ fontSize: 12, fontWeight: 700, color: accent, marginBottom: intro ? 3 : 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          {title}
+        </div>
+      )}
+      {intro && <div style={{ fontSize: 11, color: '#718096', lineHeight: 1.55, marginBottom: 10 }}>{intro}</div>}
+      {principles.map((p) => (
+        <div key={p.id} style={{
+          background: '#f7fafc', border: '1px solid #e2e8f0',
+          borderLeft: `3px solid ${accent}`,
+          borderRadius: 6, padding: '10px 14px', marginBottom: 8,
+        }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: '#2d3748', marginBottom: 4 }}>{p.label}</div>
+          <div style={{ fontSize: 11, color: '#718096', lineHeight: 1.6 }}>{p.content}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function ManifestTab({ result }: { result: ScimPipelineResult }) {
   const manifest = {
     engine_version: '0.2.0',
@@ -161,27 +189,37 @@ function ManifestTab({ result }: { result: ScimPipelineResult }) {
     pipeline_steps: result.steps.length,
     pipeline_success: result.success,
     known_gaps: KNOWN_GAPS.map((g) => g.id),
-    principles: MANIFEST_PRINCIPLES.map((p) => p.id),
+    design_principles: DESIGN_PRINCIPLES.map((p) => p.id),
+    app_principles: APP_PRINCIPLES.map((p) => p.n),
+    engine_principles: MANIFEST_PRINCIPLES.map((p) => p.id),
     timestamp: new Date().toISOString(),
   };
 
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif' }}>
-      <div style={{ fontSize: 12, fontWeight: 600, color: '#4a5568', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-        Leitprinzipien
+      <div style={{ fontSize: 11, color: '#a0aec0', marginBottom: 16, fontStyle: 'italic' }}>
+        Sammelplatz aller Manifeste (derweil). Drei Schichten: Architektur (System), Marke/UX (App), Engine.
       </div>
-      {MANIFEST_PRINCIPLES.map((p) => (
-        <div key={p.id} style={{
-          background: '#f7fafc', border: '1px solid #e2e8f0',
-          borderLeft: '3px solid #4a5568',
-          borderRadius: 6, padding: '10px 14px', marginBottom: 8,
-        }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: '#2d3748', marginBottom: 4 }}>
-            {p.label}
-          </div>
-          <div style={{ fontSize: 11, color: '#718096', lineHeight: 1.6 }}>{p.content}</div>
+
+      {/* Design-Manifest — Architektur, mit dem Wahrheitskreislauf-Emblem */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 12 }}>
+        <TrygonLoopEmblem size={66} withLegend={false} animated />
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 800, color: '#553c9a' }}>Design-Manifest · Architektur</div>
+          <div style={{ fontSize: 11, color: '#718096', lineHeight: 1.5, marginTop: 2 }}>{DESIGN_MANIFEST_INTRO}</div>
         </div>
-      ))}
+      </div>
+      <ManifestSection title="" accent="#553c9a" principles={DESIGN_PRINCIPLES} />
+
+      {/* App-Manifest — Marke & UX */}
+      <div style={{ fontSize: 13, fontWeight: 800, color: '#b7791f', marginBottom: 3 }}>App-Manifest · Marke &amp; UX</div>
+      <div style={{ fontSize: 11, color: '#718096', lineHeight: 1.55, marginBottom: 6 }}>{APP_MANIFEST_INTRO}</div>
+      <div style={{ fontSize: 12, fontStyle: 'italic', color: '#b7791f', marginBottom: 10 }}>Slogan: „{APP_SLOGAN}"</div>
+      <ManifestSection title="" accent="#b7791f" principles={APP_PRINCIPLES.map((p) => ({ id: String(p.n), label: p.title, content: p.line }))} />
+
+      {/* Engine-Leitprinzipien */}
+      <ManifestSection title="Engine-Leitprinzipien" accent="#4a5568" principles={MANIFEST_PRINCIPLES} />
+
       <div style={{ fontSize: 12, fontWeight: 600, color: '#4a5568', margin: '16px 0 8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
         Manifest JSON
       </div>
