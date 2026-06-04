@@ -126,9 +126,13 @@ function layersForAsset(asset: InspectorAsset | null): LayerAvailability {
 // Resample-Vorschau (P08): Segmente abwechselnd blau/gelb (zeigt die Teilung).
 // Ohne Stützpunkt-Dots — die störten die Ansicht (User-Feedback).
 // Strecken-Gradient: statt harter Farbe je Segment über die Stützpunkte INTERPOLIEREN.
-// Vertex-Last = Mittel der zwei angrenzenden Segment-Lasten → an den Stoßstellen
+// Vertex-Last = Mittel der zwei angrenzenden Segment-Lasten → an den INNEREN Stoßstellen
 // gleicht sich die Farbe an (keine Stufe). Jedes Segment in M Stücke geteilt und je
 // Stück die Farbe gelerpt. Reine Darstellung — das Last-Modell bleibt unberührt.
+//
+// INVARIANTE: NUR innerhalb einer Strecke (Kreuzung→Kreuzung). Die Strecken-ENDEN
+// (= Kreuzungen) nehmen die eigene End-Segment-Last (vLoad(0)/vLoad(n)) — NIE über
+// den Kreuzungs-Stoß hinweg gemischt. An Kreuzungen treffen die Strecken hart aufeinander.
 function drawStretchGradient(
   sub: L.LayerGroup,
   points: [number, number][],
@@ -141,6 +145,7 @@ function drawStretchGradient(
   const n = segLoads.length;
   if (n === 0) return;
   const vLoad = (i: number): number =>
+    // Enden (Kreuzungen) hart: eigene End-Last, kein Misch über den Stoß. Nur innen mitteln.
     i <= 0 ? segLoads[0] : i >= n ? segLoads[n - 1] : (segLoads[i - 1] + segLoads[i]) / 2;
   for (let i = 1; i <= n; i++) {
     const a = points[i - 1], b = points[i];
