@@ -30,6 +30,8 @@ export interface ShellFunction {
   device: 'base' | 'layer' | 'planned' | 'none';
   /** true = eintritts-nahes Merkmal — der Globe-Switcher liest das, um zu wissen, was am Eintritt hängt. */
   entry?: boolean;
+  /** Eintritts-Pfad, falls NICHT beide: 'qr' = nur per QR-Code · 'url' = nur über die nackte Adresse (Launcher). Weglassen = beide. */
+  entryPath?: 'qr' | 'url';
   /** High · Design-Notizen zur Oberfläche: so kann es sein · bewährt · Fallback · Ausbau. */
   highNotes: string[];
   /** Deep · Notizen zum Produktions-Code: was er tun muss · schneller weil · Budget · erneuert weil. */
@@ -338,7 +340,7 @@ export function evaluateGate(state, nowMin) {
   // globe-switcher · collector · transfer wohnen NICHT im Studio (kein Ziel-App-Code),
   // sondern als eigene Tabs in P11 (Publishing-/Edge-Layer). Siehe ⓘ shell-run.
   {
-    id: 'launcher', device: 'none', entry: true,
+    id: 'launcher', device: 'none', entry: true, entryPath: 'url',
     title: 'Launcher · globale Auswahl',
     subtitle: 'Kacheln Nation→Region→Rep',
     surface: 'placeholder',

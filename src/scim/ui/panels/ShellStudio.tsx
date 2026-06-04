@@ -305,6 +305,7 @@ export default function ShellStudio() {
 
       <div style={{ flex: '0 0 auto', fontSize: 9.5, color: '#a0aec0', margin: '0 0 6px' }}>
         Block-Rahmen: <b style={{ color: '#e53e3e' }}>rot</b> kein Sim-Inhalt · <b style={{ color: '#3182ce' }}>blau</b> Sim-Inhalt · <b style={{ color: '#38a169' }}>grün</b> Produktions-Code · <b style={{ color: '#805ad5' }}>lila Ring</b> aktiver Block
+        <br />Eintritt: <b>ohne Marke</b> = beide (QR + nackt) · <b style={{ color: '#2c7a7b' }}>⤧ nur nackt (URL)</b> = nur über diesenpark.com / Launcher · <b style={{ color: '#2b6cb0' }}>⤧ nur QR</b> = nur per QR-Code
       </div>
       <div style={{ flex: '1 1 auto', minHeight: 0, display: 'flex', gap: 14 }}>
         {/* LINKS: zwei fixe Devices (Vorschau live · Shell-Neu) — geteilt, nicht pro Block */}
@@ -351,6 +352,16 @@ export default function ShellStudio() {
                 <span style={{ fontSize: 13, color: '#718096', width: 14 }}>{isOpen ? '▾' : '▸'}</span>
                 <span style={{ fontSize: 13, fontWeight: 700, color: '#1a365d' }}>{fn.title}</span>
                 {fn.subtitle && <span style={{ fontSize: 10.5, color: '#a0aec0', fontFamily: 'monospace' }}>{fn.subtitle}</span>}
+                {fn.entryPath && (
+                  <span style={{
+                    fontSize: 9, fontWeight: 800, padding: '1px 7px', borderRadius: 999,
+                    background: fn.entryPath === 'url' ? '#e6fffa' : '#ebf8ff',
+                    color: fn.entryPath === 'url' ? '#2c7a7b' : '#2b6cb0',
+                    border: `1px solid ${fn.entryPath === 'url' ? '#b2f5ea' : '#bee3f8'}`,
+                  }}>
+                    {fn.entryPath === 'url' ? '⤧ nur nackt (URL)' : '⤧ nur QR'}
+                  </span>
+                )}
                 <button
                   onClick={(e) => { e.stopPropagation(); goStation('P07', 't4'); }}
                   title="Shell · Icon-Assets"
