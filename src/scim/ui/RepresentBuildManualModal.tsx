@@ -196,7 +196,7 @@ export default function RepresentBuildManualModal({ onClose }: Props) {
         }}>
           <div style={{ fontWeight: 700, marginBottom: 14 }}>USAGE MANUAL &amp; SCIM-STATE</div>
           <div style={{ marginBottom: 16 }}>
-            <TrygonLoopEmblem size={104} withLegend={false} />
+            <TrygonLoopEmblem size={104} withLegend={false} animated />
           </div>
           <pre style={{ margin: 0, fontFamily: 'inherit', fontSize: 'inherit', whiteSpace: 'pre-wrap' }}>
             {MANUAL_BODY}

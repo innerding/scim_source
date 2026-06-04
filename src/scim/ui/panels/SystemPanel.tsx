@@ -640,7 +640,7 @@ function LeistungsblattTab({ result }: { result: ScimPipelineResult }) {
     <div>
       {/* Header-Emblem: Trygon-Loop (TL) — Kernfunktion */}
       <div style={{ marginBottom: 14, maxWidth: 720, paddingBottom: 12, borderBottom: '1px solid #edf2f7' }}>
-        <TrygonLoopEmblem size={88} />
+        <TrygonLoopEmblem size={88} animated />
       </div>
       <div style={{
         display: 'flex', justifyContent: 'flex-end', alignItems: 'center',
