@@ -6,13 +6,14 @@
 import { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import { geometryById } from '../../workspace/workspace.registry';
+import { colorize } from '../../sensus/loadColour';
 import type { Representation } from '../../workspace/workspace.types';
 import type { OriginPackage } from '../../sensus/originPackage';
 
 const W = 184, H = 372, BORDER = 9;
 
-export default function ShellNewMonitor({ rep, originOn, originPkg }: {
-  rep: Representation; originOn: boolean; originPkg: OriginPackage | null;
+export default function ShellNewMonitor({ rep, originOn, originPkg, loads }: {
+  rep: Representation; originOn: boolean; originPkg: OriginPackage | null; loads: number[] | null;
 }) {
   const elRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -44,16 +45,25 @@ export default function ShellNewMonitor({ rep, originOn, originPkg }: {
     if (ring.length < 3) return;
     const latlng = ring.map(([lon, lat]) => [lat, lon]) as [number, number][];
     const poly = L.polygon(latlng, { color: '#4a6a8a', weight: 1.5, fill: false }).addTo(layer);
+    // origin-mesh: neutral, oder — sobald Anthem-Last da ist — colorize je Segment
+    // (das ist „colorize ins Monitor 2 hineingebaut"). Flach je Segment; der Gradient
+    // ist render-features (dokumentiert, nicht live).
     const net = originPkg?.originNet;
     if (net) {
+      let idx = 0;
       for (const s of net.stretches) {
-        if (s.points.length >= 2) {
-          L.polyline(s.points as L.LatLngExpression[], { color: '#718096', weight: 2, opacity: 0.7, lineCap: 'round' }).addTo(layer);
+        for (let i = 1; i < s.points.length; i++) {
+          const load = loads ? (loads[idx] ?? 0) : null;
+          idx++;
+          const color = load != null ? colorize(load) : '#718096';
+          L.polyline([s.points[i - 1], s.points[i]] as L.LatLngExpression[], {
+            color, weight: load != null ? 3 : 2, opacity: load != null ? 0.95 : 0.7, lineCap: 'round',
+          }).addTo(layer);
         }
       }
     }
     map.fitBounds(poly.getBounds(), { padding: [14, 14] });
-  }, [originOn, originPkg, rep]);
+  }, [originOn, originPkg, rep, loads]);
 
   return (
     <div style={{ flexShrink: 0 }}>

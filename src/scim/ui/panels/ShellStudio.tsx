@@ -12,7 +12,7 @@ import { useWorkspaceNav } from '../workspaceNav';
 import { ShellRunBadge } from '../ShellRunInfo';
 import { useAuftraggeberRep } from '../../../runtime/useAuftraggeberRep';
 import { buildOriginPackage } from '../../sensus/originPackage';
-import { simSegmentLoads } from '../../sensus/anthemSim';
+import { produceAnthem, dayPhase } from '../../sensus/anthemProducer';
 import { fmtBytes } from '../../sensus/formatBytes';
 import ShellNewMonitor from './ShellNewMonitor';
 
@@ -227,8 +227,14 @@ export default function ShellStudio() {
   const rep = useAuftraggeberRep();
   const [originOn, setOriginOn] = useState(false);
   const [anthemOn, setAnthemOn] = useState(false);
+  const [turboHour, setTurboHour] = useState(13); // anthem-sim Zeit (Time/Turbo) — bei echtem Last-Paket weg
+  const simMin = turboHour * 60;
   const originPkg = useMemo(() => (originOn || anthemOn) ? buildOriginPackage(rep) : null, [originOn, anthemOn, rep]);
-  const loads = useMemo(() => (anthemOn && originPkg?.originNet) ? simSegmentLoads(originPkg.originNet) : null, [anthemOn, originPkg]);
+  const loads = useMemo(
+    () => (anthemOn && originPkg?.originNet) ? produceAnthem(originPkg.originNet, rep.id, simMin).loads : null,
+    [anthemOn, originPkg, rep, simMin],
+  );
+  const phaseLabel = dayPhase(simMin) > 0.85 ? 'Spitze' : dayPhase(simMin) > 0.5 ? 'Mittag' : dayPhase(simMin) > 0.2 ? 'Rand' : 'ruhig';
 
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -255,6 +261,13 @@ export default function ShellStudio() {
           <span style={{ fontSize: 10, fontWeight: 800, color: '#718096', letterSpacing: 0.5 }}>TEST-STAND</span>
           <HarnessSwitch on={originOn} label="Origin" tone="#3182ce" onClick={() => setOriginOn((v) => !v)} />
           <HarnessSwitch on={anthemOn} label="Anthem" tone="#38a169" onClick={() => setAnthemOn((v) => !v)} />
+          {anthemOn && (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }} title="Time/Turbo — anthem-sim-Zeit (6–20 h). Bei echtem Last-Paket automatisch weg.">
+              <span style={{ fontSize: 9, fontWeight: 800, color: '#38a169', letterSpacing: 0.5 }}>TURBO</span>
+              <input type="range" min={6} max={20} step={0.5} value={turboHour} onChange={(e) => setTurboHour(+e.target.value)} style={{ width: 88 }} />
+              <span style={{ fontSize: 10, color: '#276749', fontFamily: 'monospace', minWidth: 72 }}>{String(Math.floor(turboHour)).padStart(2, '0')}:{turboHour % 1 ? '30' : '00'} · {phaseLabel}</span>
+            </span>
+          )}
           <span style={{ fontSize: 10.5, color: '#a0aec0', fontFamily: 'monospace' }}>Rep: {rep.name}</span>
           <span style={{ fontSize: 10.5, color: '#4a5568', flex: 1, minWidth: 180 }}>
             {!originOn && !anthemOn && 'aus — Funktionen ohne echte Daten. Einschalten, um mit der aktiven Rep zu arbeiten.'}
@@ -264,7 +277,7 @@ export default function ShellStudio() {
           </span>
         </div>
         </div>
-        <ShellNewMonitor rep={rep} originOn={originOn} originPkg={originPkg} />
+        <ShellNewMonitor rep={rep} originOn={originOn} originPkg={originPkg} loads={loads} />
       </div>
 
       <div style={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto' }}>
