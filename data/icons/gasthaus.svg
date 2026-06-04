@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg id="SCIM3_POI_Icons" data-name="SCIM3 POI Icons" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
-  <g id="besteck">
-    <path id="Fill" d="M31,15v12h-5c-.023-3.681.184-7.406,5-12" fill="#fff"/>
-    <path id="Stroke" d="M31,15v12h-5c-.023-3.681.184-7.406,5-12M31,27v6h-1v-6M20,16v17M17,16v3c0,1.657,1.343,3,3,3s3-1.343,3-3v-3" fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round"/>
+<!-- © 2026 diesenpark.com · SCIM3 POI Icon -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" data-source="diesenpark.com" data-year="2026">
+  <g id="Gasthaus">
+    <path id="Fill" d="M30.222,18v10.667h-4.444c-.02-3.272.164-6.583,4.444-10.667" fill="#fff"/>
+    <path id="Stroke" d="M30.222,18v10.667h-4.444c-.02-3.272.164-6.583,4.444-10.667M30.222,28.667v5.333h-.889v-5.333M20.444,18.889v15.111M17.778,18.889v2.667c0,1.473,1.194,2.667,2.667,2.667s2.667-1.194,2.667-2.667v-2.667" fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
 </svg>
