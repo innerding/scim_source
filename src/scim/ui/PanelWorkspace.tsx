@@ -17,6 +17,7 @@ import UserExclusionControl from './panels/UserExclusionControl';
 import TestRouteControl from './panels/TestRouteControl';
 import RuntimeFlowExplainer from './panels/RuntimeFlowExplainer';
 import SensusCorePipeline from './panels/SensusCorePipeline';
+import GlobeSwitcherView from './panels/GlobeSwitcherView';
 import { BoundaryView, WegnetzCompareView, IntroView, RingSvg } from './panels/SichelViews';
 import HighShellIconAssets from './panels/HighShellIconAssets';
 import ShellStudio from './panels/ShellStudio';
@@ -74,7 +75,7 @@ interface Props {
   onCatalogConsumed?: () => void;
 }
 
-const TAB_ORDER: TabId[] = ['catalog', 't1', 't2', 't3', 't4', 't5', 't6', 'signal_intake', 'analysis', 'adjust', 'input', 'icon', 'simulation', 'result', 'validation', 'leistungsblatt', 'raw'];
+const TAB_ORDER: TabId[] = ['catalog', 't1', 't2', 't3', 't4', 't5', 't6', 'signal_intake', 'analysis', 'adjust', 'globe_switcher', 'input', 'icon', 'simulation', 'result', 'validation', 'leistungsblatt', 'raw'];
 
 function TabBar({
   tabs, active, onSelect,
@@ -1134,6 +1135,8 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
       return <P09Artifact d={d} rep={inspectedRep} origin={p09Origin} />;
     }
   }
+  // P11 Globe-Switcher: die Eintritts-Weiche (QR ↔ URL) vor dem Publishing.
+  if (panel.id === 'P11' && activeTab === 'globe_switcher') return <GlobeSwitcherView />;
   // P11 Sensus Core Service: die drei Horizont-Pakete (Eingabe-Tab).
   if (panel.id === 'P11' && activeTab === 'input') return <SensusCorePackages />;
   // P11 t1: Shell-ID-Stamping (reg-/rep-Icon an die generische Shell binden).
