@@ -243,7 +243,9 @@ export default function ShellStudio() {
   };
   useEffect(() => { recompute(); }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
   const colorizeIdx = SHELL_FUNCTIONS.findIndex((f) => f.id === 'colorize');
-  const colorizeOn = activeIdx >= colorizeIdx;
+  // Schicht-Toggle übersteuert den Scroll-Default (undefined = folgt Scroll).
+  const [colorizeOverride, setColorizeOverride] = useState<boolean | undefined>(undefined);
+  const colorizeOn = colorizeOverride ?? (activeIdx >= colorizeIdx);
   const activeLabel = SHELL_FUNCTIONS[activeIdx]?.title;
 
   return (
@@ -291,7 +293,27 @@ export default function ShellStudio() {
         {/* LINKS: zwei fixe Devices (Vorschau live · Shell-Neu) — geteilt, nicht pro Block */}
         <div style={{ flex: '0 0 auto', display: 'flex', gap: 12, alignSelf: 'flex-start' }}>
           <DeviceFrame><AppIframe /></DeviceFrame>
-          <ShellNewMonitor rep={rep} originOn={originOn} originPkg={originPkg} loads={loads} colorizeOn={colorizeOn} activeLabel={activeLabel} height={FRAME_H} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <ShellNewMonitor rep={rep} originOn={originOn} originPkg={originPkg} loads={loads} colorizeOn={colorizeOn} activeLabel={activeLabel} height={FRAME_H} />
+            {/* Schicht-Toggles — direkt unter dem Shell-Neu-Device */}
+            <div style={{ width: 300, border: '1px solid #e2e8f0', borderRadius: 8, padding: '8px 10px', background: '#f7fafc' }}>
+              <div style={{ fontSize: 9.5, fontWeight: 800, color: '#276749', letterSpacing: 0.4, marginBottom: 6 }}>SCHICHTEN · Shell-Neu</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                <HarnessSwitch on={colorizeOn} label="colorize · Last-Farbe" tone="#dd6b20" onClick={() => setColorizeOverride(!colorizeOn)} />
+                <span style={{ fontSize: 9.5, color: '#a0aec0' }}>{colorizeOverride == null ? '(folgt Scroll)' : 'manuell'}</span>
+                {colorizeOverride != null && (
+                  <button onClick={() => setColorizeOverride(undefined)} title="zurück auf Scroll-Automatik" style={{ fontSize: 9, padding: '1px 6px', borderRadius: 5, cursor: 'pointer', border: '1px solid #cbd5e0', background: '#fff', color: '#718096' }}>auto</button>
+                )}
+              </div>
+              <div style={{ fontSize: 10, color: '#a0aec0', lineHeight: 1.5 }}>
+                <span style={{ color: '#718096', fontWeight: 700 }}>folgt:</span> intro · slogan · container · poi-select · route-solver · via · bak · guidance
+              </div>
+              <div style={{ fontSize: 10, color: '#cbd5e0', lineHeight: 1.5, marginTop: 3 }}>
+                <span style={{ fontWeight: 700 }}>kein Device-Beitrag:</span> drossler · globe-switcher · collector · launcher · lade-treiber · transfer
+              </div>
+              <div style={{ fontSize: 9.5, color: '#a0aec0', marginTop: 6, fontStyle: 'italic' }}>Origin-Basis (Boundary + Mesh) hängt am Origin-Schalter oben.</div>
+            </div>
+          </div>
         </div>
         {/* RECHTS: scrollbare Blöcke (ohne eigene Devices) */}
         <div ref={scrollRef} onScroll={recompute} style={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto' }}>
