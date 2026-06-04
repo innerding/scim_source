@@ -78,6 +78,12 @@ export default function GlobeSwitcherView() {
         in die Publishing-Config schreiben, damit die Edge-Dispatch-Logik (Worker/CDN) ihn liest. Danach stempelt Sensus Core P
         die globalen Icons. <strong>Nach</strong> der Weiche folgt erst das Publishing.
       </div>
+
+      <div style={{ marginTop: 10, fontSize: 11, color: '#744210', background: '#fffbeb', border: '1px solid #f6e05e', borderRadius: 6, padding: '9px 12px', lineHeight: 1.55 }}>
+        <strong>Ausbau (geplant): Allowlist.</strong> Statt nur an/aus — „nur bestimmte Adressen sehen es". Das sichert uns
+        zugleich den <strong>eigenen Vorab-Zugang</strong> (Shell-Studio, ungestempelte Inhalte), solange noch nichts öffentlich
+        dastehen muss.
+      </div>
     </div>
   );
 }
