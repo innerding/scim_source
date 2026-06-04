@@ -141,6 +141,7 @@ function drawStretchGradient(
   weight: number,
   opacity: number,
   M: number,
+  renderer?: L.Renderer,
 ): void {
   const n = segLoads.length;
   if (n === 0) return;
@@ -156,7 +157,7 @@ function drawStretchGradient(
       const p0: [number, number] = [a[0] + (b[0] - a[0]) * f0, a[1] + (b[1] - a[1]) * f0];
       const p1: [number, number] = [a[0] + (b[0] - a[0]) * f1, a[1] + (b[1] - a[1]) * f1];
       const lmid = la + (lb - la) * ((f0 + f1) / 2);
-      L.polyline([p0, p1], { color: colorFn(lmid), weight, opacity, lineCap: 'round' }).addTo(sub);
+      L.polyline([p0, p1], { color: colorFn(lmid), weight, opacity, lineCap: 'round', renderer }).addTo(sub);
     }
   }
 }
@@ -207,6 +208,7 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
   const mapRef = useRef<L.Map | null>(null);
   const layerGroupRef = useRef<L.LayerGroup | null>(null);
   const clusterLayerRef = useRef<L.LayerGroup | null>(null);
+  const meshRendererRef = useRef<L.Canvas | null>(null); // eigener Canvas fürs Mesh (Atmen scoped)
   const baseTileRef = useRef<L.TileLayer | null>(null);
   const [vis, setVis] = useState<LayerVisibility>(DEFAULT_VISIBILITY);
 
@@ -388,6 +390,12 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
       wheelDebounceTime: 0,
       preferCanvas: true,
     });
+    // Eigene Canvas-Ebene fürs Colour-Mesh — damit „Atmen" NUR das Mesh betrifft
+    // (nicht Route/POIs) und unter den Routen liegt. preferCanvas → eigener Renderer.
+    map.createPane('dpMesh');
+    const meshPane = map.getPane('dpMesh');
+    if (meshPane) meshPane.style.zIndex = '360';
+    meshRendererRef.current = L.canvas({ pane: 'dpMesh', padding: 0.5 });
     // Initiale Base-Tile: nur wenn mapBase an; darkBase entscheidet den Stil.
     if (DEFAULT_VISIBILITY.mapBase) {
       const initialUrl = DEFAULT_VISIBILITY.darkBase ? TILE_MESH_URL : TILE_OSM_URL;
@@ -598,13 +606,14 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
         }).map((c) => [c.id, c.state]),
       );
       const effBias = Math.max(-1, Math.min(1, colourCfg.bias + colourCfg.safety));
+      const meshRenderer = meshRendererRef.current ?? undefined; // eigene Canvas-Ebene (Atmen scoped)
       // Pass 1: Shadow-Halo je Strecke — per DP-Schalter weglassbar (spart 1 Polyline/Strecke).
       if (!mesh.dpZoom) {
         for (const s of simNet.stretches) {
           if (s.points.length >= 2) {
             L.polyline(s.points, {
               color: '#ffffff', weight: 8, opacity: 1,
-              lineCap: 'round', lineJoin: 'round',
+              lineCap: 'round', lineJoin: 'round', renderer: meshRenderer,
             }).addTo(sub);
           }
         }
@@ -627,10 +636,10 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
             : colorize(load, { palette: colourCfg.palette, spectrum: colourCfg.spectrum, bias: effBias });
 
         if (mesh.gradients && !gray && segCount > 0) {
-          drawStretchGradient(sub, s.points as [number, number][], segLoads, colorFn, weight, opacity, gradM);
+          drawStretchGradient(sub, s.points as [number, number][], segLoads, colorFn, weight, opacity, gradM, meshRenderer);
         } else {
           for (let i = 1; i < s.points.length; i++) {
-            L.polyline([s.points[i - 1], s.points[i]], { color: colorFn(segLoads[i - 1] ?? 0), weight, opacity, lineCap: 'round' }).addTo(sub);
+            L.polyline([s.points[i - 1], s.points[i]], { color: colorFn(segLoads[i - 1] ?? 0), weight, opacity, lineCap: 'round', renderer: meshRenderer }).addTo(sub);
           }
         }
       }
@@ -844,7 +853,7 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
       <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
         <div ref={containerRef} style={{ position: 'absolute', inset: 0 }} />
         <MeshToggles />
-        <style>{`@keyframes dpAtmen{0%,100%{opacity:1}50%{opacity:.82}} .dp-atmen .leaflet-overlay-pane{animation:dpAtmen 5s ease-in-out infinite}`}</style>
+        <style>{`@keyframes dpBreathe{0%,100%{opacity:1}50%{opacity:.72}} .dp-atmen .leaflet-dpMesh-pane{animation:dpBreathe 5s ease-in-out infinite;filter:blur(.5px)}`}</style>
       </div>
     </div>
   );
