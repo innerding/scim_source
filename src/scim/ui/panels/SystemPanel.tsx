@@ -3,6 +3,7 @@ import type { TabId } from '../panelRegistry';
 import { TrygonLoopEmblem } from '../TrygonLoopEmblem';
 import { LEISTUNGEN } from '../../sensus/leistungen';
 import { DESIGN_MANIFEST_INTRO, DESIGN_PRINCIPLES } from '../../sensus/designManifest';
+import { SHELL_KATALOG_MANIFEST_INTRO, SHELL_KATALOG_PRINCIPLES } from '../../sensus/shellKatalogManifest';
 import { APP_SLOGAN, APP_MANIFEST_INTRO, MANIFEST_PRINCIPLES as APP_PRINCIPLES } from '../../sensus/appManifest';
 import type { ScimPipelineResult } from '../../pipeline/scimPipeline.types';
 
@@ -190,6 +191,7 @@ function ManifestTab({ result }: { result: ScimPipelineResult }) {
     pipeline_success: result.success,
     known_gaps: KNOWN_GAPS.map((g) => g.id),
     design_principles: DESIGN_PRINCIPLES.map((p) => p.id),
+    shell_katalog_principles: SHELL_KATALOG_PRINCIPLES.map((p) => p.id),
     app_principles: APP_PRINCIPLES.map((p) => p.n),
     engine_principles: MANIFEST_PRINCIPLES.map((p) => p.id),
     timestamp: new Date().toISOString(),
@@ -210,6 +212,11 @@ function ManifestTab({ result }: { result: ScimPipelineResult }) {
         </div>
       </div>
       <ManifestSection title="" accent="#553c9a" principles={DESIGN_PRINCIPLES} />
+
+      {/* System-Manifest — Shell & Katalog (zwei Takte) */}
+      <div style={{ fontSize: 13, fontWeight: 800, color: '#2c7a7b', marginBottom: 3 }}>System-Manifest · Shell &amp; Katalog</div>
+      <div style={{ fontSize: 11, color: '#718096', lineHeight: 1.55, marginBottom: 10 }}>{SHELL_KATALOG_MANIFEST_INTRO}</div>
+      <ManifestSection title="" accent="#2c7a7b" principles={SHELL_KATALOG_PRINCIPLES} />
 
       {/* App-Manifest — Marke & UX */}
       <div style={{ fontSize: 13, fontWeight: 800, color: '#b7791f', marginBottom: 3 }}>App-Manifest · Marke &amp; UX</div>

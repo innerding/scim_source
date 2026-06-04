@@ -3,6 +3,10 @@
 **Status:** Design-Konsens 2026-06-02. Routing-Modell **B** (Segment-Graph in der
 App) entschieden. Diese Spec ist maßgeblich für den Umbau.
 
+**Siehe auch:** `docs/shell_katalog_zwei_takte.md` — wie Render-Mechanik (Shell,
+langsam/versioniert) und Katalog (live) auf zwei Schienen getrennt gebaut werden,
+inkl. Git-Sharing des Render-Kerns (git-getaggte npm-Dependency).
+
 **Überordnetes Ziel:** Eine **Ziel-App** über **sensus core** und seine Pakete
 **Shell · Origin · Anthem** per **git / Cloudflare R2** ausspielen. Die App meldet
 ihren Aufenthalt in einer **Representation** (z.Z. nur Lichtenberg), fordert eine

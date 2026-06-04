@@ -2,7 +2,7 @@
 <!-- © 2026 diesenpark.com · SCIM3 POI Icon -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" data-source="diesenpark.com" data-year="2026">
   <g id="Gasthaus">
-    <path id="Fill" d="M30.222,18v10.667h-4.444c-.02-3.272.164-6.583,4.444-10.667" fill="#fff"/>
-    <path id="Stroke" d="M30.222,18v10.667h-4.444c-.02-3.272.164-6.583,4.444-10.667M30.222,28.667v5.333h-.889v-5.333M20.444,18.889v15.111M17.778,18.889v2.667c0,1.473,1.194,2.667,2.667,2.667s2.667-1.194,2.667-2.667v-2.667" fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round"/>
+    <path id="Fill" d="M29.833,18.125v10h-4.167c-.019-3.067.153-6.172,4.167-10" fill="#fff"/>
+    <path id="Stroke" d="M29.833,18.125v10h-4.167c-.019-3.067.153-6.172,4.167-10M29.833,28.125v5h-.833v-5M20.667,18.958v14.167M18.167,18.958v2.5c0,1.381,1.119,2.5,2.5,2.5s2.5-1.119,2.5-2.5v-2.5" fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
 </svg>
