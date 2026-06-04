@@ -136,7 +136,7 @@ export function buildPoiComposite(
   const contentH = 5 * UNIT_SCALE * DECO_TEXT_SCALE;
   const contentX = frameX + (frameW - contentW) / 2;
   const contentY = frameY + (frameH - contentH) / 2;
-  const summitIconShift = -1;
+  const summitIconShift = 0;
   const iconPart = `<g transform="translate(0,${-summitIconShift})">${iconInner}</g>`;
   const frameEntry = glyphById('frame');
   const frameInner = frameEntry
