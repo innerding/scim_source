@@ -7,6 +7,7 @@
 //                       Sensus Core Publishing packt). SIM-Code ≠ Produktions-Code.
 // Das ist NICHT SCIM3 selbst, sondern was SCIM3 in die Ziel-App bringt.
 import { useState, useMemo, useRef, useEffect, type ReactNode } from 'react';
+import { ComfortSliders } from 'shell-kit';
 import { SHELL_FUNCTIONS, TARGET_PLATFORMS, STUB, type ShellFunction, type TargetPlatform } from '../../shell-studio/shellStudio';
 import { useWorkspaceNav } from '../workspaceNav';
 import { ShellRunBadge } from '../ShellRunInfo';
@@ -176,22 +177,23 @@ function GateViz() {
 }
 
 // Funktions-Visualisierung „comfort" — die drei Strecken-Zustände (crossing-gated).
+// Comfort-Button: die ECHTE Komponente aus shell-kit (1:1, nicht nachgezeichnet).
+// position:absolute der ComfortSliders wird vom relative-Container gerahmt. Nur Move
+// (step2Active=false). Interaktiv (Drag aktualisiert den lokalen Wert).
 function ComfortViz() {
-  const rows = [
-    { c: '#2f855a', label: 'normal · unter Schwelle' },
-    { c: '#d69e2e', label: 'degraded · Operator-Schwelle' },
-    { c: '#a0aec0', label: 'excluded · Move-Schwelle (User)' },
-  ];
+  const [mv, setMv] = useState(0.5);
   return (
-    <div style={{ padding: 12, height: '100%', display: 'flex', flexDirection: 'column', gap: 10, fontFamily: 'system-ui, sans-serif' }}>
-      <div style={{ fontSize: 11, fontWeight: 700, color: '#1a365d' }}>Klassifikation je Strecke</div>
-      {rows.map((r, i) => (
-        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ width: 18, height: 6, borderRadius: 3, background: r.c, flexShrink: 0 }} />
-          <span style={{ fontSize: 10, color: '#4a5568' }}>{r.label}</span>
-        </div>
-      ))}
-      <div style={{ marginTop: 4, fontSize: 9.5, color: '#718096', lineHeight: 1.4 }}>Ø-Last je Kreuzung→Kreuzung; Move-Slider setzt die Ausschluss-Schwelle.</div>
+    <div style={{ position: 'relative', height: '100%', padding: 12, fontFamily: 'system-ui, sans-serif' }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: '#1a365d' }}>Comfort-Button · echte UI</div>
+      <div style={{ fontSize: 9.5, color: '#718096', lineHeight: 1.4, marginTop: 4, maxWidth: 150 }}>
+        1:1 aus <code>shell-kit</code> gerendert (nicht nachgezeichnet). Nur Move — Rest/Rast aus.
+      </div>
+      <ComfortSliders
+        movementValue={mv} movementLoad={0.4}
+        stayValue={0.5} stayLoad={0.4} stayMaxValue={1}
+        onMovementChange={setMv} onStayChange={() => {}}
+        step2Active={false}
+      />
     </div>
   );
 }
