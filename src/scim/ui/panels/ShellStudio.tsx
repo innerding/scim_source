@@ -14,6 +14,7 @@ import { useAuftraggeberRep } from '../../../runtime/useAuftraggeberRep';
 import { buildOriginPackage } from '../../sensus/originPackage';
 import { simSegmentLoads } from '../../sensus/anthemSim';
 import { fmtBytes } from '../../sensus/formatBytes';
+import ShellNewMonitor from './ShellNewMonitor';
 
 // Test-Stand-Switch (Origin/Anthem): zapft echte Daten der aktiven Rep an.
 function HarnessSwitch({ on, label, tone, onClick }: { on: boolean; label: string; tone: string; onClick: () => void }) {
@@ -231,7 +232,8 @@ export default function ShellStudio() {
 
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ flex: '0 0 auto', marginBottom: 8 }}>
+      <div style={{ flex: '0 0 auto', marginBottom: 8, display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           <div style={{
             display: 'inline-block', padding: '2px 8px', fontSize: 10, fontFamily: 'monospace',
@@ -261,6 +263,8 @@ export default function ShellStudio() {
             {anthemOn && (loads ? `Anthem: ${loads.length} Last-Werte` : 'Anthem: kein Netz (Wegnetz fehlt?)')}
           </span>
         </div>
+        </div>
+        <ShellNewMonitor rep={rep} originOn={originOn} originPkg={originPkg} />
       </div>
 
       <div style={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto' }}>
