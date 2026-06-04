@@ -10,11 +10,12 @@ import { colorize } from '../../sensus/loadColour';
 import type { Representation } from '../../workspace/workspace.types';
 import type { OriginPackage } from '../../sensus/originPackage';
 
-const W = 184, H = 372, BORDER = 9;
+const W = 230, BORDER = 9; // Breite wie das „Vorschau"-Device (DEV_W)
 
-export default function ShellNewMonitor({ rep, originOn, originPkg, loads }: {
-  rep: Representation; originOn: boolean; originPkg: OriginPackage | null; loads: number[] | null;
+export default function ShellNewMonitor({ rep, originOn, originPkg, loads, height = 460 }: {
+  rep: Representation; originOn: boolean; originPkg: OriginPackage | null; loads: number[] | null; height?: number;
 }) {
+  const H = height;
   const elRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const layerRef = useRef<L.LayerGroup | null>(null);

@@ -48,15 +48,19 @@ export function TrygonLoopEmblem({ size = 96, withLegend = true, animated = fals
         <g>
           <circle cx="60" cy="10" r="9" fill="#fff" stroke={INK} strokeWidth="1" />
           <text x="60" y="13.4" textAnchor="middle" fontSize="9" fontWeight="600" letterSpacing="0.5" fill={INK} fontFamily="system-ui, sans-serif">AP</text>
+          <animateTransform attributeName="transform" type="rotate" from="0 60 10" to="-360 60 10" dur="10s" repeatCount="indefinite" />
         </g>
         <g>
           <circle cx="16.7" cy="85" r="9" fill="#fff" stroke={INK} strokeWidth="1" />
           <text x="16.7" y="88.4" textAnchor="middle" fontSize="9" fontWeight="600" letterSpacing="0.5" fill={INK} fontFamily="system-ui, sans-serif">CK</text>
+          <animateTransform attributeName="transform" type="rotate" from="0 16.7 85" to="-360 16.7 85" dur="10s" repeatCount="indefinite" />
         </g>
         <g>
           <circle cx="103.3" cy="85" r="9" fill="#fff" stroke={INK} strokeWidth="1" />
           <text x="103.3" y="88.4" textAnchor="middle" fontSize="9" fontWeight="600" letterSpacing="0.5" fill={INK} fontFamily="system-ui, sans-serif">AK</text>
+          <animateTransform attributeName="transform" type="rotate" from="0 103.3 85" to="-360 103.3 85" dur="10s" repeatCount="indefinite" />
         </g>
+        {/* Bahn-Drehung der ganzen Kürzel-Ebene (Gegendrehung oben hält die Texte aufrecht) */}
         <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="10s" repeatCount="indefinite" />
       </g>
 
