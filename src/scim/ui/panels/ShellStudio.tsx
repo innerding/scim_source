@@ -214,6 +214,22 @@ function Viz({ fn }: { fn: ShellFunction }) {
   return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', padding: 12, textAlign: 'center', fontSize: 10, color: '#cbd5e0', fontStyle: 'italic' }}>—</div>;
 }
 
+// Kompaktes Live-diesenpark.com-Device für den Header (Monitor 1) — neben Shell-Neu.
+function LiveDevice() {
+  const DW = 184, DH = 372, B = 9, VW = 390;
+  const cw = DW - 2 * B, ch = DH - 2 * B;
+  const scale = cw / VW;
+  return (
+    <div style={{ flexShrink: 0 }}>
+      <div style={{ fontSize: 9.5, color: '#2b6cb0', textAlign: 'center', marginBottom: 3, fontWeight: 700 }}>diesenpark.com (live)</div>
+      <div style={{ width: DW, height: DH, borderRadius: 26, border: `${B}px solid #1a202c`, background: '#000', overflow: 'hidden', position: 'relative', boxShadow: '0 8px 24px rgba(0,0,0,0.22)' }}>
+        <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: 60, height: 12, background: '#1a202c', borderRadius: '0 0 10px 10px', zIndex: 5 }} />
+        <iframe src={APP_URL} title="diesenpark.com (live)" loading="lazy" style={{ width: VW, height: ch / scale, border: 'none', display: 'block', transform: `scale(${scale})`, transformOrigin: 'top left' }} />
+      </div>
+    </div>
+  );
+}
+
 export default function ShellStudio() {
   const { goStation } = useWorkspaceNav();
   const [open, setOpen] = useState<Record<string, boolean>>({ map: true });
@@ -277,7 +293,10 @@ export default function ShellStudio() {
           </span>
         </div>
         </div>
-        <ShellNewMonitor rep={rep} originOn={originOn} originPkg={originPkg} loads={loads} />
+        <div style={{ display: 'flex', gap: 10, flexShrink: 0 }}>
+          <LiveDevice />
+          <ShellNewMonitor rep={rep} originOn={originOn} originPkg={originPkg} loads={loads} />
+        </div>
       </div>
 
       <div style={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto' }}>
