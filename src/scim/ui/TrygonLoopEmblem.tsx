@@ -4,11 +4,14 @@
 // animated=true: Versatz-Staffel / Newton's Cradle —
 //   · gerichteter Impuls AP → CK → AK: jede Kugel fährt bis DICHT vor die nächste (eine
 //     Kugelbreite Abstand) und stupst sie an, die nächste startet im selben Moment
-//   · weil sie nicht ganz aufschließt, rutscht der Reigen pro Runde eine Kugelbreite zurück —
-//     sichtbar am Trygon (das voll mitdreht): die Kugeln lagen ihm Runde um Runde nach
+//   · weil sie nicht ganz aufschließt, rutscht der Reigen pro Runde eine Kugelbreite zurück
+//   · ANSTÖSSER: AP (erste Kugel) wird nicht von selbst los, sondern vom echten Trygon
+//     angestoßen — es trackt AP (−100°/Runde), steht still und schlägt jeden Rundenanfang
+//     seinen Apex sauber auf AP (strike-and-stop)
+//   · VERSATZ sichtbar am still stehenden Ghost-Trygon (Ursprungs-Apexe): Kugeln fallen dahinter zurück
 //   · das ist der TL-Signalfluss (messen→beobachten→handeln) als wandernde Knall-Welle
-//   · 18 Runden schließen den Loop nahtlos; Texte bleiben aufrecht; TL-Scheibe r 11,5
-//   · Keyframes programmatisch: VS_* / vsAnim()
+//   · 18 Runden schließen den Loop nahtlos; Texte aufrecht; TL-Scheibe r 11,5
+//   · Keyframes programmatisch: VS_* / vsAnim() / vsTriangle()
 // © designed by Dietmar Broda · 2025/2026.
 
 const INK = '#2d3748';
@@ -55,6 +58,29 @@ const VS = {
   akMove: vsAnim(2, 60, 60, -VS_PER), akText: vsAnim(2, 103.3, 85, VS_PER),
 };
 
+// Echtes Trygon (Anstößer): trackt AP mit −100°/Runde. Es steht still, schlägt dann mit
+// jedem Rundenanfang seinen Apex genau auf AP (strike-and-stop, Dauer VS_J), steht wieder
+// still. So sitzt der Apex jede Runde sauber auf der ersten Kugel und stößt sie an.
+const VS_J = 0.35; // Schlag-Dauer (s)
+function vsTriangle() {
+  const pts: [number, number][] = [[0, 0]];
+  for (let r = 1; r <= VS_N; r++) {
+    const tEnd = r * VS_ROUND;          // Schlag endet exakt am Rundenanfang
+    pts.push([tEnd - VS_J, -(r - 1) * VS_PER]); // hält die alte Lage bis kurz davor
+    pts.push([tEnd, -r * VS_PER]);              // Schlag auf die neue AP-Position
+  }
+  const vals: string[] = [], kts: string[] = [];
+  let prevT = -1;
+  for (const [t, a] of pts) {
+    if (t === prevT) { vals[vals.length - 1] = `${a} 60 60`; continue; }
+    vals.push(`${a} 60 60`); kts.push((t / VS_TOTAL).toFixed(5)); prevT = t;
+  }
+  return { values: vals.join('; '), keyTimes: kts.join('; ') };
+}
+const VS_TRI = vsTriangle();
+// Trygon auf Kugelhöhe (Ecken auf dem Ring r50, wo die Kugeln sitzen).
+const VS_TRI_POINTS = '60,10 16.7,85 103.3,85';
+
 export function TrygonLoopEmblem({ size = 96, withLegend = true, animated = false }: { size?: number; withLegend?: boolean; animated?: boolean }) {
   const staticSvg = (
     <svg width={size} height={size} viewBox="0 0 120 120" aria-label="Trygon-Loop (TL)" style={{ flexShrink: 0 }}>
@@ -76,14 +102,15 @@ export function TrygonLoopEmblem({ size = 96, withLegend = true, animated = fals
       {/* Loop-Ring (statisch) */}
       <circle cx="60" cy="60" r="50" fill="none" stroke={FAINT} strokeWidth="1" />
 
-      {/* Trygon-Ebene: dreht mit (−120°/Runde, volles Vorrücken). Weil die Kugeln nur
-          100°/Runde schaffen, lagen sie pro Runde eine Kugelbreite zurück = der Versatz. */}
+      {/* Ghost-Trygon: still an den Ursprungs-Apexen (0/120/240). Die Kugeln (und das echte
+          Trygon) fallen Runde um Runde dahinter zurück = der sichtbare Versatz. */}
+      <polygon points={VS_TRI_POINTS} fill="none" stroke={FAINT} strokeWidth="1" strokeDasharray="3 3" opacity="0.55" strokeLinejoin="round" />
+
+      {/* Echtes Trygon (Anstößer): trackt AP (−100°/Runde) und schlägt seinen Apex mit jedem
+          Rundenanfang sauber auf AP (strike-and-stop). Keyframes: vsTriangle(). */}
       <g>
-        <polygon points="60,26 30.6,77 89.4,77" fill="none" stroke={INK} strokeWidth="1.4" strokeLinejoin="round" />
-        <circle cx="60" cy="26" r="2.4" fill={INK} />
-        <circle cx="30.6" cy="77" r="2.4" fill={INK} />
-        <circle cx="89.4" cy="77" r="2.4" fill={INK} />
-        <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="-120 60 60" dur={`${VS_ROUND}s`} repeatCount="indefinite" />
+        <polygon points={VS_TRI_POINTS} fill="none" stroke={INK} strokeWidth="1.4" strokeLinejoin="round" />
+        <animateTransform attributeName="transform" type="rotate" values={VS_TRI.values} keyTimes={VS_TRI.keyTimes} dur={VS_DUR} repeatCount="indefinite" />
       </g>
 
       {/* Kürzel-Ebene: Versatz-Staffel. Jede Kugel fährt bis DICHT vor die nächste und
