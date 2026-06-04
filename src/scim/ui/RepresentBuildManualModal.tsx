@@ -4,9 +4,25 @@
 // Urfassung (Render von docs/represent_build.md), die durch dieses
 // Manual abgeloest wurde.
 
+import { TrygonLoopEmblem } from './TrygonLoopEmblem';
+import { LEISTUNGEN_STAND, leistungenManualBlock } from '../sensus/leistungen';
+
 interface Props {
   onClose: () => void;
 }
+
+const TRYGON_SPEC = `TRYGON-LOOP (TL) — KERNFUNKTION (Systemmerkmal)
+
+  Der fortlaufende Loop aus drei Funktionen — das, was uns von
+  gaengigen Systemen unterscheidet.
+
+    AP  Anthem-Pulse      misst die Last (5-Min-Puls) - Voraussetzung
+    CK  Comfort Kernel    beobachtet den Comfort
+    AK  Avoidance Kernel  handelt: Deeskalations-Kaskade
+
+  Loop : AP -> CK -> AK -> veraendert das Aufkommen -> AP misst neu.
+  Oeffentlich: Anthem-Pulse. Innovations-Label: TL.
+  designed by Dietmar Broda 2025/2026`;
 
 const MANUAL_BODY = `    JAHR                     2026
     SOFTWARE-ARCHITECTURE    Dietmar Broda
@@ -122,24 +138,17 @@ READER (am Fuss der Kosmologie)
 
 ────────────────────────────────────────────────────────
 
-LEISTUNGEN
+${TRYGON_SPEC}
 
-  Quellcode                       ~36.000 Zeilen TypeScript/TSX
-  Tests                           518 in 33 Test-Dateien
-  Pipeline                        14 P-Panels + 7 Compute-Module
-  Region-Katalog                  3 Regionen, 60 POIs gesamt
-                                    Gruenberg    49 POIs, 12 Subkategorien
-                                    Lichtenberg  11 POIs, OSM + Wiki-recherchiert
-                                    Gaisberg     prepared
-  Icon-Bibliothek                 49 SVG-Assets (POI-Icons + Glyphs + Frame)
+────────────────────────────────────────────────────────
+
+LEISTUNGEN  (Stand ${LEISTUNGEN_STAND} · eine Quelle mit dem Leistungsblatt)
+
+${leistungenManualBlock()}
   Annotationen                    53 Eintraege als KI-Briefing-Material
   Kosmologie-Klick-Karte          19 Hitboxen verdrahtet
-                                    (Tetraeder oben + unten, Mond, Mesh,
-                                     Inspector, Reader)
-  R2-Deploy                       Cloudflare R2 + D1 + Worker konfiguriert
+  R2-Deploy                       Cloudflare R2 + D1 + Worker
   QR-Generierung                  automatisiert je Representation
-  Auto-Deploy                     Cloudflare Pages bei jedem main-Push
-  Git-Historie                    232 Commits
 
 ────────────────────────────────────────────────────────
 
@@ -186,6 +195,9 @@ export default function RepresentBuildManualModal({ onClose }: Props) {
           fontSize: 13, lineHeight: 1.55, color: '#1a202c',
         }}>
           <div style={{ fontWeight: 700, marginBottom: 14 }}>USAGE MANUAL &amp; SCIM-STATE</div>
+          <div style={{ marginBottom: 16 }}>
+            <TrygonLoopEmblem size={104} withLegend={false} />
+          </div>
           <pre style={{ margin: 0, fontFamily: 'inherit', fontSize: 'inherit', whiteSpace: 'pre-wrap' }}>
             {MANUAL_BODY}
           </pre>

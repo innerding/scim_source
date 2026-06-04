@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { TabId } from '../panelRegistry';
 import { TrygonLoopEmblem } from '../TrygonLoopEmblem';
+import { LEISTUNGEN } from '../../sensus/leistungen';
 import type { ScimPipelineResult } from '../../pipeline/scimPipeline.types';
 
 interface Props {
@@ -380,14 +381,9 @@ function LeistungsblattV02Tab({ result }: { result: ScimPipelineResult }) {
 
 // ─── v0.3 (aktuell, Mai 2026) ────────────────────────────────────────────────
 
-const METRIKEN_V03 = [
-  { label: 'Quellcode gesamt',         wert: '~31.000 Zeilen',    detail: '251 Dateien · SCIM3 + Runtime + Worker' },
-  { label: 'Automatisierte Tests',     wert: '518 Tests',         detail: '33 Test-Dateien · verifiziert 2026-05-26' },
-  { label: 'Pipeline-Module',          wert: '14 P-Panels + 7 Compute', detail: 'Unverändert seit v0.2 · stabile Architektur' },
-  { label: 'Region-Katalog',           wert: '2 Regionen',        detail: 'Grünberg (49 POIs) · Lichtenberg (11 POIs)' },
-  { label: 'Icon- + Glyph-Bibliothek', wert: '49 SVG-Assets',     detail: '~38 POI-Icons · 11 Decoration-Glyphs · Frame' },
-  { label: 'Git-Historie',             wert: '130 Commits',       detail: 'Auto-Deploy bei jedem Push (GitHub Actions → Cloudflare Pages)' },
-];
+// Kennzahlen kommen jetzt aus der EINEN Quelle (sensus/leistungen.ts) — dieselbe,
+// die das Usage-Manual liest. Keine Divergenz mehr.
+const METRIKEN_V03 = LEISTUNGEN;
 
 const NEUERUNGEN_V03 = [
   { id: 'catalog', label: 'Region-Katalog-System', desc: 'Plan-md als deklarative Datenquelle pro Region. Parser, Serializer, Editor mit Diff-Patches im localStorage. Round-Trip-sicher: Export → md → Re-Import ohne Datenverlust.' },
