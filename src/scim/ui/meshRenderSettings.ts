@@ -1,6 +1,8 @@
-// Mesh-Render-Einstellungen — drei abschaltbare Effekte, damit man bei mangelnder
-// Performance degradieren und rasch zu einem MVP-Ergebnis kommen kann. REINE
-// Render-Schicht: berührt NIE das Segment-id-↔-Last-Modell. Konsens 2026-06-04.
+// Colour-Mesh-Render-Features — die „High-Shell Render-Adjustments": drei abschaltbare
+// Effekte, damit man bei mangelnder Performance degradieren und rasch zu einem MVP-
+// Ergebnis kommen kann. Konzeptuell HIGH-SHELL (Darstellung/UX-Feintuning) — getrennt
+// von der colorize-ENGINE (Deep-Shell, Last→Farbe-Mathematik). Test-UI: Inspector.
+// REINE Render-Schicht: berührt NIE das Segment-id-↔-Last-Modell. Konsens 2026-06-04.
 //   gradients — glatter Farbverlauf je Kante (aus = flach, K=1, billiger)
 //   dpZoom    — Mesh vereinfachen (Glow weg + gröbere Kurve) — entlastet beim Rauszoomen
 //   atmen     — sanftes Pulsieren des Overlays (CSS-Deckkraft, GPU-billig)
