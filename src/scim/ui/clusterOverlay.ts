@@ -138,7 +138,8 @@ export function renderClusterPois(
             const cy = (ents[i].y + ents[j].y) / 2;
             const latlng = map.layerPointToLatLng(L.point(cx, cy));
             const ringSize = Math.min(GHOST_MAX + 18, d + ICON);
-            const ringSvg = `<svg viewBox="0 0 48 48" width="${ringSize}" height="${ringSize}">${buildContainerSvgString(hexGeo, HEX_COLOR)}</svg>`;
+            const ringInner = buildContainerSvgString(hexGeo, HEX_COLOR).replace('fill="none"', `fill="${HEX_COLOR}"`);
+            const ringSvg = `<svg viewBox="0 0 48 48" width="${ringSize}" height="${ringSize}">${ringInner}</svg>`;
             placeMarker(layer, latlng, markerHtml(ringSvg, ringSize, 0.33), ringSize, { interactive: false, z: 500 });
           }
         }
