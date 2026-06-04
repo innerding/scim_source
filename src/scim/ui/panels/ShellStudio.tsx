@@ -233,6 +233,7 @@ export default function ShellStudio() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const blockEls = useRef<(HTMLDivElement | null)[]>([]);
   const [activeIdx, setActiveIdx] = useState(0);
+  const [spacerH, setSpacerH] = useState(0); // Endraum: damit auch der letzte Block ganz nach oben (neben die Devices) scrollt
   const recompute = () => {
     const root = scrollRef.current;
     if (!root) return;
@@ -242,6 +243,15 @@ export default function ShellStudio() {
     setActiveIdx(idx);
   };
   useEffect(() => { recompute(); }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const root = scrollRef.current;
+    if (!root) return;
+    const set = () => setSpacerH(root.clientHeight);
+    set();
+    const ro = new ResizeObserver(set);
+    ro.observe(root);
+    return () => ro.disconnect();
+  }, []);
   // Schicht-Toggles übersteuern den Scroll-Default (undefined = folgt Scroll). Pro Schicht ein Eintrag.
   const [layerOverride, setLayerOverride] = useState<Record<string, boolean | undefined>>({});
   const layerOn = (id: string) => layerOverride[id] ?? (activeIdx >= SHELL_FUNCTIONS.findIndex((f) => f.id === id));
@@ -371,6 +381,7 @@ export default function ShellStudio() {
             </div>
           );
         })}
+        <div style={{ height: spacerH }} aria-hidden />
         </div>
       </div>
 
