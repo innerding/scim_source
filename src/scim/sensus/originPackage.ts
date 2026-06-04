@@ -14,6 +14,7 @@ import { geometryById, wegnetzById } from '../workspace/workspace.registry';
 import { parseCatalogById } from '../poi-catalog/catalogRegistry';
 import { iconById } from '../poi-catalog/iconRegistry';
 import { resolveIcon } from '../poi-catalog/poiCatalog.composite';
+import { containerOf } from '../poi-catalog/poiCatalog.containerSystem';
 import { resampleNet, type ResampledNet } from '../wegnetz/netResample';
 
 // MVP-Zielsegmentlänge fürs origin-net (Beschluss): 10 m — Geometrie ≈ roh,
@@ -74,9 +75,19 @@ export function buildOriginPackage(rep: Representation): OriginPackage {
   const cat = rep.catalog_id ? parseCatalogById(rep.catalog_id) : null;
   if (cat) {
     const pois = cat.pois ?? [];
+    // Container-Katalog-Pfad: der Capsuler löst den Container-Schlüssel je POI
+    // VORAB auf (Subkategorie → Geometrie + Farbe) und hängt ihn ans poi-set.
+    // So bekommt die Deep-Shell-Container-Engine fertig zuordenbare POIs und
+    // bleibt generisch — sie benutzt den Capsulator als Vehikel (spart Abgleich).
+    const poiSet = pois.map((p) => {
+      const c = containerOf(p.subcategory);
+      return c ? { ...p, container: { geometry_id: c.geometry_id, color: c.color } } : p;
+    });
+    const withKey = poiSet.filter((p) => 'container' in p).length;
     particles.push({
       id: 'origin-poi-set', label: 'origin-poi-set',
-      bytes: utf8Bytes(JSON.stringify(pois)), detail: `${pois.length} POIs`,
+      bytes: utf8Bytes(JSON.stringify(poiSet)),
+      detail: `${pois.length} POIs · ${withKey} mit Container-Schlüssel`,
     });
 
     // asset-set: distinkte, aufgelöste Icons → svg_cleaned eingebettet
