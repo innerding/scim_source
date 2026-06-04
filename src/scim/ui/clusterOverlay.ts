@@ -17,6 +17,7 @@ import L from 'leaflet';
 import type { CatalogPoi } from '../poi-catalog/poiCatalog.types';
 import { poiCompositeSvg, buildContainerSvgString } from '../poi-catalog/poiCatalog.composite';
 import { geometryOf } from '../poi-catalog/poiCatalog.containerSystem';
+import { mergeOverlapping } from '../sensus/shellRenderCore';
 
 const ICON = 30;            // Render-Groesse eines Einzel-Icons (px), wie ScimMap POI_SIZE
 const SWALLOW = ICON;       // Zentren naeher als das → Icons ueberlappen → Ghost
@@ -25,11 +26,6 @@ const GHOST_MIN = 34;
 const GHOST_MAX = 56;
 const HEX_COLOR = '#ff00ff';
 
-interface Entity {
-  x: number;
-  y: number;
-  members: CatalogPoi[];
-}
 
 function markerHtml(svg: string, size: number, opacity = 1): string {
   return `<div style="width:${size}px;height:${size}px;line-height:0;` +
@@ -50,35 +46,8 @@ function placeMarker(
   m.addTo(layer);
 }
 
-// Greedy: solange zwei Entitaeten naeher als SWALLOW liegen, zu einer
-// (flaechengewichteten) Ghost-Entitaet verschmelzen.
-function mergeOverlapping(start: Entity[]): Entity[] {
-  let ents = start;
-  let merged = true;
-  while (merged) {
-    merged = false;
-    outer:
-    for (let i = 0; i < ents.length; i++) {
-      for (let j = i + 1; j < ents.length; j++) {
-        const d = Math.hypot(ents[i].x - ents[j].x, ents[i].y - ents[j].y);
-        if (d < SWALLOW) {
-          const a = ents[i], b = ents[j];
-          const na = a.members.length, nb = b.members.length;
-          const fused: Entity = {
-            x: (a.x * na + b.x * nb) / (na + nb),
-            y: (a.y * na + b.y * nb) / (na + nb),
-            members: [...a.members, ...b.members],
-          };
-          ents = ents.filter((_, k) => k !== i && k !== j);
-          ents.push(fused);
-          merged = true;
-          break outer;
-        }
-      }
-    }
-  }
-  return ents;
-}
+// Cluster-Verschmelzung (Greedy) lebt im Shell-Render-Kern — siehe
+// mergeOverlapping(ents, SWALLOW) im draw-Pfad unten.
 
 export function renderClusterPois(
   map: L.Map,
@@ -99,10 +68,10 @@ export function renderClusterPois(
   const hexGeo = geometryOf('geo_special_hexagon_ring');
 
   for (const [clusterName, ms] of byCluster) {
-    const ents = mergeOverlapping(ms.map((m) => {
+    const ents = mergeOverlapping<CatalogPoi>(ms.map((m) => {
       const p = map.latLngToLayerPoint([m.coord[1], m.coord[0]]);
       return { x: p.x, y: p.y, members: [m] };
-    }));
+    }), SWALLOW);
     const ghostPoi = ghostByCluster.get(clusterName);
 
     for (const e of ents) {
