@@ -1,17 +1,59 @@
 // Trygon-Loop (TL) — das Kernfunktions-Emblem. Sachlich, nüchtern, monochrom.
 //   AP = Anthem-Pulse · CK = Comfort Kernel · AK = Avoidance Kernel · TL = der Loop.
 // Statisch (Default): Kürzel an den Trygon-Ecken, TL-Scheibe r 13,5.
-// animated=true: Staffel-Lauf / Newton's Cradle (9 s = 3 Runden) —
-//   · gerichteter Impuls AP → CK → AK: jede Kugel fährt VOLL bis auf die Position der nächsten
-//     und stupst sie an, die nächste startet im selben Moment; das ist der TL-Signalfluss
-//     (messen→beobachten→handeln), als wandernde Knall-Welle um den Ring
-//   · jede Kugel umrundet einmal komplett (3 Etappen) → nahtloser Loop; Texte bleiben aufrecht
-//   · das Trygon dreht langsam mit (−120°/Runde) — „der Orbiter dreht sich mit den Kugeln"
-//   · TL-Scheibe 2 px kleiner (r 11,5)
+// animated=true: Versatz-Staffel / Newton's Cradle —
+//   · gerichteter Impuls AP → CK → AK: jede Kugel fährt bis DICHT vor die nächste (eine
+//     Kugelbreite Abstand) und stupst sie an, die nächste startet im selben Moment
+//   · weil sie nicht ganz aufschließt, rutscht der Reigen pro Runde eine Kugelbreite zurück —
+//     sichtbar am Trygon (das voll mitdreht): die Kugeln lagen ihm Runde um Runde nach
+//   · das ist der TL-Signalfluss (messen→beobachten→handeln) als wandernde Knall-Welle
+//   · 18 Runden schließen den Loop nahtlos; Texte bleiben aufrecht; TL-Scheibe r 11,5
+//   · Keyframes programmatisch: VS_* / vsAnim()
 // © designed by Dietmar Broda · 2025/2026.
 
 const INK = '#2d3748';
 const FAINT = '#a0aec0';
+
+// — Versatz-Staffel (animated). Jede Kugel fährt bis DICHT vor die nächste (eine
+// Kugelbreite Abstand, ≈20° auf dem Ring r50, ⌀18) und stupst sie an; die nächste
+// startet im selben Moment. Weil sie nicht ganz auf die Position der nächsten fährt,
+// rutscht der Reigen pro Runde eine Kugelbreite zurück — fortlaufend. Vorrücken je
+// Runde = 120° − 20° = 100°. Nach 18 Runden (18·100 = 5·360) sind die Kugeln wieder
+// deckungsgleich, das Trygon (−120°/Runde = 6·360) ebenso → nahtloser Loop.
+const VS_D = 20;            // Kugelbreite in Ring-Grad (≈ Berührung)
+const VS_PER = 120 - VS_D;  // Vorrücken je Runde
+const VS_N = 18;            // Runden bis zum nahtlosen Loop-Schluss
+const VS_HO = 1.0;          // Sekunden je Etappe (3 Etappen = 1 Runde)
+const VS_ROUND = 3 * VS_HO;
+const VS_TOTAL = VS_N * VS_ROUND;
+const VS_DUR = `${VS_TOTAL}s`;
+
+// Baut values/keyTimes für eine Kugel: sie bewegt sich in Etappe `slot` jeder Runde
+// um `step`° (negativ = Außen-Drehung um 60,60; positiv = Text-Gegendrehung um cx,cy).
+function vsAnim(slot: number, cx: number, cy: number, step: number) {
+  const pts: [number, number][] = [[0, 0]];
+  for (let r = 0; r < VS_N; r++) {
+    const tStart = (r * 3 + slot) * VS_HO;
+    pts.push([tStart, r * step]);
+    pts.push([tStart + VS_HO, (r + 1) * step]);
+  }
+  pts.push([VS_TOTAL, VS_N * step]);
+  const vals: string[] = [], kts: string[] = [];
+  let prevT = -1;
+  for (const [t, a] of pts) {
+    if (t === prevT) { vals[vals.length - 1] = `${a} ${cx} ${cy}`; continue; }
+    vals.push(`${a} ${cx} ${cy}`);
+    kts.push((t / VS_TOTAL).toFixed(5));
+    prevT = t;
+  }
+  return { values: vals.join('; '), keyTimes: kts.join('; ') };
+}
+
+const VS = {
+  apMove: vsAnim(0, 60, 60, -VS_PER), apText: vsAnim(0, 60, 10, VS_PER),
+  ckMove: vsAnim(1, 60, 60, -VS_PER), ckText: vsAnim(1, 16.7, 85, VS_PER),
+  akMove: vsAnim(2, 60, 60, -VS_PER), akText: vsAnim(2, 103.3, 85, VS_PER),
+};
 
 export function TrygonLoopEmblem({ size = 96, withLegend = true, animated = false }: { size?: number; withLegend?: boolean; animated?: boolean }) {
   const staticSvg = (
@@ -34,59 +76,43 @@ export function TrygonLoopEmblem({ size = 96, withLegend = true, animated = fals
       {/* Loop-Ring (statisch) */}
       <circle cx="60" cy="60" r="50" fill="none" stroke={FAINT} strokeWidth="1" />
 
-      {/* Trygon-Ebene: dreht langsam mit dem Staffel-Lauf mit (−360° über den vollen
-          3-Runden-Zyklus = −120°/Runde). „der Orbiter dreht sich mit den Kugeln." */}
+      {/* Trygon-Ebene: dreht mit (−120°/Runde, volles Vorrücken). Weil die Kugeln nur
+          100°/Runde schaffen, lagen sie pro Runde eine Kugelbreite zurück = der Versatz. */}
       <g>
         <polygon points="60,26 30.6,77 89.4,77" fill="none" stroke={INK} strokeWidth="1.4" strokeLinejoin="round" />
         <circle cx="60" cy="26" r="2.4" fill={INK} />
         <circle cx="30.6" cy="77" r="2.4" fill={INK} />
         <circle cx="89.4" cy="77" r="2.4" fill={INK} />
-        <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="-360 60 60" dur="9s" repeatCount="indefinite" />
+        <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="-120 60 60" dur={`${VS_ROUND}s`} repeatCount="indefinite" />
       </g>
 
-      {/* Kürzel-Ebene: Staffel-Lauf (Newton's Cradle). Gerichteter Impuls AP → CK → AK:
-          jede Kugel fährt VOLL bis auf die Position der nächsten und stupst sie an, die
-          nächste startet im selben Moment. 9 Etappen (3 Runden) = ein nahtloser Loop;
-          jede Kugel umrundet einmal komplett. Innere Gegendrehung hält die Texte aufrecht. */}
+      {/* Kürzel-Ebene: Versatz-Staffel. Jede Kugel fährt bis DICHT vor die nächste und
+          stupst sie an; pro Runde rutscht der Reigen eine Kugelbreite zurück (siehe oben).
+          Innere Gegendrehung hält die Texte aufrecht. Keyframes: vsAnim(). */}
       <g>
-        {/* AP — Etappen 1, 4, 7 */}
         <g>
           <circle cx="60" cy="10" r="9" fill="#fff" stroke={INK} strokeWidth="1" />
           <g>
             <text x="60" y="13.4" textAnchor="middle" fontSize="9" fontWeight="600" letterSpacing="0.5" fill={INK} fontFamily="system-ui, sans-serif">AP</text>
-            <animateTransform attributeName="transform" type="rotate"
-              values="0 60 10; 120 60 10; 120 60 10; 120 60 10; 240 60 10; 240 60 10; 240 60 10; 360 60 10; 360 60 10; 360 60 10"
-              keyTimes="0; 0.111; 0.222; 0.333; 0.444; 0.556; 0.667; 0.778; 0.889; 1" dur="9s" repeatCount="indefinite" />
+            <animateTransform attributeName="transform" type="rotate" values={VS.apText.values} keyTimes={VS.apText.keyTimes} dur={VS_DUR} repeatCount="indefinite" />
           </g>
-          <animateTransform attributeName="transform" type="rotate"
-            values="0 60 60; -120 60 60; -120 60 60; -120 60 60; -240 60 60; -240 60 60; -240 60 60; -360 60 60; -360 60 60; -360 60 60"
-            keyTimes="0; 0.111; 0.222; 0.333; 0.444; 0.556; 0.667; 0.778; 0.889; 1" dur="9s" repeatCount="indefinite" />
+          <animateTransform attributeName="transform" type="rotate" values={VS.apMove.values} keyTimes={VS.apMove.keyTimes} dur={VS_DUR} repeatCount="indefinite" />
         </g>
-        {/* CK — Etappen 2, 5, 8 */}
         <g>
           <circle cx="16.7" cy="85" r="9" fill="#fff" stroke={INK} strokeWidth="1" />
           <g>
             <text x="16.7" y="88.4" textAnchor="middle" fontSize="9" fontWeight="600" letterSpacing="0.5" fill={INK} fontFamily="system-ui, sans-serif">CK</text>
-            <animateTransform attributeName="transform" type="rotate"
-              values="0 16.7 85; 0 16.7 85; 120 16.7 85; 120 16.7 85; 120 16.7 85; 240 16.7 85; 240 16.7 85; 240 16.7 85; 360 16.7 85; 360 16.7 85"
-              keyTimes="0; 0.111; 0.222; 0.333; 0.444; 0.556; 0.667; 0.778; 0.889; 1" dur="9s" repeatCount="indefinite" />
+            <animateTransform attributeName="transform" type="rotate" values={VS.ckText.values} keyTimes={VS.ckText.keyTimes} dur={VS_DUR} repeatCount="indefinite" />
           </g>
-          <animateTransform attributeName="transform" type="rotate"
-            values="0 60 60; 0 60 60; -120 60 60; -120 60 60; -120 60 60; -240 60 60; -240 60 60; -240 60 60; -360 60 60; -360 60 60"
-            keyTimes="0; 0.111; 0.222; 0.333; 0.444; 0.556; 0.667; 0.778; 0.889; 1" dur="9s" repeatCount="indefinite" />
+          <animateTransform attributeName="transform" type="rotate" values={VS.ckMove.values} keyTimes={VS.ckMove.keyTimes} dur={VS_DUR} repeatCount="indefinite" />
         </g>
-        {/* AK — Etappen 3, 6, 9 */}
         <g>
           <circle cx="103.3" cy="85" r="9" fill="#fff" stroke={INK} strokeWidth="1" />
           <g>
             <text x="103.3" y="88.4" textAnchor="middle" fontSize="9" fontWeight="600" letterSpacing="0.5" fill={INK} fontFamily="system-ui, sans-serif">AK</text>
-            <animateTransform attributeName="transform" type="rotate"
-              values="0 103.3 85; 0 103.3 85; 0 103.3 85; 120 103.3 85; 120 103.3 85; 120 103.3 85; 240 103.3 85; 240 103.3 85; 240 103.3 85; 360 103.3 85"
-              keyTimes="0; 0.111; 0.222; 0.333; 0.444; 0.556; 0.667; 0.778; 0.889; 1" dur="9s" repeatCount="indefinite" />
+            <animateTransform attributeName="transform" type="rotate" values={VS.akText.values} keyTimes={VS.akText.keyTimes} dur={VS_DUR} repeatCount="indefinite" />
           </g>
-          <animateTransform attributeName="transform" type="rotate"
-            values="0 60 60; 0 60 60; 0 60 60; -120 60 60; -120 60 60; -120 60 60; -240 60 60; -240 60 60; -240 60 60; -360 60 60"
-            keyTimes="0; 0.111; 0.222; 0.333; 0.444; 0.556; 0.667; 0.778; 0.889; 1" dur="9s" repeatCount="indefinite" />
+          <animateTransform attributeName="transform" type="rotate" values={VS.akMove.values} keyTimes={VS.akMove.keyTimes} dur={VS_DUR} repeatCount="indefinite" />
         </g>
       </g>
 
