@@ -6,7 +6,7 @@
 //                       (Footer: Plattform wählen → rechnen → Code je Block + Summe →
 //                       Sensus Core Publishing packt). SIM-Code ≠ Produktions-Code.
 // Das ist NICHT SCIM3 selbst, sondern was SCIM3 in die Ziel-App bringt.
-import { useState, useMemo, type ReactNode } from 'react';
+import { useState, useMemo, useRef, useEffect, type ReactNode } from 'react';
 import { SHELL_FUNCTIONS, TARGET_PLATFORMS, type ShellFunction, type TargetPlatform } from '../../shell-studio/shellStudio';
 import { useWorkspaceNav } from '../workspaceNav';
 import { ShellRunBadge } from '../ShellRunInfo';
@@ -227,6 +227,25 @@ export default function ShellStudio() {
   );
   const phaseLabel = dayPhase(simMin) > 0.85 ? 'Spitze' : dayPhase(simMin) > 0.5 ? 'Mittag' : dayPhase(simMin) > 0.2 ? 'Rand' : 'ruhig';
 
+  // Scroll-Sync: welcher Block steht gerade neben den Devices? Der Shell-Neu-Monitor
+  // baut kumulativ bis dorthin auf. Heute trägt real nur 'colorize' eine Schicht bei;
+  // weitere Funktionen klinken sich hier künftig ein.
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const blockEls = useRef<(HTMLDivElement | null)[]>([]);
+  const [activeIdx, setActiveIdx] = useState(0);
+  const recompute = () => {
+    const root = scrollRef.current;
+    if (!root) return;
+    const line = root.getBoundingClientRect().top + 64; // Schwelle nahe oben
+    let idx = 0;
+    blockEls.current.forEach((el, i) => { if (el && el.getBoundingClientRect().top <= line) idx = i; });
+    setActiveIdx(idx);
+  };
+  useEffect(() => { recompute(); }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+  const colorizeIdx = SHELL_FUNCTIONS.findIndex((f) => f.id === 'colorize');
+  const colorizeOn = activeIdx >= colorizeIdx;
+  const activeLabel = SHELL_FUNCTIONS[activeIdx]?.title;
+
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div style={{ flex: '0 0 auto', marginBottom: 8 }}>
@@ -272,14 +291,15 @@ export default function ShellStudio() {
         {/* LINKS: zwei fixe Devices (Vorschau live · Shell-Neu) — geteilt, nicht pro Block */}
         <div style={{ flex: '0 0 auto', display: 'flex', gap: 12, alignSelf: 'flex-start' }}>
           <DeviceFrame><AppIframe /></DeviceFrame>
-          <ShellNewMonitor rep={rep} originOn={originOn} originPkg={originPkg} loads={loads} height={FRAME_H} />
+          <ShellNewMonitor rep={rep} originOn={originOn} originPkg={originPkg} loads={loads} colorizeOn={colorizeOn} activeLabel={activeLabel} height={FRAME_H} />
         </div>
         {/* RECHTS: scrollbare Blöcke (ohne eigene Devices) */}
-        <div style={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto' }}>
-        {SHELL_FUNCTIONS.map((fn) => {
+        <div ref={scrollRef} onScroll={recompute} style={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto' }}>
+        {SHELL_FUNCTIONS.map((fn, i) => {
           const isOpen = !!open[fn.id];
+          const isActive = i === activeIdx;
           return (
-            <div key={fn.id} style={{ border: '1px solid #e2e8f0', borderRadius: 10, marginBottom: 12, overflow: 'hidden' }}>
+            <div key={fn.id} ref={(el) => { blockEls.current[i] = el; }} style={{ border: `1px solid ${isActive ? '#38a169' : '#e2e8f0'}`, borderRadius: 10, marginBottom: 12, overflow: 'hidden', boxShadow: isActive ? '0 0 0 1px #38a169' : 'none' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', background: '#f7fafc', cursor: 'pointer' }} onClick={() => toggle(fn.id)}>
                 <span style={{ fontSize: 13, color: '#718096', width: 14 }}>{isOpen ? '▾' : '▸'}</span>
                 <span style={{ fontSize: 13, fontWeight: 700, color: '#1a365d' }}>{fn.title}</span>

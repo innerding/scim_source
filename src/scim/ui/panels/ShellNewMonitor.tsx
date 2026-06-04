@@ -12,8 +12,9 @@ import type { OriginPackage } from '../../sensus/originPackage';
 
 const BORDER = 9;
 
-export default function ShellNewMonitor({ rep, originOn, originPkg, loads, height = 460 }: {
-  rep: Representation; originOn: boolean; originPkg: OriginPackage | null; loads: number[] | null; height?: number;
+export default function ShellNewMonitor({ rep, originOn, originPkg, loads, colorizeOn = false, activeLabel, height = 460 }: {
+  rep: Representation; originOn: boolean; originPkg: OriginPackage | null; loads: number[] | null;
+  colorizeOn?: boolean; activeLabel?: string; height?: number;
 }) {
   const H = height;
   const W = Math.round(H * 390 / 844); // Handy-Proportion 390:844 wie das „Vorschau"-Device
@@ -52,10 +53,11 @@ export default function ShellNewMonitor({ rep, originOn, originPkg, loads, heigh
     // ist render-features (dokumentiert, nicht live).
     const net = originPkg?.originNet;
     if (net) {
+      const useColor = colorizeOn && !!loads; // colorize-Schicht erst ab dem 'colorize'-Block
       let idx = 0;
       for (const s of net.stretches) {
         for (let i = 1; i < s.points.length; i++) {
-          const load = loads ? (loads[idx] ?? 0) : null;
+          const load = useColor ? (loads![idx] ?? 0) : null;
           idx++;
           const color = load != null ? colorize(load) : '#718096';
           L.polyline([s.points[i - 1], s.points[i]] as L.LatLngExpression[], {
@@ -65,11 +67,11 @@ export default function ShellNewMonitor({ rep, originOn, originPkg, loads, heigh
       }
     }
     map.fitBounds(poly.getBounds(), { padding: [14, 14] });
-  }, [originOn, originPkg, rep, loads]);
+  }, [originOn, originPkg, rep, loads, colorizeOn]);
 
   return (
     <div style={{ flexShrink: 0 }}>
-      <div style={{ fontSize: 9.5, color: '#276749', textAlign: 'center', marginBottom: 3, fontWeight: 700 }}>Shell-Neu · aus Origin/Anthem</div>
+      <div style={{ fontSize: 9.5, color: '#276749', textAlign: 'center', marginBottom: 3, fontWeight: 700 }}>Shell-Neu · bis „{activeLabel ?? '—'}"</div>
       <div style={{ width: W, height: H, borderRadius: 26, border: `${BORDER}px solid #1a202c`, background: '#0f1722', overflow: 'hidden', position: 'relative', boxShadow: '0 8px 24px rgba(0,0,0,0.22)' }}>
         <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: 60, height: 12, background: '#1a202c', borderRadius: '0 0 10px 10px', zIndex: 500 }} />
         <div ref={elRef} style={{ width: '100%', height: '100%' }} />
