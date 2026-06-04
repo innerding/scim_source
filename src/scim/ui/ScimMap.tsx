@@ -12,6 +12,8 @@ import {
   addRoadHeatMesh, addPoiRoutes, fetchOsmEdges,
   TILE_OSM_URL, TILE_OSM_ATTR, TILE_MESH_URL, TILE_MESH_ATTR,
 } from './colourMeshOverlay';
+import { useMeshSettings } from './meshRenderSettings';
+import MeshToggles from './MeshToggles';
 import { useInspectorView, useInspectorAsset, useRepresentationContext } from '../../runtime/repContext';
 import type { InspectorAsset } from '../../runtime/repContext';
 import { slugify } from '../../runtime/router';
@@ -165,6 +167,7 @@ function buildInspectedTarget(asset: InspectorAsset | null): InspectedTarget | n
 
 export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const mesh = useMeshSettings(); // 3 Degrade-Schalter (Gradient/DP/Atmen)
   const mapRef = useRef<L.Map | null>(null);
   const layerGroupRef = useRef<L.LayerGroup | null>(null);
   const clusterLayerRef = useRef<L.LayerGroup | null>(null);
@@ -754,7 +757,13 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
         [Math.max(...lats), Math.max(...lons)],
       ]);
     }
-  }, [result, vis, osmEdges, repBbox, repPolygonLatLng, activeRep, repCatalog, availLayers, repWegnetz, wegnetzAsEdges, colourCfg, userExcl, simNet, simFlows, simHour, testSeed]);
+  }, [result, vis, osmEdges, repBbox, repPolygonLatLng, activeRep, repCatalog, availLayers, repWegnetz, wegnetzAsEdges, colourCfg, userExcl, simNet, simFlows, simHour, testSeed, mesh.gradients, mesh.dpZoom]);
+
+  // Atmen — reine CSS-Deckkraft-Pulsation am Overlay-Pane (GPU-billig, kein Re-Render).
+  useEffect(() => {
+    const el = containerRef.current;
+    if (el) el.classList.toggle('dp-atmen', mesh.atmen);
+  }, [mesh.atmen]);
 
   // Dynamisches Cluster-Overlay: bei jedem zoom/move neu rechnen (Pixel-Logik).
   // Eigener Layer, damit der Haupt-Render unberuehrt bleibt.
@@ -789,7 +798,11 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
   return (
     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
       <Header label="Inspector" detail="System-Build-Mirror" vis={vis} setVis={setVis} avail={availLayers} onNavigate={onNavigate} onCollapseToggle={onCollapseToggle} repCtx={repCtx} />
-      <div ref={containerRef} style={{ flex: 1, minHeight: 0 }} />
+      <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
+        <div ref={containerRef} style={{ position: 'absolute', inset: 0 }} />
+        <MeshToggles />
+        <style>{`@keyframes dpAtmen{0%,100%{opacity:1}50%{opacity:.82}} .dp-atmen .leaflet-overlay-pane{animation:dpAtmen 5s ease-in-out infinite}`}</style>
+      </div>
     </div>
   );
 }
