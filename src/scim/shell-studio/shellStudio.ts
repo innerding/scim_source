@@ -342,12 +342,33 @@ export function evaluateGate(state, nowMin) {
   {
     id: 'launcher', device: 'none', entry: true, entryPath: 'url',
     title: 'Launcher · globale Auswahl',
-    subtitle: 'Kacheln Nation→Region→Rep',
+    subtitle: 'Kacheln Nation→Region→Rep · „powered by diesenpark.com"',
     surface: 'placeholder',
     viz: 'none',
-    highNotes: ['Rendert die Kacheln und löst die Bundle-Auslieferung aus. Generische High-Shell-Surface, außerhalb des Rep-Bundles.'],
-    deepNotes: ['Der eigentliche Konsument des Collector-Path. Wird vom globe-switcher gezeigt (URL) oder übersprungen (QR).'],
-    simCode: STUB,
+    highNotes: [
+      'Globale Auswahl: rendert die Kacheln Nation → Region → Representation; Klick löst die Bundle-Auslieferung aus.',
+      'Trägt das Shell-Branding „powered by diesenpark.com" (Fuß der Eintritts-Flächen: Global-/Region-/Start-Screen).',
+      'Generische High-Shell-Surface, außerhalb des Rep-Bundles. Nur im nackt-Pfad — QR überspringt sie.',
+    ],
+    deepNotes: [
+      'Konsument des Collector-Path (Nation→Region→Rep-Katalog). Vom globe-switcher gezeigt (URL) oder übersprungen (QR).',
+      'BEFUND: Die Kachel-Icons kommen heute aus HARTKODIERTEN Asset-Importen + einem REGION_ICONS-Mapping, das in 3 Screens (Global/Region/Start) DUPLIZIERT ist — keine eine Quelle.',
+      'SOLL: Icons aus EINEM eigenen Pfad — der Origin-Capsuler deklariert je Rep/Region das Icon, der Collector aggregiert es, der Launcher löst es über EINEN Resolver auf (kein gebündeltes Hartkode-Mapping).',
+    ],
+    simCode: `// Launcher — globale Auswahl (nur nackt-Pfad; QR überspringt sie).
+// Kacheln Nation → Region → Representation; Klick = Bundle laden.
+regions.map((r) => (
+  <Tile key={r.id} onClick={() => loadRegion(r.indexRef)}>
+    <img src={iconFor(r)} alt={r.name} />   // Icon je Region/Rep
+    <span>{r.name}</span>
+  </Tile>
+));
+// Fuß: „powered by diesenpark.com" (Shell-Branding der Eintritts-Flächen).
+
+// HEUTE (Befund): iconFor = hartkodiertes REGION_ICONS-Mapping, in 3 Screens dupliziert:
+//   import skgUrl from '../../assets/SKG.svg';
+//   const REGION_ICONS = { skg: skgUrl, salzburg: ..., boehmerwald: ... };
+// SOLL: iconFor(r) = r.icon aus Collector/Origin (eigener Pfad), EIN Resolver — kein Hartkode.`,
   },
   {
     id: 'lade-treiber', device: 'none', entry: true,
