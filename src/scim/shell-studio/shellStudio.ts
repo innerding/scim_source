@@ -145,6 +145,30 @@ export function playBoundaryReveal(container, map, ringLatLng) {
 }`,
   },
   {
+    id: 'slogan',
+    title: 'Slogan · Erstkonsumat',
+    subtitle: 'das Manifest in 3 Worten',
+    surface: 'intro',
+    viz: 'none',
+    highNotes: [
+      'Das ERSTE, was der User konsumiert: „Geh deinen Weg" — erscheint im Intro über der Lade-Latenz.',
+      'Schließt Fixrouten aus (wir sind kein Routen-Shop) — Haltung, nicht Deko.',
+      'Platzierung/Anordnung in-app noch TBD; der Wortlaut selbst steht.',
+    ],
+    deepNotes: [
+      'EINE Quelle: der Slogan lebt im App-Manifest (sensus/appManifest.ts, APP_SLOGAN) — hier nur sein Auftritt auf der Strecke, kein zweiter String.',
+      'Geburtsort = App-Manifest (Marke/UX, System-Tab „Manifest"). Ändert sich der Wortlaut, nur dort.',
+      'Generisch in der Shell; der konkrete Wortlaut ist gestempelter Inhalt.',
+    ],
+    simCode: `// Kein eigener String — eine Quelle: der Slogan kommt aus dem App-Manifest.
+import { APP_SLOGAN } from '../sensus/appManifest';   // = 'Geh deinen Weg'
+
+// Auftritt im Intro (über der Lade-Latenz), z. B.:
+<div className="intro-slogan">{APP_SLOGAN}</div>
+
+// Geburtsort/Quelle: sensus/appManifest.ts · siehe System-Tab „Manifest".`,
+  },
+  {
     id: 'container',
     title: 'Container-System',
     subtitle: 'POI-Buckets · Cluster-Ghosts (Engine)',
