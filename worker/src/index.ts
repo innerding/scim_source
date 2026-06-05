@@ -10,6 +10,8 @@
  *   PUT    /api/origin/:repId/mesh       — Origin-Mesh veröffentlichen (für Anthem-Compute)
  *   GET    /api/origin/:repId/mesh       — Origin-Mesh (read-only): die Ziel-App holt das Mesh
  *   GET    /api/origin/:repId            — Origin-Schicht-Status (read-only): published, stretches, bytes, uploadedAt
+ *   PUT    /api/origin/:repId/bundle     — Volles Origin-Bundle veröffentlichen (P11-CTA „ausspielen")
+ *   GET    /api/origin/:repId/bundle     — Volles Origin-Bundle (read-only): die Ziel-App holt es über ?rep=
  *   POST   /api/anthem/:repId/presence   — App klopft: Presence-Session + erster Snapshot
  *   GET    /api/anthem/:repId/presence   — Presence-Status (read-only): present, firstSeen, lastSeen, durationMin
  *   GET    /api/anthem/:repId            — Worker rechnet aktuellen Anthem-Snapshot (presence-gegated)
@@ -436,6 +438,41 @@ export default {
       if (!obj) return err(`No published origin-mesh for "${repId}".`, 404);
       return new Response(obj.body, {
         headers: { ...CORS_HEADERS, 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=3600' },
+      });
+    }
+
+    // ── PUT /api/origin/:repId/bundle ─────────────────────────────────────────
+    // SCIM (P11-CTA „ausspielen") veröffentlicht das VOLLE Origin-Bundle einer Rep
+    // (boundary + net + poi-set + asset-set, ein JSON). Die Ziel-App holt es über ?rep=.
+    if (request.method === 'PUT' && pathname.match(/^\/api\/origin\/[^/]+\/bundle$/)) {
+      if (!checkAuth(request, env)) return err('Unauthorized', 401);
+      const repId = pathname.split('/')[3];
+      if (!KEY_PATTERN.test(repId)) return err('Invalid repId', 422);
+
+      let body: unknown;
+      try { body = await request.json(); } catch { return err('Invalid JSON body', 400); }
+      if (!body || typeof body !== 'object') return err('Expected origin bundle object', 422);
+
+      const bundleJson = JSON.stringify(body);
+      await env.PACKAGES.put(`origin/${repId}/bundle.json`, bundleJson, {
+        httpMetadata: { contentType: 'application/json', cacheControl: 'public, max-age=300' },
+      });
+      const meta = { bytes: bundleJson.length, uploadedAt: new Date().toISOString() };
+      await env.PACKAGES.put(`origin/${repId}/bundle-meta.json`, JSON.stringify(meta), {
+        httpMetadata: { contentType: 'application/json', cacheControl: 'no-store' },
+      });
+      return json({ ok: true, repId, ...meta });
+    }
+
+    // ── GET /api/origin/:repId/bundle ─────────────────────────────────────────
+    // Read-only: die Ziel-App holt das volle Origin-Bundle (Modell B, statisch). Kein Key.
+    if (request.method === 'GET' && pathname.match(/^\/api\/origin\/[^/]+\/bundle$/)) {
+      const repId = pathname.split('/')[3];
+      if (!KEY_PATTERN.test(repId)) return err('Invalid repId', 422);
+      const obj = await env.PACKAGES.get(`origin/${repId}/bundle.json`);
+      if (!obj) return err(`No published origin-bundle for "${repId}".`, 404);
+      return new Response(obj.body, {
+        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=300' },
       });
     }
 
