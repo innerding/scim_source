@@ -27,27 +27,10 @@ export type Subcategory =
   | 'Help_emergency'
   | 'Cluster';
 
-// Geometrie-Shape (ann_042 — diskriminierte Union).
-// Pro Variante die einfachstmögliche SVG-native Form.
-export type GeometryShape =
-  | { kind: 'circle';  cx: number; cy: number; r: number }
-  | { kind: 'rect';    x: number; y: number; width: number; height: number; rx?: number }
-  | { kind: 'polygon'; points: [number, number][] }
-  | { kind: 'path';    d: string };
-
-export interface Geometry {
-  id: string;                       // 'geo_1_circle' …
-  name_display: string;             // 'Kreis', 'Tropfen', … (für UI-Anzeige)
-  viewBox: string;                  // meist '0 0 48 48', Hexagon '0 0 46 50'
-  fill_role: 'fill' | 'stroke';     // 'stroke' nur beim Hexagon-Ring
-  shape: GeometryShape;
-  // Pixel-Y-Versatz für das innenliegende Icon, gegenüber der geometrischen
-  // Mitte (24,24). Positiv = Icon nach unten; nutzt der Composite-Renderer
-  // im Standard-Modus (nicht im Summit-Modus, dort positioniert summitLayout).
-  // Default 0. Beispiele: Droplet=5 (Icon in den bauchigen Teil), Triangle=4
-  // (Schwerpunkts-Versatz nach unten).
-  icon_offset_y?: number;
-}
+// Geometrie-Vokabular (Geometry/GeometryShape) lebt jetzt in shell-kit (app/geometry) —
+// EINE Quelle für Editor + Runtime. Hier nur re-exportiert (Editor-API unverändert).
+// icon_offset_y: Droplet=5, Triangle=4 (in den shell-kit-GEOMETRIES gepflegt).
+export type { Geometry, GeometryShape } from 'shell-kit';
 
 // Status der POI-Koordinate.
 // 'cluster_ghost' (ann_048): POI ist Ghost in der Cluster-Subkategorie,

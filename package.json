@@ -17,7 +17,7 @@
     "qrcode": "^1.5.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "shell-kit": "github:innerding/shell-kit#v0.7.0",
+    "shell-kit": "github:innerding/shell-kit#v0.9.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {

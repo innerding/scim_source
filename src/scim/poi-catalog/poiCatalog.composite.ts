@@ -1,4 +1,4 @@
-// EDITOR-ADAPTER über den generischen Shell-Render-Kern (sensus/shellRenderCore).
+// EDITOR-ADAPTER über den generischen Shell-Render-Kern (shell-kit, app/render).
 //
 // Der eigentliche Render-Code (Container ⊕ Icon ⊕ Deco, Glyph-Reihe, Cluster-
 // Mathematik) lebt EINMAL im Kern — „eine Quelle je Engine" (Umbauplan). Diese
@@ -24,7 +24,7 @@ import {
   buildGlyphRow,
   extractIconInner as coreExtractIconInner,
   type RenderAssets,
-} from '../sensus/shellRenderCore';
+} from 'shell-kit';
 
 // ── Re-Exports: bestehende Editor-API unverändert ───────────────────────────
 export const extractIconInner = coreExtractIconInner;
