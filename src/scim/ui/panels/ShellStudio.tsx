@@ -41,7 +41,7 @@ import { ColourGradientBar } from './ColourGradientBar';
 const APP_URL = 'https://diesenpark.com/?k=geh-deinen-weg';
 // MVP-Lichtenberg: gleiche Domain + ?rep=lichtenberg (lädt das echte Lichtenberg-Origin,
 // sobald Phase 0 verdrahtet + publiziert ist). Demo bleibt der Default (bare URL).
-const MVP_URL = `${APP_URL}&rep=lichtenberg`;
+const MVP_URL = `${APP_URL}&rep=rep-lichtenberg`;
 
 const FRAME_H = 649; // Handy-Proportion 390:844 bei fester Breite 300 → 300 × 844/390 ≈ 649
 const DEV_W = 300; // feste Breite; FRAME_H folgt der Handy-Proportion 390:844
