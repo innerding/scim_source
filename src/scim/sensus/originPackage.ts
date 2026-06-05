@@ -18,6 +18,8 @@ import { containerOf } from '../poi-catalog/poiCatalog.containerSystem';
 import { resampleNet, type ResampledNet } from '../wegnetz/netResample';
 import { loadColourSettings, type ColourSettings } from './colourSettings';
 import { slugify } from '../../runtime/router';
+import { extractDecoration, iconMeta, type DecorationMatch } from '../poi-catalog/decorations';
+import { GLYPHS } from '../poi-catalog/digitGlyphs';
 
 // MVP-Zielsegmentlänge fürs origin-net (Beschluss): 10 m — Geometrie ≈ roh,
 // Atem (Load-Array) ~6 kB / 5 Min. 3 m wäre Detail-Untergrenze (Geometrie
@@ -139,8 +141,8 @@ export interface OriginBundle {
   version: number;
   boundary: [number, number][];      // Außenring [lon, lat]
   net: ResampledNet | null;          // resampeltes Netz (Segmente + Segment-ids)
-  pois: unknown[];                   // poi-set inkl. aufgelöstem Container-Schlüssel
-  assets: Record<string, string>;    // iconId → svg_cleaned (eingebettet)
+  pois: unknown[];                   // poi-set inkl. Container-Schlüssel + deco
+  assets: Record<string, string>;    // iconId → svg_cleaned + glyph/* → svg_raw + digit/* → svg_raw
   colour: ColourSettings;            // Farb-/Schwellen-Kette (palette/spectrum/bias/safety/degradier/spread/floor)
 }
 
@@ -152,16 +154,38 @@ export function buildOriginBundle(rep: Representation): OriginBundle {
 
   const cat = rep.catalog_id ? parseCatalogById(rep.catalog_id) : null;
   const rawPois = cat?.pois ?? [];
-  const pois = rawPois.map((p) => {
+
+  // Deco pre-compute (eine Quelle: shell-kit extractDecoration).
+  // Plus-Suffix im Icon-Name erzwingt Deco; ICONS_META ist Opt-in.
+  const poisWithDeco = rawPois.map((p) => {
     const c = containerOf(p.subcategory);
-    return c ? { ...p, container: { geometry_id: c.geometry_id, color: c.color } } : p;
+    const { iconId, forceElevation } = resolveIcon(p.icon);
+    const meta = iconMeta(iconId);
+    const decoAllowed = forceElevation || !!meta.decoration_below;
+    const deco: DecorationMatch | null = decoAllowed ? extractDecoration(p.text ?? '') : null;
+    return c
+      ? { ...p, container: { geometry_id: c.geometry_id, color: c.color }, deco }
+      : { ...p, deco };
   });
+  const pois = poisWithDeco;
 
   const assets: Record<string, string> = {};
+  // Icons einbetten.
   for (const p of rawPois) {
     const { iconId } = resolveIcon(p.icon);
     const entry = iconById(iconId);
     if (entry && !assets[iconId]) assets[iconId] = entry.svg_cleaned;
+  }
+  // Glyph-SVGs einbetten — alle unit-Glyphen + Ziffern 0–9.
+  // Prefix: `glyph/<id>` für Units/Stars, `digit/<n>` für Ziffern.
+  for (const g of GLYPHS) {
+    if (g.kind === 'digit' && g.digit !== undefined) {
+      const key = `digit/${g.digit}`;
+      if (!assets[key]) assets[key] = g.svg_raw;
+    } else if (g.kind !== 'digit') {
+      const key = `glyph/${g.id}`;
+      if (!assets[key]) assets[key] = g.svg_raw;
+    }
   }
 
   // Farb-/Schwellen-Kette der Region (P01 spread/floor, P02 bias/safety/degradier,

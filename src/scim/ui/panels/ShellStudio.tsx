@@ -193,8 +193,8 @@ function ComfortViz() {
         1:1 aus <code>shell-kit</code> gerendert (nicht nachgezeichnet). Nur Move — Rest/Rast aus.
       </div>
       <ComfortSliders
-        movementValue={mv} movementLoad={0.4}
-        stayValue={0.5} stayLoad={0.4} stayMaxValue={1}
+        movementValue={mv}
+        stayValue={0.5} stayMaxValue={1}
         onMovementChange={setMv} onStayChange={() => {}}
         step2Active={false}
       />
