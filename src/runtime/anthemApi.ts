@@ -20,6 +20,17 @@ export async function publishOriginMesh(repId: string, net: { stretches: Array<{
   return res.json() as Promise<{ ok: boolean; repId: string; stretches: number }>;
 }
 
+/** Volles Origin-Bundle (boundary+net+poi-set+asset-set) nach R2 veröffentlichen — P11-CTA „ausspielen". */
+export async function publishOriginBundle(repId: string, bundle: unknown) {
+  const res = await fetch(`${WORKER_URL}/api/origin/${repId}/bundle`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', 'X-Scim-Key': UPLOAD_API_KEY ?? '' },
+    body: JSON.stringify(bundle),
+  });
+  if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
+  return res.json() as Promise<{ ok: boolean; repId: string; bytes: number; uploadedAt: string }>;
+}
+
 /** Die App „klopft": Presence registrieren + ersten Snapshot zurückbekommen. */
 export async function knockPresence(repId: string, t?: number) {
   const qs = t != null ? `?t=${Math.round(t)}` : '';

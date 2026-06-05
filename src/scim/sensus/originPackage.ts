@@ -116,3 +116,52 @@ export function buildOriginPackage(rep: Representation): OriginPackage {
     originNet,
   };
 }
+
+// ── Renderbares Origin-Bundle (für die Ausspielung) ─────────────────────────
+// buildOriginPackage MISST nur (Bytes für P09). Dies hier EMITTIERT die Daten,
+// die die Ziel-App zum Rendern braucht: boundary + net + poi-set (mit Container-
+// Schlüssel) + asset-set (Icons eingebettet). Genau das lädt der P11-CTA nach R2,
+// und die Runtime holt es über ?rep=. Eine Quelle der Auflösung wie oben.
+export interface OriginBundle {
+  kind: 'origin_bundle_v1';
+  repId: string;
+  repName: string;
+  version: number;
+  boundary: [number, number][];      // Außenring [lon, lat]
+  net: ResampledNet | null;          // resampeltes Netz (Segmente + Segment-ids)
+  pois: unknown[];                   // poi-set inkl. aufgelöstem Container-Schlüssel
+  assets: Record<string, string>;    // iconId → svg_cleaned (eingebettet)
+}
+
+export function buildOriginBundle(rep: Representation): OriginBundle {
+  const geo = rep.geometry_id ? geometryById(rep.geometry_id) : undefined;
+  const boundary = (geo?.polygon ?? []) as [number, number][];
+
+  const net = rep.wegnetz_id ? wegnetzById(rep.wegnetz_id) : undefined;
+  const originNet = net ? resampleNet(net.edges, { targetMeters: MVP_RESAMPLE_TARGET_METERS }) : null;
+
+  const cat = rep.catalog_id ? parseCatalogById(rep.catalog_id) : null;
+  const rawPois = cat?.pois ?? [];
+  const pois = rawPois.map((p) => {
+    const c = containerOf(p.subcategory);
+    return c ? { ...p, container: { geometry_id: c.geometry_id, color: c.color } } : p;
+  });
+
+  const assets: Record<string, string> = {};
+  for (const p of rawPois) {
+    const { iconId } = resolveIcon(p.icon);
+    const entry = iconById(iconId);
+    if (entry && !assets[iconId]) assets[iconId] = entry.svg_cleaned;
+  }
+
+  return {
+    kind: 'origin_bundle_v1',
+    repId: rep.id,
+    repName: rep.name,
+    version: rep.version ?? 1,
+    boundary,
+    net: originNet ?? null,
+    pois,
+    assets,
+  };
+}

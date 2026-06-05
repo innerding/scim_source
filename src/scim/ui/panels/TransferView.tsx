@@ -2,8 +2,12 @@
 // Sensus Core P transferiert → geschnürt (Shell ⊕ Origin ⊕ Anthem), versioniert
 // (V01), Identität gestempelt. Erst HIER wird aus generisch eine konkrete
 // Auslieferung. Verb 'transfer' (statt 'ausspielen'). shell-run-Schritt 'transfer'.
+import { useState } from 'react';
 import { ShellRunBadge } from '../ShellRunInfo';
 import { useWorkspaceNav } from '../workspaceNav';
+import { useAuftraggeberRep } from '../../../runtime/useAuftraggeberRep';
+import { buildOriginBundle } from '../../sensus/originPackage';
+import { publishOriginBundle, anthemPublishConfigured } from '../../../runtime/anthemApi';
 
 const STEPS: { n: number; head: string; body: string }[] = [
   { n: 1, head: 'schnüren', body: 'Shell ⊕ Origin ⊕ Anthem zu EINEM Bundle bündeln.' },
@@ -14,6 +18,24 @@ const STEPS: { n: number; head: string; body: string }[] = [
 
 export default function TransferView() {
   const { goStation } = useWorkspaceNav();
+  const rep = useAuftraggeberRep();
+  const [phase, setPhase] = useState<'idle' | 'publishing' | 'done' | 'error'>('idle');
+  const [msg, setMsg] = useState('');
+  const configured = anthemPublishConfigured();
+
+  const publish = async () => {
+    setPhase('publishing'); setMsg('');
+    try {
+      const res = await publishOriginBundle(rep.id, buildOriginBundle(rep));
+      const kb = (res.bytes / 1024).toFixed(1);
+      setMsg(`✓ veröffentlicht: origin/${res.repId}/bundle.json · ${kb} kB · ${new Date(res.uploadedAt).toLocaleString('de')}`);
+      setPhase('done');
+    } catch (e) {
+      setMsg(`✗ ${(e as Error).message}`);
+      setPhase('error');
+    }
+  };
+
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 640 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
@@ -39,6 +61,23 @@ export default function TransferView() {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* CTA: Origin-Bundle ausspielen — schnürt buildOriginBundle(rep) → R2 (PUT /api/origin/:repId/bundle).
+          Shell steckt im App-Build (shell-kit), Anthem ist Sim → für MVP reicht das Origin-Bundle. */}
+      <div style={{ border: '1px solid #fbb6ce', borderRadius: 8, padding: 12, marginBottom: 14, background: '#fff5f7' }}>
+        <div style={{ fontSize: 12.5, fontWeight: 800, color: '#b83280', marginBottom: 6 }}>Ausspielen → R2: {rep.name}</div>
+        <button
+          onClick={publish}
+          disabled={!configured || phase === 'publishing'}
+          title={configured ? 'PUT /api/origin/:repId/bundle' : 'VITE_WORKER_URL + VITE_UPLOAD_API_KEY setzen'}
+          style={{ fontSize: 12, fontWeight: 700, padding: '6px 14px', borderRadius: 6, cursor: configured && phase !== 'publishing' ? 'pointer' : 'not-allowed', border: 'none', background: configured ? '#b83280' : '#cbd5e0', color: '#fff' }}
+        >
+          {phase === 'publishing' ? '⏳ lädt…' : '⊕ Origin-Bundle veröffentlichen'}
+        </button>
+        {!configured && <span style={{ fontSize: 10.5, color: '#a0aec0', marginLeft: 10 }}>Worker nicht konfiguriert</span>}
+        {msg && <div style={{ fontSize: 11, color: phase === 'error' ? '#c53030' : '#276749', marginTop: 8, fontFamily: 'monospace', wordBreak: 'break-all' }}>{msg}</div>}
+        <div style={{ fontSize: 10.5, color: '#a0aec0', marginTop: 6, lineHeight: 1.5 }}>Schnürt boundary + net + poi-set (Container) + asset-set zu EINEM JSON → R2. Die Runtime holt es über <code>?rep={rep.id}</code>.</div>
       </div>
 
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
