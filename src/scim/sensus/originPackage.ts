@@ -16,6 +16,8 @@ import { iconById } from '../poi-catalog/iconRegistry';
 import { resolveIcon } from '../poi-catalog/poiCatalog.composite';
 import { containerOf } from '../poi-catalog/poiCatalog.containerSystem';
 import { resampleNet, type ResampledNet } from '../wegnetz/netResample';
+import { loadColourSettings, type ColourSettings } from './colourSettings';
+import { slugify } from '../../runtime/router';
 
 // MVP-Zielsegmentlänge fürs origin-net (Beschluss): 10 m — Geometrie ≈ roh,
 // Atem (Load-Array) ~6 kB / 5 Min. 3 m wäre Detail-Untergrenze (Geometrie
@@ -131,6 +133,7 @@ export interface OriginBundle {
   net: ResampledNet | null;          // resampeltes Netz (Segmente + Segment-ids)
   pois: unknown[];                   // poi-set inkl. aufgelöstem Container-Schlüssel
   assets: Record<string, string>;    // iconId → svg_cleaned (eingebettet)
+  colour: ColourSettings;            // Farb-/Schwellen-Kette (palette/spectrum/bias/safety/degradier/spread/floor)
 }
 
 export function buildOriginBundle(rep: Representation): OriginBundle {
@@ -154,6 +157,11 @@ export function buildOriginBundle(rep: Representation): OriginBundle {
     if (entry && !assets[iconId]) assets[iconId] = entry.svg_cleaned;
   }
 
+  // Farb-/Schwellen-Kette der Region (P01 spread/floor, P02 bias/safety/degradier,
+  // P04 palette/spectrum) reist mit — so reproduziert die Runtime das Mesh exakt.
+  const regionSlug = slugify(geo?.region ?? '') || 'default';
+  const colour = loadColourSettings(regionSlug);
+
   return {
     kind: 'origin_bundle_v1',
     repId: rep.id,
@@ -163,5 +171,6 @@ export function buildOriginBundle(rep: Representation): OriginBundle {
     net: originNet ?? null,
     pois,
     assets,
+    colour,
   };
 }
