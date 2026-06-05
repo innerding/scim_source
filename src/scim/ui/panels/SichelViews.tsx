@@ -1,12 +1,11 @@
 // Sichel-Views (P07 Boundary · P08 Wegnetz-Sampling) — machen das bereits
 // FUNKTIONALE sichtbar, damit man dem Platzhalter nicht ahnungslos gegenübersteht.
-// Reine Anzeige über vorhandene Resolver (buildOriginPackage · resampleNet).
+// Reine Anzeige über vorhandene Resolver (buildOriginPackage liefert den mesh-output).
 // Heimat: P07 t1 (Boundary), P08 t3 (Mesh-Output). Voll: docs/anthem_snapshot_spec.md.
 
 import type { ReactNode } from 'react';
 import { REPRESENTATIONS, wegnetzById, geometryById } from '../../workspace/workspace.registry';
 import { buildOriginPackage, MVP_RESAMPLE_TARGET_METERS } from '../../sensus/originPackage';
-import { resampleNet } from '../../wegnetz/netResample';
 import { fmtBytes } from '../../sensus/formatBytes';
 import { playReveal } from '../../sensus/revealPrep';
 
@@ -164,10 +163,10 @@ function NetSvg({ stretches, nodes = false, bounds }: {
 
 // ── P08 Wegnetz-Sampling · Pipeline-Vergleich (ohne Tabs) ────────────────────
 export function WegnetzCompareView() {
-  const { net } = resolveDemo();
-  if (!net) return <div style={{ fontSize: 12, color: '#a0aec0' }}>— kein Netz auflösbar.</div>;
+  const { net, origin } = resolveDemo();
+  const r = origin?.originNet;
+  if (!net || !r) return <div style={{ fontSize: 12, color: '#a0aec0' }}>— kein Netz auflösbar.</div>;
   const edges = net.edges as unknown as { points: [number, number][] }[];
-  const r = resampleNet(net.edges, { targetMeters: MVP_RESAMPLE_TARGET_METERS });
   const bounds = boundsOf(edges); // geteilter Maßstab für alle drei Boxen
   const exampleId = r.stretches.length > 0 ? `${r.stretches[0].id}#0` : '—';
 

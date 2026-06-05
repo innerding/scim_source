@@ -24,6 +24,16 @@ import { slugify } from '../../runtime/router';
 // explodiert), 25 m gröber/kleiner. Ein Knopf, falls wir's später drehen.
 export const MVP_RESAMPLE_TARGET_METERS = 10;
 
+// EINE Quelle des mesh-output (= P09 cap-origin-mesh „3. mesh-output"): der
+// Capsulator isoliert das resampelte Netz HIER; Origin-Paket, Origin-Bundle und
+// die P09-Anzeige übernehmen es von hier, statt es je neu zu rechnen. Das
+// ausgespielte Netz ist die gesampelte Geometrie (nicht der Drawer-Rohstand);
+// die Segment-ids sind der Index, den das Anthem-Load-Array adressiert.
+export function resolveOriginNet(rep: Representation): ResampledNet | null {
+  const net = rep.wegnetz_id ? wegnetzById(rep.wegnetz_id) : undefined;
+  return net ? resampleNet(net.edges, { targetMeters: MVP_RESAMPLE_TARGET_METERS }) : null;
+}
+
 export interface OriginParticle {
   id: string;        // 'origin-boundary' …
   label: string;     // Anzeigename
@@ -62,10 +72,8 @@ export function buildOriginPackage(rep: Representation): OriginPackage {
   // origin-net — das RESAMPELTE Netz (gleich lange Segmente @MVP-Target). Das
   // ausgespielte Netz ist die gesampelte Geometrie, nicht der Drawer-Rohstand;
   // die Segment-ids sind der Index, den das Anthem-Load-Array adressiert.
-  const net = rep.wegnetz_id ? wegnetzById(rep.wegnetz_id) : undefined;
-  let originNet: ResampledNet | undefined;
-  if (net) {
-    originNet = resampleNet(net.edges, { targetMeters: MVP_RESAMPLE_TARGET_METERS });
+  const originNet = resolveOriginNet(rep) ?? undefined;
+  if (originNet) {
     particles.push({
       id: 'origin-net', label: `origin-net (resampled @${MVP_RESAMPLE_TARGET_METERS} m)`,
       bytes: originNet.geometryBytes,
@@ -140,8 +148,7 @@ export function buildOriginBundle(rep: Representation): OriginBundle {
   const geo = rep.geometry_id ? geometryById(rep.geometry_id) : undefined;
   const boundary = (geo?.polygon ?? []) as [number, number][];
 
-  const net = rep.wegnetz_id ? wegnetzById(rep.wegnetz_id) : undefined;
-  const originNet = net ? resampleNet(net.edges, { targetMeters: MVP_RESAMPLE_TARGET_METERS }) : null;
+  const originNet = resolveOriginNet(rep);   // mesh-output aus dem Capsulator (eine Quelle)
 
   const cat = rep.catalog_id ? parseCatalogById(rep.catalog_id) : null;
   const rawPois = cat?.pois ?? [];
