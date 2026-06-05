@@ -39,6 +39,9 @@ import { ColourGradientBar } from './ColourGradientBar';
 // ?k=… entriegelt das Zugangs-Gate der Runtime (Öffentlichkeit ist gesperrt) —
 // so behält das Studio seinen Vorab-Zugang. Passphrase in sensus-core-runtime/AccessGate.
 const APP_URL = 'https://diesenpark.com/?k=geh-deinen-weg';
+// MVP-Lichtenberg: gleiche Domain + ?rep=lichtenberg (lädt das echte Lichtenberg-Origin,
+// sobald Phase 0 verdrahtet + publiziert ist). Demo bleibt der Default (bare URL).
+const MVP_URL = `${APP_URL}&rep=lichtenberg`;
 
 const FRAME_H = 649; // Handy-Proportion 390:844 bei fester Breite 300 → 300 × 844/390 ≈ 649
 const DEV_W = 300; // feste Breite; FRAME_H folgt der Handy-Proportion 390:844
@@ -98,12 +101,13 @@ function Notes({ title, items, tone }: { title: string; items: string[]; tone: s
 // Die echte, live laufende Ziel-App im Device-Frame. Sie rendert in echter Mobil-
 // Breite (390 px) und wird auf die Frame-Breite herunterskaliert → ganze App sichtbar,
 // nicht nur ein Ausschnitt.
-function AppIframe() {
+function AppIframe({ src }: { src: string }) {
   const VW = 390;
   const scale = CONTENT_W / VW;
   return (
     <iframe
-      src={APP_URL}
+      key={src}
+      src={src}
       title="Ziel-App · diesenpark.com"
       loading="lazy"
       style={{
@@ -218,6 +222,7 @@ export default function ShellStudio() {
   //   Origin → buildOriginPackage (per-Rep, tief) · Anthem → simSegmentLoads (Last).
   // (NICHT der Collector — der ist die über-Rep-Liste.)
   const rep = useAuftraggeberRep();
+  const [vorschauMvp, setVorschauMvp] = useState(false); // Vorschau-iframe: Demo (Bestand) ↔ MVP-Lichtenberg
   const [originOn, setOriginOn] = useState(false);
   const [anthemOn, setAnthemOn] = useState(false);
   const [turboHour, setTurboHour] = useState(13); // anthem-sim Zeit (Time/Turbo) — bei echtem Last-Paket weg
@@ -312,7 +317,16 @@ export default function ShellStudio() {
       <div style={{ flex: '1 1 auto', minHeight: 0, display: 'flex', gap: 14 }}>
         {/* LINKS: zwei fixe Devices (Vorschau live · Shell-Neu) — geteilt, nicht pro Block */}
         <div style={{ flex: '0 0 auto', display: 'flex', gap: 12, alignSelf: 'flex-start' }}>
-          <DeviceFrame><AppIframe /></DeviceFrame>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <DeviceFrame><AppIframe src={vorschauMvp ? MVP_URL : APP_URL} /></DeviceFrame>
+            {/* Switcher UNTER dem iframe: Demo (Bestand) ↔ MVP-Lichtenberg (neu, ?rep=lichtenberg) */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, width: DEV_W, padding: '6px 8px', border: '1px solid #e2e8f0', borderRadius: 8, background: '#f7fafc' }}>
+              <span style={{ fontSize: 9, fontWeight: 800, color: '#718096', letterSpacing: 0.4 }}>VORSCHAU</span>
+              <button onClick={() => setVorschauMvp(false)} style={{ fontSize: 10, fontWeight: 700, padding: '3px 9px', borderRadius: 6, cursor: 'pointer', border: `1px solid ${!vorschauMvp ? '#2b6cb0' : '#cbd5e0'}`, background: !vorschauMvp ? '#2b6cb0' : '#fff', color: !vorschauMvp ? '#fff' : '#4a5568' }}>Demo</button>
+              <button onClick={() => setVorschauMvp(true)} style={{ fontSize: 10, fontWeight: 700, padding: '3px 9px', borderRadius: 6, cursor: 'pointer', border: `1px solid ${vorschauMvp ? '#276749' : '#cbd5e0'}`, background: vorschauMvp ? '#38a169' : '#fff', color: vorschauMvp ? '#fff' : '#4a5568' }}>MVP-Lichtenberg</button>
+              {vorschauMvp && <span style={{ fontSize: 8.5, color: '#a0aec0', fontStyle: 'italic' }}>füllt sich ab Phase 0</span>}
+            </div>
+          </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <ShellNewMonitor rep={rep} originOn={originOn} originPkg={originPkg} loads={loads} colorizeOn={colorizeOn} activeLabel={activeLabel} height={FRAME_H} />
             {/* Schicht-Toggles — direkt unter dem Shell-Neu-Device, aus den Block-Markierungen (device) abgeleitet */}
