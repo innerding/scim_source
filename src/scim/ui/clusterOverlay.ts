@@ -4,7 +4,7 @@
 import type L from 'leaflet';
 import type { CatalogPoi } from '../poi-catalog/poiCatalog.types';
 import { poiCompositeSvg } from '../poi-catalog/poiCatalog.composite';
-import { renderClusterPois as coreRender, type ClusterMember, type ClusterGhost } from 'shell-kit';
+import { renderClusterPois as coreRender, type ClusterMember, type ClusterGhost } from 'shell-kit/cluster';
 
 export function renderClusterPois(
   map: L.Map,
