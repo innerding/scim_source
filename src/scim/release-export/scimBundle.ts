@@ -1,3 +1,7 @@
+// @LEGACY (2026-06-05): alter Weg 1 — scim3_bundle_v1 (GeoJSON + Koordinaten).
+// Abgelöst durch den Origin-Weg (originPackage.ts → bundle.json/mesh.json → R2/Worker).
+// Noch load-bearing in der Editor-UI (Pipeline-Publish-CTA). Löschen erst auf
+// Operator-Commit. Siehe docs/aufraeum_inventar.md (K3.1).
 import type { ScimContext } from '../context/scimContext.types';
 import type { GraphState } from '../graph/graph.types';
 import type { RouteLayerModelState } from '../route-layer-model/routeLayerModel.types';

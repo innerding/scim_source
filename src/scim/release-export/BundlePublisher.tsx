@@ -1,3 +1,6 @@
+// @LEGACY (2026-06-05): publiziert das alte Weg-1-Bundle (scim3_bundle_v1). Abgelöst
+// durch den Origin-Weg (P11 transfer → bundle.json/R2). Noch load-bearing in der UI.
+// Löschen erst auf Operator-Commit. Siehe docs/aufraeum_inventar.md (K3.1).
 import { useState, useEffect, useRef } from 'react';
 import QRCode from 'qrcode';
 import type { ScimBundle } from './scimBundle.types';
