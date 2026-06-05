@@ -43,4 +43,17 @@ export const DESIGN_PRINCIPLES: DesignPrinciple[] = [
       'SCIM3 liefert nur Geometrie (Segment-Graph) und Lastbild (Anthem-Pulse), keine vorgebackenen ' +
       'Routen. Die App baut ihre Linie selbst über den Graph — passend zum Slogan „Geh deinen Weg".',
   },
+  {
+    id: 'comfort-destillat',
+    label: 'Comfort als Destillat — BCK / BAK',
+    content:
+      'Der Comfort-Slider baut keine Routen. Seine Schiene ist ein Gradient-Balken — das Destillat ' +
+      'des Colour-Meshs, die Lastverteilung des Netzes auf eine Achse eingedampft (ein Schauglas). ' +
+      'Der Schieber ist eine Schwelle: nach unten gezogen schränkt er das Netz ein — Abschnitte ' +
+      'oberhalb der tolerierten Last fallen weg (das ist der Broda Comfort Kernel, BCK). Innerhalb ' +
+      'des verbliebenen Netzes deeskaliert der Broda Avoidance Kernel (BAK) die Route in Stufen. ' +
+      'Ändert sich die gemessene Last, wandert das Destillat mit — damit der Nutzer die einmal ' +
+      'getroffene Comfort-Einstellung behält, gleitet das Schauglas unter einem ruhenden Schieber: ' +
+      'die Welt bewegt sich, die Geste bleibt stabil.',
+  },
 ];
