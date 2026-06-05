@@ -1,5 +1,10 @@
 # Aufräum-Inventar — Kill-Liste (evidenzbasiert)
 
+> **Fortschritt:** **K1 ✅ erledigt** (shell-kit v0.9.0: colorMesh + Snapshot-Wrapper
+> entfernt) · **K2 ✅ erledigt** (Render-Kern → shell-kit, `shellRenderCore.ts` gelöscht;
+> GEOMETRIES/geometryOf + Geometry/GeometryShape re-exportieren shell-kit) ·
+> **K3 offen** (markiert, löschen erst auf Operator-Commit).
+
 **Stand 2026-06-05.** Kandidaten, die im Umfeld des Anthem/Shell-Umbaus nicht mehr
 gebraucht werden. **Disziplin (Konsens):** isolieren + markieren als Default;
 **löschen erst auf persönlichen Commit des Operators**, pro Posten. Drei Klassen:
