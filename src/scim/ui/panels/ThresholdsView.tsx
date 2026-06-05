@@ -36,6 +36,17 @@ export default function ThresholdsView() {
           <ColourAdjust panelId={s.id} />
         </div>
       ))}
+      <div style={{
+        marginTop: 14, padding: '8px 10px', fontSize: 10.5, lineHeight: 1.5,
+        color: '#744210', background: '#fffaf0', border: '1px solid #feebc8', borderRadius: 6,
+      }}>
+        <strong>Hinweis · Sichtbarkeit am Gerät:</strong> Anthem deutet und packt die Last im
+        <strong> 5-Minuten-Takt</strong> (anthem_snapshot_v1, je Segment, ohne Koordinaten). Eine
+        geänderte Schwelle wird am Ziel-Device daher erst mit dem <strong>nächsten Snapshot</strong>
+        {' '}sichtbar — nicht sofort. Das ist korrekt so. <strong>Geplant:</strong> ein
+        <strong> Testmodus</strong>, der den Effekt sofort sichtbar macht (im MVP zeigt der
+        Turbo-Slider der Runtime das vorab).
+      </div>
     </div>
   );
 }

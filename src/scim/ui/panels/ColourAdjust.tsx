@@ -5,7 +5,7 @@
 
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
-import { loadColourSettings, saveColourSettings, type ColourSettings } from '../../sensus/colourSettings';
+import { loadColourSettings, saveColourSettings, COLOUR_SETTINGS_EVENT, type ColourSettings } from '../../sensus/colourSettings';
 import { PALETTES, type PaletteId } from '../../sensus/loadColour';
 import { useInspectorView } from '../../../runtime/repContext';
 import { slugify } from '../../../runtime/router';
@@ -50,9 +50,25 @@ export default function ColourAdjust({ panelId }: { panelId: string }) {
   const [s, setS] = useState<ColourSettings>(() => loadColourSettings(regionSlug));
   useEffect(() => { setS(loadColourSettings(regionSlug)); }, [regionSlug]);
 
+  // Drei ColourAdjust-Instanzen (System/Region/Load) teilen EINE Region-Settings.
+  // Darum read-modify-write gegen den FRISCHEN Speicherstand (nicht den eigenen,
+  // evtl. veralteten Schnappschuss) — sonst klobbern sich die Sektionen.
   const update = (patch: Partial<ColourSettings>) => {
-    setS((prev) => { const next = { ...prev, ...patch }; saveColourSettings(regionSlug, next); return next; });
+    const next = { ...loadColourSettings(regionSlug), ...patch };
+    saveColourSettings(regionSlug, next);
+    setS(next);
   };
+
+  // Ändert eine andere Sektion dieselbe Region, hier mitziehen (kein stale state).
+  useEffect(() => {
+    const onEvt = (e: Event) => {
+      const d = (e as CustomEvent).detail as { regionSlug?: string; settings?: ColourSettings } | undefined;
+      if (!d || d.regionSlug !== (regionSlug || 'default') || !d.settings) return;
+      setS(d.settings);
+    };
+    window.addEventListener(COLOUR_SETTINGS_EVENT, onEvt);
+    return () => window.removeEventListener(COLOUR_SETTINGS_EVENT, onEvt);
+  }, [regionSlug]);
 
   // Vorschau-Palette = Spektrum + (Bias + Safety). spread/floor wirken auf die
   // Last-Verteilung (live), nicht auf die statische 0..1-Skala → als Marker/Note.
