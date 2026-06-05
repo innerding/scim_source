@@ -1,7 +1,12 @@
-# Ziel-App Umbauplan — paket-basierte App über Shell/Origin/Anthem (verbindlich)
+# Ziel-App Umbauplan — paket-basierte App über Shell/Origin/Anthem
+
+> **⚠ ABGELÖST (2026-06-05):** Das **Phasen-/Fortschritts-Tracking führt jetzt
+> `docs/umbauplan_gesamt.md`** (Merge aus diesem Plan + realem Baustand + BCK/BAK).
+> Dieses Doc bleibt als **Design-Begründung** (Modell-B-Entscheidung, Lücken-Analyse,
+> Format-Verträge) erhalten — für „Stand / was kommt" → Gesamt-Doc lesen.
 
 **Status:** Design-Konsens 2026-06-02. Routing-Modell **B** (Segment-Graph in der
-App) entschieden. Diese Spec ist maßgeblich für den Umbau.
+App) entschieden. Design-Begründung; Fortschritt siehe `umbauplan_gesamt.md`.
 
 **Siehe auch:** `docs/shell_katalog_zwei_takte.md` — wie Render-Mechanik (Shell,
 langsam/versioniert) und Katalog (live) auf zwei Schienen getrennt gebaut werden,
