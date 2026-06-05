@@ -195,3 +195,41 @@ shell-kit/
 **Stand:** `shell-kit` noch nicht aufgestellt (Repo-Lift offen). Erster geplanter
 Schritt: shell-kit aufstellen, beginnend mit dem Comfort-Button (`ComfortSliders` +
 `brodaComfortKernel`) als erstem Mitglied in `shell-kit/app/`.
+
+---
+
+## Container-Kette (Bezug + wer wacht über den Transport)
+
+Konsens 2026-06-05. Auch als In-App-`ann_104`. Die Container-Mechanik gehört zur
+**Shell**, wird aber **nicht über shell-studio gebildet** — dort nur „beäugt".
+
+### Vier Glieder
+1. **Mechanik (generisch, Shell):** `GEOMETRIES` (Formen) +
+   `buildContainerSvg`/`buildComposite`/`mergeOverlapping` (Render-Kern
+   `shellRenderCore.ts`, Ziel `shell-kit/app/`). Identitätsfrei.
+2. **Klassifikation (Origin/Capsuler, P09):** `containerOf(subcategory) →
+   {geometry_id, color}` je POI, angeheftet als `p.container` ans **origin-poi-set**
+   (`originPackage.ts`). Der **„Baum"** = `Bucket → Subcategory → Geometrie+Farbe`
+   (`CONTAINER_SYSTEM`); der Capsuler ordnet jeden POI ein und legt das **Ergebnis**
+   (nicht die Tabelle) ans poi-set.
+3. **Transport:** origin-poi-set reist im **Origin-Paket** (Daten, nicht Shell) →
+   R2/Worker → Runtime.
+4. **Honorieren (Runtime-Render, Shell):** nimmt je POI `{geometry_id, color, icon}`,
+   schlägt `geometry_id` in den Shell-`GEOMETRIES` nach, rendert Container+Icon
+   (+Cluster via `mergeOverlapping`).
+
+### Wer wacht (Code vs. Daten)
+- **Mechanik (Code):** Quelle = `shell-kit`; Linse zum Beäugen = `shell-run`/
+  `shell-studio` (der `container`-Block).
+- **Daten/Transport:** Capsuler (P09) klassifiziert + legt ans poi-set · Publishing
+  (P11) schnürt · Runtime honoriert.
+- **Kernsatz:** *Container **klassifizieren** = Origin · Container-**Mechanik** =
+  Shell (shell-kit) · **beäugen** = shell-studio · **honorieren** = Runtime.* Spiegelt
+  exakt die Icon-Regel (klassifizieren = Origin, honorieren = Shell).
+
+### Stand
+- **Gebaut:** Mechanik (Render-Kern, editor-seitig genutzt) · Klassifikation (Capsuler
+  hängt `container` ans poi-set).
+- **OFFEN:** Transport → **Runtime-Honorieren** — die Runtime rendert POIs noch als
+  schlichte Marker (kein Container-Composite), nutzt Mocks/altes Paket. (Gleiche
+  Bruchstelle wie Weg 1↔2.)

@@ -55,6 +55,14 @@ const SEED_ANNOTATIONS: Annotation[] = [
     related_panel: 'P07',
     date: '2026-06-05',
   },
+  {
+    id: 'ann_104',
+    category: 'adr',
+    label: 'Container-Kette (Bezug + wer wacht über den Transport)',
+    content: 'Die Container-Mechanik gehört zur SHELL, wird aber NICHT über shell-studio GEBILDET — dort nur „beäugt". Kette in 4 Gliedern: (1) MECHANIK (generisch, Shell): GEOMETRIES (Formen) + buildContainerSvg/buildComposite/mergeOverlapping (Render-Kern shellRenderCore.ts, Ziel shell-kit/app/), identitätsfrei. (2) KLASSIFIKATION (Origin/Capsuler, P09): containerOf(subcategory) → {geometry_id,color} je POI, angeheftet als p.container ans origin-poi-set (originPackage.ts). Der „Baum" = Bucket → Subcategory → Geometrie+Farbe (CONTAINER_SYSTEM); der Capsuler ordnet jeden POI ein und legt das ERGEBNIS (nicht die Tabelle) ans poi-set. (3) TRANSPORT: origin-poi-set reist im Origin-PAKET (Daten, nicht Shell) → R2/Worker → Runtime. (4) HONORIEREN (Runtime-Render, Shell): nimmt je POI {geometry_id,color,icon}, schlägt geometry_id in den Shell-GEOMETRIES nach, rendert Container+Icon (+Cluster via mergeOverlapping). — WÄCHTER (Code vs. Daten): Mechanik (Code) — Quelle shell-kit, Linse shell-run/shell-studio (container-Block); Daten/Transport — Capsuler (P09) klassifiziert+legt ans poi-set, Publishing (P11) schnürt, Runtime honoriert. KERNSATZ: Container klassifizieren = Origin · Container-Mechanik = Shell (shell-kit) · beäugen = shell-studio · honorieren = Runtime (spiegelt die Icon-Regel klassifizieren=Origin/honorieren=Shell). — STAND: Mechanik gebaut (Render-Kern, editor-seitig genutzt) · Klassifikation gebaut (Capsuler hängt container ans poi-set) · OFFEN: Transport→Runtime-Honorieren (Runtime rendert POIs noch als schlichte Marker, ohne Container-Composite; nutzt Mocks/altes Paket). VOLL: docs/wege_und_begriffe.md §Container-Kette.',
+    related_panel: 'P09',
+    date: '2026-06-05',
+  },
 
   // ── Kernbegriffe ──────────────────────────────────────────────────────────────
 
