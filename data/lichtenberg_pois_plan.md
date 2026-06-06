@@ -1,9 +1,11 @@
 # Lichtenberg POI-Plan v1
-**Stand:** 2026-06-04  ·  **24 POIs**  ·  ✓ 23 · ≈ 0 · ❓ 0
+**Stand:** 2026-06-06  ·  **24 POIs**  ·  ✓ 23 · ≈ 0 · ❓ 0
 **Token-Präfix:** boeh · lichtenberg
 
 Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 **✓** aus OSM/bestätigt · **≈** abgeleitet/geschätzt · **❓** fehlt
+
+---
 
 ---
 
@@ -93,7 +95,7 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 
 | Code | Icon | Tagline | Description | Coord | Cluster | Status |
 |---|---|---|---|---|---|---|
-| boeh-lichtenberg-9mqd | aussichtspunkt | Gis 927 m | Sender, Giselawarte und Gasthaus am Lichtenberg-Gipfel | ↑ | Lichtenberg | cluster_ghost |
+| boeh-lichtenberg-9mqd | aussichtswarte+ | Gis 927 m | Sender, Giselawarte und Gasthaus am Lichtenberg-Gipfel | ↑ | Lichtenberg | cluster_ghost |
 
 ---
 
@@ -157,11 +159,13 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 
 ---
 
+---
+
 ## Cluster
 
 ### Lichtenberg *(7 POIs)*
 
-aussichtswarte+ Giselawarte 927 m *(Cluster-Icon)* · sender Sender · aussichtspunkt+ Gipfel Lichtenberg 927m · gasthaus+ zur Gis a° 1702 · gewaesser Pollack-Quelle · parkplatz Gisela Parkplatz · aussichtspunkt Gis 927 m
+aussichtswarte+ Giselawarte 927 m *(Cluster-Icon)* · sender Sender · aussichtspunkt+ Gipfel Lichtenberg 927m · gasthaus+ zur Gis a° 1702 · gewaesser Pollack-Quelle · parkplatz Gisela Parkplatz · aussichtswarte+ Gis 927 m
 
 ---
 
