@@ -15,6 +15,7 @@ import type { TabId } from './panelRegistry';
 import NavTransmissionField from './NavTransmissionField';
 import NavMetaSpace from './NavMetaSpace';
 import NavDepthTetraeder from './NavDepthTetraeder';
+import NavTrashTruck from './NavTrashTruck';
 
 interface Props {
   activeId: string;
@@ -382,6 +383,9 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
     return s;
   });
   const cosmoOpen = manuallyOpen.has('cosmo');
+  // Müllwagen-Sektion: ungenutzte Panels (REST). Default zu; auto-offen, wenn der
+  // aktive Panel drinliegt (sonst wäre der Aktiv-Marker versteckt).
+  const trashOpen = manuallyOpen.has('trash') || REST_IDS.includes(activeId);
   const toggleSection = (sectionId: string) => {
     setManuallyOpen((prev) => {
       const next = new Set(prev);
@@ -813,22 +817,29 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
         })}
       </SectionBody>
 
-      {/* ── Rest — was bislang keinen Platz fand (flach, ohne Titel, mit Icons) ── */}
+      {/* ── Müllwagen — ungenutzte Panels (der „Rest"), eingeklappt unter dem Strich ── */}
       <SectionDivider />
-      {REST_IDS
-        .map(descById)
-        .filter((d): d is { id: string; icon: string; label: string } => d !== null)
-        .map((d) => (
-          <NavItem
-            key={d.id}
-            id={d.id}
-            icon={d.icon}
-            label={d.label}
-            status={panelStatus[d.id] ?? 'grey'}
-            isActive={activeId === d.id}
-            onClick={() => onSelect(d.id)}
-          />
-        ))}
+      <NavTrashTruck
+        isOpen={trashOpen}
+        count={REST_IDS.map(descById).filter((d) => d !== null).length}
+        onClick={() => toggleSection('trash')}
+      />
+      <SectionBody isOpen={trashOpen}>
+        {REST_IDS
+          .map(descById)
+          .filter((d): d is { id: string; icon: string; label: string } => d !== null)
+          .map((d) => (
+            <NavItem
+              key={d.id}
+              id={d.id}
+              icon={d.icon}
+              label={d.label}
+              status={panelStatus[d.id] ?? 'grey'}
+              isActive={activeId === d.id}
+              onClick={() => onSelect(d.id)}
+            />
+          ))}
+      </SectionBody>
     </nav>
   );
 }
