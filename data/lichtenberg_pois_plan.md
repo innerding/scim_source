@@ -1,9 +1,11 @@
 # Lichtenberg POI-Plan v1
-**Stand:** 2026-06-06  ·  **24 POIs**  ·  ✓ 23 · ≈ 0 · ❓ 0
+**Stand:** 2026-06-06  ·  **23 POIs**  ·  ✓ 22 · ≈ 0 · ❓ 0
 **Token-Präfix:** boeh · lichtenberg
 
 Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 **✓** aus OSM/bestätigt · **≈** abgeleitet/geschätzt · **❓** fehlt
+
+---
 
 ---
 
@@ -42,7 +44,6 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 | Code | Icon | Tagline | Description | Coord | Cluster | Status |
 |---|---|---|---|---|---|---|
 | boeh-lichtenberg-pcck | aussichtswarte+ | Giselawarte 927 m | Steinblock-Aussichtswarte von 1857, 17,5 m hoch | 14.25445, 48.38515 | Lichtenberg *(Cluster-Icon)* | ✓ |
-| boeh-lichtenberg-e6e8 | aussichtspunkt | Kogl | Blick über die Koglerau ins Donautal und auf das Alpenpanorama | 14.23873, 48.38005 | — | ✓ |
 | boeh-lichtenberg-puxy | aussichtspunkt+ | Gipfel Lichtenberg 927m |  | 14.25434, 48.38534 | Lichtenberg | ✓ |
 | boeh-lichtenberg-vwjr | aussichtspunkt | Steinfelsen Gipfel |  | 14.24210, 48.41206 | — | ✓ |
 
@@ -144,6 +145,8 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 - Service: Sub-Differenzierung allein durch das Innensymbol
 - Cluster: keine Sub (magenta einheitlich)
 - Hexagon-Ring: transparent als unsichtbarer Cluster-Ring · opaque als vereinigtes Cluster-POI beim Herauszoomen
+
+---
 
 ---
 
