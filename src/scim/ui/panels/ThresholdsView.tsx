@@ -2,12 +2,13 @@
 // Die Skala = Farb-Felder, getrennt durch Grenzen (Load-Positionen 0..1).
 // Der farbige Verlauf ist nur ANSICHT dieser Positionen.
 //
-// SCHRITT 1 (hier gebaut): Marker beliebig setzen → „✓ Check" zentriert diesen
-//   Punkt auf die Mitte (Load 0.5); alle Felder darunter teilen sich die untere,
-//   alle darüber die obere Hälfte (rechnerische Verschiebung der Positionen). Die
-//   Farben wandern mit (keine Umfärbung). „✎ ändern" löst den Marker wieder.
+// SCHRITT 1 (hier gebaut): Klick auf ein FELD macht es zum Mittelfeld → es rückt
+//   in die Mitte (Load 0.5); Felder darunter teilen sich die untere, darüber die
+//   obere Hälfte (rechnerische Verschiebung der Positionen). Farben wandern mit.
+//   Kein Marker, kein Check — direkt.
 //
-// SCHRITT 2 (später): zwei Live-Schieber justieren die Grenzen je Hälfte direkt.
+// WEITERE SCHRITTE (später): an jeder Feldgrenze ein Schieber, der die GRENZE
+//   verschiebt (angrenzende Felder ändern ihre Größe).
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { loadColourSettings, saveColourSettings, COLOUR_SETTINGS_EVENT, evenPositions, type ColourSettings } from '../../sensus/colourSettings';
@@ -52,16 +53,13 @@ export default function ThresholdsView() {
   const regionSlug = slugify(view?.geometry?.region ?? '') || 'default';
   const [s, setS] = useState<ColourSettings>(() => loadColourSettings(regionSlug));
 
-  // Schritt-1-Zustand
-  const [checked, setChecked] = useState(false);
-  const [marker, setMarker] = useState(0.5);          // Marker-Load (im Justier-Modus)
-  const [tweenPos, setTweenPos] = useState<number[] | null>(null); // animierte Anzeige-Positionen
+  // Schritt-1-Zustand: nur die animierte Anzeige (Tween)
+  const [tweenPos, setTweenPos] = useState<number[] | null>(null);
   const rafRef = useRef(0);
   const barRef = useRef<HTMLDivElement>(null);
-  const dragRef = useRef(false);
 
   useEffect(() => {
-    setS(loadColourSettings(regionSlug)); setChecked(false); setMarker(0.5); setTweenPos(null);
+    setS(loadColourSettings(regionSlug)); setTweenPos(null);
   }, [regionSlug]);
 
   const update = useCallback((patch: Partial<ColourSettings>) => {
@@ -95,48 +93,39 @@ export default function ThresholdsView() {
     rafRef.current = requestAnimationFrame(step);
   };
 
-  const toggleCheck = () => {
-    if (!checked) {
-      const from = s.positions.slice();
-      const to = centerPositions(s.positions, marker);
-      update({ positions: to });
-      setChecked(true); setMarker(0.5);
-      animateTo(from, to);
-    } else {
-      setChecked(false); setMarker(0.5);
-    }
+  // Klick auf ein Feld → dieses Feld wird Mittelfeld (rückt in die Mitte).
+  const centerField = (idx: number) => {
+    const from = s.positions.slice();
+    const to = centerPositions(s.positions, s.positions[idx]);
+    update({ positions: to });
+    animateTo(from, to);
   };
-
-  // Marker per Zeiger setzen (nur im Justier-Modus)
-  const pointToLoad = (clientY: number) => {
-    const r = barRef.current?.getBoundingClientRect(); if (!r) return marker;
-    return clamp01(1 - (clientY - r.top) / r.height);
+  const onBarClick = (e: React.MouseEvent) => {
+    const r = barRef.current?.getBoundingClientRect(); if (!r) return;
+    const load = clamp01(1 - (e.clientY - r.top) / r.height);
+    let idx = 0, best = Infinity;                       // nächstgelegenes Feld (Stop)
+    s.positions.forEach((p, i) => { const dd = Math.abs(p - load); if (dd < best) { best = dd; idx = i; } });
+    centerField(idx);
   };
-  const onBarDown = (e: React.PointerEvent) => {
-    if (checked) return;
-    dragRef.current = true; (e.target as HTMLElement).setPointerCapture(e.pointerId);
-    setMarker(pointToLoad(e.clientY));
-  };
-  const onBarMove = (e: React.PointerEvent) => { if (dragRef.current && !checked) setMarker(pointToLoad(e.clientY)); };
-  const onBarUp = (e: React.PointerEvent) => { dragRef.current = false; try { (e.target as HTMLElement).releasePointerCapture(e.pointerId); } catch { /* */ } };
 
   const displayPos = tweenPos ?? s.positions;
-  const markerY = checked ? 0.5 : marker;
+  // Feld-Trenner: Mittelpunkte zwischen benachbarten Stops
+  const seps = displayPos.slice(0, -1).map((p, i) => (p + displayPos[i + 1]) / 2);
 
   const setStop = (i: number, color: string) => { const stops = s.stops.slice(); stops[i] = color; update({ stops }); };
   const addStop = () => {
     if (s.stops.length >= 6) return;
     const stops = [...s.stops, s.stops[s.stops.length - 1]];
     update({ stops, positions: evenPositions(stops.length) });   // Felder neu gleichverteilen
-    setChecked(false); setMarker(0.5);
+    setTweenPos(null);
   };
   const removeStop = (i: number) => {
     if (s.stops.length <= 2) return;
     const stops = s.stops.filter((_, j) => j !== i);
     update({ stops, positions: evenPositions(stops.length) });
-    setChecked(false); setMarker(0.5);
+    setTweenPos(null);
   };
-  const resetEven = () => { update({ positions: evenPositions(s.stops.length) }); setChecked(false); setMarker(0.5); };
+  const resetEven = () => { update({ positions: evenPositions(s.stops.length) }); setTweenPos(null); };
 
   const vj = s.verjuengung;
   const setVj = (p: Partial<typeof vj>) => update({ verjuengung: { ...vj, ...p } });
@@ -151,31 +140,30 @@ export default function ThresholdsView() {
       </div>
 
       <div style={{ fontSize: 12.5, fontWeight: 700, color: '#1a365d', marginBottom: 2 }}>
-        Schritt 1 · Mitte zentrieren <span style={{ fontWeight: 400, fontSize: 10.5, color: '#a0aec0' }}>· Felder + Grenzen</span>
+        Schritt 1 · Mittelfeld wählen <span style={{ fontWeight: 400, fontSize: 10.5, color: '#a0aec0' }}>· Felder + Grenzen</span>
       </div>
       <div style={{ fontSize: 10, color: '#718096', marginBottom: 10, maxWidth: 380 }}>
-        Marker auf dem Verlauf setzen → <strong>„✓ Check"</strong> zentriert diesen Punkt auf die Mitte.
-        Felder darunter/darüber teilen sich je die untere/obere Hälfte — die Farben wandern mit.
+        <strong>Klick auf ein Feld</strong> macht es zum Mittelfeld → es rückt in die Mitte.
+        Felder darunter/darüber teilen sich je die untere/obere Hälfte; die Farben wandern mit.
       </div>
 
       <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
-        {/* Verlauf-Säule mit Marker */}
+        {/* Verlauf-Säule: klickbare Felder, Mitte-Referenz + Feld-Trenner */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
           <div
             ref={barRef}
-            onPointerDown={onBarDown} onPointerMove={onBarMove} onPointerUp={onBarUp}
-            style={{ position: 'relative', width: 44, height: PV_H, borderRadius: 5, border: '1px solid #cbd5e0', background: gradientCss(s.stops, displayPos), cursor: checked ? 'default' : 'ns-resize', touchAction: 'none' }}
+            onClick={onBarClick}
+            title="Feld anklicken = in die Mitte rücken"
+            style={{ position: 'relative', width: 44, height: PV_H, borderRadius: 5, border: '1px solid #cbd5e0', background: gradientCss(s.stops, displayPos), cursor: 'pointer' }}
           >
-            <div style={{ position: 'absolute', left: -4, right: -4, top: `${(1 - markerY) * 100}%`, height: 0, borderTop: checked ? '2px solid rgba(255,255,255,0.97)' : '2px dashed rgba(255,255,255,0.97)', boxShadow: '0 0 0 0.7px rgba(0,0,0,0.55)', transition: tweenPos ? 'top 0.42s ease' : 'none' }} />
+            {/* Feld-Trenner */}
+            {seps.map((m, i) => (
+              <div key={i} style={{ position: 'absolute', left: 0, right: 0, top: `${(1 - m) * 100}%`, height: 0, borderTop: '1px solid rgba(255,255,255,0.7)' }} />
+            ))}
+            {/* Mitte-Referenz */}
+            <div style={{ position: 'absolute', left: -4, right: -4, top: '50%', height: 0, borderTop: '2px solid rgba(0,0,0,0.55)', boxShadow: '0 0 0 0.6px rgba(255,255,255,0.8)' }} />
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <button
-              onClick={toggleCheck}
-              style={{ fontSize: 10.5, padding: '3px 10px', borderRadius: 4, cursor: 'pointer', fontWeight: 600,
-                border: '1px solid ' + (checked ? '#2b6cb0' : '#dd6b20'),
-                background: checked ? '#ebf8ff' : '#dd6b20', color: checked ? '#2b6cb0' : '#fff' }}
-            >{checked ? '✎ ändern' : '✓ Check'}</button>
-          </div>
+          <span style={{ fontSize: 8.5, color: '#a0aec0' }}>oben = Last 1</span>
           <button onClick={resetEven} style={{ fontSize: 9, padding: '1px 6px', borderRadius: 3, border: '1px solid #e2e8f0', background: '#f7fafc', color: '#718096', cursor: 'pointer' }}>↺ gleichverteilen</button>
         </div>
 
@@ -186,7 +174,8 @@ export default function ThresholdsView() {
             {s.stops.map((c, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <input type="color" value={toHex(c)} onChange={(e) => setStop(i, e.target.value)} style={{ width: 30, height: 24, border: 'none', background: 'none', cursor: 'pointer' }} />
-                <span style={{ fontSize: 9.5, color: '#a0aec0', fontFamily: 'ui-monospace, Menlo, monospace', width: 64 }}>Pos {(s.positions[i] * 100).toFixed(0)}%</span>
+                <button onClick={() => centerField(i)} title="dieses Feld in die Mitte rücken" style={{ fontSize: 10, padding: '1px 6px', borderRadius: 3, border: '1px solid #cbd5e0', background: '#fff', color: '#2b6cb0', cursor: 'pointer' }}>⊙ Mitte</button>
+                <span style={{ fontSize: 9.5, color: '#a0aec0', fontFamily: 'ui-monospace, Menlo, monospace', width: 58 }}>{(s.positions[i] * 100).toFixed(0)}%</span>
                 {s.stops.length > 2 && (
                   <button onClick={() => removeStop(i)} style={{ fontSize: 12, border: 'none', background: 'none', color: '#a0aec0', cursor: 'pointer' }}>×</button>
                 )}
