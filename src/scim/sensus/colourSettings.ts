@@ -23,24 +23,24 @@ export interface ColourSettings {
   floor: number;             // P01 — 0 … 1 Mindest-Rot
   // ── Neues Skalen-Modell (Thresholds-Umbau, Stufe 2) — speist shell-kit ScaleSpec ──
   // Übergangsweise neben den alten Feldern; Stufe 6 löst spread/floor/palette ab.
-  stops: string[];                       // 2–6 Farb-Stops (grün→rot), = ScaleSpec.stops
-  positions: number[];                   // Load-Position 0..1 je Stop (sortiert) — Felder/Grenzen-Modell
-  spreizung: { mitte: number; oben: number; unten: number };        // (vestigial, bis Mesh auf positions umgestellt ist)
+  stops: string[];                       // 2–6 Farb-Felder (grün→rot, unten→oben)
+  borders: number[];                     // N−1 innere Feldgrenzen (Load 0..1, sortiert) — Grenzen sind die Wahrheit
+  spreizung: { mitte: number; oben: number; unten: number };        // (vestigial, bis Mesh auf borders umgestellt ist)
   verjuengung: { unten: number; oben: number };                     // Wrap (Comfort-only)
 }
 
 const DEFAULT_STOPS = ['#2ecc40', '#ffd400', '#ff2d2d', '#ff0099'];  // grün · gelb · rot · pink (wie Comfort-Slider)
 
-// Gleichmäßige Positionen für n Stops: [0, 1/(n-1), …, 1].
-export function evenPositions(n: number): number[] {
-  if (n <= 1) return [0];
-  return Array.from({ length: n }, (_, i) => i / (n - 1));
+// Gleichmäßige innere Grenzen für n Felder: [1/n, 2/n, …, (n−1)/n].
+export function evenBorders(n: number): number[] {
+  if (n <= 1) return [];
+  return Array.from({ length: n - 1 }, (_, i) => (i + 1) / n);
 }
 
 export const DEFAULT_COLOUR_SETTINGS: ColourSettings = {
   palette: DEFAULT_PALETTE, spectrum: 0.5, bias: 0, safety: 0, degradier: null, spread: 0, floor: 0,
   stops: [...DEFAULT_STOPS],
-  positions: evenPositions(DEFAULT_STOPS.length),
+  borders: evenBorders(DEFAULT_STOPS.length),
   spreizung: { mitte: 0.5, oben: 0.5, unten: 0.5 },
   verjuengung: { unten: 0, oben: 0 },
 };
@@ -62,11 +62,12 @@ function coerceStops(v: unknown): string[] {
   return ok.slice(0, 6);
 }
 
-// Positionen: genau n finite Zahlen in [0,1], aufsteigend sortiert; sonst gleichmäßig.
-function coercePositions(v: unknown, n: number): number[] {
-  if (!Array.isArray(v) || v.length !== n) return evenPositions(n);
-  const ok = v.map((x) => (typeof x === 'number' && Number.isFinite(x) ? clamp(x, 0, 1) : NaN));
-  if (ok.some((x) => Number.isNaN(x))) return evenPositions(n);
+// Grenzen: genau n−1 finite Zahlen in (0,1), aufsteigend sortiert; sonst gleichmäßig.
+function coerceBorders(v: unknown, n: number): number[] {
+  const need = Math.max(0, n - 1);
+  if (!Array.isArray(v) || v.length !== need) return evenBorders(n);
+  const ok = v.map((x) => (typeof x === 'number' && Number.isFinite(x) ? clamp(x, 0.001, 0.999) : NaN));
+  if (ok.some((x) => Number.isNaN(x))) return evenBorders(n);
   return ok.slice().sort((a, b) => a - b);
 }
 
@@ -87,7 +88,7 @@ export function coerceSettings(raw: unknown): ColourSettings {
     spread: clamp(num(r.spread, d.spread), 0, 1),
     floor: clamp(num(r.floor, d.floor), 0, 1),
     stops,
-    positions: coercePositions(r.positions, stops.length),
+    borders: coerceBorders(r.borders, stops.length),
     spreizung: {
       mitte: clamp(num((r.spreizung as Record<string, unknown>)?.mitte, d.spreizung.mitte), 0, 1),
       oben: clamp(num((r.spreizung as Record<string, unknown>)?.oben, d.spreizung.oben), 0, 1),
