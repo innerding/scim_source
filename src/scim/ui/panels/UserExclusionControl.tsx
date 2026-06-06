@@ -1,26 +1,14 @@
 // „Der Ausschluss des Users" (Umbauplan C1) — Runtime-Sim im P09-Mask-Tab.
 // Der User setzt eine Ø-Last-Schwelle; Strecken darüber werden später (Phase D)
-// farblos neutralisiert. §2a: durchgehender Gradient (Region-Palette), die
-// Schwelle nur als aufgesetzter Marker.
+// farblos neutralisiert. (Alte colorize-Legende ausgemustert, Stufe 6.)
 
 import { useState } from 'react';
 import { loadUserExclusion, saveUserExclusion } from '../../sensus/userExclusion';
-import { loadColourSettings } from '../../sensus/colourSettings';
-import { useInspectorView } from '../../../runtime/repContext';
-import { slugify } from '../../../runtime/router';
-import { ColourGradientBar, type GradientMarker } from './ColourGradientBar';
-
-const clamp = (x: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, x));
 
 export default function UserExclusionControl() {
-  const view = useInspectorView();
-  const regionSlug = slugify(view?.geometry?.region ?? '') || 'default';
-  const settings = loadColourSettings(regionSlug);
   const [val, setVal] = useState<number | null>(() => loadUserExclusion());
 
   const update = (v: number | null) => { setVal(v); saveUserExclusion(v); };
-  const effBias = clamp(settings.bias + settings.safety, -1, 1);
-  const markers: GradientMarker[] = val != null ? [{ at: val, label: 'Ausschluss', color: '#000000' }] : [];
 
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 440, marginTop: 4 }}>
@@ -28,9 +16,6 @@ export default function UserExclusionControl() {
       <div style={{ fontSize: 11, color: '#718096', margin: '2px 0 8px', lineHeight: 1.45 }}>
         Runtime/User (hier simuliert): ab dieser <strong>Ø-Last je Strecke</strong> werden Routen/POIs
         <strong> neutralisiert</strong> (farblos) — anders als die Operator-Degradierung, die nur entdrängt.
-      </div>
-      <div style={{ marginBottom: 10 }}>
-        <ColourGradientBar palette={settings.palette} spectrum={settings.spectrum} bias={effBias} markers={markers} />
       </div>
       <label style={{ fontSize: 11, color: '#4a5568', display: 'flex', gap: 6, alignItems: 'center', marginBottom: 6 }}>
         <input type="checkbox" checked={val != null}

@@ -12,7 +12,6 @@ import type { ScimPipelineResult } from '../pipeline/scimPipeline.types';
 
 // Panel content placeholders — filled panel by panel in subsequent sessions
 import PanelInputForm from './panels/PanelInputForm';
-import ColourAdjust from './panels/ColourAdjust';
 import UserExclusionControl from './panels/UserExclusionControl';
 import TestRouteControl from './panels/TestRouteControl';
 import RuntimeFlowExplainer from './panels/RuntimeFlowExplainer';
@@ -1263,11 +1262,9 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
       // 'adjust' der Farb-Stationen P01/P02/P04 → die Farb-Regler (B2);
       // sonst die generischen Schwellen-Slider.
       case 'input':      tabContent = <PanelInputForm panel={panel} result={result} />; break;
-      case 'adjust':
-        tabContent = (panel.id === 'P01' || panel.id === 'P02' || panel.id === 'P04')
-          ? <ColourAdjust panelId={panel.id} />
-          : <PanelInputForm panel={panel} result={result} />;
-        break;
+      // 'adjust': Farb-Tuning lebt jetzt komplett in P01 (ThresholdsView, Felder-Modell);
+      // die alte ColourAdjust-Fläche (palette/spectrum/bias) ist ausgemustert (Stufe 6).
+      case 'adjust':     tabContent = <PanelInputForm panel={panel} result={result} />; break;
       // 'simulation'-Tab gibt es nicht mehr — Sim-Telco ist in T3 nach P04 (Telco)
       // gewandert (SimArchitecture · Sim-Clock · Sim-Form).
       case 'result':     tabContent = <PanelResult panel={panel} result={result} />; break;

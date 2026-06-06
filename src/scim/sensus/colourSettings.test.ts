@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { coerceSettings, DEFAULT_COLOUR_SETTINGS } from './colourSettings';
 
-describe('colourSettings – coerceSettings (B1)', () => {
+describe('colourSettings – coerceSettings', () => {
   it('leeres/ungültiges Objekt → Defaults', () => {
     expect(coerceSettings({})).toEqual(DEFAULT_COLOUR_SETTINGS);
     expect(coerceSettings(undefined)).toEqual(DEFAULT_COLOUR_SETTINGS);
@@ -9,21 +9,10 @@ describe('colourSettings – coerceSettings (B1)', () => {
     expect(coerceSettings(42)).toEqual(DEFAULT_COLOUR_SETTINGS);
   });
 
-  it('clampt jeden Wert in seinen Bereich', () => {
-    const s = coerceSettings({ spectrum: 5, bias: -3, safety: 9, spread: -1, floor: 2 });
-    expect(s.spectrum).toBe(1);
-    expect(s.bias).toBe(-1);
-    expect(s.safety).toBe(1);
+  it('clampt spread/floor in ihren Bereich', () => {
+    const s = coerceSettings({ spread: -1, floor: 2 });
     expect(s.spread).toBe(0);
     expect(s.floor).toBe(1);
-  });
-
-  it('gültige Werte gehen durch, Rest Default', () => {
-    const s = coerceSettings({ spectrum: 0.3, bias: 0.5 });
-    expect(s.spectrum).toBe(0.3);
-    expect(s.bias).toBe(0.5);
-    expect(s.safety).toBe(0);       // default
-    expect(s.degradier).toBeNull(); // default
   });
 
   it('degradier: Zahl wird geclampt, sonst null (aus)', () => {
@@ -35,8 +24,15 @@ describe('colourSettings – coerceSettings (B1)', () => {
   });
 
   it('NaN/Infinity fallen auf Default zurück', () => {
-    const s = coerceSettings({ spectrum: NaN, bias: Infinity });
-    expect(s.spectrum).toBe(0.5);
-    expect(s.bias).toBe(0);
+    const s = coerceSettings({ spread: NaN, floor: Infinity });
+    expect(s.spread).toBe(0);
+    expect(s.floor).toBe(0);
+  });
+
+  it('Felder-Modell: stops/borders/middleField übernommen + validiert', () => {
+    const s = coerceSettings({ stops: ['#2ecc40', '#ff2d2d'], borders: [0.5], middleField: 0 });
+    expect(s.stops).toEqual(['#2ecc40', '#ff2d2d']);
+    expect(s.borders).toEqual([0.5]);
+    expect(s.middleField).toBe(0);
   });
 });

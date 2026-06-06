@@ -1,28 +1,17 @@
-// Farb-/Schwellen-Settings (Umbauplan B1) — die Operator-Parameter der Farb-
-// Kette, persistiert pro Region (localStorage, wie edgeTypeConfig). Speisen die
-// Engine-Funktionen aus Phase A:
-//   P04 Load   → spectrum            (colorize: Spektrum-Charakter)
-//   P02 Region → bias · safety       (colorize: Tendenz + Safety-Default)
-//               degradier            (classifyStretches: Degradier-Schwelle)
-//   P01 System → spread · floor      (normalizeLoads)
-// Defaults = neutrale Kette (≙ heatColor, keine Normalisierung) — bis getunt
-// wird, ändert sich nichts. §2a bleibt gewahrt (Schwellen sind Werte, der
-// Gradient ist stetig).
+// Farb-/Schwellen-Settings — die Operator-Parameter der Farb-Kette, persistiert
+// pro Region (localStorage). Das Farb-Modell ist das Felder-/Grenzen-Modell
+// (stops/borders/middleField → shell-kit ScaleSpec, colorAt). Die alte colorize-
+// Kette (palette/spectrum/bias/safety) ist ausgemustert (Stufe 6).
+//   degradier            → BCK-Degradier-Schwelle
+//   spread · floor       → Anthem-Normalisierung (eigener, späterer Schritt)
 //
 // Die User-Ausschluss-Schwelle ist NICHT hier — sie ist runtime/user (P09 Mask).
 
-import { PALETTES, DEFAULT_PALETTE, type PaletteId } from './loadColour';
-
 export interface ColourSettings {
-  palette: PaletteId;        // P04 — Palette-Modell (Grund-Spektrum)
-  spectrum: number;          // P04 — 0 ruhig … 0.5 linear … 1 aggressiv
-  bias: number;              // P02 — −1 kühler … 0 … +1 heißer (regionale Tendenz)
-  safety: number;            // P02 — 0 … 1 zusätzliche Aggressivität (Safety-Default)
-  degradier: number | null;  // P02 — Ø-Last-Schwelle (null = aus)
-  spread: number;            // P01 — 0 absolut … 1 voll relativ
-  floor: number;             // P01 — 0 … 1 Mindest-Rot
-  // ── Neues Skalen-Modell (Thresholds-Umbau, Stufe 2) — speist shell-kit ScaleSpec ──
-  // Übergangsweise neben den alten Feldern; Stufe 6 löst spread/floor/palette ab.
+  degradier: number | null;  // Ø-Last-Schwelle (null = aus) — BCK-Degradier
+  spread: number;            // Anthem-Norm — 0 absolut … 1 voll relativ
+  floor: number;             // Anthem-Norm — 0 … 1 Mindest-Rot
+  // ── Felder-/Grenzen-Modell (Stufe 1) — speist shell-kit ScaleSpec ──
   stops: string[];                       // 2–6 Farb-Felder (grün→rot, unten→oben)
   borders: number[];                     // N−1 innere Feldgrenzen (Load 0..1, sortiert) — Grenzen sind die Wahrheit
   middleField: number | null;            // in Schritt 1 zentriertes Feld (Index) — bleibt auf 0.5 fixiert; null = keins
@@ -39,7 +28,7 @@ export function evenBorders(n: number): number[] {
 }
 
 export const DEFAULT_COLOUR_SETTINGS: ColourSettings = {
-  palette: DEFAULT_PALETTE, spectrum: 0.5, bias: 0, safety: 0, degradier: null, spread: 0, floor: 0,
+  degradier: null, spread: 0, floor: 0,
   stops: [...DEFAULT_STOPS],
   borders: evenBorders(DEFAULT_STOPS.length),
   middleField: null,
@@ -79,13 +68,8 @@ export function coerceSettings(raw: unknown): ColourSettings {
   const r = (raw && typeof raw === 'object') ? raw as Record<string, unknown> : {};
   const d = DEFAULT_COLOUR_SETTINGS;
   const degValid = typeof r.degradier === 'number' && Number.isFinite(r.degradier);
-  const palette = (typeof r.palette === 'string' && r.palette in PALETTES) ? r.palette as PaletteId : d.palette;
   const stops = coerceStops(r.stops);
   return {
-    palette,
-    spectrum: clamp(num(r.spectrum, d.spectrum), 0, 1),
-    bias: clamp(num(r.bias, d.bias), -1, 1),
-    safety: clamp(num(r.safety, d.safety), 0, 1),
     degradier: degValid ? clamp(r.degradier as number, 0, 1) : null,
     spread: clamp(num(r.spread, d.spread), 0, 1),
     floor: clamp(num(r.floor, d.floor), 0, 1),

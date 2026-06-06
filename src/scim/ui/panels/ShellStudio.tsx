@@ -31,8 +31,7 @@ function HarnessSwitch({ on, label, tone, onClick }: { on: boolean; label: strin
     </button>
   );
 }
-import { colorize } from '../../sensus/loadColour';
-import { ColourGradientBar } from './ColourGradientBar';
+import { colorAt, DEFAULT_SCALE } from 'shell-kit';
 
 // Die echte, veröffentlichte erste Demo der Ziel-App. Surface-Blöcke zeigen SIE
 // (inkl. Expand/Collapse/Positionierung) — keine erfundene Nachbildung.
@@ -125,12 +124,12 @@ function ColorizeViz() {
   return (
     <div style={{ padding: 12, height: '100%', display: 'flex', flexDirection: 'column', gap: 8, fontFamily: 'system-ui, sans-serif' }}>
       <div style={{ fontSize: 11, fontWeight: 700, color: '#1a365d' }}>Auslastung</div>
-      <ColourGradientBar palette="green_violet" height={16} />
+      <div style={{ height: 16, borderRadius: 3, background: `linear-gradient(to right, ${[0, 0.25, 0.5, 0.75, 1].map((t) => colorAt(t, DEFAULT_SCALE)).join(', ')})` }} />
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: '#a0aec0' }}><span>ruhig</span><span>busy</span></div>
       <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 6 }}>
         {samples.map((l, i) => (
           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <div style={{ flex: 1, height: 5, borderRadius: 3, background: colorize(l) }} />
+            <div style={{ flex: 1, height: 5, borderRadius: 3, background: colorAt(l, DEFAULT_SCALE) }} />
             <span style={{ fontSize: 9, color: '#718096', fontFamily: 'ui-monospace, Menlo, monospace' }}>{l.toFixed(2)}</span>
           </div>
         ))}
