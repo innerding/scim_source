@@ -13,6 +13,7 @@ import {
   TILE_OSM_URL, TILE_OSM_ATTR, TILE_MESH_URL, TILE_MESH_ATTR,
 } from './colourMeshOverlay';
 import { useInspectorView, useInspectorAsset, useRepresentationContext } from '../../runtime/repContext';
+import { useColourRegionSlug } from '../../runtime/useAuftraggeberRep';
 import type { InspectorAsset } from '../../runtime/repContext';
 import { slugify } from '../../runtime/router';
 import { loadIncludedTypes } from '../regio-content/edgeTypeConfig';
@@ -205,19 +206,20 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
     return () => window.removeEventListener('scim:edge-types:changed', onChange);
   }, [regionSlug]);
 
-  // Farb-Settings (P01/P02/P04) pro Region + User-Ausschluss (runtime). Beide
-  // speisen das „Last (sim)"-Rendern; bei Änderung (Regler) live neu zeichnen.
-  const [colourCfg, setColourCfg] = useState(() => loadColourSettings(regionSlug));
-  useEffect(() => { setColourCfg(loadColourSettings(regionSlug)); }, [regionSlug]);
+  // Farb-Settings (P01/P02/P04): an die PUBLISH-Region gekoppelt (wie P01 + Bundle),
+  // damit die Vorschau zeigt, was publiziert wird. Edge-Types bleiben an der aktiven Rep.
+  const colourRegionSlug = useColourRegionSlug();
+  const [colourCfg, setColourCfg] = useState(() => loadColourSettings(colourRegionSlug));
+  useEffect(() => { setColourCfg(loadColourSettings(colourRegionSlug)); }, [colourRegionSlug]);
   useEffect(() => {
     const onChange = (e: Event) => {
       const d = (e as CustomEvent).detail as { regionSlug?: string } | undefined;
-      if (d && d.regionSlug && d.regionSlug !== regionSlug) return;
-      setColourCfg(loadColourSettings(regionSlug));
+      if (d && d.regionSlug && d.regionSlug !== colourRegionSlug) return;
+      setColourCfg(loadColourSettings(colourRegionSlug));
     };
     window.addEventListener(COLOUR_SETTINGS_EVENT, onChange);
     return () => window.removeEventListener(COLOUR_SETTINGS_EVENT, onChange);
-  }, [regionSlug]);
+  }, [colourRegionSlug]);
 
   const [userExcl, setUserExcl] = useState<number | null>(() => loadUserExclusion());
   useEffect(() => {

@@ -11,8 +11,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { loadColourSettings, saveColourSettings, COLOUR_SETTINGS_EVENT, evenBorders, type ColourSettings } from '../../sensus/colourSettings';
-import { useInspectorView } from '../../../runtime/repContext';
-import { slugify } from '../../../runtime/router';
+import { useColourRegionSlug } from '../../../runtime/useAuftraggeberRep';
 import { AnthemCycleBadge } from '../AnthemCycleInfo';
 
 const PV_H = 220;
@@ -67,8 +66,7 @@ function VSlider({ label, value, onChange, accent = '#805ad5' }: {
 }
 
 export default function ThresholdsView() {
-  const view = useInspectorView();
-  const regionSlug = slugify(view?.geometry?.region ?? '') || 'default';
+  const regionSlug = useColourRegionSlug();   // = Publish-Region (buildOriginBundle), kein Mismatch
   const [s, setS] = useState<ColourSettings>(() => loadColourSettings(regionSlug));
 
   const [tweenB, setTweenB] = useState<number[] | null>(null);   // Schritt-1-Animation

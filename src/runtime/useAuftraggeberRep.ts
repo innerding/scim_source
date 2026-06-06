@@ -2,8 +2,9 @@
 // Representation aus dem Inspector-Asset, fällt sonst auf Lichtenberg/erste zurück.
 // Geteilt von PanelWorkspace-Views UND dem globalen Footer (heilt source=<xy>).
 import type { Representation } from '../scim/workspace/workspace.types';
-import { REPRESENTATIONS } from '../scim/workspace/workspace.registry';
+import { REPRESENTATIONS, geometryById } from '../scim/workspace/workspace.registry';
 import { useInspectorAsset } from './repContext';
+import { slugify } from './router';
 
 export function useAuftraggeberRep(): Representation {
   const asset = useInspectorAsset();
@@ -17,4 +18,15 @@ export function useAuftraggeberRep(): Representation {
     if (r) return r;
   }
   return demoRep;
+}
+
+/**
+ * Region-Slug der PUBLIZIERTEN Rep — exakt wie buildOriginBundle ihn bildet.
+ * EINE Quelle für Farb-Tuning (P01) UND Vorschau UND Publish → kein Schlüssel-
+ * Mismatch mehr (vorher: P01 = Inspector-Region, Bundle = Auftraggeber-Region).
+ */
+export function useColourRegionSlug(): string {
+  const rep = useAuftraggeberRep();
+  const geo = rep.geometry_id ? geometryById(rep.geometry_id) : undefined;
+  return slugify(geo?.region ?? '') || 'default';
 }
