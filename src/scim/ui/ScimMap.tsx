@@ -24,7 +24,7 @@ import { poiCompositeSvg } from '../poi-catalog/poiCatalog.composite';
 import { renderClusterPois } from './clusterOverlay';
 import { drawNet } from './netDraw';
 import { resampleNet, type ResampledNet } from '../wegnetz/netResample';
-import { stretchAverages, normalizeLoads, classifyStretches } from '../sensus/anthemSim';
+import { stretchAverages, classifyStretches } from '../sensus/anthemSim';
 import { playbookLoad, buildFlows, pickTestRoute, reroute, routeFromBusTo } from '../sensus/playbook';
 import { routeComfortCheck } from '../sensus/netRoute';
 import { getTestSeed, getTestRoute, setTestRoute, setTestBefund, subscribeTestRoute,
@@ -548,10 +548,10 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
     // STRECKE über die Ø-Last (crossing-gated). §2a: stetiger Gradient.
     if (vis.simLoad && activeRep && repWegnetz && simNet) {
       const sub = L.layerGroup();
-      // Playbook-Last zur Tageszeit (Bus→Attraktor-Flows × Sonntagskurve)
-      const raw = playbookLoad(simNet, simFlows, simHour);
-      // System: normalisieren (Spreizung + Mindest-Rot)
-      const loads = normalizeLoads(raw, { spread: colourCfg.spread, floor: colourCfg.floor });
+      // Playbook-Last zur Tageszeit (Bus→Attraktor-Flows × Sonntagskurve) — RAW.
+      // Keine spread/floor-Vor-Normalisierung mehr; die Verteilung macht das
+      // Felder-/Grenzen-Modell (colorAt) selbst (Stufe 6).
+      const loads = playbookLoad(simNet, simFlows, simHour);
       // je Strecke klassifizieren (Operator-Degradierung + User-Ausschluss)
       const avgs = stretchAverages(simNet, loads);
       const stateById = new Map(

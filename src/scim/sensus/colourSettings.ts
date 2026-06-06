@@ -1,16 +1,14 @@
 // Farb-/Schwellen-Settings — die Operator-Parameter der Farb-Kette, persistiert
 // pro Region (localStorage). Das Farb-Modell ist das Felder-/Grenzen-Modell
 // (stops/borders/middleField → shell-kit ScaleSpec, colorAt). Die alte colorize-
-// Kette (palette/spectrum/bias/safety) ist ausgemustert (Stufe 6).
+// Kette (palette/spectrum/bias/safety) UND die spread/floor-Normalisierung sind
+// ausgemustert (Stufe 6) — die Verteilung macht colorAt(borders) selbst.
 //   degradier            → BCK-Degradier-Schwelle
-//   spread · floor       → Anthem-Normalisierung (eigener, späterer Schritt)
 //
 // Die User-Ausschluss-Schwelle ist NICHT hier — sie ist runtime/user (P09 Mask).
 
 export interface ColourSettings {
   degradier: number | null;  // Ø-Last-Schwelle (null = aus) — BCK-Degradier
-  spread: number;            // Anthem-Norm — 0 absolut … 1 voll relativ
-  floor: number;             // Anthem-Norm — 0 … 1 Mindest-Rot
   // ── Felder-/Grenzen-Modell (Stufe 1) — speist shell-kit ScaleSpec ──
   stops: string[];                       // 2–6 Farb-Felder (grün→rot, unten→oben)
   borders: number[];                     // N−1 innere Feldgrenzen (Load 0..1, sortiert) — Grenzen sind die Wahrheit
@@ -28,7 +26,7 @@ export function evenBorders(n: number): number[] {
 }
 
 export const DEFAULT_COLOUR_SETTINGS: ColourSettings = {
-  degradier: null, spread: 0, floor: 0,
+  degradier: null,
   stops: [...DEFAULT_STOPS],
   borders: evenBorders(DEFAULT_STOPS.length),
   middleField: null,
@@ -71,8 +69,6 @@ export function coerceSettings(raw: unknown): ColourSettings {
   const stops = coerceStops(r.stops);
   return {
     degradier: degValid ? clamp(r.degradier as number, 0, 1) : null,
-    spread: clamp(num(r.spread, d.spread), 0, 1),
-    floor: clamp(num(r.floor, d.floor), 0, 1),
     stops,
     borders: coerceBorders(r.borders, stops.length),
     middleField: (typeof r.middleField === 'number' && Number.isInteger(r.middleField) && r.middleField >= 0 && r.middleField < stops.length) ? r.middleField : null,

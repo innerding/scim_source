@@ -28,11 +28,11 @@
 // Geteilte Producer-Engine (EINE Quelle, auch vom Editor genutzt) — „Worker rechnet
 // selbst": aus dem veröffentlichten Origin-Mesh + (Sim-)Zeit → AnthemSnapshot.
 import { produceAnthem } from '../../src/scim/sensus/anthemProducer';
-import type { SegmentedNet, NormalizeParams } from '../../src/scim/sensus/anthemSim';
+import type { SegmentedNet } from '../../src/scim/sensus/anthemSim';
 
-// Veröffentlichtes Origin-Mesh: Segment-Geometrie + (optional) die mitgelieferten Load-
-// Thresholds, damit der Worker bit-gleich zum Editor normalisiert.
-type PublishedMesh = SegmentedNet & { norm?: NormalizeParams };
+// Veröffentlichtes Origin-Mesh: Segment-Geometrie (Rohlast; keine spread/floor-
+// Normalisierung mehr — Stufe 6, die Verteilung macht colorAt(borders) am Gerät).
+type PublishedMesh = SegmentedNet;
 
 const CDN_BASE      = 'https://cdn.diesenpark.com';
 const PACKAGES_PATH = 'packages';
@@ -514,7 +514,7 @@ export default {
 
       const net = await readOriginMesh(env, repId);
       if (!net) return err(`No published origin-mesh for "${repId}" — PUT /api/origin/${repId}/mesh first.`, 404);
-      const snapshot = produceAnthem(net, repId, simMinFromUrl(url), net.norm ?? {});
+      const snapshot = produceAnthem(net, repId, simMinFromUrl(url));
       return json({ ok: true, repId, firstSeen, lastSeen, snapshot });
     }
 
@@ -544,7 +544,7 @@ export default {
       }
       const net = await readOriginMesh(env, repId);
       if (!net) return err(`No published origin-mesh for "${repId}".`, 404);
-      return json(produceAnthem(net, repId, simMinFromUrl(url), net.norm ?? {}));
+      return json(produceAnthem(net, repId, simMinFromUrl(url)));
     }
 
     return err('Not found', 404);

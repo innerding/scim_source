@@ -46,7 +46,6 @@ import DrawerPanel from './panels/DrawerPanel';
 import { poiCompositeSvg } from '../poi-catalog/poiCatalog.composite';
 import { CONTAINER_SYSTEM } from '../poi-catalog/poiCatalog.containerSystem';
 import { REPRESENTATIONS, wegnetzById, geometryById } from '../workspace/workspace.registry';
-import { loadColourSettings } from '../sensus/colourSettings';
 import { slugify } from '../../runtime/router';
 import { buildOriginPackage, MVP_RESAMPLE_TARGET_METERS } from '../sensus/originPackage';
 import { parseCatalogById } from '../poi-catalog/catalogRegistry';
@@ -398,15 +397,6 @@ const fmtBytes = (n: number) =>
 // solange keine URL-/Compare-Rep gesetzt war).
 // P09 · Origin-Capsuler — baut Origin: Auftraggeber wählen → kapseln (OriginManifest)
 // + Wegnetz-Sampling-Vorschau. M4: aus P11 hierher gezogen.
-// Load-Threshold (schwellen) der Rep-Region → normalizeLoads-Parameter. Dieselbe
-// Quelle, die ScimMap fürs Karten-Render nutzt (colourSettings, pro Region). Wird in
-// den Snapshot-Pfad gereicht (Coder-Vorschau) UND mit dem Origin veröffentlicht, damit
-// der Worker bit-gleich rechnet. Editor-only (liest localStorage).
-function repLoadNorm(rep: { geometry_id: string }): { spread: number; floor: number } {
-  const region = geometryById(rep.geometry_id)?.region ?? '';
-  const s = loadColourSettings(slugify(region) || 'default');
-  return { spread: s.spread, floor: s.floor };
-}
 
 // P02 · Coder — der Anthem-Encoder mit echtem (client-seitigem) Atemzyklus:
 // presence-Toggle gated, Sim-Clock-getaktet (Time-Turbo in Telco treibt sie),
@@ -430,7 +420,7 @@ function CoderView() {
   const fmtClock = (m: number) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(Math.round(m % 60)).padStart(2, '0')}`;
   // EINE geteilte Pipeline (produceAnthem) — exakt dieselbe rechnet der Worker.
   // Sim-Telco → normalisieren (mit Load-Thresholds) → Tageskurve → packen.
-  const snap = presence && r ? produceAnthem(r, rep.id, tMin, repLoadNorm(rep)) : null;
+  const snap = presence && r ? produceAnthem(r, rep.id, tMin) : null;
   const jsonBytes = snap ? JSON.stringify(snap).length : 0;
 
   const onWireTest = async () => {
@@ -677,7 +667,7 @@ function OriginCapsulerView({ tab }: { tab: TabId }) {
     if (!r) { setPublishMsg('✗ Kein Wegnetz an dieser Representation.'); return; }
     setPublishing(true); setPublishMsg(null);
     try {
-      const payload = { stretches: r.stretches.map((s) => ({ id: s.id, points: s.points })), norm: repLoadNorm(rep) };
+      const payload = { stretches: r.stretches.map((s) => ({ id: s.id, points: s.points })) };
       const res = await publishOriginMesh(rep.id, payload);
       setPublishMsg(`✓ veröffentlicht: ${res.stretches} Strecken → origin/${rep.id}/mesh.json`);
     } catch (e) {
