@@ -9,7 +9,7 @@ import type { RouteLayerModelState } from '../route-layer-model/routeLayerModel.
 import RepresentBuildTetrahedron from './RepresentBuildTetrahedron';
 import type { RepresentBuildFace } from './RepresentBuildTetrahedron';
 import {
-  addRoadHeatMesh, addPoiRoutes, fetchOsmEdges,
+  fetchOsmEdges,
   TILE_OSM_URL, TILE_OSM_ATTR, TILE_MESH_URL, TILE_MESH_ATTR,
 } from './colourMeshOverlay';
 import { useInspectorView, useInspectorAsset, useRepresentationContext } from '../../runtime/repContext';
@@ -671,21 +671,8 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
     //     noch nicht durch ist, lieber kein Mesh als das falsche.
     //   - Pipeline-POIs werden nicht in die R-Sicht gezeichnet — die richtigen
     //     POIs kommen ueber rep.catalog_id, eigene Iteration.
-    const meshBbox = repBbox ?? boundary?.computed_boundary.bbox;
-    if (availLayers.colourmesh && vis.colourmesh && meshBbox) {
-      const pois = activeRep ? [] : (extraction?.extracted_pois ?? []);
-      // Aktive R: echte Edges — OSM-Wege wenn schon geladen, sonst die
-      // gespeicherten Wegnetz-Edges (sofort da). Niemals synthetisch.
-      const edgesToRender = activeRep
-        ? (osmEdges.length > 0 ? osmEdges : wegnetzAsEdges)
-        : (osmEdges.length > 0 ? osmEdges : (graph?.edges ?? []));
-      if (edgesToRender.length > 0) {
-        addRoadHeatMesh(layerGroup, edgesToRender, meshBbox, pois, !activeRep);
-      }
-      if (pois.length > 0) {
-        addPoiRoutes(layerGroup, pois);
-      }
-    }
+    // Colour-Mesh (altes Heat-entlang-Strassen-Overlay, heatColor/synthetisch)
+    // ausgemustert (Stufe 6): die Last-Färbung läuft über das colorAt-Mesh ('simLoad').
 
     // POIs aus dem Catalog der aktiven R (rep.catalog_id). Eigene
     // Render-Schleife mit leichterem Stil — kein Load-Class-Mapping,
