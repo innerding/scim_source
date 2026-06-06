@@ -137,22 +137,21 @@ hat eine Rückfrage. Detail: `komfort_kaskade_spec.md`.
 
 ---
 
-## 7 · Offene Rest-Schulden (außerhalb des Phasen-Kerns)
+## 7 · Rest-Schulden (Stand 2026-06-06)
 
-- **Mesh-Re-Publish mit `norm`:** Worker normalisiert mit `mesh.json.norm` (alt) →
-  P01 **spread/floor** erreichen den Worker erst nach Mesh-Re-Publish mit aktueller
-  norm (Analog zur Bundle-CTA fehlt für `/mesh`).
-- **Anthem-Snapshot-Encoder vereinheitlichen:** Editor `anthemEncoder` ↔ shell-kit
-  `produceAnthemSnapshot` — ein Producer (Worker nutzt shell-kit-Mathematik).
-- **Sub-Schritt B (Render-Kern-Dedup):** Editor `sensus/shellRenderCore.ts` +
-  lokale `GEOMETRIES` → auf shell-kit umbiegen, lokal löschen.
-- **Studio ↔ Runtime strikt 1:1:** Studio-Monitor wendet colourSettings/Snapshot-Pfad
-  noch nicht an wie die Runtime.
-- **POI-Deco-Glyphen** reisen nicht im Bundle (Deco null in der Runtime).
-- **Testmodus in P01** (sofort-sichtbar) — Notiz steht; Runtime-Turbo zeigt's vorab.
-- **Echtes Telco + Presence**, Guidance „besser als das Beste", **Kehrseite** (TVB),
-  **Collector/Launcher** (Cross-Rep), Globe-switcher-Allowlist, regionale Dashboards,
-  Datengröße-Hebel, Asphalt-Warnungen — Post-MVP.
+**Erledigt seit Plan-Erstellung:**
+- ✅ **Sub-Schritt B (Render-Kern-Dedup):** `shellRenderCore.ts` gelöscht, GEOMETRIES auf shell-kit.
+- ✅ **Anthem-Snapshot-Encoder-Dopplung:** shell-kit `produceAnthemSnapshot` entfernt; ein Producer (Worker via Editor-`anthemEncoder`, Mathematik aus shell-kit).
+- ✅ **POI-Deco-Glyphen:** Deco-Logik in shell-kit (eine Quelle), Deco pre-computed + Glyphen (`glyph/*`,`digit/*`) reisen im Bundle.
+- ✅ **Frische nach Re-Publish:** Worker `/bundle`+`/mesh` GET = `no-store`, Runtime-Fetch `no-cache`.
+- ✅ **BCK** (Comfort-Slider + Netz-Dimming + POI-Dimming), **Colour-Mesh** (pro 10 m, weißer Rand), **Cluster** (ein Ghost), **Boundary** (f0.6 + Invert-Maske).
+
+**Noch offen:**
+- **Zwei Publish-Aktionen:** Schwellen wirken erst, wenn **beide** re-publiziert werden — `publishOriginMesh` (trägt `norm`=spread/floor → Worker) UND `publishOriginBundle` (trägt `colour` palette/spectrum/bias → Gerät). UX-Lücke: ein „Origin publizieren"-Knopf fehlt (gehört in die Versionierungs-Kette).
+- **Studio ↔ Runtime strikt 1:1:** `ShellNewMonitor` nutzt noch `colorize(load)` ohne colourSettings/Snapshot-Pfad.
+- **Testmodus in P01** (sofort-sichtbar) — Notiz steht; Runtime-Turbo + `no-store` zeigen's faktisch schon schnell.
+- **Versionierung** (Origin/Shell) — siehe `versionierung.md` + `versionierungsplanung.md` (Bau verschoben).
+- **Post-MVP:** echtes Telco/Presence · BAK (Route-Solver) · Guidance · Kehrseite (TVB) · Collector/Launcher · Globe-switcher-Allowlist · regionale Dashboards · Datengröße-Hebel · Asphalt-Warnungen.
 
 ---
 
