@@ -33,15 +33,18 @@ function gradientCss(stops: string[], borders: number[]): string {
   return `linear-gradient(to top, ${parts.join(', ')})`;
 }
 
-// Schritt 1: Grenzen so setzen, dass Feld c mittig (0.5) liegt; je Seite gleich groß.
+// Schritt 1: Grenzen so, dass Feld c ZENTRIERT auf 0.5 liegt (gleiche Hälften),
+// die übrigen Felder teilen sich je Seite gleichmäßig den Rest.
 function centerFieldBorders(n: number, c: number): number[] {
+  c = Math.max(0, Math.min(n - 1, c));
+  const half = 1 / (2 * n);                             // halbe Mittelfeld-Breite
+  const lo = 0.5 - half, hi = 0.5 + half;               // Grenzen des Mittelfelds (symmetrisch um 0.5)
+  const below = c, above = n - 1 - c;
   const out: number[] = [];
-  const unitLow = 0.5 / (c + 0.5);                      // c Felder + halbes Feld c unten
-  const unitHigh = 0.5 / (0.5 + (n - 1 - c));           // halbes Feld c + (n-1-c) Felder oben
   for (let i = 0; i <= n - 2; i++) {
-    if (i < c) out.push((i + 1) * unitLow);             // untere Grenzen
-    else if (i === c) out.push(0.5 + 0.5 * unitHigh);   // Oberkante des Mittelfelds
-    else out.push(0.5 + (0.5 + (i - c)) * unitHigh);    // obere Grenzen
+    if (i < c) out.push(below > 0 ? (i + 1) * (lo / below) : lo);         // untere Grenzen
+    else if (i === c) out.push(hi);                                       // Oberkante Mittelfeld
+    else out.push(above > 0 ? hi + (i - c) * ((1 - hi) / above) : hi);    // obere Grenzen
   }
   return out.map((x) => Math.min(0.999, Math.max(0.001, x)));
 }
@@ -111,11 +114,11 @@ export default function ThresholdsView() {
     rafRef.current = requestAnimationFrame(step);
   };
 
-  // Schritt 1: Feld c → Mitte
+  // Schritt 1: Feld c → Mitte (und als Mittelfeld merken → bleibt fixiert)
   const centerField = (c: number) => {
     const from = s.borders.slice();
     const to = centerFieldBorders(n, c);
-    update({ borders: to });
+    update({ borders: to, middleField: c });
     animateTo(from, to);
   };
   const onBarClick = (e: React.MouseEvent) => {
@@ -157,16 +160,16 @@ export default function ThresholdsView() {
   const addStop = () => {
     if (n >= 6) return;
     const stops = [...s.stops, s.stops[n - 1]];
-    update({ stops, borders: evenBorders(stops.length) });
+    update({ stops, borders: evenBorders(stops.length), middleField: null });
     setTweenB(null); setDragB(null);
   };
   const removeStop = (i: number) => {
     if (n <= 2) return;
     const stops = s.stops.filter((_, j) => j !== i);
-    update({ stops, borders: evenBorders(stops.length) });
+    update({ stops, borders: evenBorders(stops.length), middleField: null });
     setTweenB(null); setDragB(null);
   };
-  const resetEven = () => { update({ borders: evenBorders(n) }); setTweenB(null); setDragB(null); };
+  const resetEven = () => { update({ borders: evenBorders(n), middleField: null }); setTweenB(null); setDragB(null); };
 
   // Drag&Drop-Reorder (Felder umsortieren; Grenzen/Größen bleiben slot-basiert)
   const reorder = (from: number, to: number) => {
@@ -210,17 +213,23 @@ export default function ThresholdsView() {
           >
             {/* Mitte-Referenz */}
             <div style={{ position: 'absolute', left: -3, right: -3, top: '50%', height: 0, borderTop: '2px solid rgba(0,0,0,0.5)', boxShadow: '0 0 0 0.6px rgba(255,255,255,0.8)' }} />
-            {/* Grenz-Griffe (Schritt 2) */}
-            {borders.map((b, i) => (
-              <div
-                key={i}
-                onPointerDown={onBorderDown(i)} onPointerMove={onBorderMove(i)} onPointerUp={onBorderUp(i)}
-                title={`Grenze ${i + 1}: ${(b * 100).toFixed(0)}%`}
-                style={{ position: 'absolute', left: -7, right: -7, top: `calc(${(1 - b) * 100}% - 7px)`, height: 14, display: 'flex', alignItems: 'center', cursor: 'ns-resize', touchAction: 'none' }}
-              >
-                <div style={{ flex: 1, height: dragIdx.current === i ? 4 : 3, background: '#ffffff', boxShadow: '0 0 0 1px rgba(0,0,0,0.45)', borderRadius: 2 }} />
-              </div>
-            ))}
+            {/* Grenz-Griffe (Schritt 2); die zwei Grenzen des Mittelfelds sind gesperrt */}
+            {borders.map((b, i) => {
+              const locked = s.middleField != null && (i === s.middleField - 1 || i === s.middleField);
+              if (locked) return (
+                <div key={i} title="Mittelfeld-Grenze (fixiert)" style={{ position: 'absolute', left: 0, right: 0, top: `${(1 - b) * 100}%`, height: 0, borderTop: '2px dotted rgba(0,0,0,0.35)' }} />
+              );
+              return (
+                <div
+                  key={i}
+                  onPointerDown={onBorderDown(i)} onPointerMove={onBorderMove(i)} onPointerUp={onBorderUp(i)}
+                  title={`Grenze ${i + 1}: ${(b * 100).toFixed(0)}%`}
+                  style={{ position: 'absolute', left: -7, right: -7, top: `calc(${(1 - b) * 100}% - 7px)`, height: 14, display: 'flex', alignItems: 'center', cursor: 'ns-resize', touchAction: 'none' }}
+                >
+                  <div style={{ flex: 1, height: dragIdx.current === i ? 4 : 3, background: '#ffffff', boxShadow: '0 0 0 1px rgba(0,0,0,0.45)', borderRadius: 2 }} />
+                </div>
+              );
+            })}
           </div>
           <span style={{ fontSize: 8.5, color: '#a0aec0' }}>oben = Last 1</span>
           <button onClick={resetEven} style={{ fontSize: 9, padding: '1px 6px', borderRadius: 3, border: '1px solid #e2e8f0', background: '#f7fafc', color: '#718096', cursor: 'pointer' }}>↺ gleichverteilen</button>
@@ -229,28 +238,33 @@ export default function ThresholdsView() {
         {/* Farb-Felder: Verlauf-Richtung, Drag&Drop, je Feld zur Mitte */}
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 12.5, fontWeight: 700, color: '#1a365d', marginBottom: 6 }}>Felder <span style={{ fontWeight: 400, fontSize: 10.5, color: '#a0aec0' }}>· {n}/6 · ziehen zum Umsortieren</span></div>
+          <div style={{ fontSize: 8.5, color: '#a0aec0', marginBottom: 2 }}>↑ oben = Last 1</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-            {order.map((i) => (
+            {order.map((i) => {
+              const isMid = s.middleField === i;
+              return (
               <div
                 key={i}
                 draggable
                 onDragStart={() => { dndIdx.current = i; }}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={() => { if (dndIdx.current != null) reorder(dndIdx.current, i); dndIdx.current = null; }}
-                style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '2px 4px', borderRadius: 4, cursor: 'grab', background: '#fff', border: '1px solid #edf2f7' }}
+                style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '2px 4px', borderRadius: 4, cursor: 'grab', background: isMid ? '#ebf8ff' : '#fff', border: '1px solid ' + (isMid ? '#bee3f8' : '#edf2f7') }}
               >
                 <span style={{ color: '#cbd5e0', fontSize: 12, cursor: 'grab' }}>⠿</span>
                 <input type="color" value={toHex(s.stops[i])} onChange={(e) => setStop(i, e.target.value)} style={{ width: 30, height: 24, border: 'none', background: 'none', cursor: 'pointer' }} />
-                <button onClick={() => centerField(i)} title="dieses Feld in die Mitte rücken" style={{ fontSize: 10, padding: '1px 6px', borderRadius: 3, border: '1px solid #cbd5e0', background: '#fff', color: '#2b6cb0', cursor: 'pointer' }}>⊙ Mitte</button>
+                <button onClick={() => centerField(i)} title="dieses Feld in die Mitte rücken" style={{ fontSize: 10, padding: '1px 6px', borderRadius: 3, border: '1px solid ' + (isMid ? '#2b6cb0' : '#cbd5e0'), background: isMid ? '#2b6cb0' : '#fff', color: isMid ? '#fff' : '#2b6cb0', cursor: 'pointer' }}>⊙ Mitte</button>
                 {n > 2 && (
                   <button onClick={() => removeStop(i)} style={{ marginLeft: 'auto', fontSize: 12, border: 'none', background: 'none', color: '#a0aec0', cursor: 'pointer' }}>×</button>
                 )}
               </div>
-            ))}
+              );
+            })}
             {n < 6 && (
               <button onClick={addStop} style={{ marginTop: 2, alignSelf: 'flex-start', width: 28, height: 26, borderRadius: 4, border: '1px dashed #cbd5e0', background: '#f7fafc', color: '#4a5568', cursor: 'pointer', fontSize: 16 }}>+</button>
             )}
           </div>
+          <div style={{ fontSize: 8.5, color: '#a0aec0', marginTop: 2 }}>↓ unten = Last 0</div>
         </div>
       </div>
 

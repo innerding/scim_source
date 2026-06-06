@@ -25,6 +25,7 @@ export interface ColourSettings {
   // Übergangsweise neben den alten Feldern; Stufe 6 löst spread/floor/palette ab.
   stops: string[];                       // 2–6 Farb-Felder (grün→rot, unten→oben)
   borders: number[];                     // N−1 innere Feldgrenzen (Load 0..1, sortiert) — Grenzen sind die Wahrheit
+  middleField: number | null;            // in Schritt 1 zentriertes Feld (Index) — bleibt auf 0.5 fixiert; null = keins
   spreizung: { mitte: number; oben: number; unten: number };        // (vestigial, bis Mesh auf borders umgestellt ist)
   verjuengung: { unten: number; oben: number };                     // Wrap (Comfort-only)
 }
@@ -41,6 +42,7 @@ export const DEFAULT_COLOUR_SETTINGS: ColourSettings = {
   palette: DEFAULT_PALETTE, spectrum: 0.5, bias: 0, safety: 0, degradier: null, spread: 0, floor: 0,
   stops: [...DEFAULT_STOPS],
   borders: evenBorders(DEFAULT_STOPS.length),
+  middleField: null,
   spreizung: { mitte: 0.5, oben: 0.5, unten: 0.5 },
   verjuengung: { unten: 0, oben: 0 },
 };
@@ -89,6 +91,7 @@ export function coerceSettings(raw: unknown): ColourSettings {
     floor: clamp(num(r.floor, d.floor), 0, 1),
     stops,
     borders: coerceBorders(r.borders, stops.length),
+    middleField: (typeof r.middleField === 'number' && Number.isInteger(r.middleField) && r.middleField >= 0 && r.middleField < stops.length) ? r.middleField : null,
     spreizung: {
       mitte: clamp(num((r.spreizung as Record<string, unknown>)?.mitte, d.spreizung.mitte), 0, 1),
       oben: clamp(num((r.spreizung as Record<string, unknown>)?.oben, d.spreizung.oben), 0, 1),
