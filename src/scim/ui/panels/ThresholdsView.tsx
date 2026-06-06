@@ -165,6 +165,31 @@ export default function ThresholdsView() {
     setTimeout(() => { dragIdx.current = null; }, 0);   // Klick-Zentrieren nicht auslösen
   };
 
+  // Mittelfeld-Grenzen: symmetrisch um 0.5 gekoppelt → Größe frei, Mitte bleibt zentriert.
+  const onMidDown = (i: number) => (e: React.PointerEvent) => {
+    e.stopPropagation(); e.preventDefault();
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    dragIdx.current = i; setDragB(s.borders.slice());
+  };
+  const onMidMove = (e: React.PointerEvent) => {
+    if (dragIdx.current == null || s.middleField == null) return;
+    const mid = s.middleField, lowI = mid - 1, hiI = mid;
+    const below = lowI - 1 >= 0 ? s.borders[lowI - 1] : 0;
+    const above = hiI + 1 <= n - 2 ? s.borders[hiI + 1] : 1;
+    let h = Math.abs(loadAt(e.clientY) - 0.5);
+    h = Math.max(0.005, Math.min(h, 0.5 - below - GAP, above - 0.5 - GAP));
+    const nb = (dragB ?? s.borders).slice();
+    nb[lowI] = 0.5 - h; nb[hiI] = 0.5 + h;
+    setDragB(nb);
+  };
+  const onMidUp = (e: React.PointerEvent) => {
+    if (dragIdx.current == null) return;
+    try { (e.target as HTMLElement).releasePointerCapture(e.pointerId); } catch { /* */ }
+    if (dragB) update({ borders: dragB });
+    setDragB(null);
+    setTimeout(() => { dragIdx.current = null; }, 0);
+  };
+
   // Farben
   const setStop = (i: number, color: string) => { const stops = s.stops.slice(); stops[i] = color; update({ stops }); };
   const addStop = () => {
@@ -209,7 +234,7 @@ export default function ThresholdsView() {
       </div>
       <div style={{ fontSize: 10, color: '#718096', marginBottom: 10, maxWidth: 420 }}>
         <strong>Links</strong>: ein Strich = Mitte — ziehen wählt das Mittelfeld (rückt in die Mitte, bleibt zentriert).
-        <strong> Rechts</strong>: ein Strich je Grenze — ziehen verschiebt sie. Die zwei Mittelfeld-Grenzen sind grau (fix).
+        <strong> Rechts</strong>: ein Strich je Grenze — ziehen verschiebt sie. Die zwei <span style={{ color: '#2b6cb0' }}>blauen</span> Mittelfeld-Grenzen sind gekoppelt (Größe frei, Mitte bleibt zentriert).
       </div>
 
       <div style={{ display: 'flex', gap: 18, alignItems: 'flex-start' }}>
@@ -233,17 +258,20 @@ export default function ThresholdsView() {
             {/* RECHTS · Schritt 2 — Striche an den Grenzen */}
             <div style={{ position: 'relative', width: 22, height: PV_H }}>
               {borders.map((b, i) => {
-                const locked = s.middleField != null && (i === s.middleField - 1 || i === s.middleField);
+                const mid = s.middleField;
+                // Mittelfeld-Paar nur wenn beide Grenzen existieren (Mittelfeld liegt innen)
+                const isMidPair = mid != null && mid - 1 >= 0 && mid <= n - 2 && (i === mid - 1 || i === mid);
+                const down = isMidPair ? onMidDown(i) : onBorderDown(i);
+                const move = isMidPair ? onMidMove : onBorderMove(i);
+                const up = isMidPair ? onMidUp : onBorderUp(i);
                 return (
                   <div
                     key={i}
-                    onPointerDown={locked ? undefined : onBorderDown(i)}
-                    onPointerMove={locked ? undefined : onBorderMove(i)}
-                    onPointerUp={locked ? undefined : onBorderUp(i)}
-                    title={locked ? 'Mittelfeld-Grenze (fix)' : `Grenze ${i + 1}: ${(b * 100).toFixed(0)}%`}
-                    style={{ position: 'absolute', left: 1, right: 0, top: `calc(${(1 - b) * 100}% - 7px)`, height: 14, display: 'flex', alignItems: 'center', cursor: locked ? 'default' : 'ns-resize', touchAction: 'none' }}
+                    onPointerDown={down} onPointerMove={move} onPointerUp={up}
+                    title={isMidPair ? 'Mittelfeld-Größe (bleibt zentriert)' : `Grenze ${i + 1}: ${(b * 100).toFixed(0)}%`}
+                    style={{ position: 'absolute', left: 1, right: 0, top: `calc(${(1 - b) * 100}% - 7px)`, height: 14, display: 'flex', alignItems: 'center', cursor: 'ns-resize', touchAction: 'none' }}
                   >
-                    <div style={{ flex: 1, height: (!locked && dragIdx.current === i) ? 3 : 2, background: locked ? '#cbd5e0' : '#1a365d', borderRadius: 1 }} />
+                    <div style={{ flex: 1, height: dragIdx.current === i ? 3 : 2, background: isMidPair ? '#2b6cb0' : '#1a365d', borderRadius: 1 }} />
                   </div>
                 );
               })}
