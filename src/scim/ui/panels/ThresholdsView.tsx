@@ -14,19 +14,19 @@ import { useCallback, useEffect, useState } from 'react';
 import { loadColourSettings, saveColourSettings, COLOUR_SETTINGS_EVENT, type ColourSettings } from '../../sensus/colourSettings';
 import { useInspectorView } from '../../../runtime/repContext';
 import { slugify } from '../../../runtime/router';
-import { colorAt, type ScaleSpec } from 'shell-kit';
+import { colorAt, colorFromStops, type ScaleSpec } from 'shell-kit';
 import { AnthemCycleBadge } from '../AnthemCycleInfo';
 
 // ── zarter vertikaler Slider (rotierter Range — robust cross-browser) ──────────
-function VSlider({ label, value, onChange, accent = '#2b6cb0' }: {
-  label: string; value: number; onChange: (v: number) => void; accent?: string;
+function VSlider({ label, value, onChange, accent = '#2b6cb0', disabled = false }: {
+  label: string; value: number; onChange: (v: number) => void; accent?: string; disabled?: boolean;
 }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, width: 48 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, width: 48, opacity: disabled ? 0.55 : 1 }}>
       <div style={{ width: 28, height: 150, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <input type="range" min={0} max={1} step={0.01} value={value}
+        <input type="range" min={0} max={1} step={0.01} value={value} disabled={disabled}
           onChange={(e) => onChange(parseFloat(e.target.value))}
-          style={{ width: 150, transform: 'rotate(-90deg)', accentColor: accent }} />
+          style={{ width: 150, transform: 'rotate(-90deg)', accentColor: accent, cursor: disabled ? 'default' : 'pointer' }} />
       </div>
       <span style={{ fontSize: 9, color: '#4a5568', fontFamily: 'ui-monospace, Menlo, monospace' }}>{value.toFixed(2)}</span>
       <span style={{ fontSize: 9.5, color: '#1a365d', textAlign: 'center', lineHeight: 1.15 }}>{label}</span>
@@ -34,17 +34,23 @@ function VSlider({ label, value, onChange, accent = '#2b6cb0' }: {
   );
 }
 
-// ── Vorschau-Säule (read-only): Last-Achse, Farbe = colorAt (= Mesh-Sicht) ─────
-function Preview({ spec, mitte }: { spec: ScaleSpec; mitte: number }) {
+// ── Vorschau-Säule ─────────────────────────────────────────────────────────
+// inaktiv (justieren): LAST-Achse, Farbe = colorAt (echte Verteilung, gestaucht);
+//   die Mitte-Marke ist die „eigene Position" im stehenden Gradienten.
+// aktiv (Check):      DISPLAY-Achse, Farbe = colorFromStops (ausgebreitet); die
+//   Mitte ist in die Fenstermitte gewandert und bleibt dort.
+function Preview({ spec, active, mitteDraft }: { spec: ScaleSpec; active: boolean; mitteDraft: number }) {
   const N = 56;
+  const markY = active ? 0.5 : mitteDraft;
   return (
     <div style={{ position: 'relative', width: 38, height: 170, borderRadius: 4, overflow: 'hidden', border: '1px solid #cbd5e0' }}>
       {Array.from({ length: N }, (_, i) => {
-        const load = (N - 1 - i) / (N - 1);
-        return <div key={i} style={{ position: 'absolute', left: 0, right: 0, top: `${(i / N) * 100}%`, height: `${100 / N + 0.6}%`, background: colorAt(load, spec) }} />;
+        const h = (N - 1 - i) / (N - 1);                 // oben = 1
+        const color = active ? colorFromStops(spec.stops, h) : colorAt(h, spec);
+        return <div key={i} style={{ position: 'absolute', left: 0, right: 0, top: `${(i / N) * 100}%`, height: `${100 / N + 0.6}%`, background: color }} />;
       })}
-      {/* Mitte-Marke (zeigt den Pivot der Vorschau) */}
-      <div style={{ position: 'absolute', left: 0, right: 0, top: `${(1 - mitte) * 100}%`, height: 0, borderTop: '1px dashed rgba(255,255,255,0.9)', boxShadow: '0 0 0 0.5px rgba(0,0,0,0.4)' }} />
+      {/* Mitte-Marke (wandert bei Check in die Fenstermitte) */}
+      <div style={{ position: 'absolute', left: 0, right: 0, top: `${(1 - markY) * 100}%`, height: 0, borderTop: active ? '2px solid rgba(255,255,255,0.95)' : '2px dashed rgba(255,255,255,0.95)', boxShadow: '0 0 0 0.6px rgba(0,0,0,0.5)', transition: 'top 0.35s ease' }} />
     </div>
   );
 }
@@ -54,10 +60,11 @@ export default function ThresholdsView() {
   const regionSlug = slugify(view?.geometry?.region ?? '') || 'default';
   const [s, setS] = useState<ColourSettings>(() => loadColourSettings(regionSlug));
   const [mitteDraft, setMitteDraft] = useState(s.spreizung.mitte);
+  const [mitteActive, setMitteActive] = useState(true);   // true = Check gesetzt (fixiert)
 
   useEffect(() => {
     const next = loadColourSettings(regionSlug);
-    setS(next); setMitteDraft(next.spreizung.mitte);
+    setS(next); setMitteDraft(next.spreizung.mitte); setMitteActive(true);
   }, [regionSlug]);
 
   const update = useCallback((patch: Partial<ColourSettings>) => {
@@ -70,7 +77,7 @@ export default function ThresholdsView() {
     const onEvt = (e: Event) => {
       const d = (e as CustomEvent).detail as { regionSlug?: string; settings?: ColourSettings } | undefined;
       if (!d || d.regionSlug !== (regionSlug || 'default') || !d.settings) return;
-      setS(d.settings); setMitteDraft(d.settings.spreizung.mitte);
+      setS(d.settings); setMitteDraft(d.settings.spreizung.mitte); setMitteActive(true);
     };
     window.addEventListener(COLOUR_SETTINGS_EVENT, onEvt);
     return () => window.removeEventListener(COLOUR_SETTINGS_EVENT, onEvt);
@@ -80,10 +87,13 @@ export default function ThresholdsView() {
   const setSp = (p: Partial<typeof sp>) => update({ spreizung: { ...sp, ...p } });
   const setVj = (p: Partial<typeof vj>) => update({ verjuengung: { ...vj, ...p } });
 
-  // Vorschau folgt dem (noch nicht bestätigten) Mitte-Entwurf live.
-  const spec: ScaleSpec = { stops: s.stops, spreizung: { ...sp, mitte: mitteDraft }, verjuengung: vj };
-  const mitteDirty = Math.abs(mitteDraft - sp.mitte) > 0.001;
-  const commitMitte = () => setSp({ mitte: mitteDraft });
+  // Gradient zeigt IMMER die übernommene Mitte (sp.mitte) — der Entwurf bewegt nur
+  // die Marke, nicht den Gradienten. Erst Check übernimmt + fixiert.
+  const spec: ScaleSpec = { stops: s.stops, spreizung: sp, verjuengung: vj };
+  const toggleCheck = () => {
+    if (mitteActive) { setMitteActive(false); }          // entsperren → nachjustieren
+    else { setSp({ mitte: mitteDraft }); setMitteActive(true); }  // übernehmen + fixieren
+  };
 
   const setStop = (i: number, color: string) => {
     const stops = s.stops.slice(); stops[i] = color; update({ stops });
@@ -104,31 +114,38 @@ export default function ThresholdsView() {
         Skalen-Form <span style={{ fontWeight: 400, fontSize: 10.5, color: '#a0aec0' }}>· Ansicht, auf der sich die Last verteilt (Mesh + Comfort)</span>
       </div>
       <div style={{ fontSize: 10, color: '#718096', marginBottom: 10, maxWidth: 380 }}>
-        <strong>Mitte</strong> = globale Mitte: frei ziehen, dann <strong>„Check"</strong> übernimmt sie.
+        <strong>Mitte</strong>: bei offenem Check frei im Gradienten platzieren →
+        <strong> „✓ Check"</strong> übernimmt, die Mitte wandert in die Fenstermitte und bleibt fixiert.
         <strong> oben/unten</strong> = Mitte ihres Teils (relativ), wirken sofort.
       </div>
 
       <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
         {/* Vorschau-Säule */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, paddingTop: 4 }}>
-          <Preview spec={spec} mitte={mitteDraft} />
-          <span style={{ fontSize: 8.5, color: '#a0aec0' }}>Last → Farbe</span>
+          <Preview spec={spec} active={mitteActive} mitteDraft={mitteDraft} />
+          <span style={{ fontSize: 8.5, color: '#a0aec0' }}>{mitteActive ? 'fixiert (Display)' : 'Last → Farbe'}</span>
         </div>
 
         {/* drei zarte Schieber */}
         <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
           <VSlider label="unten" value={sp.unten} onChange={(v) => setSp({ unten: v })} />
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <VSlider label="Mitte" value={mitteDraft} onChange={setMitteDraft} accent={mitteDirty ? '#dd6b20' : '#2b6cb0'} />
+            <VSlider
+              label="Mitte"
+              value={mitteActive ? sp.mitte : mitteDraft}
+              onChange={setMitteDraft}
+              accent={mitteActive ? '#2b6cb0' : '#dd6b20'}
+              disabled={mitteActive}
+            />
             <button
-              onClick={commitMitte}
-              disabled={!mitteDirty}
+              onClick={toggleCheck}
               style={{
-                marginTop: 4, fontSize: 10, padding: '2px 8px', borderRadius: 4, cursor: mitteDirty ? 'pointer' : 'default',
-                border: '1px solid ' + (mitteDirty ? '#dd6b20' : '#e2e8f0'),
-                background: mitteDirty ? '#dd6b20' : '#f7fafc', color: mitteDirty ? '#fff' : '#a0aec0',
+                marginTop: 4, fontSize: 10, padding: '2px 8px', borderRadius: 4, cursor: 'pointer',
+                border: '1px solid ' + (mitteActive ? '#2b6cb0' : '#dd6b20'),
+                background: mitteActive ? '#ebf8ff' : '#dd6b20',
+                color: mitteActive ? '#2b6cb0' : '#fff', fontWeight: 600,
               }}
-            >✓ Check</button>
+            >{mitteActive ? '✎ ändern' : '✓ Check'}</button>
           </div>
           <VSlider label="oben" value={sp.oben} onChange={(v) => setSp({ oben: v })} />
         </div>
