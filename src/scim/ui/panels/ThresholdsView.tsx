@@ -152,6 +152,19 @@ export default function ThresholdsView() {
           <input type="range" min={0} max={1} step={0.01} value={s.degradier} onChange={(e) => update({ degradier: parseFloat(e.target.value) })} style={{ width: 200, accentColor: '#2b6cb0' }} />
         )}
       </div>
+
+      {/* Bauplan-Notiz — wie das künftig in Relation zu „Sperren" laufen kann */}
+      <div style={{ marginTop: 16, padding: '8px 10px', fontSize: 10.5, lineHeight: 1.5, color: '#744210', background: '#fffaf0', border: '1px solid #feebc8', borderRadius: 6 }}>
+        <strong>Bauplan (Pflege-Pfad, künftig):</strong> Heute wird hier (Shell-Studio) justiert →
+        über <strong>Origin publizieren</strong>. Später wandert die Pflege in ein
+        <strong> Regio-Dashboard</strong> — ein <strong>direkter Pfad, ähnlich „Sperren setzen"</strong>.
+        Dabei gilt die bestehende Schichtung: <strong>Spreizung/Normalisierung</strong> kann
+        <strong> live über Anthem</strong> (5-Min-Takt, wie Sperren) wirken; <strong>Farb-Stops</strong>
+        reisen über <strong>Origin</strong> (Bundle-Publish). Verbindliche Werte werden in die
+        <strong> Representation zurückgeschrieben</strong> (Kapsel, versioniert). Der ScaleSpec ist
+        der gemeinsame Vertrag — Editor (P01/Dashboard) und Propagation (Origin/Anthem) sind
+        austauschbar. Siehe docs/thresholds_umbauplan.md.
+      </div>
     </div>
   );
 }
