@@ -107,11 +107,11 @@ export default function ThresholdsView() {
           <div style={{ fontSize: 12.5, fontWeight: 700, color: '#1a365d', marginBottom: 6 }}>Skalen-Form <span style={{ fontWeight: 400, fontSize: 10.5, color: '#a0aec0' }}>· vertikal</span></div>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             <VSlider label="Mitte" value={sp.mitte} onChange={(v) => setSp({ mitte: v })} />
-            <VSlider label="oben spreizen" value={sp.obenHet} onChange={(v) => setSp({ obenHet: v })} />
-            <VSlider label="unten spreizen" value={sp.untenHet} onChange={(v) => setSp({ untenHet: v })} />
+            <VSlider label="oben stauchen" value={sp.obenHet} onChange={(v) => setSp({ obenHet: v })} />
+            <VSlider label="unten stauchen" value={sp.untenHet} onChange={(v) => setSp({ untenHet: v })} />
             <div style={{ width: 1, alignSelf: 'stretch', background: '#e2e8f0', margin: '0 4px' }} />
-            <VSlider label="oben stauchen" value={vj.oben} onChange={(v) => setVj({ oben: v })} />
-            <VSlider label="unten stauchen" value={vj.unten} onChange={(v) => setVj({ unten: v })} />
+            <VSlider label="Wrap oben" value={vj.oben} onChange={(v) => setVj({ oben: v })} />
+            <VSlider label="Wrap unten" value={vj.unten} onChange={(v) => setVj({ unten: v })} />
           </div>
         </div>
 
