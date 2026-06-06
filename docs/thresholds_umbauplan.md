@@ -1,116 +1,84 @@
-# Thresholds-Umbauplan (P01) — Schichten, Reihenfolge, Beschriftung
+# Thresholds-Umbauplan (P01) — finaler Plan vor dem Bau
 
-**Status:** Plan 2026-06-06. Bau **nach** Freigabe, in einem Durchgang (kein iteratives
-Drauflosbauen). Anlass: Regler sollen nach Wichtigkeit, verständlich beschriftet und
-gestuft (einfach → fortgeschritten) sein; „System" ist der wichtigste Teil.
-
----
-
-## Leitgedanke: drei Schichten, eine Last
-
-Es gibt **eine** gemessene Last (heute Sim, später Telco). Darauf sitzen drei Schichten:
-
-```
-            ┌──────────────────────────────────────────────┐
-   Last  →  │ (0) SYSTEM — Last sinnvoll machen             │  geteilt
-            │     (Normalisierung: spread/floor)            │
-            └───────────────┬──────────────────────────────┘
-                            │  die „sinnvolle" Last
-            ┌───────────────┴───────────────┐
-   ┌────────┴─────────┐            ┌─────────┴──────────┐
-   │ (1) MESH-FARBE   │            │ (2) COMFORT-SCHIEBER│   pro Fläche
-   │ spectrum/bias/   │            │ Skala + Beschriftung │   unabhängig
-   │ palette          │            │ (A: Dichte-Labels)   │
-   └──────────────────┘            └──────────────────────┘
-```
-
-- **(0) SYSTEM ist das Wichtigste.** Es entscheidet, *wie sich die Last über die Skala
-  verteilt* — damit das Mesh nicht durchweg grün und der Schieber nicht überreizt ist.
-  Beide Flächen sitzen auf dieser einen normalisierten Last. **Stimmt System, stimmen
-  beide.**
-- **(1) und (2) sind die Darstellung pro Fläche** und kollidieren nicht miteinander —
-  weil sie nur *einfärben/beschriften*, nicht die Last verändern.
+**Status:** Design abgeschlossen 2026-06-06. Bau **nach Freigabe, in einem Durchgang**.
+Ziel: Regler nach Wichtigkeit, in Klartext beschriftet, gestuft (einfach → fortgeschritten);
+Orientierung als Bedeutungsträger.
 
 ---
 
-## Reihenfolge & Stufen (so soll P01 aussehen)
+## Grundmodell: eine Last, zwei Darstellungen
 
-### SYSTEM — am wichtigsten (immer sichtbar)
-1. **„Spreizung / Absolut↔Relativ"** *(= spread)* — macht aus meist-niedriger Last eine
-   sichtbare Verteilung. 0 = echte Werte (ruhig→grün), 1 = aktueller Bereich gestreckt.
-2. **„Mindest-Sichtbarkeit"** *(= floor)* — die Spitze zeigt immer etwas Rot.
+Es gibt **eine** gemessene Last (heute Sim, später Telco). Darauf sitzen:
+- **Comfort-Schieber** (vertikal, User-Instrument) — daran wählt der User Comfort.
+- **Mesh** (die Karte) — zeigt die Last farbig.
 
-→ Diese zwei sind „System": sie verhindern *alles-grün* **und** *Schieber knallt*.
-
-### MESH-FARBE — einfach (immer sichtbar)
-3. **„Wie früh wird es rot?"** *(= spectrum)*
-4. **„Grundton kühler/heißer"** *(= bias)*
-
-### MESH-FARBE — fortgeschritten (ausklappbar)
-5. **„Sicherheits-Aufschlag"** *(= safety)*
-6. **„Abdimm-Schwelle"** *(= degradier)* — überlastete Strecken entdrängen.
-7. **„Farbmodell"** *(= palette)*
-
-### COMFORT-SCHIEBER — eigener Block (A)
-8. **Dichte-Skala mit Beschriftung** — z. B. `<1/km` grün … `>1/m` rot, mit
-   Unterteilungen. Das **User-Instrument**, unabhängig von (1).
+**Merksatz: Mesh = alles außer dem Wrap.** Die Skalen-Form gilt für beide; nur die
+„Verjüngung" (der Wrap, ein reiner UX-Trick) wirkt **nur** auf den Comfort-Schieber.
 
 ---
 
-## Mapping: neuer Regler ↔ bestehendes Feld (keine Daten-Migration)
+## Regler-Bestand
 
-| Neuer (klarer) Regler | colourSettings-Feld | heute zugeordnet |
-|---|---|---|
-| Spreizung absolut↔relativ | `spread` | P01 System |
-| Mindest-Sichtbarkeit | `floor` | P01 System |
-| Wie früh wird es rot | `spectrum` | P04 Load |
-| Grundton kühler/heißer | `bias` | P02 Region |
-| Sicherheits-Aufschlag | `safety` | P02 Region |
-| Abdimm-Schwelle | `degradier` | P02 Region |
-| Farbmodell | `palette` | P04 Load |
-| Dichte-Skala (A) | **NEU** | — |
+### Skalen-Form — VERTIKAL (formt die Verteilung der Skala)
+- **Spreizung (3 Regler, global)** — wirkt auf **Comfort UND Mesh**:
+  1. **Mitte-Position** — wo die homogene Mitte sitzt.
+  2. **oben heterogen** — wie stark der obere Bereich spreizt.
+  3. **unten heterogen** — wie stark der untere Bereich spreizt.
+  → Mitte gleichmäßig, Enden gespreizt. (Ersetzt das alte binäre `spread`.)
+- **Verjüngung / Wrap (2 Regler, global)** — wirkt **nur auf den Comfort-Schieber**:
+  4. **Verjüngung unten** · 5. **Verjüngung oben** — Striche laufen zu den Enden enger
+  zusammen → weniger Rot-Fläche im Schieber, ohne das Mesh anzufassen.
 
-**Alle Felder existieren schon** in `colourSettings` (außer A). Der Umbau ist also
-**Umsortieren + Beschriften + Stufen**, keine neue Daten-Struktur.
+### Farbsorten — HORIZONTAL (welche Farben)
+- **2–6 Farb-Stops** (Default z. B. 3: grün · gelb · rot) — die prinzipiellen Farbwerte.
+  Wirken auf **beides**. (Ersetzt das feste `palette`.)
 
----
-
-## Wie das Bestehende transformiert wird
-
-- **Heute:** `ThresholdsView` zeigt drei Abschnitte **nach Horizont** (System/Region/Load),
-  jeder ein generischer `ColourAdjust`. Verständlich nur für Eingeweihte.
-- **Neu:** `ThresholdsView` zeigt **nach Wichtigkeit + Stufe** (System → Mesh-Farbe einfach
-  → Mesh-Farbe fortgeschritten → Comfort-Schieber). Klartext-Labels statt Feldnamen.
-- **Intern unverändert:** jeder Wert bleibt seinem **Horizont** zugeordnet (für die
-  Versionierungs-Kadenz: System=lang, Region=mittel, Load=kurz). Nur die **Anzeige**
-  ändert sich. `colourSettings` bleibt 1:1.
-- **`ColourAdjust`** wird von „rendert ein Horizont-Set" zu „rendert eine benannte
-  Regler-Gruppe" — oder durch eine neue, schlichtere Komponente ersetzt.
+### Orientierungs-Konvention
+**vertikal = Skalen-Form · horizontal = Farbsorten.** Auf einen Blick lesbar.
 
 ---
 
-## Was fehlt (zu bauen)
+## Ehrlichkeit (bewusste Entscheidungen)
 
-1. **Dichte-Skala (A)** für den Comfort-Schieber — beschriftete Stützpunkte in
-   Personen/Länge. *(Zahlen nominal bis echtes Telco; die Skala ist der Vertrag.)*
-2. **Klartext-Labels + Stufen-UI** (einfach immer sichtbar, fortgeschritten ausklappbar).
-3. **Trennung Schieber-Darstellung ↔ Mesh-Darstellung** sauber sichtbar machen
-   (zwei Blöcke), auf der geteilten System-Last.
+- **Kein `floor` („immer etwas Rot").** Wäre unehrlich (Rot ohne Last). Gestrichen.
+- **Keine Ruhe-Schwelle.** Nicht nötig.
+- Die **Spreizung** zeigt Variation **wo wirklich Last ist** (relativ) — das ist die
+  ehrliche Quelle für „genug Rot im Mesh".
+- Die **Comfort-Schwelle** wird fürs **Abdimmen** auf die **echte Last zurückgerechnet**
+  (entzerrt) — der Wrap verfälscht nur die Anzeige, nicht die Logik.
+
+---
+
+## Transform: heutige `colourSettings` → neues Modell
+
+| heute | neu |
+|---|---|
+| `spread` (binär) | **Spreizung (3)** |
+| `palette` (fest) | **Farbsorten (2–6 Stops)** |
+| `floor` | **entfällt** |
+| — | **Verjüngung (2)** — neu (Wrap, Comfort-only) |
+| `spectrum`, `bias`, `safety`, `degradier` | **beim Bau klären** (s.u.) |
+
+**Offen, beim Bau zu entscheiden:** wo die alten Farb-Kurven-Regler landen —
+- `spectrum` (wie früh rot) / `bias` (Grundton) → vermutlich in **Spreizung**
+  (Mitte-Position ≈ bias, Verteilung ≈ spectrum) **aufgegangen**.
+- `safety` (Sicherheits-Aufschlag) / `degradier` (Abdimm-Schwelle) → sind **Mesh-Verhalten**,
+  nicht Skalen-Form → entweder eigene horizontale Mesh-Regler **oder** zu BCK verschoben.
+
+Heutige Anzeige sortiert nach **Horizont** (System/Region/Load); neu nach **Wichtigkeit +
+Orientierung**. Intern bleibt jeder Wert seinem Horizont zugeordnet (Versionierungs-Kadenz).
 
 ---
 
-## Offene Entscheidung (vor dem Bau zu klären)
+## Zu bauen
 
-**Zeigt der Comfort-Schieber die *absolute Dichte* (A, roh/ehrlich) oder die
-*System-normalisierte* Skala?**
-- *Absolut:* ehrlich, aber bei niedriger Last steht der Schieber „unten im Grünen".
-- *System-normalisiert:* sitzt mittig/ausgewogen, aber die Dichte-Labels sind dann
-  relativ, nicht absolut.
-- (Möglich: absolute Labels **anzeigen**, Schieber-Position aber auf der normalisierten
-  Verteilung — Beschriftung absolut, Mechanik normalisiert.)
-
----
+1. **Spreizung (3)** + **Verjüngung (2)** als vertikale Regler.
+2. **Farb-Stops (2–6)** als horizontale Regler.
+3. **Wrap-Mechanik** (Comfort-Skala verzerren) + **Entzerrung** der Comfort-Schwelle fürs Abdimmen.
+4. Stufen-UI (einfach immer sichtbar, fortgeschritten ausklappbar).
+5. `colourSettings`-Felder erweitern (Spreizung-Tripel, Verjüngung-Paar, Stops-Array);
+   alte Felder transformieren/ablösen (s.o.).
 
 ## Abgrenzung
-Plan. Bau in einem Durchgang nach Freigabe. Keine `colourSettings`-Migration. Mesh-Farbe
-und Schieber bleiben unabhängige Darstellungen auf der geteilten System-Last.
+Design fix. Bau in einem Durchgang nach Freigabe. Mesh-Farbe und Comfort-Schieber bleiben
+zwei Darstellungen einer Last; nur der Wrap ist Comfort-exklusiv.
