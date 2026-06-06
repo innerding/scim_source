@@ -45,7 +45,9 @@ function Preview({ spec, active, mitteDraft }: { spec: ScaleSpec; active: boolea
   const M = 90;
   // mitte-unabhängige Farb-Skala (oben/unten bleiben wirksam):
   const colorSpec: ScaleSpec = { stops: spec.stops, spreizung: { mitte: 0.5, oben: spec.spreizung.oben, unten: spec.spreizung.unten }, verjuengung: spec.verjuengung };
-  const shiftPx = (spec.spreizung.mitte - 0.5) * PV_H;            // committete Mitte → Fenstermitte
+  // Justieren (inaktiv): Gradient neutral (shift 0), Marke über die volle Höhe frei.
+  // Check (aktiv): Verschiebung schiebt Gradient + Marke gemeinsam in die Fenstermitte.
+  const shiftPx = active ? (spec.spreizung.mitte - 0.5) * PV_H : 0;
   const markLoad = active ? spec.spreizung.mitte : mitteDraft;
   const innerY = (L: number) => (1.5 - L) * PV_H;                 // px ab Inner-Oberkante (Höhe 2·H)
   return (
