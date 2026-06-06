@@ -1,9 +1,11 @@
 # Lichtenberg POI-Plan v1
-**Stand:** 2026-06-06  ·  **23 POIs**  ·  ✓ 22 · ≈ 0 · ❓ 0
+**Stand:** 2026-06-06  ·  **22 POIs**  ·  ✓ 21 · ≈ 0 · ❓ 0
 **Token-Präfix:** boeh · lichtenberg
 
 Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 **✓** aus OSM/bestätigt · **≈** abgeleitet/geschätzt · **❓** fehlt
+
+---
 
 ---
 
@@ -80,12 +82,6 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 |---|---|---|---|---|---|---|
 | boeh-lichtenberg-uap8 | parkplatz | Gisela Parkplatz |  | 14.25724, 48.38040 | Lichtenberg | ✓ |
 
-### Service_Sleep
-
-| Code | Icon | Tagline | Description | Coord | Cluster | Status |
-|---|---|---|---|---|---|---|
-| boeh-lichtenberg-mg6x | hotel | Lamahof | Bauernhof-Unterkunft mit Lamas | 14.23566, 48.40170 | — | ✓ |
-
 ### Service_Others
 
 | Code | Icon | Tagline | Description | Coord | Cluster | Status |
@@ -145,6 +141,8 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 - Service: Sub-Differenzierung allein durch das Innensymbol
 - Cluster: keine Sub (magenta einheitlich)
 - Hexagon-Ring: transparent als unsichtbarer Cluster-Ring · opaque als vereinigtes Cluster-POI beim Herauszoomen
+
+---
 
 ---
 
