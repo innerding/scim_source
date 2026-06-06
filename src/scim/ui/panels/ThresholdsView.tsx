@@ -1,63 +1,48 @@
-// P01 · Thresholds — Skalen-Modell, gespeist aus dem EINEN shell-kit/scale.
-// Die Oberfläche ist eine Kopie dieses Modells.
+// P01 · Thresholds — Felder-/Grenzen-Modell (einfaches Denken).
+// Die Skala = Farb-Felder, getrennt durch Grenzen (Load-Positionen 0..1).
+// Der farbige Verlauf ist nur ANSICHT dieser Positionen.
 //
-// Blöcke:
-//   1. Skalen-Form: Vorschau-Säule (Last → Farbe, wie Mesh) + drei ZARTE Schieber.
-//      Mitte = globaler Pivot: frei ziehen → mit „Check" übernehmen → justiert sich ein.
-//      oben/unten = Anteil ihrer Hälfte (relativ zur Mitte), wirken live.
-//   2. Farbsorten (horizontal): 2–6 Farb-Stops.
-//   3. Wrap (nur Comfort-Button): subjektiv. Fasst das Mesh NIE an.
+// SCHRITT 1 (hier gebaut): Marker beliebig setzen → „✓ Check" zentriert diesen
+//   Punkt auf die Mitte (Load 0.5); alle Felder darunter teilen sich die untere,
+//   alle darüber die obere Hälfte (rechnerische Verschiebung der Positionen). Die
+//   Farben wandern mit (keine Umfärbung). „✎ ändern" löst den Marker wieder.
 //
-// Schreibt die colourSettings-Felder. Wirkung auf Mesh/Comfort = Stufe 4/5.
+// SCHRITT 2 (später): zwei Live-Schieber justieren die Grenzen je Hälfte direkt.
 
-import { useCallback, useEffect, useState } from 'react';
-import { loadColourSettings, saveColourSettings, COLOUR_SETTINGS_EVENT, type ColourSettings } from '../../sensus/colourSettings';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { loadColourSettings, saveColourSettings, COLOUR_SETTINGS_EVENT, evenPositions, type ColourSettings } from '../../sensus/colourSettings';
 import { useInspectorView } from '../../../runtime/repContext';
 import { slugify } from '../../../runtime/router';
-import { colorAt, type ScaleSpec } from 'shell-kit';
 import { AnthemCycleBadge } from '../AnthemCycleInfo';
 
-// ── zarter vertikaler Slider (rotierter Range — robust cross-browser) ──────────
-function VSlider({ label, value, onChange, accent = '#2b6cb0', disabled = false }: {
-  label: string; value: number; onChange: (v: number) => void; accent?: string; disabled?: boolean;
-}) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, width: 48, opacity: disabled ? 0.55 : 1 }}>
-      <div style={{ width: 28, height: 150, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <input type="range" min={0} max={1} step={0.01} value={value} disabled={disabled}
-          onChange={(e) => onChange(parseFloat(e.target.value))}
-          style={{ width: 150, transform: 'rotate(-90deg)', accentColor: accent, cursor: disabled ? 'default' : 'pointer' }} />
-      </div>
-      <span style={{ fontSize: 9, color: '#4a5568', fontFamily: 'ui-monospace, Menlo, monospace' }}>{value.toFixed(2)}</span>
-      <span style={{ fontSize: 9.5, color: '#1a365d', textAlign: 'center', lineHeight: 1.15 }}>{label}</span>
-    </div>
-  );
+const PV_H = 200;            // Säulen-Höhe (px)
+const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
+
+// CSS-Verlauf aus Stops + Positionen (unten = Load 0 → „to top").
+function gradientCss(stops: string[], positions: number[]): string {
+  const parts = stops.map((c, i) => `${c} ${(positions[i] * 100).toFixed(2)}%`);
+  return `linear-gradient(to top, ${parts.join(', ')})`;
 }
 
-// ── Vorschau-Säule ─────────────────────────────────────────────────────────
-// LAST-Achse, Farbe = colorAt mit der ECHTEN committeten Mitte (= Wahrheit; die
-// Stretcher oben/unten ankern korrekt an ihr). Die Mitte ist zusätzlich eine
-// VERSCHIEBUNG: bei Check gleiten Gradient + Marke gemeinsam in die Fenstermitte,
-// die Farben MORPHEN dabei (background-Transition) statt zu snappen. Beim
-// Justieren (inaktiv) steht der Gradient, nur die Marke wandert frei.
-const PV_H = 170;
-function Preview({ spec, active, mitteDraft }: { spec: ScaleSpec; active: boolean; mitteDraft: number }) {
-  const M = 90;
-  // Justieren (inaktiv): Gradient neutral (shift 0), Marke über die volle Höhe frei.
-  // Check (aktiv): Verschiebung schiebt Gradient + Marke gemeinsam in die Fenstermitte.
-  const shiftPx = active ? (spec.spreizung.mitte - 0.5) * PV_H : 0;
-  const markLoad = active ? spec.spreizung.mitte : mitteDraft;
-  const innerY = (L: number) => (1.5 - L) * PV_H;                 // px ab Inner-Oberkante (Höhe 2·H)
+// Zentriert den Punkt m: Positionen < m → [0,0.5], > m → [0.5,1].
+function centerPositions(p: number[], m: number): number[] {
+  const mm = Math.min(0.98, Math.max(0.02, m));
+  return p.map((x) => (x <= mm ? (x * 0.5) / mm : 0.5 + ((x - mm) * 0.5) / (1 - mm)));
+}
+
+// ── zarter vertikaler Wrap-Slider (Comfort-only) ──────────────────────────────
+function VSlider({ label, value, onChange, accent = '#805ad5' }: {
+  label: string; value: number; onChange: (v: number) => void; accent?: string;
+}) {
   return (
-    <div style={{ position: 'relative', width: 38, height: PV_H, borderRadius: 4, overflow: 'hidden', border: '1px solid #cbd5e0' }}>
-      <div style={{ position: 'absolute', left: 0, right: 0, top: -PV_H * 0.5, height: PV_H * 2, transform: `translateY(${shiftPx}px)`, transition: 'transform 0.4s ease' }}>
-        {Array.from({ length: M }, (_, i) => {
-          const load = 1.5 - (i / (M - 1)) * 2.0;        // 1.5 … −0.5 (Enden klemmen auf End-Farbe)
-          return <div key={i} style={{ position: 'absolute', left: 0, right: 0, top: `${(i / M) * 100}%`, height: `${100 / M + 0.6}%`, background: colorAt(load, spec), transition: 'background 0.4s ease' }} />;
-        })}
-        {/* Mitte-Marke — liegt IM Gradienten, verschiebt sich mit ihm */}
-        <div style={{ position: 'absolute', left: 0, right: 0, top: `${innerY(markLoad)}px`, height: 0, borderTop: active ? '2px solid rgba(255,255,255,0.95)' : '2px dashed rgba(255,255,255,0.95)', boxShadow: '0 0 0 0.6px rgba(0,0,0,0.55)' }} />
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, width: 48 }}>
+      <div style={{ width: 28, height: 96, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <input type="range" min={0} max={1} step={0.01} value={value}
+          onChange={(e) => onChange(parseFloat(e.target.value))}
+          style={{ width: 96, transform: 'rotate(-90deg)', accentColor: accent }} />
       </div>
+      <span style={{ fontSize: 9, color: '#4a5568', fontFamily: 'ui-monospace, Menlo, monospace' }}>{value.toFixed(2)}</span>
+      <span style={{ fontSize: 9.5, color: '#1a365d' }}>{label}</span>
     </div>
   );
 }
@@ -66,12 +51,17 @@ export default function ThresholdsView() {
   const view = useInspectorView();
   const regionSlug = slugify(view?.geometry?.region ?? '') || 'default';
   const [s, setS] = useState<ColourSettings>(() => loadColourSettings(regionSlug));
-  const [mitteDraft, setMitteDraft] = useState(s.spreizung.mitte);
-  const [mitteActive, setMitteActive] = useState(true);   // true = Check gesetzt (fixiert)
+
+  // Schritt-1-Zustand
+  const [checked, setChecked] = useState(false);
+  const [marker, setMarker] = useState(0.5);          // Marker-Load (im Justier-Modus)
+  const [tweenPos, setTweenPos] = useState<number[] | null>(null); // animierte Anzeige-Positionen
+  const rafRef = useRef(0);
+  const barRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef(false);
 
   useEffect(() => {
-    const next = loadColourSettings(regionSlug);
-    setS(next); setMitteDraft(next.spreizung.mitte); setMitteActive(true);
+    setS(loadColourSettings(regionSlug)); setChecked(false); setMarker(0.5); setTweenPos(null);
   }, [regionSlug]);
 
   const update = useCallback((patch: Partial<ColourSettings>) => {
@@ -84,114 +74,146 @@ export default function ThresholdsView() {
     const onEvt = (e: Event) => {
       const d = (e as CustomEvent).detail as { regionSlug?: string; settings?: ColourSettings } | undefined;
       if (!d || d.regionSlug !== (regionSlug || 'default') || !d.settings) return;
-      setS(d.settings); setMitteDraft(d.settings.spreizung.mitte); setMitteActive(true);
+      setS(d.settings);
     };
     window.addEventListener(COLOUR_SETTINGS_EVENT, onEvt);
     return () => window.removeEventListener(COLOUR_SETTINGS_EVENT, onEvt);
   }, [regionSlug]);
 
-  const sp = s.spreizung, vj = s.verjuengung;
-  const setSp = (p: Partial<typeof sp>) => update({ spreizung: { ...sp, ...p } });
-  const setVj = (p: Partial<typeof vj>) => update({ verjuengung: { ...vj, ...p } });
+  useEffect(() => () => cancelAnimationFrame(rafRef.current), []);
 
-  // Gradient zeigt IMMER die übernommene Mitte (sp.mitte) — der Entwurf bewegt nur
-  // die Marke, nicht den Gradienten. Erst Check übernimmt + fixiert.
-  const spec: ScaleSpec = { stops: s.stops, spreizung: sp, verjuengung: vj };
+  const animateTo = (from: number[], to: number[]) => {
+    cancelAnimationFrame(rafRef.current);
+    const start = performance.now(), dur = 420;
+    const step = (now: number) => {
+      const k = Math.min(1, (now - start) / dur);
+      const e = 1 - Math.pow(1 - k, 3);                 // easeOutCubic
+      setTweenPos(from.map((f, i) => f + (to[i] - f) * e));
+      if (k < 1) rafRef.current = requestAnimationFrame(step);
+      else setTweenPos(null);
+    };
+    rafRef.current = requestAnimationFrame(step);
+  };
+
   const toggleCheck = () => {
-    if (mitteActive) { setMitteActive(false); }          // entsperren → nachjustieren
-    else { setSp({ mitte: mitteDraft }); setMitteActive(true); }  // übernehmen + fixieren
+    if (!checked) {
+      const from = s.positions.slice();
+      const to = centerPositions(s.positions, marker);
+      update({ positions: to });
+      setChecked(true); setMarker(0.5);
+      animateTo(from, to);
+    } else {
+      setChecked(false); setMarker(0.5);
+    }
   };
 
-  const setStop = (i: number, color: string) => {
-    const stops = s.stops.slice(); stops[i] = color; update({ stops });
+  // Marker per Zeiger setzen (nur im Justier-Modus)
+  const pointToLoad = (clientY: number) => {
+    const r = barRef.current?.getBoundingClientRect(); if (!r) return marker;
+    return clamp01(1 - (clientY - r.top) / r.height);
   };
-  const addStop = () => { if (s.stops.length < 6) update({ stops: [...s.stops, s.stops[s.stops.length - 1]] }); };
-  const removeStop = (i: number) => { if (s.stops.length > 2) update({ stops: s.stops.filter((_, j) => j !== i) }); };
+  const onBarDown = (e: React.PointerEvent) => {
+    if (checked) return;
+    dragRef.current = true; (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    setMarker(pointToLoad(e.clientY));
+  };
+  const onBarMove = (e: React.PointerEvent) => { if (dragRef.current && !checked) setMarker(pointToLoad(e.clientY)); };
+  const onBarUp = (e: React.PointerEvent) => { dragRef.current = false; try { (e.target as HTMLElement).releasePointerCapture(e.pointerId); } catch { /* */ } };
+
+  const displayPos = tweenPos ?? s.positions;
+  const markerY = checked ? 0.5 : marker;
+
+  const setStop = (i: number, color: string) => { const stops = s.stops.slice(); stops[i] = color; update({ stops }); };
+  const addStop = () => {
+    if (s.stops.length >= 6) return;
+    const stops = [...s.stops, s.stops[s.stops.length - 1]];
+    update({ stops, positions: evenPositions(stops.length) });   // Felder neu gleichverteilen
+    setChecked(false); setMarker(0.5);
+  };
+  const removeStop = (i: number) => {
+    if (s.stops.length <= 2) return;
+    const stops = s.stops.filter((_, j) => j !== i);
+    update({ stops, positions: evenPositions(stops.length) });
+    setChecked(false); setMarker(0.5);
+  };
+  const resetEven = () => { update({ positions: evenPositions(s.stops.length) }); setChecked(false); setMarker(0.5); };
+
+  const vj = s.verjuengung;
+  const setVj = (p: Partial<typeof vj>) => update({ verjuengung: { ...vj, ...p } });
 
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 560 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
         <span style={{ display: 'inline-block', padding: '2px 8px', fontSize: 10, fontFamily: 'monospace', color: '#2b6cb0', background: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: 4 }}>
-          P01 · Thresholds · Skalen-Modell · Region „{regionSlug}"
+          P01 · Thresholds · Felder-Modell · Region „{regionSlug}"
         </span>
         <AnthemCycleBadge />
       </div>
 
       <div style={{ fontSize: 12.5, fontWeight: 700, color: '#1a365d', marginBottom: 2 }}>
-        Skalen-Form <span style={{ fontWeight: 400, fontSize: 10.5, color: '#a0aec0' }}>· Ansicht, auf der sich die Last verteilt (Mesh + Comfort)</span>
+        Schritt 1 · Mitte zentrieren <span style={{ fontWeight: 400, fontSize: 10.5, color: '#a0aec0' }}>· Felder + Grenzen</span>
       </div>
       <div style={{ fontSize: 10, color: '#718096', marginBottom: 10, maxWidth: 380 }}>
-        <strong>Mitte</strong>: bei offenem Check frei im Gradienten platzieren →
-        <strong> „✓ Check"</strong> übernimmt, die Mitte wandert in die Fenstermitte und bleibt fixiert.
-        <strong> oben/unten</strong> = Mitte ihres Teils (relativ), wirken sofort.
+        Marker auf dem Verlauf setzen → <strong>„✓ Check"</strong> zentriert diesen Punkt auf die Mitte.
+        Felder darunter/darüber teilen sich je die untere/obere Hälfte — die Farben wandern mit.
       </div>
 
       <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
-        {/* Vorschau-Säule */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, paddingTop: 4 }}>
-          <Preview spec={spec} active={mitteActive} mitteDraft={mitteDraft} />
-          <span style={{ fontSize: 8.5, color: '#a0aec0' }}>{mitteActive ? 'Mitte fixiert' : 'Last → Farbe'}</span>
-        </div>
-
-        {/* drei zarte Schieber */}
-        <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
-          <VSlider label="unten" value={sp.unten} onChange={(v) => setSp({ unten: v })} />
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <VSlider
-              label="Mitte"
-              value={mitteActive ? sp.mitte : mitteDraft}
-              onChange={setMitteDraft}
-              accent={mitteActive ? '#2b6cb0' : '#dd6b20'}
-              disabled={mitteActive}
-            />
+        {/* Verlauf-Säule mit Marker */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+          <div
+            ref={barRef}
+            onPointerDown={onBarDown} onPointerMove={onBarMove} onPointerUp={onBarUp}
+            style={{ position: 'relative', width: 44, height: PV_H, borderRadius: 5, border: '1px solid #cbd5e0', background: gradientCss(s.stops, displayPos), cursor: checked ? 'default' : 'ns-resize', touchAction: 'none' }}
+          >
+            <div style={{ position: 'absolute', left: -4, right: -4, top: `${(1 - markerY) * 100}%`, height: 0, borderTop: checked ? '2px solid rgba(255,255,255,0.97)' : '2px dashed rgba(255,255,255,0.97)', boxShadow: '0 0 0 0.7px rgba(0,0,0,0.55)', transition: tweenPos ? 'top 0.42s ease' : 'none' }} />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <button
               onClick={toggleCheck}
-              style={{
-                marginTop: 4, fontSize: 10, padding: '2px 8px', borderRadius: 4, cursor: 'pointer',
-                border: '1px solid ' + (mitteActive ? '#2b6cb0' : '#dd6b20'),
-                background: mitteActive ? '#ebf8ff' : '#dd6b20',
-                color: mitteActive ? '#2b6cb0' : '#fff', fontWeight: 600,
-              }}
-            >{mitteActive ? '✎ ändern' : '✓ Check'}</button>
+              style={{ fontSize: 10.5, padding: '3px 10px', borderRadius: 4, cursor: 'pointer', fontWeight: 600,
+                border: '1px solid ' + (checked ? '#2b6cb0' : '#dd6b20'),
+                background: checked ? '#ebf8ff' : '#dd6b20', color: checked ? '#2b6cb0' : '#fff' }}
+            >{checked ? '✎ ändern' : '✓ Check'}</button>
           </div>
-          <VSlider label="oben" value={sp.oben} onChange={(v) => setSp({ oben: v })} />
+          <button onClick={resetEven} style={{ fontSize: 9, padding: '1px 6px', borderRadius: 3, border: '1px solid #e2e8f0', background: '#f7fafc', color: '#718096', cursor: 'pointer' }}>↺ gleichverteilen</button>
+        </div>
+
+        {/* Farbsorten + Positionen */}
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 12.5, fontWeight: 700, color: '#1a365d', marginBottom: 6 }}>Farben <span style={{ fontWeight: 400, fontSize: 10.5, color: '#a0aec0' }}>· {s.stops.length}/6 · unten → oben</span></div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+            {s.stops.map((c, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <input type="color" value={toHex(c)} onChange={(e) => setStop(i, e.target.value)} style={{ width: 30, height: 24, border: 'none', background: 'none', cursor: 'pointer' }} />
+                <span style={{ fontSize: 9.5, color: '#a0aec0', fontFamily: 'ui-monospace, Menlo, monospace', width: 64 }}>Pos {(s.positions[i] * 100).toFixed(0)}%</span>
+                {s.stops.length > 2 && (
+                  <button onClick={() => removeStop(i)} style={{ fontSize: 12, border: 'none', background: 'none', color: '#a0aec0', cursor: 'pointer' }}>×</button>
+                )}
+              </div>
+            ))}
+            {s.stops.length < 6 && (
+              <button onClick={addStop} style={{ marginTop: 2, alignSelf: 'flex-start', width: 28, height: 26, borderRadius: 4, border: '1px dashed #cbd5e0', background: '#f7fafc', color: '#4a5568', cursor: 'pointer', fontSize: 16 }}>+</button>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Farbsorten (horizontal) */}
-      <div style={{ marginTop: 18 }}>
-        <div style={{ fontSize: 12.5, fontWeight: 700, color: '#1a365d', marginBottom: 6 }}>Farbsorten <span style={{ fontWeight: 400, fontSize: 10.5, color: '#a0aec0' }}>· horizontal · {s.stops.length}/6</span></div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {s.stops.map((c, i) => (
-            <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-              <input type="color" value={toHex(c)} onChange={(e) => setStop(i, e.target.value)} style={{ width: 34, height: 28, border: 'none', background: 'none', cursor: 'pointer' }} />
-              {s.stops.length > 2 && (
-                <button onClick={() => removeStop(i)} style={{ fontSize: 10, border: 'none', background: 'none', color: '#a0aec0', cursor: 'pointer' }}>×</button>
-              )}
-            </div>
-          ))}
-          {s.stops.length < 6 && (
-            <button onClick={addStop} style={{ width: 28, height: 28, borderRadius: 4, border: '1px dashed #cbd5e0', background: '#f7fafc', color: '#4a5568', cursor: 'pointer', fontSize: 16 }}>+</button>
-          )}
-        </div>
-      </div>
-
-      {/* Wrap — NUR Comfort-Button (subjektiv, fasst Mesh nie an) */}
+      {/* Wrap — NUR Comfort-Button */}
       <div style={{ marginTop: 18, borderTop: '1px solid #edf2f7', paddingTop: 12 }}>
         <div style={{ fontSize: 12.5, fontWeight: 700, color: '#1a365d', marginBottom: 2 }}>
           Wrap <span style={{ fontWeight: 400, fontSize: 10.5, color: '#a0aec0' }}>· nur Comfort-Button</span>
         </div>
         <div style={{ fontSize: 10, color: '#718096', marginBottom: 8, maxWidth: 380 }}>
-          Staucht die Enden der <strong>Comfort-Anzeige</strong>, damit der Schieber nicht „knallt".
-          Subjektiv — das <strong>Mesh bleibt objektiv</strong> (jedes 10-m-Segment zeigt die echte Last).
+          Staucht die Enden der <strong>Comfort-Anzeige</strong> (subjektiv). Das <strong>Mesh bleibt objektiv</strong>.
         </div>
         <div style={{ display: 'flex', gap: 12 }}>
-          <VSlider label="unten" value={vj.unten} onChange={(v) => setVj({ unten: v })} accent="#805ad5" />
-          <VSlider label="oben" value={vj.oben} onChange={(v) => setVj({ oben: v })} accent="#805ad5" />
+          <VSlider label="unten" value={vj.unten} onChange={(v) => setVj({ unten: v })} />
+          <VSlider label="oben" value={vj.oben} onChange={(v) => setVj({ oben: v })} />
         </div>
       </div>
 
-      {/* degradier bleibt (Mesh-Verhalten) */}
+      {/* degradier */}
       <div style={{ marginTop: 18, borderTop: '1px solid #edf2f7', paddingTop: 12 }}>
         <div style={{ fontSize: 12.5, fontWeight: 700, color: '#1a365d', marginBottom: 4 }}>Abdimm-Schwelle <span style={{ fontWeight: 400, fontSize: 10.5, color: '#a0aec0' }}>· Mesh · überlastete Strecken entdrängen</span></div>
         <label style={{ fontSize: 11, color: '#4a5568', display: 'flex', gap: 6, alignItems: 'center', marginBottom: 6 }}>
@@ -202,17 +224,11 @@ export default function ThresholdsView() {
         )}
       </div>
 
-      {/* Bauplan-Notiz — wie das künftig in Relation zu „Sperren" laufen kann */}
+      {/* Bauplan-Notiz */}
       <div style={{ marginTop: 16, padding: '8px 10px', fontSize: 10.5, lineHeight: 1.5, color: '#744210', background: '#fffaf0', border: '1px solid #feebc8', borderRadius: 6 }}>
-        <strong>Bauplan (Pflege-Pfad, künftig):</strong> Heute wird hier (Shell-Studio) justiert →
-        über <strong>Origin publizieren</strong>. Später wandert die Pflege in ein
-        <strong> Regio-Dashboard</strong> — ein <strong>direkter Pfad, ähnlich „Sperren setzen"</strong>.
-        Dabei gilt die bestehende Schichtung: <strong>Spreizung/Normalisierung</strong> kann
-        <strong> live über Anthem</strong> (5-Min-Takt, wie Sperren) wirken; <strong>Farb-Stops</strong>
-        reisen über <strong>Origin</strong> (Bundle-Publish). Verbindliche Werte werden in die
-        <strong> Representation zurückgeschrieben</strong> (Kapsel, versioniert). Der ScaleSpec ist
-        der gemeinsame Vertrag — Editor (P01/Dashboard) und Propagation (Origin/Anthem) sind
-        austauschbar. Siehe docs/thresholds_umbauplan.md.
+        <strong>Bauplan:</strong> Schritt 2 (folgt) — zwei Live-Schieber justieren die Grenzen je Hälfte direkt.
+        Mesh liest künftig <strong>positions</strong> (statt spreizung); Pflege später im Regio-Dashboard,
+        Werte in die Representation zurückgeschrieben (Kapsel). Siehe docs/thresholds_umbauplan.md.
       </div>
     </div>
   );

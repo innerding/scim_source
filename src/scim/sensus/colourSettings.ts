@@ -24,15 +24,23 @@ export interface ColourSettings {
   // ── Neues Skalen-Modell (Thresholds-Umbau, Stufe 2) — speist shell-kit ScaleSpec ──
   // Übergangsweise neben den alten Feldern; Stufe 6 löst spread/floor/palette ab.
   stops: string[];                       // 2–6 Farb-Stops (grün→rot), = ScaleSpec.stops
-  spreizung: { mitte: number; oben: number; unten: number };        // mitte=Pivot; oben/unten=Anteil ihrer Hälfte (0.5 neutral)
+  positions: number[];                   // Load-Position 0..1 je Stop (sortiert) — Felder/Grenzen-Modell
+  spreizung: { mitte: number; oben: number; unten: number };        // (vestigial, bis Mesh auf positions umgestellt ist)
   verjuengung: { unten: number; oben: number };                     // Wrap (Comfort-only)
 }
 
 const DEFAULT_STOPS = ['#2ecc40', '#ffd400', '#ff2d2d', '#ff0099'];  // grün · gelb · rot · pink (wie Comfort-Slider)
 
+// Gleichmäßige Positionen für n Stops: [0, 1/(n-1), …, 1].
+export function evenPositions(n: number): number[] {
+  if (n <= 1) return [0];
+  return Array.from({ length: n }, (_, i) => i / (n - 1));
+}
+
 export const DEFAULT_COLOUR_SETTINGS: ColourSettings = {
   palette: DEFAULT_PALETTE, spectrum: 0.5, bias: 0, safety: 0, degradier: null, spread: 0, floor: 0,
   stops: [...DEFAULT_STOPS],
+  positions: evenPositions(DEFAULT_STOPS.length),
   spreizung: { mitte: 0.5, oben: 0.5, unten: 0.5 },
   verjuengung: { unten: 0, oben: 0 },
 };
@@ -54,6 +62,14 @@ function coerceStops(v: unknown): string[] {
   return ok.slice(0, 6);
 }
 
+// Positionen: genau n finite Zahlen in [0,1], aufsteigend sortiert; sonst gleichmäßig.
+function coercePositions(v: unknown, n: number): number[] {
+  if (!Array.isArray(v) || v.length !== n) return evenPositions(n);
+  const ok = v.map((x) => (typeof x === 'number' && Number.isFinite(x) ? clamp(x, 0, 1) : NaN));
+  if (ok.some((x) => Number.isNaN(x))) return evenPositions(n);
+  return ok.slice().sort((a, b) => a - b);
+}
+
 // Mischt beliebige (Teil-/Korrupt-)Eingaben mit den Defaults und clampt jeden
 // Wert in seinen gültigen Bereich. Reine Funktion → testbar ohne localStorage.
 export function coerceSettings(raw: unknown): ColourSettings {
@@ -61,6 +77,7 @@ export function coerceSettings(raw: unknown): ColourSettings {
   const d = DEFAULT_COLOUR_SETTINGS;
   const degValid = typeof r.degradier === 'number' && Number.isFinite(r.degradier);
   const palette = (typeof r.palette === 'string' && r.palette in PALETTES) ? r.palette as PaletteId : d.palette;
+  const stops = coerceStops(r.stops);
   return {
     palette,
     spectrum: clamp(num(r.spectrum, d.spectrum), 0, 1),
@@ -69,7 +86,8 @@ export function coerceSettings(raw: unknown): ColourSettings {
     degradier: degValid ? clamp(r.degradier as number, 0, 1) : null,
     spread: clamp(num(r.spread, d.spread), 0, 1),
     floor: clamp(num(r.floor, d.floor), 0, 1),
-    stops: coerceStops(r.stops),
+    stops,
+    positions: coercePositions(r.positions, stops.length),
     spreizung: {
       mitte: clamp(num((r.spreizung as Record<string, unknown>)?.mitte, d.spreizung.mitte), 0, 1),
       oben: clamp(num((r.spreizung as Record<string, unknown>)?.oben, d.spreizung.oben), 0, 1),
