@@ -24,7 +24,7 @@ export interface ColourSettings {
   // ── Neues Skalen-Modell (Thresholds-Umbau, Stufe 2) — speist shell-kit ScaleSpec ──
   // Übergangsweise neben den alten Feldern; Stufe 6 löst spread/floor/palette ab.
   stops: string[];                       // 2–6 Farb-Stops (grün→rot), = ScaleSpec.stops
-  spreizung: { mitte: number; oben: number; unten: number };        // drei Mitten-Pivots (Last-Werte)
+  spreizung: { mitte: number; oben: number; unten: number };        // mitte=Pivot; oben/unten=Anteil ihrer Hälfte (0.5 neutral)
   verjuengung: { unten: number; oben: number };                     // Wrap (Comfort-only)
 }
 
@@ -33,7 +33,7 @@ const DEFAULT_STOPS = ['#2ecc40', '#ffd400', '#ff2d2d', '#ff0099'];  // grün ·
 export const DEFAULT_COLOUR_SETTINGS: ColourSettings = {
   palette: DEFAULT_PALETTE, spectrum: 0.5, bias: 0, safety: 0, degradier: null, spread: 0, floor: 0,
   stops: [...DEFAULT_STOPS],
-  spreizung: { mitte: 0.5, oben: 0.75, unten: 0.25 },
+  spreizung: { mitte: 0.5, oben: 0.5, unten: 0.5 },
   verjuengung: { unten: 0, oben: 0 },
 };
 
