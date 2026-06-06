@@ -89,7 +89,7 @@ export const ANTHEM_STATIONS: AnthemStation[] = [
   },
   {
     n: 10, word: 'konsumieren', title: 'Konsum (färben & routen)', home: 'Ziel-App R06/R07',
-    status: 'open',
-    blurb: 'Die App mappt segId → Geometrie übers Origin-Mesh, färbt (colorize) und routet die Komfort-Kaskade (BCK/BAK) mit der Live-Last. Dann beginnt der Kreis von vorn (nächste Anforderung). App-Konsum ist noch Gerüst (Phase 3/4). STAND (2026-06-04): Der Live-Pfad in der Runtime (useAnthemOverlay, Phase 3b) ist GEBAUT, aber bewusst GEPARKT — bis echtes, nicht simuliertes Origin/Anthem steht. Grund: sonst würde ein vorgebackenes Overlay als „live" maskiert und eine falsche presence-origin eingetragen. Bis dahin nutzt die App das vorgebackene svg_overlay als Fallback, und der Anthem im Shell-Studio bleibt simuliert (Werkzeug zum visuellen Testen). AUSBAU: useAnthemOverlay entparken, sobald echter Anthem live ist.',
+    status: 'partial',
+    blurb: 'Die App mappt segId → Geometrie übers Origin-Mesh, färbt über das Skalen-Modell (colorAt mit Feldern/borders) und routet die Komfort-Kaskade (BCK/BAK) mit der Live-Last. STAND (2026-06-06): Der LIVE-Konsum ist für den MVP-Pfad GEBAUT und aktiv — OriginPreview (?rep=…) holt den Worker-Snapshot (knock → fetchAnthem) und färbt das Mesh per renderColorMesh/colorAt. Der alte, geparkte useAnthemOverlay + das vorgebackene svg_overlay-Fallback wurden ENTFERNT. Offen bleibt nur der allgemeine App-/Launcher-Pfad (mehrere Reps) — daher „teilweise".',
   },
 ];
