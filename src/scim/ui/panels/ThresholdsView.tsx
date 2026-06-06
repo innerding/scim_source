@@ -35,21 +35,25 @@ function VSlider({ label, value, onChange, accent = '#2b6cb0', disabled = false 
 }
 
 // ── Vorschau-Säule ─────────────────────────────────────────────────────────
-// LAST-Achse, Farbe = colorAt (= Mesh-Sicht). Marke + Gradient liegen in EINER
-// Schicht: bei Check verschiebt sich beides GEMEINSAM, bis die markierte Mitte in
-// der Fenstermitte sitzt. inaktiv: Marke bewegt sich frei (Gradient steht).
+// LAST-Achse, Farbe = colorAt. WICHTIG: die Farben werden mitte-UNABHÄNGIG
+// gerendert (mitte fix 0.5), damit der Gradient beim Check NICHT neu aufbaut.
+// Die Mitte ist rein eine VERSCHIEBUNG: Gradient + Marke gleiten als starres Bild
+// gemeinsam, bis die committete Mitte in der Fenstermitte sitzt. Beim Justieren
+// (inaktiv) steht der Gradient, nur die Marke wandert frei.
 const PV_H = 170;
 function Preview({ spec, active, mitteDraft }: { spec: ScaleSpec; active: boolean; mitteDraft: number }) {
   const M = 90;
+  // mitte-unabhängige Farb-Skala (oben/unten bleiben wirksam):
+  const colorSpec: ScaleSpec = { stops: spec.stops, spreizung: { mitte: 0.5, oben: spec.spreizung.oben, unten: spec.spreizung.unten }, verjuengung: spec.verjuengung };
+  const shiftPx = (spec.spreizung.mitte - 0.5) * PV_H;            // committete Mitte → Fenstermitte
   const markLoad = active ? spec.spreizung.mitte : mitteDraft;
-  const shiftPx = active ? (spec.spreizung.mitte - 0.5) * PV_H : 0;  // mitte → Fenstermitte
-  const innerY = (L: number) => (1.5 - L) * PV_H;                    // px ab Inner-Oberkante (Höhe 2·H)
+  const innerY = (L: number) => (1.5 - L) * PV_H;                 // px ab Inner-Oberkante (Höhe 2·H)
   return (
     <div style={{ position: 'relative', width: 38, height: PV_H, borderRadius: 4, overflow: 'hidden', border: '1px solid #cbd5e0' }}>
       <div style={{ position: 'absolute', left: 0, right: 0, top: -PV_H * 0.5, height: PV_H * 2, transform: `translateY(${shiftPx}px)`, transition: 'transform 0.4s ease' }}>
         {Array.from({ length: M }, (_, i) => {
           const load = 1.5 - (i / (M - 1)) * 2.0;        // 1.5 … −0.5 (Enden klemmen auf End-Farbe)
-          return <div key={i} style={{ position: 'absolute', left: 0, right: 0, top: `${(i / M) * 100}%`, height: `${100 / M + 0.6}%`, background: colorAt(load, spec) }} />;
+          return <div key={i} style={{ position: 'absolute', left: 0, right: 0, top: `${(i / M) * 100}%`, height: `${100 / M + 0.6}%`, background: colorAt(load, colorSpec) }} />;
         })}
         {/* Mitte-Marke — liegt IM Gradienten, verschiebt sich mit ihm */}
         <div style={{ position: 'absolute', left: 0, right: 0, top: `${innerY(markLoad)}px`, height: 0, borderTop: active ? '2px solid rgba(255,255,255,0.95)' : '2px dashed rgba(255,255,255,0.95)', boxShadow: '0 0 0 0.6px rgba(0,0,0,0.55)' }} />
