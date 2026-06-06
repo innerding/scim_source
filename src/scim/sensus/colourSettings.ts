@@ -24,7 +24,7 @@ export interface ColourSettings {
   // ── Neues Skalen-Modell (Thresholds-Umbau, Stufe 2) — speist shell-kit ScaleSpec ──
   // Übergangsweise neben den alten Feldern; Stufe 6 löst spread/floor/palette ab.
   stops: string[];                       // 2–6 Farb-Stops (grün→rot), = ScaleSpec.stops
-  spreizung: { mitte: number; obenHet: number; untenHet: number };  // Verteilung
+  spreizung: { mitte: number; oben: number; unten: number };        // drei Mitten-Pivots (Last-Werte)
   verjuengung: { unten: number; oben: number };                     // Wrap (Comfort-only)
 }
 
@@ -33,7 +33,7 @@ const DEFAULT_STOPS = ['#2ecc40', '#ffd400', '#ff2d2d', '#ff0099'];  // grün ·
 export const DEFAULT_COLOUR_SETTINGS: ColourSettings = {
   palette: DEFAULT_PALETTE, spectrum: 0.5, bias: 0, safety: 0, degradier: null, spread: 0, floor: 0,
   stops: [...DEFAULT_STOPS],
-  spreizung: { mitte: 0.5, obenHet: 0, untenHet: 0 },
+  spreizung: { mitte: 0.5, oben: 0.75, unten: 0.25 },
   verjuengung: { unten: 0, oben: 0 },
 };
 
@@ -72,8 +72,8 @@ export function coerceSettings(raw: unknown): ColourSettings {
     stops: coerceStops(r.stops),
     spreizung: {
       mitte: clamp(num((r.spreizung as Record<string, unknown>)?.mitte, d.spreizung.mitte), 0, 1),
-      obenHet: clamp(num((r.spreizung as Record<string, unknown>)?.obenHet, d.spreizung.obenHet), 0, 1),
-      untenHet: clamp(num((r.spreizung as Record<string, unknown>)?.untenHet, d.spreizung.untenHet), 0, 1),
+      oben: clamp(num((r.spreizung as Record<string, unknown>)?.oben, d.spreizung.oben), 0, 1),
+      unten: clamp(num((r.spreizung as Record<string, unknown>)?.unten, d.spreizung.unten), 0, 1),
     },
     verjuengung: {
       unten: clamp(num((r.verjuengung as Record<string, unknown>)?.unten, d.verjuengung.unten), 0, 1),

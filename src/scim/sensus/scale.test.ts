@@ -3,8 +3,8 @@ import { posForLoad, loadForPos, colorAt, colorFromStops, DEFAULT_SCALE, type Sc
 
 const SPECS: ScaleSpec[] = [
   DEFAULT_SCALE,
-  { stops: ['#2ecc40', '#ff2d2d'], spreizung: { mitte: 0.3, obenHet: 0.8, untenHet: 0.2 }, verjuengung: { unten: 0.5, oben: 0.9 } },
-  { stops: ['#0099ff', '#00d4aa', '#c084fc', '#ec4899'], spreizung: { mitte: 0.7, obenHet: 0.4, untenHet: 0.9 }, verjuengung: { unten: 0, oben: 0 } },
+  { stops: ['#2ecc40', '#ff2d2d'], spreizung: { mitte: 0.3, oben: 0.6, unten: 0.1 }, verjuengung: { unten: 0.5, oben: 0.9 } },
+  { stops: ['#0099ff', '#00d4aa', '#c084fc', '#ec4899'], spreizung: { mitte: 0.7, oben: 0.9, unten: 0.4 }, verjuengung: { unten: 0, oben: 0 } },
 ];
 
 describe('scale — Invertierbarkeit', () => {
