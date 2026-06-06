@@ -26,7 +26,7 @@ const TRYGON_SPEC = `TRYGON-LOOP (TL) — KERNFUNKTION (Systemmerkmal)
 
 const MANUAL_BODY = `    JAHR                     2026
     SOFTWARE-ARCHITECTURE    Dietmar Broda
-    CODE-EXECUTION           Claude Opus 4.7 / Claude Code
+    CODE-EXECUTION           Claude Opus 4.8 / Claude Code
     LLM-ASSISTANCE           Chat-GPT 5.5 Thinking
 
     Die Architektur des digitalen Systems SCIM3 — Sensus Core Integration
@@ -79,13 +79,16 @@ TRANSMISSION (Mesh zwischen Mond und Komposit-Tetraeder)
   Dispatcher existieren konzeptuell, aber nicht als eigene Panels.
 
 KOMPOSIT-TETRAEDER (Apex up - fire)
-  Klick Face : scb -> P11, org -> Workspace,
-               cat -> Katalog, geo -> Editor.
-  Klick Arc  : sys -> P01, rou -> P02, loa -> P09.
+  Klick Face   : scb -> P11, org -> Workspace,
+                 cat -> Katalog, geo -> Editor.
+  Klick Arc    : sys -> P01 Thresholds, regio -> P04 Telco,
+                 load -> P02 Coder.
+  Klick Sichel : bou -> P07 High-Shell, eng -> P08 Deep-Shell,
+                 smp -> P09 Origin-Capsuler.
 
   Die drei Arcs sind als konkave Signal-Catcher modelliert —
   Schalen-Schirme, die Threshold-Treffer aus dem Transmissionsfeld
-  einfangen und an die zustaendigen Engine-Panels (P01/P02/P09)
+  einfangen und an die zustaendigen Engine-Panels (P01/P04/P02)
   weiterreichen.
 
   Panels im Komposit:
@@ -98,12 +101,12 @@ KOMPOSIT-TETRAEDER (Apex up - fire)
                          Buckets und Subkategorien.
     Editor               Polygone, Linien und Punkte direkt auf
                          der Karte zeichnen.
-    P01  SystemAdjust    Globale Engine-Schwellen — Confidence,
-                         Layer-Gewichte, Routing-Defaults.
-    P02  RegioContent    Regions-spezifische Schwellen und
-                         Content-Parameter, ueberschreibt P01.
-    P09  Engine          Vier Bewertungsmodelle fuer POIs,
-                         feinjustierbar pro Achse.
+    P01  Thresholds      Globale Last-Schwellen der Farbskala
+                         (Felder/Grenzen) — System-Ebene.
+    P04  Telco           Regionales Lastbild / Telco-Parameter
+                         der Representation.
+    P02  Coder           Regions-spezifische Schwellen, die das
+                         System-Default ueberschreiben.
 
   Stand: architektonisch vorbereitet auf Mehrbenutzer-Betrieb. Die
   Bauteile tragen mehrere Anwendungsfaelle, die ueber dem heutigen
@@ -129,9 +132,9 @@ SUBSTRAT-TETRAEDER (Apex down - matter)
 
   Stand: nur ein Bruchteil funktional. Eine rasche SCIM-Ausrollung
   auf eine Region wie das Salzkammergut braeuchte hier echtes
-  Lifecycle- und Workflow-Werkzeug statt reiner Sichtbarmachung
-  der spaerlich gefuellten Pipeline-Panels (P03, P04, P05, P07,
-  P08, P10, P12, P13, P14).
+  Lifecycle- und Workflow-Werkzeug. Die heute weitgehend
+  ungenutzten Panels (P03, P10, P12-P14, R02-R08) sind im
+  Navigator im Muellwagen gesammelt — Klick klappt sie aus.
 
 READER (am Fuss der Kosmologie)
   Klick : oeffnet dieses Dokument.
@@ -149,6 +152,23 @@ ${leistungenManualBlock()}
   Kosmologie-Klick-Karte          19 Hitboxen verdrahtet
   R2-Deploy                       Cloudflare R2 + D1 + Worker
   QR-Generierung                  automatisiert je Representation
+
+────────────────────────────────────────────────────────
+
+STAND JUNI 2026 (neu)
+
+  bak-test       Im Ziel-App-Test POIs zu einer Route waehlbar
+                 (Dijkstra ueber den Segment-Graph). Faellt die
+                 Route-Last ueber das Comfort-Level, meldet die
+                 Shell "ausserhalb der Comfort-Zone". Logik in
+                 shell-kit, das Geraet bleibt duenner Konsument.
+  App-QR         V03 und P11 erzeugen je Representation einen QR
+                 auf die echte Origin-URL (?rep=). Scannen laedt
+                 die MVP-Lichtenberg aufs Geraet (Gate reist mit).
+  Auslieferung   Doktrin im Design-Manifest: Pakete cloud-only,
+                 ohne Desktop-Nabel, ohne Umwege, die der Voll-
+                 ausbau nicht nutzt. Nicht-Auslieferungs-Pfade
+                 sind im Code als @LEGACY ausgewiesen.
 
 ────────────────────────────────────────────────────────
 
