@@ -1,3 +1,6 @@
+// @LEGACY (2026-06-06): Koords-Segmentformat (SvgSegment) — Modell B liefert segId-only,
+// kein Koords-Overlay. NICHT im Auslieferungspfad (Design-Manifest · Auslieferung).
+// Löschen mit der Demo-Ablösung (Operator-Commit). Siehe docs/aufraeum_inventar.md (K3.2).
 export type {
   SvgSegment,
   SvgOverlayState,

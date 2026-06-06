@@ -1,3 +1,6 @@
+// @LEGACY (2026-06-06): Koords-Segmentformat (SvgSegment) — Modell B = segId-only.
+// NICHT im Auslieferungspfad (Design-Manifest · Auslieferung). Löschen mit der
+// Demo-Ablösung (Operator-Commit). Siehe docs/aufraeum_inventar.md (K3.2).
 import type { RouteScoreClass } from '../route-model/routeModel.types';
 
 // ── SvgSegment ────────────────────────────────────────────────────────────────

@@ -3,7 +3,14 @@
 > **Fortschritt:** **K1 ✅ erledigt** (shell-kit v0.9.0: colorMesh + Snapshot-Wrapper
 > entfernt) · **K2 ✅ erledigt** (Render-Kern → shell-kit, `shellRenderCore.ts` gelöscht;
 > GEOMETRIES/geometryOf + Geometry/GeometryShape re-exportieren shell-kit) ·
-> **K3 offen** (markiert, löschen erst auf Operator-Commit).
+> **K3 ✅ markiert** (2026-06-06: alle K3-Posten tragen `@LEGACY`-Datei-Header mit
+> Verweis „NICHT im Auslieferungspfad · Design-Manifest · Auslieferung"; K3.3 war
+> bereits gecuttet) — **löschen weiterhin erst auf Operator-Commit, pro Posten**.
+
+> **Bezug:** Diese Marker belegen den 6. Grundsatz des Design-Manifests
+> („Auslieferung — Cloud-only, ohne Desktop-Nabel"): der Weg vom Publizieren bis aufs
+> Gerät ist frei von Umwegen, die der Vollausbau nicht auch nutzt. Jeder Nicht-
+> Auslieferungs-Pfad ist nun im Code als solcher ausgewiesen.
 
 **Stand 2026-06-05.** Kandidaten, die im Umfeld des Anthem/Shell-Umbaus nicht mehr
 gebraucht werden. **Disziplin (Konsens):** isolieren + markieren als Default;
@@ -41,10 +48,10 @@ Jede Referenz unten per `grep` geprüft (beide Repos + Worker + shell-kit).
 
 | # | Sache | Ort | Beleg | Aktion |
 |---|---|---|---|---|
-| K3.1 | **Alter Weg 1: `scim3_bundle_v1`** (GeoJSON+Koords) | `scim_source/src/scim/release-export/` (`scimBundle.ts`, `scimBundle.types.ts`, `BundlePublisher.tsx`) | referenziert in `AiInterfacePanel`, `CatalogTab`, `PanelResultContent` (+ Pipeline-Publish-CTA) | `@LEGACY` markieren (abgelöst durch Origin-Weg). **Load-bearing in der Editor-UI** → nicht jetzt löschen. |
-| K3.2 | **Koords-Segment-Format `SvgSegment`** | Editor `svg-overlay/*`; Runtime `package.types.ts`, `MapView.tsx`, `buildOverlay.ts` | genutzt vom Demo-App-Pfad (`MapView`) + parked Overlay | `@LEGACY` markieren (Modell B = segId-only). Konvergiert mit der Demo-Ablösung. |
-| K3.3 | **Parked Phase-3-Overlay** | Runtime `anthem/useAnthemOverlay.ts`, `anthem/buildOverlay.ts` | **kein Aufrufer** (von `OriginPreview` faktisch abgelöst) | markieren „parked, kein Aufrufer" → entscheiden: an OriginPreview heben oder cutten. |
-| K3.4 | **Demo/Mock-Fallback** | Runtime `ui/DemoBadge.tsx`, `app/useAppMachine.ts` (`isMock`), `package/package.loader.ts` | aktiver Fallback, sichtbar markiert | **BEHALTEN bis persönlicher Lösch-Commit** (stehender Grundsatz). Nur gelistet. |
+| K3.1 | **Alter Weg 1: `scim3_bundle_v1`** (GeoJSON+Koords) | `scim_source/src/scim/release-export/` (`scimBundle.ts`, `scimBundle.types.ts`, `BundlePublisher.tsx`) | referenziert in `AiInterfacePanel`, `CatalogTab`, `PanelResultContent` (+ Pipeline-Publish-CTA) | ✅ **markiert** (alle drei tragen `@LEGACY`). **Load-bearing in der Editor-UI** → löschen erst auf Operator-Commit. |
+| K3.2 | **Koords-Segment-Format `SvgSegment`** | Editor `svg-overlay/index.ts` + `svgOverlay.types.ts`; Runtime `package.types.ts`, `MapView.tsx` | genutzt vom Demo-App-Pfad (`MapView`) | ✅ **markiert** (`@LEGACY`, Modell B = segId-only). Konvergiert mit der Demo-Ablösung. |
+| K3.3 | **Parked Phase-3-Overlay** | ~~Runtime `anthem/useAnthemOverlay.ts`, `anthem/buildOverlay.ts`~~ | **bereits gecuttet** (Dateien existieren nicht mehr) | ✅ **erledigt** (gecuttet, kein Marker nötig). |
+| K3.4 | **Demo/Mock-Fallback** | Runtime `ui/DemoBadge.tsx`, `app/useAppMachine.ts` (`isMock`), `package/package.loader.ts` | aktiver Fallback, sichtbar markiert | ✅ **markiert** (`@LEGACY` „nicht im Auslieferungspfad"). **BEHALTEN bis persönlicher Lösch-Commit** (stehender Grundsatz). |
 
 ---
 

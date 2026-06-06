@@ -1,3 +1,6 @@
+// @LEGACY (2026-06-06): Typen des alten Weg-1-Bundles (scim3_bundle_v1). Abgelöst durch
+// den Origin-Weg (originPackage.ts). NICHT im Auslieferungspfad (Design-Manifest ·
+// Auslieferung). Löschen erst auf Operator-Commit. Siehe docs/aufraeum_inventar.md (K3.1).
 import type { RouteScoreClass } from '../route-model/routeModel.types';
 import type { PoiLoadClass } from '../poi-output/poiOutput.types';
 
