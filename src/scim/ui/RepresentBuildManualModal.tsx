@@ -31,9 +31,11 @@ const MANUAL_BODY = `    JAHR                     2026
 
     Die Architektur des digitalen Systems SCIM3 — Sensus Core Integration
     Model — ist ab Juni 2026 ueber das 3D-visualisierte Navigationstool
-    Cosmo Control erklaer- und navigierbar. SCIM3 ist mit heutigem Stand
-    in der Lage, eine MVP Ziel-App-Repraesentation zu publizieren und
-    damit seine Funktionalitaet zu beweisen.
+    Cosmo Control erklaer- und navigierbar. SCIM3 publiziert mit heutigem
+    Stand die Ziel-App MVP-Lichtenberg: per QR auf ein Endgeraet ladbar
+    (diesenpark.com/?rep=rep-lichtenberg), edge-lokal und datensparsam.
+    Damit ist die Funktionalitaet der Kette Werkbank -> Paket -> Geraet
+    am laufenden Beispiel bewiesen.
 
 ────────────────────────────────────────────────────────
 
@@ -64,19 +66,15 @@ MOON (Release Artifacts: App-Shell, Packages, Breath-Colour-Mesh)
 TRANSMISSION (Mesh zwischen Mond und Komposit-Tetraeder)
   Klick : oeffnet P06 Transmitter.
 
-  Das Mesh ist die sichtbare Oberflaeche der Pattern-Recognition-
-  Kette: Receptor Fields -> Feature Extraction -> Pattern
-  Classification -> Confidence Scoring -> Priority Queue ->
-  Cache/Lookup -> Dispatcher -> Target App. Der Komposit-Tetraeder
-  feuert klassifizierte Pakete in dieses Feld. P06
-  SignalInterpretation heisst im Panel-Header Transmitter und
-  sortiert eingehende Signale in drei Klassen — flow (fliessendes
-  Signal), accumulation (Stau-/Sammel-Signal), ambiguous
-  (mehrdeutig).
+  Das Feld visualisiert die Uebergabe klassifizierter Signale vom
+  Komposit-Tetraeder Richtung Ziel-App. P06 (Header: Transmitter)
+  ist heute der einzige real gebaute Teil der Kette: er sortiert
+  eingehende Signale in drei Klassen — flow (fliessend),
+  accumulation (Stau/Sammel), ambiguous (mehrdeutig).
 
-  Stand: nur ein Bruchteil funktional. Aus der Kette sitzt heute
-  P06 als Klassifikator; Priority Queue, Cache/Lookup und
-  Dispatcher existieren konzeptuell, aber nicht als eigene Panels.
+  Stand: eine groessere Verarbeitungskette (Priority Queue,
+  Cache/Lookup, Dispatcher) ist konzeptuell gedacht, aber nicht
+  gebaut. Das Mesh ist hier Darstellung, nicht Funktion.
 
 KOMPOSIT-TETRAEDER (Apex up - fire)
   Klick Face   : scb -> P11, org -> Workspace,
@@ -148,8 +146,9 @@ ${TRYGON_SPEC}
 LEISTUNGEN  (Stand ${LEISTUNGEN_STAND} · eine Quelle mit dem Leistungsblatt)
 
 ${leistungenManualBlock()}
-  Annotationen                    53 Eintraege als KI-Briefing-Material
-  Kosmologie-Klick-Karte          19 Hitboxen verdrahtet
+  Kosmologie-Klick-Karte          21 Hitboxen verdrahtet
+                                  (Mond 6 · Transmissionsfeld 1 ·
+                                   Komposit 10 · Substrat 3 · Grund 1)
   R2-Deploy                       Cloudflare R2 + D1 + Worker
   QR-Generierung                  automatisiert je Representation
 
@@ -174,8 +173,11 @@ STAND JUNI 2026 (neu)
 
 SUMMARY
 
-  Der architektonische Rahmen wirkt stabil; ob er die erwartete
-  Codefuelle im Vollausbau tragen kann, gilt es erst zu beweisen.
+  Der architektonische Rahmen ist vielversprechend und in Teilen
+  bereits am laufenden Beispiel bewiesen — die Kette Werkbank ->
+  Paket -> Geraet traegt (MVP-Lichtenberg). Der Vollausbau —
+  Mehrbenutzer-Betrieb, regionale Pflege, reale Telco-Last — steht
+  aus und wird die erwartete Codefuelle erst beweisen muessen.
 
   released for review
 `;
