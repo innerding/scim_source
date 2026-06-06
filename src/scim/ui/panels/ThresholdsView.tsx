@@ -35,16 +35,14 @@ function VSlider({ label, value, onChange, accent = '#2b6cb0', disabled = false 
 }
 
 // ── Vorschau-Säule ─────────────────────────────────────────────────────────
-// LAST-Achse, Farbe = colorAt. WICHTIG: die Farben werden mitte-UNABHÄNGIG
-// gerendert (mitte fix 0.5), damit der Gradient beim Check NICHT neu aufbaut.
-// Die Mitte ist rein eine VERSCHIEBUNG: Gradient + Marke gleiten als starres Bild
-// gemeinsam, bis die committete Mitte in der Fenstermitte sitzt. Beim Justieren
-// (inaktiv) steht der Gradient, nur die Marke wandert frei.
+// LAST-Achse, Farbe = colorAt mit der ECHTEN committeten Mitte (= Wahrheit; die
+// Stretcher oben/unten ankern korrekt an ihr). Die Mitte ist zusätzlich eine
+// VERSCHIEBUNG: bei Check gleiten Gradient + Marke gemeinsam in die Fenstermitte,
+// die Farben MORPHEN dabei (background-Transition) statt zu snappen. Beim
+// Justieren (inaktiv) steht der Gradient, nur die Marke wandert frei.
 const PV_H = 170;
 function Preview({ spec, active, mitteDraft }: { spec: ScaleSpec; active: boolean; mitteDraft: number }) {
   const M = 90;
-  // mitte-unabhängige Farb-Skala (oben/unten bleiben wirksam):
-  const colorSpec: ScaleSpec = { stops: spec.stops, spreizung: { mitte: 0.5, oben: spec.spreizung.oben, unten: spec.spreizung.unten }, verjuengung: spec.verjuengung };
   // Justieren (inaktiv): Gradient neutral (shift 0), Marke über die volle Höhe frei.
   // Check (aktiv): Verschiebung schiebt Gradient + Marke gemeinsam in die Fenstermitte.
   const shiftPx = active ? (spec.spreizung.mitte - 0.5) * PV_H : 0;
@@ -55,7 +53,7 @@ function Preview({ spec, active, mitteDraft }: { spec: ScaleSpec; active: boolea
       <div style={{ position: 'absolute', left: 0, right: 0, top: -PV_H * 0.5, height: PV_H * 2, transform: `translateY(${shiftPx}px)`, transition: 'transform 0.4s ease' }}>
         {Array.from({ length: M }, (_, i) => {
           const load = 1.5 - (i / (M - 1)) * 2.0;        // 1.5 … −0.5 (Enden klemmen auf End-Farbe)
-          return <div key={i} style={{ position: 'absolute', left: 0, right: 0, top: `${(i / M) * 100}%`, height: `${100 / M + 0.6}%`, background: colorAt(load, colorSpec) }} />;
+          return <div key={i} style={{ position: 'absolute', left: 0, right: 0, top: `${(i / M) * 100}%`, height: `${100 / M + 0.6}%`, background: colorAt(load, spec), transition: 'background 0.4s ease' }} />;
         })}
         {/* Mitte-Marke — liegt IM Gradienten, verschiebt sich mit ihm */}
         <div style={{ position: 'absolute', left: 0, right: 0, top: `${innerY(markLoad)}px`, height: 0, borderTop: active ? '2px solid rgba(255,255,255,0.95)' : '2px dashed rgba(255,255,255,0.95)', boxShadow: '0 0 0 0.6px rgba(0,0,0,0.55)' }} />
