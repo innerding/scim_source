@@ -14,7 +14,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { loadColourSettings, saveColourSettings, COLOUR_SETTINGS_EVENT, type ColourSettings } from '../../sensus/colourSettings';
 import { useInspectorView } from '../../../runtime/repContext';
 import { slugify } from '../../../runtime/router';
-import { colorAt, colorFromStops, type ScaleSpec } from 'shell-kit';
+import { colorAt, type ScaleSpec } from 'shell-kit';
 import { AnthemCycleBadge } from '../AnthemCycleInfo';
 
 // ── zarter vertikaler Slider (rotierter Range — robust cross-browser) ──────────
@@ -35,22 +35,25 @@ function VSlider({ label, value, onChange, accent = '#2b6cb0', disabled = false 
 }
 
 // ── Vorschau-Säule ─────────────────────────────────────────────────────────
-// inaktiv (justieren): LAST-Achse, Farbe = colorAt (echte Verteilung, gestaucht);
-//   die Mitte-Marke ist die „eigene Position" im stehenden Gradienten.
-// aktiv (Check):      DISPLAY-Achse, Farbe = colorFromStops (ausgebreitet); die
-//   Mitte ist in die Fenstermitte gewandert und bleibt dort.
+// LAST-Achse, Farbe = colorAt (= Mesh-Sicht). Marke + Gradient liegen in EINER
+// Schicht: bei Check verschiebt sich beides GEMEINSAM, bis die markierte Mitte in
+// der Fenstermitte sitzt. inaktiv: Marke bewegt sich frei (Gradient steht).
+const PV_H = 170;
 function Preview({ spec, active, mitteDraft }: { spec: ScaleSpec; active: boolean; mitteDraft: number }) {
-  const N = 56;
-  const markY = active ? 0.5 : mitteDraft;
+  const M = 90;
+  const markLoad = active ? spec.spreizung.mitte : mitteDraft;
+  const shiftPx = active ? (spec.spreizung.mitte - 0.5) * PV_H : 0;  // mitte → Fenstermitte
+  const innerY = (L: number) => (1.5 - L) * PV_H;                    // px ab Inner-Oberkante (Höhe 2·H)
   return (
-    <div style={{ position: 'relative', width: 38, height: 170, borderRadius: 4, overflow: 'hidden', border: '1px solid #cbd5e0' }}>
-      {Array.from({ length: N }, (_, i) => {
-        const h = (N - 1 - i) / (N - 1);                 // oben = 1
-        const color = active ? colorFromStops(spec.stops, h) : colorAt(h, spec);
-        return <div key={i} style={{ position: 'absolute', left: 0, right: 0, top: `${(i / N) * 100}%`, height: `${100 / N + 0.6}%`, background: color }} />;
-      })}
-      {/* Mitte-Marke (wandert bei Check in die Fenstermitte) */}
-      <div style={{ position: 'absolute', left: 0, right: 0, top: `${(1 - markY) * 100}%`, height: 0, borderTop: active ? '2px solid rgba(255,255,255,0.95)' : '2px dashed rgba(255,255,255,0.95)', boxShadow: '0 0 0 0.6px rgba(0,0,0,0.5)', transition: 'top 0.35s ease' }} />
+    <div style={{ position: 'relative', width: 38, height: PV_H, borderRadius: 4, overflow: 'hidden', border: '1px solid #cbd5e0' }}>
+      <div style={{ position: 'absolute', left: 0, right: 0, top: -PV_H * 0.5, height: PV_H * 2, transform: `translateY(${shiftPx}px)`, transition: 'transform 0.4s ease' }}>
+        {Array.from({ length: M }, (_, i) => {
+          const load = 1.5 - (i / (M - 1)) * 2.0;        // 1.5 … −0.5 (Enden klemmen auf End-Farbe)
+          return <div key={i} style={{ position: 'absolute', left: 0, right: 0, top: `${(i / M) * 100}%`, height: `${100 / M + 0.6}%`, background: colorAt(load, spec) }} />;
+        })}
+        {/* Mitte-Marke — liegt IM Gradienten, verschiebt sich mit ihm */}
+        <div style={{ position: 'absolute', left: 0, right: 0, top: `${innerY(markLoad)}px`, height: 0, borderTop: active ? '2px solid rgba(255,255,255,0.95)' : '2px dashed rgba(255,255,255,0.95)', boxShadow: '0 0 0 0.6px rgba(0,0,0,0.55)' }} />
+      </div>
     </div>
   );
 }
@@ -123,7 +126,7 @@ export default function ThresholdsView() {
         {/* Vorschau-Säule */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, paddingTop: 4 }}>
           <Preview spec={spec} active={mitteActive} mitteDraft={mitteDraft} />
-          <span style={{ fontSize: 8.5, color: '#a0aec0' }}>{mitteActive ? 'fixiert (Display)' : 'Last → Farbe'}</span>
+          <span style={{ fontSize: 8.5, color: '#a0aec0' }}>{mitteActive ? 'Mitte fixiert' : 'Last → Farbe'}</span>
         </div>
 
         {/* drei zarte Schieber */}
