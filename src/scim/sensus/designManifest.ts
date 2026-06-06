@@ -56,4 +56,16 @@ export const DESIGN_PRINCIPLES: DesignPrinciple[] = [
       'getroffene Comfort-Einstellung behält, gleitet das Schauglas unter einem ruhenden Schieber: ' +
       'die Welt bewegt sich, die Geste bleibt stabil.',
   },
+  {
+    id: 'auslieferung',
+    label: 'Auslieferung — Cloud-only, ohne Desktop-Nabel',
+    content:
+      'Die Pakete erreichen das Gerät rein aus der Cloud (CF Pages + Worker/R2); nach dem ' +
+      'Publizieren besteht keine Verbindung zum Desktop. Shell reist einkompiliert (atomarer ' +
+      'Deploy, keine Versions-Schere zwischen App und Shell), Origin als versioniertes R2-Bundle ' +
+      '(P11 · transfer), Anthem als flüchtiger Worker-Stream im 5-Min-Takt. Eintritt fürs MVP ist ' +
+      'der QR → direkt zur Representation; Launcher und globe-switcher sind additiv (Post-MVP) und ' +
+      'ersetzen diesen Pfad nicht. So bleibt der Weg vom Publizieren bis aufs Gerät frei von ' +
+      'Umwegen, die der Vollausbau nicht auch nutzt.',
+  },
 ];

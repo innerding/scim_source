@@ -98,6 +98,7 @@ export default function TransferView() {
 
       <div style={{ fontSize: 11, color: '#718096', background: '#f7fafc', border: '1px solid #e2e8f0', borderRadius: 6, padding: '9px 12px', lineHeight: 1.55, marginTop: 12 }}>
         <strong>Stand:</strong> teilweise — P11 existiert (Publishing + Shell-ID). Dieses Tab macht den Transfer-Handoff als eigenen Schritt sichtbar.
+        <br /><strong>Auslieferungsweg:</strong> Cloud-only, ohne Desktop-Nabel — Shell einkompiliert, Origin als R2-Bundle (hier), Anthem als Worker-Stream; Eintritt QR → direkt zur Rep. Doktrin: System-Tab „Manifest" · <em>Auslieferung</em>.
       </div>
     </div>
   );
