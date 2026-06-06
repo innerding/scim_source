@@ -73,9 +73,11 @@ export default function ThresholdsView() {
 
   const [tweenB, setTweenB] = useState<number[] | null>(null);   // Schritt-1-Animation
   const [dragB, setDragB] = useState<number[] | null>(null);     // Schritt-2-Live-Drag
+  const [leftDrag, setLeftDrag] = useState<number | null>(null); // Schritt-1-Strich-Drag
   const rafRef = useRef(0);
   const barRef = useRef<HTMLDivElement>(null);
   const dragIdx = useRef<number | null>(null);                   // Grenz-Drag-Index
+  const leftDragging = useRef(false);
   const dndIdx = useRef<number | null>(null);                    // Drag&Drop-Reorder-Index
 
   useEffect(() => { setS(loadColourSettings(regionSlug)); setTweenB(null); setDragB(null); }, [regionSlug]);
@@ -121,6 +123,23 @@ export default function ThresholdsView() {
     update({ borders: to, middleField: c });
     animateTo(from, to);
   };
+  // Schritt 1: linker Strich ziehen → Feld an dieser Höhe wird Mittelfeld (beim Loslassen)
+  const onLeftDown = (e: React.PointerEvent) => {
+    e.preventDefault(); (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    leftDragging.current = true; setLeftDrag(loadAt(e.clientY));
+  };
+  const onLeftMove = (e: React.PointerEvent) => { if (leftDragging.current) setLeftDrag(loadAt(e.clientY)); };
+  const onLeftUp = (e: React.PointerEvent) => {
+    if (!leftDragging.current) return;
+    leftDragging.current = false;
+    try { (e.target as HTMLElement).releasePointerCapture(e.pointerId); } catch { /* */ }
+    const L = leftDrag ?? 0.5;
+    let c = n - 1;
+    for (let i = 0; i < n; i++) { if (L < fieldHi(s.borders, i, n)) { c = i; break; } }
+    setLeftDrag(null);
+    centerField(c);
+  };
+
   // Schritt 2: Grenze i ziehen
   const loadAt = (clientY: number) => {
     const r = barRef.current?.getBoundingClientRect(); if (!r) return 0.5;
@@ -189,67 +208,49 @@ export default function ThresholdsView() {
         Felder & Grenzen <span style={{ fontWeight: 400, fontSize: 10.5, color: '#a0aec0' }}>· Klick = Mittelfeld · Grenz-Griffe ziehen</span>
       </div>
       <div style={{ fontSize: 10, color: '#718096', marginBottom: 10, maxWidth: 420 }}>
-        <strong>Links (Schritt 1):</strong> ⊙ wählt das Mittelfeld → es rückt in die Mitte und bleibt zentriert.
-        <strong> Rechts (Schritt 2):</strong> Grenz-Griffe ziehen verschiebt die Grenze; die Mittelfeld-Grenzen (🔒) bleiben fix.
+        <strong>Links</strong>: ein Strich = Mitte — ziehen wählt das Mittelfeld (rückt in die Mitte, bleibt zentriert).
+        <strong> Rechts</strong>: ein Strich je Grenze — ziehen verschiebt sie. Die zwei Mittelfeld-Grenzen sind grau (fix).
       </div>
 
       <div style={{ display: 'flex', gap: 18, alignItems: 'flex-start' }}>
-        {/* Verlauf-Fenster mit Schritt 1 (links) und Schritt 2 (rechts) */}
+        {/* Verlauf-Fenster: 1 Strich links (Mitte), N−1 Striche rechts (Grenzen) */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', height: PV_H }}>
-            {/* LINKS · Schritt 1 — Feld zur Mitte wählen */}
-            <div style={{ position: 'relative', width: 34, height: PV_H }}>
-              {s.stops.map((_, i) => {
-                const cen = fieldCenter(borders, i, n);
-                const isMid = s.middleField === i;
-                return (
-                  <button
-                    key={i}
-                    onClick={() => centerField(i)}
-                    title={`Feld ${i + 1} in die Mitte`}
-                    style={{ position: 'absolute', right: 2, top: `calc(${(1 - cen) * 100}% - 8px)`, width: 16, height: 16, borderRadius: 9, cursor: 'pointer',
-                      border: '1px solid ' + (isMid ? '#2b6cb0' : '#cbd5e0'), background: isMid ? '#2b6cb0' : '#fff', color: isMid ? '#fff' : '#a0aec0', fontSize: 9, lineHeight: '14px', padding: 0 }}
-                  >⊙</button>
-                );
-              })}
+            {/* LINKS · Schritt 1 — ein Strich = Mitte (ziehen wählt das Mittelfeld) */}
+            <div style={{ position: 'relative', width: 22, height: PV_H }}>
+              <div
+                onPointerDown={onLeftDown} onPointerMove={onLeftMove} onPointerUp={onLeftUp}
+                title="ziehen: Feld zur Mitte wählen"
+                style={{ position: 'absolute', left: 0, right: 1, top: `calc(${(1 - (leftDrag ?? 0.5)) * 100}% - 7px)`, height: 14, display: 'flex', alignItems: 'center', cursor: 'ns-resize', touchAction: 'none' }}
+              >
+                <div style={{ flex: 1, height: leftDragging.current ? 3 : 2, background: '#1a365d', borderRadius: 1 }} />
+              </div>
             </div>
 
             {/* MITTE · Verlauf (sauber) */}
-            <div
-              ref={barRef}
-              style={{ position: 'relative', width: 46, height: PV_H, borderRadius: 5, border: '1px solid #cbd5e0', background: gradientCss(s.stops, borders) }}
-            >
-              <div style={{ position: 'absolute', left: -3, right: -3, top: '50%', height: 0, borderTop: '2px solid rgba(0,0,0,0.5)', boxShadow: '0 0 0 0.6px rgba(255,255,255,0.8)' }} />
-              {/* gesperrte Mittelfeld-Grenzen (nur Anzeige) */}
-              {borders.map((b, i) => {
-                const locked = s.middleField != null && (i === s.middleField - 1 || i === s.middleField);
-                return locked ? <div key={i} style={{ position: 'absolute', left: 0, right: 0, top: `${(1 - b) * 100}%`, height: 0, borderTop: '2px dotted rgba(0,0,0,0.4)' }} /> : null;
-              })}
-            </div>
+            <div ref={barRef} style={{ position: 'relative', width: 46, height: PV_H, borderRadius: 4, border: '1px solid #cbd5e0', background: gradientCss(s.stops, borders) }} />
 
-            {/* RECHTS · Schritt 2 — Grenzen ziehen */}
-            <div style={{ position: 'relative', width: 34, height: PV_H }}>
+            {/* RECHTS · Schritt 2 — Striche an den Grenzen */}
+            <div style={{ position: 'relative', width: 22, height: PV_H }}>
               {borders.map((b, i) => {
                 const locked = s.middleField != null && (i === s.middleField - 1 || i === s.middleField);
-                if (locked) return (
-                  <div key={i} title="fixiert (Mittelfeld)" style={{ position: 'absolute', left: 2, top: `calc(${(1 - b) * 100}% - 4px)`, fontSize: 9, color: '#cbd5e0' }}>🔒</div>
-                );
                 return (
                   <div
                     key={i}
-                    onPointerDown={onBorderDown(i)} onPointerMove={onBorderMove(i)} onPointerUp={onBorderUp(i)}
-                    title={`Grenze ${i + 1}: ${(b * 100).toFixed(0)}%`}
-                    style={{ position: 'absolute', left: 0, right: 0, top: `calc(${(1 - b) * 100}% - 8px)`, height: 16, display: 'flex', alignItems: 'center', cursor: 'ns-resize', touchAction: 'none' }}
+                    onPointerDown={locked ? undefined : onBorderDown(i)}
+                    onPointerMove={locked ? undefined : onBorderMove(i)}
+                    onPointerUp={locked ? undefined : onBorderUp(i)}
+                    title={locked ? 'Mittelfeld-Grenze (fix)' : `Grenze ${i + 1}: ${(b * 100).toFixed(0)}%`}
+                    style={{ position: 'absolute', left: 1, right: 0, top: `calc(${(1 - b) * 100}% - 7px)`, height: 14, display: 'flex', alignItems: 'center', cursor: locked ? 'default' : 'ns-resize', touchAction: 'none' }}
                   >
-                    <div style={{ width: 0, height: 0, borderTop: '6px solid transparent', borderBottom: '6px solid transparent', borderLeft: (dragIdx.current === i ? '11px' : '9px') + ' solid #2b6cb0' }} />
-                    <div style={{ flex: 1, height: 2, background: '#2b6cb0', opacity: 0.5 }} />
+                    <div style={{ flex: 1, height: (!locked && dragIdx.current === i) ? 3 : 2, background: locked ? '#cbd5e0' : '#1a365d', borderRadius: 1 }} />
                   </div>
                 );
               })}
             </div>
           </div>
 
-          <span style={{ fontSize: 8.5, color: '#a0aec0' }}>← Schritt 1 · Mitte &nbsp;|&nbsp; Grenzen · Schritt 2 →</span>
+          <span style={{ fontSize: 8.5, color: '#a0aec0' }}>Mitte · Grenzen</span>
           <button onClick={resetEven} style={{ fontSize: 9, padding: '1px 6px', borderRadius: 3, border: '1px solid #e2e8f0', background: '#f7fafc', color: '#718096', cursor: 'pointer' }}>↺ gleichverteilen</button>
         </div>
 
@@ -271,7 +272,7 @@ export default function ThresholdsView() {
               >
                 <span style={{ color: '#cbd5e0', fontSize: 12, cursor: 'grab' }}>⠿</span>
                 <input type="color" value={toHex(s.stops[i])} onChange={(e) => setStop(i, e.target.value)} style={{ width: 30, height: 24, border: 'none', background: 'none', cursor: 'pointer' }} />
-                <button onClick={() => centerField(i)} title="dieses Feld in die Mitte rücken" style={{ fontSize: 10, padding: '1px 6px', borderRadius: 3, border: '1px solid ' + (isMid ? '#2b6cb0' : '#cbd5e0'), background: isMid ? '#2b6cb0' : '#fff', color: isMid ? '#fff' : '#2b6cb0', cursor: 'pointer' }}>⊙ Mitte</button>
+                {isMid && <span style={{ fontSize: 9, color: '#2b6cb0' }}>Mitte</span>}
                 {n > 2 && (
                   <button onClick={() => removeStop(i)} style={{ marginLeft: 'auto', fontSize: 12, border: 'none', background: 'none', color: '#a0aec0', cursor: 'pointer' }}>×</button>
                 )}
