@@ -6,7 +6,9 @@
 import { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import { geometryById } from '../../workspace/workspace.registry';
-import { colorize } from '../../sensus/loadColour';
+import { colorAt, type ScaleSpec } from 'shell-kit';
+import { loadColourSettings } from '../../sensus/colourSettings';
+import { slugify } from '../../../runtime/router';
 import type { Representation } from '../../workspace/workspace.types';
 import type { OriginPackage } from '../../sensus/originPackage';
 
@@ -54,12 +56,14 @@ export default function ShellNewMonitor({ rep, originOn, originPkg, loads, color
     const net = originPkg?.originNet;
     if (net) {
       const useColor = colorizeOn && !!loads; // colorize-Schicht erst ab dem 'colorize'-Block
+      const cfg = loadColourSettings(slugify(geo?.region ?? '') || 'default');
+      const scale: ScaleSpec = { stops: cfg.stops, borders: cfg.borders, spreizung: cfg.spreizung, verjuengung: cfg.verjuengung };
       let idx = 0;
       for (const s of net.stretches) {
         for (let i = 1; i < s.points.length; i++) {
           const load = useColor ? (loads![idx] ?? 0) : null;
           idx++;
-          const color = load != null ? colorize(load) : '#718096';
+          const color = load != null ? colorAt(load, scale) : '#718096';
           L.polyline([s.points[i - 1], s.points[i]] as L.LatLngExpression[], {
             color, weight: load != null ? 3 : 2, opacity: load != null ? 0.95 : 0.7, lineCap: 'round',
           }).addTo(layer);

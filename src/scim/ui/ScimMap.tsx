@@ -30,7 +30,7 @@ import { getTestSeed, getTestRoute, setTestRoute, setTestBefund, subscribeTestRo
   getDestPoi, setDestBefund, requestAltRoute } from '../sensus/testRoute';
 import { subscribeReveal } from '../sensus/revealPrep';
 import { playBoundaryReveal } from './boundaryReveal';
-import { colorize } from '../sensus/loadColour';
+import { colorAt, type ScaleSpec } from 'shell-kit';
 import { loadColourSettings, COLOUR_SETTINGS_EVENT } from '../sensus/colourSettings';
 import { loadUserExclusion, USER_EXCLUSION_EVENT } from '../sensus/userExclusion';
 import { getSimHour, subscribeSimClock } from '../sensus/simClock';
@@ -558,7 +558,8 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
           ausschluss: userExcl ?? undefined,
         }).map((c) => [c.id, c.state]),
       );
-      const effBias = Math.max(-1, Math.min(1, colourCfg.bias + colourCfg.safety));
+      // Neues Felder-/Grenzen-Modell (P01): genau das, was die Runtime publiziert.
+      const scale: ScaleSpec = { stops: colourCfg.stops, borders: colourCfg.borders, spreizung: colourCfg.spreizung, verjuengung: colourCfg.verjuengung };
       // Pass 1: Shadow-Halo je Strecke (dunkle, breite Unterlage), damit die
       // Farbe — v. a. Grün — abhebt. Ein Polyline je Strecke (günstig).
       for (const s of simNet.stretches) {
@@ -579,10 +580,10 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
           if (state === 'excluded') {
             color = '#9aa5b1'; weight = 2; opacity = 0.5;        // farblos neutralisiert
           } else if (state === 'degraded') {
-            color = colorize(load, { palette: colourCfg.palette, spectrum: colourCfg.spectrum, bias: effBias });
+            color = colorAt(load, scale);
             weight = 2; opacity = 0.4;                            // entdrängt (behält Farbe)
           } else {
-            color = colorize(load, { palette: colourCfg.palette, spectrum: colourCfg.spectrum, bias: effBias });
+            color = colorAt(load, scale);
             weight = 4; opacity = 1;
           }
           L.polyline([s.points[i - 1], s.points[i]], { color, weight, opacity, lineCap: 'round' }).addTo(sub);
