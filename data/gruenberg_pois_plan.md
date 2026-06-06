@@ -1,9 +1,11 @@
 # Grünberg POI-Plan v2
-**Stand:** 2026-05-30  ·  **67 POIs**  ·  ✓ 52 · ≈ 15 · ❓ 0
+**Stand:** 2026-06-06  ·  **68 POIs**  ·  ✓ 52 · ≈ 15 · ❓ 0
 **Token-Präfix:** skg · gruenberg
 
 Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 **✓** aus OSM/bestätigt · **≈** abgeleitet/geschätzt · **❓** fehlt
+
+---
 
 ---
 
@@ -134,6 +136,7 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 | skg-gruenberg-7m5f | aussichtspunkt+ | Grünberg Plateau 984 m | Aussichtsplateau mit Sender, Bergbahn, Gasthaus, Spiel- und Aktiv-Angeboten | 13.81838, 47.89868 | Sender | ≈ |
 | skg-gruenberg-e8z3 | badewiese | Badewiese | Bahnstation, Liegewiese, Strandbuffet, Busparkplatz | 13.80455, 47.91494 | Badewiese Weyer | ≈ |
 | skg-gruenberg-g474 | bergbahn+ | Grünberg Talstation 422 m | Talstation der Grünbergseilbahn am Traunsee — Einstiegspunkt zum Berg, mit Schiffsanlegestelle und Parkmöglichkeit | 13.80802, 47.91339 | Talstation | ≈ |
+| skg-gruenberg-bwg5 |  | Neuer Ghost |  | ↑ | — | cluster_ghost |
 
 ---
 
@@ -184,6 +187,8 @@ Operator-Kategorien (nicht OSM-Kategorien). Coord-Status:
 - Hexagon-Ring: **transparent** als unsichtbarer Cluster-Ring um Mitglieder · **opaque** ausgefüllt als vereinigtes Cluster-POI beim Herauszoomen
 
 *Anm.: Apotheke kann in Service_Others **oder** Help_emergency landen — vor Verwendung festlegen.*
+
+---
 
 ---
 
