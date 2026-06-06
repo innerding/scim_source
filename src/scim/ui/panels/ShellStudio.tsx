@@ -15,6 +15,7 @@ import { useAuftraggeberRep } from '../../../runtime/useAuftraggeberRep';
 import { buildOriginPackage } from '../../sensus/originPackage';
 import { produceAnthem, dayPhase } from '../../sensus/anthemProducer';
 import { fmtBytes } from '../../sensus/formatBytes';
+import { APP_URL, mvpUrl } from '../../../runtime/appUrl';
 import ShellNewMonitor from './ShellNewMonitor';
 
 // Test-Stand-Switch (Origin/Anthem): zapft echte Daten der aktiven Rep an.
@@ -35,12 +36,10 @@ import { colorAt, DEFAULT_SCALE } from 'shell-kit';
 
 // Die echte, veröffentlichte erste Demo der Ziel-App. Surface-Blöcke zeigen SIE
 // (inkl. Expand/Collapse/Positionierung) — keine erfundene Nachbildung.
-// ?k=… entriegelt das Zugangs-Gate der Runtime (Öffentlichkeit ist gesperrt) —
-// so behält das Studio seinen Vorab-Zugang. Passphrase in sensus-core-runtime/AccessGate.
-const APP_URL = 'https://diesenpark.com/?k=geh-deinen-weg';
-// MVP-Lichtenberg: gleiche Domain + ?rep=lichtenberg (lädt das echte Lichtenberg-Origin,
-// sobald Phase 0 verdrahtet + publiziert ist). Demo bleibt der Default (bare URL).
-const MVP_URL = `${APP_URL}&rep=rep-lichtenberg`;
+// APP_URL/mvpUrl = EINE Quelle (runtime/appUrl), geteilt mit V03 (App-QR).
+// MVP-Lichtenberg: gleiche Domain + ?rep=rep-lichtenberg (lädt das echte Lichtenberg-Origin).
+// Demo bleibt der Default (bare URL).
+const MVP_URL = mvpUrl('rep-lichtenberg');
 
 const FRAME_H = 649; // Handy-Proportion 390:844 bei fester Breite 300 → 300 × 844/390 ≈ 649
 const DEV_W = 300; // feste Breite; FRAME_H folgt der Handy-Proportion 390:844

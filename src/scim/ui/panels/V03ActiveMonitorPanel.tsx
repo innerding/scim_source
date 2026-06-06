@@ -1,13 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type CSSProperties } from 'react';
 import QRCode from 'qrcode';
 import { REGION_MAP } from './V01PackagesPanel';
 import packageOpenIcon from '../../../assets/Package-open.svg';
 import packageIcon     from '../../../assets/Package.svg';
 import type { PackageEntry } from './usePackagesApi';
 import { fetchOriginMeta, fetchPresence, type OriginMeta, type PresenceStatus } from '../../../runtime/anthemApi';
+import { mvpUrl } from '../../../runtime/appUrl';
 import { AnthemCycleBadge } from '../AnthemCycleInfo';
 
 const WORKER_URL = import.meta.env.VITE_WORKER_URL as string | undefined;
+
+const QR_LABEL: CSSProperties = { fontSize: 10, fontWeight: 700, color: '#4a5568', marginBottom: 4 };
 
 const fmtKB = (b: number | null) => (b == null ? '' : `${(b / 1024).toFixed(1)} KB`);
 const fmtUploaded = (iso: string | null) => {
@@ -167,10 +170,23 @@ function RepresentationRow({
         </div>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, minWidth: 0 }}>
+        {/* Ziel-App · QR — die ECHTE publizierte Origin-App (?rep=, QR → direkt zur Rep).
+            Trägt das Zugangs-Gate mit, sodass ein fremdes User-Device ohne Passphrase lädt.
+            Lädt, sobald „Origin veröffentlicht" (siehe Anthem-Schicht unten). */}
+        <div>
+          <div style={QR_LABEL}>Ziel-App · QR <span style={{ color: '#a0aec0', fontWeight: 400 }}>(MVP · scannen → lädt die Rep aufs Gerät)</span></div>
+          <QrCell url={mvpUrl(rep.id)} />
+        </div>
+        {/* Legacy: aktives Bundle-Paket (CDN, Weg-1). */}
         {loading && <div style={{ fontSize: 12, color: '#a0aec0' }}>…</div>}
-        {!loading && !pkg && <div style={{ fontSize: 12, color: '#a0aec0' }}>Kein aktives Paket</div>}
-        {!loading && pkg && <QrCell url={pkg.cdn_url} />}
+        {!loading && !pkg && <div style={{ fontSize: 12, color: '#a0aec0' }}>Kein aktives Bundle-Paket</div>}
+        {!loading && pkg && (
+          <div>
+            <div style={QR_LABEL}>Bundle-Paket · CDN <span style={{ color: '#a0aec0', fontWeight: 400 }}>(Legacy)</span></div>
+            <QrCell url={pkg.cdn_url} />
+          </div>
+        )}
         <AnthemLayerLine repId={rep.id} />
       </div>
     </div>
