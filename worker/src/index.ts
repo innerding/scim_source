@@ -437,7 +437,7 @@ export default {
       const obj = await env.PACKAGES.get(`origin/${repId}/mesh.json`);
       if (!obj) return err(`No published origin-mesh for "${repId}".`, 404);
       return new Response(obj.body, {
-        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=3600' },
+        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
       });
     }
 
@@ -472,7 +472,8 @@ export default {
       const obj = await env.PACKAGES.get(`origin/${repId}/bundle.json`);
       if (!obj) return err(`No published origin-bundle for "${repId}".`, 404);
       return new Response(obj.body, {
-        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=300' },
+        // no-store: nach Re-Publish sofort frisch (kein CDN/Browser-Cache). R2-GET ist billig.
+        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
       });
     }
 
