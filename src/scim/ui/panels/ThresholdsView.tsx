@@ -102,16 +102,8 @@ export default function ThresholdsView() {
       </div>
 
       <div style={{ display: 'flex', gap: 18, alignItems: 'flex-start' }}>
-        {/* Vorschau */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-          <Preview spec={spec} useWrap={wrap} />
-          <label style={{ fontSize: 9.5, color: '#4a5568', display: 'flex', alignItems: 'center', gap: 4 }}>
-            <input type="checkbox" checked={wrap} onChange={(e) => setWrap(e.target.checked)} /> Wrap (Comfort)
-          </label>
-        </div>
-
         {/* Skalen-Form (vertikal) */}
-        <div style={{ flex: 1 }}>
+        <div>
           <div style={{ fontSize: 12.5, fontWeight: 700, color: '#1a365d', marginBottom: 6 }}>Skalen-Form <span style={{ fontWeight: 400, fontSize: 10.5, color: '#a0aec0' }}>· vertikal</span></div>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             <VSlider label="Mitte" value={sp.mitte} onChange={(v) => setSp({ mitte: v })} />
@@ -121,6 +113,14 @@ export default function ThresholdsView() {
             <VSlider label="Verj. oben" value={vj.oben} onChange={(v) => setVj({ oben: v })} />
             <VSlider label="Verj. unten" value={vj.unten} onChange={(v) => setVj({ unten: v })} />
           </div>
+        </div>
+
+        {/* Vorschau — rechts neben den Slidern */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+          <Preview spec={spec} useWrap={wrap} />
+          <label style={{ fontSize: 9.5, color: '#4a5568', display: 'flex', alignItems: 'center', gap: 4 }}>
+            <input type="checkbox" checked={wrap} onChange={(e) => setWrap(e.target.checked)} /> Wrap (Comfort)
+          </label>
         </div>
       </div>
 

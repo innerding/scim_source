@@ -28,7 +28,7 @@ export interface ColourSettings {
   verjuengung: { unten: number; oben: number };                     // Wrap (Comfort-only)
 }
 
-const DEFAULT_STOPS = ['#2ecc40', '#ffd400', '#ff2d2d'];
+const DEFAULT_STOPS = ['#2ecc40', '#ffd400', '#ff2d2d', '#ff0099'];  // grün · gelb · rot · pink (wie Comfort-Slider)
 
 export const DEFAULT_COLOUR_SETTINGS: ColourSettings = {
   palette: DEFAULT_PALETTE, spectrum: 0.5, bias: 0, safety: 0, degradier: null, spread: 0, floor: 0,
