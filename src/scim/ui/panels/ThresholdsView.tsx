@@ -12,7 +12,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { loadColourSettings, saveColourSettings, COLOUR_SETTINGS_EVENT, type ColourSettings } from '../../sensus/colourSettings';
 import { useInspectorView } from '../../../runtime/repContext';
 import { slugify } from '../../../runtime/router';
-import { colorAt, posForLoad, loadForPos, type ScaleSpec } from 'shell-kit';
+import { colorAt, type ScaleSpec } from 'shell-kit';
 import { AnthemCycleBadge } from '../AnthemCycleInfo';
 
 // ── vertikaler Slider (rotierter horizontaler Range — robust cross-browser) ──
@@ -34,23 +34,19 @@ function VSlider({ label, value, onChange, min = 0, max = 1 }: {
   );
 }
 
-// ── Vorschau-Säule: Farbe je Position (mit/ohne Wrap) + Last-Ticks ──
-function Preview({ spec, useWrap }: { spec: ScaleSpec; useWrap: boolean }) {
-  const N = 40;
-  const segs = Array.from({ length: N }, (_, i) => {
-    const p = (N - 1 - i) / (N - 1);                  // oben = 1
-    // Farbe an Display-Position p = colorAt(loadForPos(p)) — über exportierte Fns:
-    return { p, color: colorAt(loadForPos(p, spec, useWrap), spec) };
-  });
-  const ticks = [0, 0.25, 0.5, 0.75, 1].map((t) => ({ t, pos: posForLoad(t, spec, useWrap) }));
+// ── Vorschau-Säule: Last-Achse — Farbe = colorAt(Last). Stauchen verschiebt sichtbar
+// den Farbwert (so wie das Mesh es zeigt). Last-Marken 0/.5/1 als Referenz. ──
+function Preview({ spec }: { spec: ScaleSpec }) {
+  const N = 48;
   return (
     <div style={{ position: 'relative', width: 40, height: 180, borderRadius: 4, overflow: 'hidden', border: '1px solid #cbd5e0' }}>
-      {segs.map((s, i) => (
-        <div key={i} style={{ position: 'absolute', left: 0, right: 0, top: `${(i / N) * 100}%`, height: `${100 / N + 0.5}%`, background: s.color }} />
-      ))}
-      {ticks.map((tk) => (
-        <div key={tk.t} style={{ position: 'absolute', left: 0, right: 0, bottom: `${tk.pos * 100}%`, height: 0, borderTop: '1px solid rgba(0,0,0,0.45)' }}>
-          <span style={{ position: 'absolute', right: 1, bottom: 0, fontSize: 7.5, color: 'rgba(0,0,0,0.6)' }}>{tk.t}</span>
+      {Array.from({ length: N }, (_, i) => {
+        const load = (N - 1 - i) / (N - 1);            // oben = Last 1
+        return <div key={i} style={{ position: 'absolute', left: 0, right: 0, top: `${(i / N) * 100}%`, height: `${100 / N + 0.5}%`, background: colorAt(load, spec) }} />;
+      })}
+      {[0, 0.5, 1].map((t) => (
+        <div key={t} style={{ position: 'absolute', left: 0, right: 0, bottom: `${t * 100}%`, height: 0, borderTop: '1px solid rgba(0,0,0,0.3)' }}>
+          <span style={{ position: 'absolute', right: 1, bottom: 0, fontSize: 7.5, color: 'rgba(0,0,0,0.6)' }}>{t}</span>
         </div>
       ))}
     </div>
@@ -79,7 +75,6 @@ export default function ThresholdsView() {
     return () => window.removeEventListener(COLOUR_SETTINGS_EVENT, onEvt);
   }, [regionSlug]);
 
-  const [wrap, setWrap] = useState(true);
   const spec: ScaleSpec = { stops: s.stops, spreizung: s.spreizung, verjuengung: s.verjuengung };
 
   const sp = s.spreizung, vj = s.verjuengung;
@@ -115,12 +110,10 @@ export default function ThresholdsView() {
           </div>
         </div>
 
-        {/* Vorschau — rechts neben den Slidern */}
+        {/* Vorschau — rechts neben den Slidern (Last-Achse = Mesh-Sicht) */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-          <Preview spec={spec} useWrap={wrap} />
-          <label style={{ fontSize: 9.5, color: '#4a5568', display: 'flex', alignItems: 'center', gap: 4 }}>
-            <input type="checkbox" checked={wrap} onChange={(e) => setWrap(e.target.checked)} /> Wrap (Comfort)
-          </label>
+          <Preview spec={spec} />
+          <span style={{ fontSize: 9, color: '#a0aec0' }}>Last → Farbe</span>
         </div>
       </div>
 
