@@ -8,6 +8,8 @@ import { useWorkspaceNav } from '../workspaceNav';
 import { useAuftraggeberRep } from '../../../runtime/useAuftraggeberRep';
 import { buildOriginBundle } from '../../sensus/originPackage';
 import { publishOriginBundle, anthemPublishConfigured } from '../../../runtime/anthemApi';
+import { mvpUrl } from '../../../runtime/appUrl';
+import QrCell from '../QrCell';
 
 const STEPS: { n: number; head: string; body: string }[] = [
   { n: 1, head: 'schnüren', body: 'Shell ⊕ Origin ⊕ Anthem zu EINEM Bundle bündeln.' },
@@ -78,6 +80,15 @@ export default function TransferView() {
         {!configured && <span style={{ fontSize: 10.5, color: '#a0aec0', marginLeft: 10 }}>Worker nicht konfiguriert</span>}
         {msg && <div style={{ fontSize: 11, color: phase === 'error' ? '#c53030' : '#276749', marginTop: 8, fontFamily: 'monospace', wordBreak: 'break-all' }}>{msg}</div>}
         <div style={{ fontSize: 10.5, color: '#a0aec0', marginTop: 6, lineHeight: 1.5 }}>Schnürt boundary + net + poi-set (Container) + asset-set zu EINEM JSON → R2. Die Runtime holt es über <code>?rep={rep.id}</code>.</div>
+
+        {/* App-QR direkt am Publish-Ort: scannen → publizierte Origin-App aufs Gerät
+            (QR trägt das Gate mit). Dieselbe QrCell/URL-Quelle wie V03. */}
+        <div style={{ borderTop: '1px dashed #fbb6ce', marginTop: 10, paddingTop: 10 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: '#b83280', marginBottom: 4 }}>
+            Ziel-App · QR <span style={{ color: '#a0aec0', fontWeight: 400 }}>(scannen → lädt die Rep aufs Gerät{phase !== 'done' ? ' · nach Veröffentlichen' : ''})</span>
+          </div>
+          <QrCell url={mvpUrl(rep.id)} />
+        </div>
       </div>
 
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
