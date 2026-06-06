@@ -1,8 +1,0 @@
-{
-  "schema": "scim3_representation_v1",
-  "id": "rep-rep-lichtenberg2",
-  "name": "rep-lichtenberg2",
-  "geometry_id": "lichtenberg",
-  "catalog_id": "lichtenberg",
-  "created_at": "2026-06-05"
-}
