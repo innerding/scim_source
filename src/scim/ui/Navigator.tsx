@@ -22,7 +22,8 @@ interface NavTheme {
 const NAV_THEMES: Record<Role, NavTheme> = {
   operator:     { bg: '#0d1520', border: '#1a2535', fg: '#a0aec0', fgActive: '#e0eeff', activeBg: '#1e3a5f', hover: '#1a2535', sub: '#3d556f', divider: '#1a2d3e' },
   analyst:      { bg: '#16110a', border: '#2c2310', fg: '#cbb083', fgActive: '#ffe6b0', activeBg: '#4a3410', hover: '#241a0b', sub: '#6b5630', divider: '#2c2310' },
-  regio_editor: { bg: '#e9f1fb', border: '#cbdcef', fg: '#3b5168', fgActive: '#12365e', activeBg: '#cfe1f6', hover: '#dce9f8', sub: '#8198ad', divider: '#d4e0ee' },
+  // Rep-Editor: gleiche (dunkle) Farbwelt wie der Operator (keine Extrawurst).
+  regio_editor: { bg: '#0d1520', border: '#1a2535', fg: '#a0aec0', fgActive: '#e0eeff', activeBg: '#1e3a5f', hover: '#1a2535', sub: '#3d556f', divider: '#1a2d3e' },
 };
 const NavThemeContext = createContext<NavTheme>(NAV_THEMES.operator);
 const useNavTheme = () => useContext(NavThemeContext);
@@ -428,24 +429,7 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
     descById(id) && !(id === 'ai_interface' && role !== 'operator')).length, 0);
 
   const navTheme = NAV_THEMES[role] ?? NAV_THEMES.operator;
-
-  // Rep-Editor: reduzierter Navigator — NUR die SCIM-Kartography-Drehscheibe
-  // (Faces + Sicheln + Deko-Bögen). Alles andere (Mond · Cloud · Transmitter ·
-  // Substrat · Grund · Müllwagen · Visibility) ist tot + unsichtbar.
-  if (role === 'regio_editor') {
-    return (
-      <NavThemeContext.Provider value={navTheme}>
-        <nav style={{
-          width: 210, flexShrink: 0, background: navTheme.bg,
-          borderRight: `1px solid ${navTheme.border}`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          padding: '12px 8px', position: 'relative', transition: 'background 0.2s, border-color 0.2s',
-        }}>
-          <RegioDashboardControl activeId={activeId} onJumpTo={go} size={186} variant="light" arcsDeco />
-        </nav>
-      </NavThemeContext.Provider>
-    );
-  }
+  const repMode = role === 'regio_editor';   // Komposit-Tetraeder wird zur Kartography-Drehscheibe
 
   return (
     <NavThemeContext.Provider value={navTheme}>
@@ -699,6 +683,11 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
         alignItems: 'center', gap: 6, flexShrink: 0,
         position: 'relative', zIndex: 2,
       }}>
+        {repMode ? (
+          // Rep-Editor: dieselbe Stelle, aber die Kartography-Drehscheibe (Faces=Controls,
+          // Sicheln=Zusatzfunktionen, Bögen als Deko). Dunkle Variante wie der Rest.
+          <RegioDashboardControl activeId={activeId} onJumpTo={go} variant="dark" size={171} arcsDeco />
+        ) : (
         <RepresentBuildTetrahedron
           activeFace={faceFromActive(activeId)}
           activeArc={arcFromActive(activeId)}
@@ -726,6 +715,7 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
             else if (s === 'wegnetz_sampling') go('P09');
           }}
         />
+        )}
       </div>
 
       {/* Tiefen-Tetraeder — Substrat-Tetraeder der Bipyramide (ann_060).
