@@ -202,9 +202,9 @@ function EyeButton({ shown, onClick }: { shown: boolean; onClick: () => void }) 
 
 // ─── Hauptpanel ─────────────────────────────────────────────────────────────
 
-// ── Rep-Editor-Modus: REP-Manufactur — die Drehscheibe pur (Faces + Sicheln,
+// ── Rep-Editor-Modus: SCIM3-Kartography — die Drehscheibe pur (Faces + Sicheln,
 //    Bögen als Deko), tab-los. Reduzierte Produktions-Oberfläche. ──
-function RepManufacturView({ onJumpTo }: { onJumpTo: (id: string) => void }) {
+function KartographyView({ onJumpTo }: { onJumpTo: (id: string) => void }) {
   return (
     <div style={{
       fontFamily: 'system-ui, sans-serif', minHeight: 360,
@@ -213,7 +213,7 @@ function RepManufacturView({ onJumpTo }: { onJumpTo: (id: string) => void }) {
     }}>
       <RegioDashboardControl activeId="workspace" onJumpTo={onJumpTo} size={260} arcsDeco />
       <div>
-        <div style={{ fontSize: 15, fontWeight: 800, color: '#1a365d', letterSpacing: '-0.01em' }}>REP-Manufactur</div>
+        <div style={{ fontSize: 15, fontWeight: 800, color: '#1a365d', letterSpacing: '-0.01em' }}>SCIM3-Kartography</div>
         <div style={{ fontSize: 11.5, color: '#718096', marginTop: 3, maxWidth: 360 }}>
           Representation-Produktion. Faces wechseln den Arbeitsschritt, Sicheln sind Zusatzfunktionen
           (Vorschau · Publish · Versionen). Bögen sind hier nur Dekoration.
@@ -257,7 +257,7 @@ function PathworksAnalystView({ onJumpTo }: { onJumpTo: (id: string) => void }) 
   );
 }
 
-export default function WorkspacePanel({ onJumpTo, activeTab = 'input' }: Props) {
+export default function WorkspacePanel({ onJumpTo }: Props) {
   const [showWizard, setShowWizard] = useState(false);
   const [showClip, setShowClip] = useState(false);   // schwebendes Arbeitsblatt (Notizen)
   const [showInfo, setShowInfo] = useState(false);   // schwebendes Infoblatt-Klemmbrett (3 Versionen)
@@ -367,9 +367,9 @@ export default function WorkspacePanel({ onJumpTo, activeTab = 'input' }: Props)
     });
   }, []);
 
-  // Rollen-Kaskade: 'result' = Analyst-Modus, 'validation' = Rep-Editor (REP-Manufactur).
-  if (activeTab === 'validation') return <RepManufacturView onJumpTo={onJumpTo} />;
-  if (activeTab === 'result') return <PathworksAnalystView onJumpTo={onJumpTo} />;
+  // Rollen-Kaskade: die effektive Rolle bestimmt den Modus (vom Footer durchgeschaltet).
+  if (role === 'regio_editor') return <KartographyView onJumpTo={onJumpTo} />;
+  if (role === 'analyst') return <PathworksAnalystView onJumpTo={onJumpTo} />;
 
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 760 }}>

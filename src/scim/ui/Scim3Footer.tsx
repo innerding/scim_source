@@ -4,7 +4,7 @@
 //    Ziel-App präsent? Eigentümer/Detail = V03 · Publishing-Monitor (t1).
 // Macht die sonst unsichtbare Presence global greifbar (Anthem-Pulse).
 import { useContext, useEffect, useState } from 'react';
-import { UserNameContext, type Role } from './RoleContext';
+import { UserNameContext, useModeSwitch, type Role } from './RoleContext';
 import { clearPasskey } from './passkey';
 import { useWorkspaceNav } from './workspaceNav';
 import { useAuftraggeberRep } from '../../runtime/useAuftraggeberRep';
@@ -21,13 +21,10 @@ const ROLE_META: Record<string, { label: string; color: string }> = {
 };
 const EDITOR_ROLE_ORDER: Role[] = ['operator', 'analyst', 'regio_editor'];
 
-export default function Scim3Footer({ realRole, preview, onPreviewChange }: {
-  realRole: Role;
-  preview: Role | null;
-  onPreviewChange: (r: Role | null) => void;
-}) {
+export default function Scim3Footer({ realRole }: { realRole: Role }) {
   // Presence/Lichter hängen an der ECHTEN Rolle (nicht an der Vorschau-Rolle).
   const role = realRole;
+  const mode = useModeSwitch();
   const userName = useContext(UserNameContext);
   const rep = useAuftraggeberRep();
   const { goStation } = useWorkspaceNav();
@@ -36,7 +33,6 @@ export default function Scim3Footer({ realRole, preview, onPreviewChange }: {
   const [errored, setErrored] = useState(false);
   const [editorPresence, setEditorPresence] = useState<EditorPresence | null>(null);
   const [editorErrored, setEditorErrored] = useState(false);
-  const [roleMenuOpen, setRoleMenuOpen] = useState(false);   // Drop-up: Ansicht-Rolle wählen
 
   useEffect(() => {
     if (!configured) return;
@@ -106,58 +102,30 @@ export default function Scim3Footer({ realRole, preview, onPreviewChange }: {
             const dur = rp?.durationMin ?? 0;
             const detail = nm ? <span style={{ color: '#718096' }}> · {nm}{dur > 0 ? ` · ${dur} min` : ''}</span> : null;
 
-            // Eigene Rolle + Operator → klickbar: Drop-up zur Ansicht-Rollenwahl.
-            // (Operator darf jede Rolle annehmen; Presence bleibt echt = Operator.)
-            if (r === role && realRole === 'operator') {
+            // Eigene Rolle, klickbar: Klick schaltet den Modus eine Stufe abwärts
+            // (Operator→Analyst→Rep-Editor→…), die Diode wechselt die Farbe. Kein Drop-up.
+            // Presence bleibt echt; nur die Ansicht (effektive Rolle) ändert sich.
+            if (r === role && mode && realRole !== 'regio_editor') {
+              const eff = mode.effective;
+              const em = ROLE_META[eff] ?? m;
+              const previewing = eff !== realRole;
               return (
-                <span key={r} style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
-                  <button
-                    onClick={() => setRoleMenuOpen((o) => !o)}
-                    title="Ansicht-Rolle wählen (hinauf/hinunter)"
-                    style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 5, cursor: 'pointer',
-                      background: 'transparent', border: 'none', font: 'inherit', color: '#a0aec0', padding: 0,
-                    }}
-                  >
-                    <span style={{ color: m.color }}>●</span>
-                    {m.label}{detail}
-                    {preview && (
-                      <span style={{ color: '#dd6b20', fontWeight: 700 }}> · 👁 {(ROLE_META[preview]?.label ?? preview)}-Sicht</span>
-                    )}
-                    <span style={{ color: '#4a5568' }}> ▴</span>
-                  </button>
-                  {roleMenuOpen && (
-                    <>
-                      <div onClick={() => setRoleMenuOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 40 }} />
-                      <div style={{
-                        position: 'absolute', bottom: '100%', left: 0, marginBottom: 8, zIndex: 50,
-                        background: '#16202e', border: '1px solid #2d3748', borderRadius: 6, padding: 4,
-                        minWidth: 150, boxShadow: '0 -8px 24px rgba(0,0,0,0.45)',
-                      }}>
-                        <div style={{ fontSize: 9, color: '#718096', padding: '2px 8px 4px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Ansicht als …</div>
-                        {EDITOR_ROLE_ORDER.map((rr) => {
-                          const rm = ROLE_META[rr] ?? { label: rr, color: '#48bb78' };
-                          const active = (preview ?? realRole) === rr;
-                          return (
-                            <button
-                              key={rr}
-                              onClick={() => { onPreviewChange(rr === realRole ? null : rr); setRoleMenuOpen(false); }}
-                              style={{
-                                display: 'flex', alignItems: 'center', gap: 7, width: '100%', textAlign: 'left',
-                                cursor: 'pointer', background: active ? '#1e3a5f' : 'transparent', border: 'none',
-                                borderRadius: 4, color: '#cbd5e0', font: 'inherit', fontSize: 11, padding: '4px 8px',
-                              }}
-                            >
-                              <span style={{ color: rm.color }}>●</span>
-                              {rm.label}{rr === realRole ? ' (voll)' : ''}
-                              <span style={{ marginLeft: 'auto', color: '#63b3ed' }}>{active ? '✓' : ''}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </>
-                  )}
-                </span>
+                <button
+                  key={r}
+                  onClick={mode.cycle}
+                  title="Modus durchklicken (Ansicht eine Stufe abwärts)"
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 5, cursor: 'pointer',
+                    background: 'transparent', border: 'none', font: 'inherit', color: '#a0aec0', padding: 0,
+                  }}
+                >
+                  <span style={{ color: em.color }}>●</span>
+                  {em.label}
+                  {previewing
+                    ? <span style={{ color: '#718096' }}> · {userName} · Ansicht</span>
+                    : detail}
+                  <span style={{ color: '#4a5568' }}> ⟳</span>
+                </button>
               );
             }
             return (

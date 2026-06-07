@@ -37,7 +37,6 @@ import SystemPanel from './panels/SystemPanel';
 import AiInterfacePanel from './panels/AiInterfacePanel';
 import CatalogTab from './panels/CatalogTab';
 import { useRole } from './RoleContext';
-import type { Role } from './RoleContext';
 import V01PackagesPanel from './panels/V01PackagesPanel';
 import V02RegionDetailPanel from './panels/V02RegionDetailPanel';
 import V03ActiveMonitorPanel from './panels/V03ActiveMonitorPanel';
@@ -161,14 +160,6 @@ function headerCode(id: string): string {
 // Die 4 Regio-Dashboard-Panels = die 4 Tetraeder-Faces (Thresholds löst Publishing ab):
 // Thresholds(P01) · Pathworks(workspace) · Drawer(geometry_editor) · Katalog(catalog).
 const REGION_DASHBOARD_IDS = new Set(['P01', 'workspace', 'geometry_editor', 'catalog']);
-
-// Rollen-Kaskade der Regio-Panel-Modus-Tabs (input=Operator · result=Analyst · validation=Rep-Editor).
-// Operator sieht alle, Analyst Analyst+Rep-Editor, Rep-Editor nur Rep-Editor (→ tab-los).
-const MODE_TAB_ROLES: Record<string, Role[]> = {
-  input:      ['operator'],
-  result:     ['operator', 'analyst'],
-  validation: ['operator', 'analyst', 'regio_editor'],
-};
 const BROCKEN_IDS = new Set(['P05']);
 const MUELL_IDS = new Set(['P03', 'P10', 'P12', 'P13', 'P14', 'R03', 'R04', 'R05', 'R06', 'R07', 'R08']);
 const OPERATOR_ONLY_IDS = new Set(['ai_interface', 'ipills', 'system']);   // Substrat
@@ -1399,15 +1390,9 @@ export default function PanelWorkspace({ activeId, activeTab, onTabChange, resul
     );
   }
 
-  const isRegion = REGION_DASHBOARD_IDS.has(activeId);
   const tabs = entry.tabs.filter((t) => {
     if (!TAB_ORDER.includes(t.id as TabId)) return false;
     if (t.id === 'icon' && role !== 'operator') return false;   // Drawer · Icon-Tab nur Operator
-    // Rollen-Kaskade auf Regio-Panels: Operator=alle · Analyst=Analyst+Rep-Editor · Rep-Editor=nur Rep-Editor.
-    if (isRegion) {
-      const allowed = MODE_TAB_ROLES[t.id];
-      if (allowed && !allowed.includes(role)) return false;
-    }
     return true;
   });
   // Aktiver Tab wird beim Panelwechsel auf 'input' gesetzt; Panels mit eigenen

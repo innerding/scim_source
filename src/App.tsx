@@ -4,7 +4,7 @@ import Navigator from './scim/ui/Navigator';
 import PanelWorkspace from './scim/ui/PanelWorkspace';
 import { useScimPipeline } from './scim/ui/useScimPipeline';
 import IntroScreen from './scim/ui/IntroScreen';
-import { RoleContext, UserNameContext } from './scim/ui/RoleContext';
+import { RoleContext, UserNameContext, ModeSwitchContext, ROLE_ORDER } from './scim/ui/RoleContext';
 import type { Role } from './scim/ui/RoleContext';
 import type { TabId } from './scim/ui/panelRegistry';
 import RepresentBuildManualModal from './scim/ui/RepresentBuildManualModal';
@@ -62,11 +62,20 @@ export default function App() {
     return <IntroScreen onAuth={(r, n) => { setUserName(n); setRole(r); }} />;
   }
 
-  // Effektive Rolle: Operator kann lokal in die Analyst-Ansicht wechseln (Präsentation).
-  const effectiveRole: Role = role === 'operator' && preview ? preview : role;
+  // Effektive Rolle: man darf nur ABWÄRTS in der Kaskade vorschauen (Operator→Analyst→Rep-Editor).
+  const effectiveRole: Role =
+    preview && ROLE_ORDER.indexOf(preview) >= ROLE_ORDER.indexOf(role) ? preview : role;
+  // Modus durchklicken: eine Stufe abwärts, am Ende zurück zur echten Rolle.
+  const cycleMode = () => {
+    const allowed = ROLE_ORDER.slice(ROLE_ORDER.indexOf(role));   // Rollen ab der eigenen abwärts
+    if (allowed.length <= 1) return;                              // Rep-Editor kann nicht wechseln
+    const next = allowed[(allowed.indexOf(effectiveRole) + 1) % allowed.length];
+    setPreview(next === role ? null : next);
+  };
 
   return (
     <RoleContext.Provider value={effectiveRole}>
+     <ModeSwitchContext.Provider value={{ real: role, effective: effectiveRole, cycle: cycleMode }}>
      <UserNameContext.Provider value={userName}>
      <RepresentationProvider>
       <WorkspaceNavProvider value={{ goStation: goTo, activeId, activeTab }}>
@@ -119,11 +128,12 @@ export default function App() {
         </div>
         {showManual && <RepresentBuildManualModal onClose={() => setShowManual(false)} />}
       </div>
-      <Scim3Footer realRole={role} preview={preview} onPreviewChange={setPreview} />
+      <Scim3Footer realRole={role} />
       </div>
       </WorkspaceNavProvider>
      </RepresentationProvider>
      </UserNameContext.Provider>
+     </ModeSwitchContext.Provider>
     </RoleContext.Provider>
   );
 }
