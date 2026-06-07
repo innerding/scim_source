@@ -32,6 +32,14 @@ const SEED_ANNOTATIONS: Annotation[] = [
   // ── Plan & Stand (2026-06-04) ───────────────────────────────────────────────
 
   {
+    id: 'ann_105',
+    category: 'next_intent',
+    label: 'Zugang/Rollen/Visibility/Log-Files ↔ Fundamental-Umbau Workspace → Pathworks (diesenpark.at)',
+    content: 'STRATEGISCHE RICHTUNG (Stand 2026-06-07). NÄCHSTER GROSSER SCHRITT: fundamentaler Umbau der Workspace-Represent-Organisation + AUSGLIEDERUNG der Representations-Bildungs-Panels — Thresholds (P01/P02/P04), Workspace, Drawer (Geometrie-Editor), Katalog — also alles, was für einen BUNDLE-COMMIT stehen kann bzw. die Colour-Mesh-Justierung betrifft — in ein eigenes REGIO-DASHBOARD unter diesenpark.at mit Namen „Pathworks". Dazu zwingend: VERSIONIERUNG der Representationen (Soll: v<n>/bundle.json + current.json als Cache-Buster; siehe docs/versionierung.md). — ZUGANGS-/AKTIVITÄTS-EBENE (reif geworden durch die Rollen-Sperre + Footer-Mehrbenutzer-Presence): (1) Zugangs-Kontrolle — Access-Panel mit Name · Auto-/Wahl-Rolle · Code; heute hartkodierte USERS + Env-Codes + Recovery-Code „FULL-VISIBILITY" (UX-Gate, client-seitig); reif für server-seitige Code-Prüfung im Worker und optional Cloudflare Access (Edge, echte Sperre) davor. (2) Rollen — operator/analyst, künftig DYNAMISCH anlegbar (neue Rollen/Namen). (3) Visibility — die Sperr-Registry (was für non-operator gesperrt ist; project_navigator_rollen_lock). (4) Log-Files — Mehrbenutzer-Drop-down im Navigator (Schwester von Visibility): wer · wann · wie lange, evtl. Panel-Aktivität (Zeit je Panel). Diese vier werden die GOVERNANCE-SCHICHT des Pathworks-Regio-Dashboards. — REIHENFOLGE-KONSENS (Tendenz des Operators): ERST Fundamental-Umbau Workspace/Representation + Pathworks-Ausgliederung + Versionierung, DANACH die Rollen-/Log-File-Geschichte (sie gehört logisch zu Pathworks). — QUICK-WIN „Modul C": „Als Analyst ansehen" = lokaler Rollen-Override (operator→analyst) für Präsentationen, ohne Logout; nutzt die bestehende RoleContext-Sperre (für Demos: zeige nur, was ein Analyst sieht). — BEZUG: Footer-Presence + Recovery-Code, Navigator-Rollen-Sperre/Visibility, Auslieferungs-Doktrin (Cloud-only). Stand: geplant, noch nicht gebaut; kollidiert NICHT mit Bestehendem (baut darauf auf).',
+    related_panel: 'workspace',
+    date: '2026-06-07',
+  },
+  {
     id: 'ann_101',
     category: 'next_intent',
     label: 'Fertigstellungsplan + Studio-Test-Stand',
