@@ -16,6 +16,7 @@ import NavTransmissionField from './NavTransmissionField';
 import NavMetaSpace from './NavMetaSpace';
 import NavDepthTetraeder from './NavDepthTetraeder';
 import NavTrashTruck from './NavTrashTruck';
+import NavVisibility from './NavVisibility';
 
 interface Props {
   activeId: string;
@@ -264,6 +265,7 @@ function sickleFromActive(activeId: string): RepresentBuildSickle | undefined {
 export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggle, inspectorActive = false, onManualOpen, panelStatus = {} }: Props) {
   const go = onGoTo ?? ((id: string) => onSelect(id));
   const role = useRole();
+  const locked = role !== 'operator';   // non-operator: alles unter dem Komposit gesperrt
 
   // Transmitter-Pulse: kurzfristiger Input-Modus des Tetraeder-Schwingungs-
   // Mechanismus (siehe ann_066). Wird per Window-Event "scim:transmitter:pulse"
@@ -396,7 +398,9 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
     });
   };
   // Anzahl sichtbarer Cosmo-Items (Rolle: catalog/ai_interface nur Operator).
-  const cosmoCount = COSMO_GROUPS.reduce((n, g) => n + g.ids.filter((id) =>
+  // non-operator: die Gruppen „Substrat" + „Grund" (alles unter dem Komposit) ausblenden.
+  const visibleCosmoGroups = COSMO_GROUPS.filter((g) => !locked || (g.label !== 'Substrat' && g.label !== 'Grund'));
+  const cosmoCount = visibleCosmoGroups.reduce((n, g) => n + g.ids.filter((id) =>
     descById(id) && !((id === 'catalog' || id === 'ai_interface') && role !== 'operator')).length, 0);
 
   return (
@@ -695,9 +699,11 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
         <NavDepthTetraeder
           size={208}
           // Vom Row-Open/Close entbunden: die drei Faces steuern die Operator-
-          // Heimat-Panels an. Oben AI-Interface · links P05 · rechts System.
+          // Heimat-Panels an. Oben AI-Interface · links i-Pills · rechts System.
+          // non-operator: Faces tot (stille Deko).
           activeId={activeId}
           onFaceClick={(panelId) => go(panelId)}
+          locked={locked}
         />
       </div>
 
@@ -709,7 +715,7 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
         padding: '0 18px', flexShrink: 0, marginTop: -20,
         position: 'relative', zIndex: 5, pointerEvents: 'none',
       }}>
-        <NavMetaSpace onPick={go} activeId={activeId} />
+        <NavMetaSpace onPick={go} activeId={activeId} locked={locked} />
       </div>
 
       {/* Manual + Reader sitzen am Fuss der Kosmologie — unter der gesamten
@@ -794,7 +800,7 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
 
       {/* ── Cosmo Controls — Drop-Down-Inhalt (Kopf ist die Zeile oben) ──────── */}
       <SectionBody isOpen={cosmoOpen}>
-        {COSMO_GROUPS.map((g) => {
+        {visibleCosmoGroups.map((g) => {
           const items = g.ids
             .map(descById)
             .filter((d): d is { id: string; icon: string; label: string } => d !== null)
@@ -820,12 +826,13 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
       {/* ── Müllwagen — ungenutzte Panels (der „Rest"), eingeklappt unter dem Strich ── */}
       <SectionDivider />
       <NavTrashTruck
-        isOpen={trashOpen}
+        isOpen={!locked && trashOpen}
         count={REST_IDS.map(descById).filter((d) => d !== null).length}
         onClick={() => toggleSection('trash')}
+        locked={locked}
       />
-      <SectionBody isOpen={trashOpen}>
-        {REST_IDS
+      <SectionBody isOpen={!locked && trashOpen}>
+        {!locked && REST_IDS
           .map(descById)
           .filter((d): d is { id: string; icon: string; label: string } => d !== null)
           .map((d) => (
@@ -840,6 +847,14 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
             />
           ))}
       </SectionBody>
+
+      {/* Visibility — operator-only Sperr-Registry, einziges ganz-verschwindendes Element. */}
+      {!locked && (
+        <NavVisibility
+          isOpen={manuallyOpen.has('visibility')}
+          onClick={() => toggleSection('visibility')}
+        />
+      )}
     </nav>
   );
 }

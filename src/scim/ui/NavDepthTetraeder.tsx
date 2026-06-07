@@ -33,6 +33,8 @@ interface Props {
   /** Klick auf eine Face navigiert zum zugeordneten Panel. */
   onFaceClick: (panelId: string) => void;
   size?: number;
+  /** non-operator: Faces tot (stille Deko) — Körper bleibt sichtbar. */
+  locked?: boolean;
 }
 
 // 3D-Geometrie — Punkt-nach-unten Tetraeder, normalisiert
@@ -104,7 +106,7 @@ function nextFaceLock(currentTheta: number): HoverState {
   };
 }
 
-export default function NavDepthTetraeder({ activeId, onFaceClick, size = 208 }: Props) {
+export default function NavDepthTetraeder({ activeId, onFaceClick, size = 208, locked = false }: Props) {
   const [rotation, setRotation] = useState(0);
   const [hover, setHover] = useState<HoverState | null>(null);
   const [isLocked, setIsLocked] = useState(false);
@@ -306,11 +308,11 @@ export default function NavDepthTetraeder({ activeId, onFaceClick, size = 208 }:
           <polygon
             key={`region-${r.panelId}`}
             points={polyPoints(r.vertices)}
-            fill={isActive ? 'rgba(99, 179, 237, 0.28)' : 'transparent'}
+            fill={isActive && !locked ? 'rgba(99, 179, 237, 0.28)' : 'transparent'}
             stroke="none"
-            onClick={() => onFaceClick(r.panelId)}
-            style={{ pointerEvents: 'all', cursor: 'pointer' }}
-            className={isActive ? 'rb-active-tile' : undefined}
+            onClick={locked ? undefined : () => onFaceClick(r.panelId)}
+            style={{ pointerEvents: locked ? 'none' : 'all', cursor: locked ? 'default' : 'pointer' }}
+            className={isActive && !locked ? 'rb-active-tile' : undefined}
           >
             <title>{r.label}</title>
           </polygon>

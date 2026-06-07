@@ -4,13 +4,16 @@
 import { useEffect, useState } from 'react';
 import type { TabId } from './panelRegistry';
 import { useWorkspaceNav } from './workspaceNav';
+import { useRole } from './RoleContext';
 import {
   SHELL_RUN_STEPS, SHELL_RUN_INTRO, KIND_META, STATION_STATUS_META,
   LADE_KASKADE, LADE_KASKADE_MVP,
 } from '../sensus/shellRun';
 
 export function ShellRunBadge({ compact = false }: { compact?: boolean }) {
+  const role = useRole();
   const [open, setOpen] = useState(false);
+  if (role !== 'operator') return null;   // i-Pill operator-only (Sub-Komposit gesperrt)
   return (
     <>
       <button

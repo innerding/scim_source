@@ -5,9 +5,12 @@
 // liefert sie rollenneutral; das Gating setzt die B-Schicht).
 import { useEffect, useState } from 'react';
 import BuilderClipboard from './panels/BuilderClipboard';
+import { useRole } from './RoleContext';
 
 export function BuilderClipboardBadge({ compact = false }: { compact?: boolean }) {
+  const role = useRole();
   const [open, setOpen] = useState(false);
+  if (role !== 'operator') return null;   // i-Pill operator-only (Sub-Komposit gesperrt)
   return (
     <>
       <button

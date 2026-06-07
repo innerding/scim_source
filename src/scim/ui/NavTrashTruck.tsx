@@ -9,21 +9,21 @@ import { useState } from 'react';
 const BG = '#0d1520';   // Nav-Hintergrund = „Schnitt"-Farbe der Innendetails
 
 export default function NavTrashTruck({
-  isOpen, count, onClick,
-}: { isOpen: boolean; count: number; onClick: () => void }) {
+  isOpen, count, onClick, locked = false,
+}: { isOpen: boolean; count: number; onClick: () => void; locked?: boolean }) {
   const [hover, setHover] = useState(false);
   const fill = isOpen ? '#5f7d9c' : hover ? '#52677f' : '#425468';
   const outline = isOpen ? '#63b3ed' : hover ? '#4a6a8a' : 'transparent';
 
   return (
     <div
-      onClick={onClick}
+      onClick={locked ? undefined : onClick}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
-      title={`Ungenutzte Panels (${count}) — auf-/zuklappen`}
+      title={locked ? 'Ungenutzte Panels — gesperrt' : `Ungenutzte Panels (${count}) — auf-/zuklappen`}
       style={{
         display: 'flex', flexDirection: 'column', alignItems: 'center',
-        cursor: 'pointer', userSelect: 'none', padding: '6px 0 2px',
+        cursor: locked ? 'default' : 'pointer', userSelect: 'none', padding: '6px 0 2px',
         flexShrink: 0,
       }}
     >

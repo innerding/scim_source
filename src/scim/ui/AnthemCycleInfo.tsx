@@ -8,10 +8,13 @@
 import { useEffect, useState } from 'react';
 import type { TabId } from './panelRegistry';
 import { useWorkspaceNav } from './workspaceNav';
+import { useRole } from './RoleContext';
 import { ANTHEM_STATIONS, ANTHEM_INTRO, STATION_STATUS_META } from '../sensus/anthemCycle';
 
 export function AnthemCycleBadge({ compact = false }: { compact?: boolean }) {
+  const role = useRole();
   const [open, setOpen] = useState(false);
+  if (role !== 'operator') return null;   // i-Pill operator-only (Sub-Komposit gesperrt)
   return (
     <>
       <button

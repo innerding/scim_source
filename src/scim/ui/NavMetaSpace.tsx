@@ -40,12 +40,12 @@ function pts(cx: number, cy: number, r: number, shape: [number, number][]): stri
   return shape.map(([dx, dy]) => `${(cx + dx * r).toFixed(1)},${(cy + dy * r).toFixed(1)}`).join(' ');
 }
 
-export default function NavMetaSpace({ onPick, activeId }: { onPick?: (id: string) => void; activeId?: string }) {
+export default function NavMetaSpace({ onPick, activeId, locked = false }: { onPick?: (id: string) => void; activeId?: string; locked?: boolean }) {
   return (
     <svg viewBox="0 0 124 60" width="100%" style={{ display: 'block', overflow: 'visible' }}>
       {ROCKS.map((k, i) => {
         const baseY = k.cy + k.r * 0.72; // die flache Unterkante
-        const clickable = !!k.pick;
+        const clickable = !!k.pick && !locked;   // non-operator: Brocken tot (stille Deko)
         const isActive = clickable && activeId === k.pick;
         return (
           <g key={i}

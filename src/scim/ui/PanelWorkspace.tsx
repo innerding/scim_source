@@ -1065,6 +1065,9 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
 }) {
   const role = useRole();
   const inspectedRep = useAuftraggeberRep(); // robust, nie leer → heilt source=<xy>
+  // Sub-Komposit-Lock: alles unter dem Komposit-Tetraeder ist für non-operator gesperrt
+  // (Sicherheitsnetz gegen Querlinks; im Navigator sind die Einstiege ohnehin tot).
+  if (role !== 'operator' && ['ai_interface', 'ipills', 'system', 'R01', 'P05'].includes(activeId)) return null;
   if (activeId === WORKSPACE_DESCRIPTOR.id) {
     return <WorkspacePanel onJumpTo={onJumpTo ?? (() => {})} />;
   }
