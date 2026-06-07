@@ -2,7 +2,7 @@
 // Pendant zu build-clipboard. Hält die offenen Notizen rund um die Drehscheibe
 // „Pathworks (Hub)" (vormals Workspace): bewusst NICHT gebaute Knöpfe, Default-Verhalten,
 // Anschlusspunkte für den Umbau. Operator-only-Gating in der Pill selbst.
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRole } from './RoleContext';
 
 export function PathworksHubBadge({ compact = false }: { compact?: boolean }) {
@@ -81,6 +81,67 @@ export function PathworksHubClipboard() {
           (Thresholds/Workspace/Drawer/Katalog) wandern perspektivisch in ein Regio-Dashboard
           unter diesenpark.at. Reihenfolge: erst Umbau + Pathworks, dann Rollen/Logs/Governance.
         </Note>
+      </div>
+    </div>
+  );
+}
+
+// Floating-Variante: KEIN gedimmter Backdrop, das Panel dahinter bleibt voll
+// bedienbar (nur die Karte selbst fängt Klicks). Per Titelleiste verschiebbar.
+export function PathworksHubFloating({ onClose }: { onClose: () => void }) {
+  const [pos, setPos] = useState(() => ({
+    x: Math.max(16, (typeof window !== 'undefined' ? window.innerWidth : 1200) - 470),
+    y: 96,
+  }));
+  const dragRef = useRef<{ ox: number; oy: number } | null>(null);
+
+  useEffect(() => {
+    const move = (e: MouseEvent) => {
+      if (!dragRef.current) return;
+      setPos({
+        x: Math.max(8, Math.min(window.innerWidth - 120, e.clientX - dragRef.current.ox)),
+        y: Math.max(8, Math.min(window.innerHeight - 60, e.clientY - dragRef.current.oy)),
+      });
+    };
+    const up = () => { dragRef.current = null; document.body.style.userSelect = ''; };
+    window.addEventListener('mousemove', move);
+    window.addEventListener('mouseup', up);
+    return () => { window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up); };
+  }, []);
+
+  const startDrag = (e: React.MouseEvent) => {
+    dragRef.current = { ox: e.clientX - pos.x, oy: e.clientY - pos.y };
+    document.body.style.userSelect = 'none';
+  };
+
+  return (
+    <div style={{
+      position: 'fixed', left: pos.x, top: pos.y, zIndex: 900,
+      width: 440, maxHeight: '78vh', display: 'flex', flexDirection: 'column',
+      background: '#fff', border: '1px solid #cbd5e0', borderRadius: 10,
+      boxShadow: '0 14px 44px rgba(15,23,35,0.30)', overflow: 'hidden',
+    }}>
+      <div
+        onMouseDown={startDrag}
+        style={{
+          flexShrink: 0, cursor: 'grab', userSelect: 'none',
+          display: 'flex', alignItems: 'center', gap: 8,
+          padding: '7px 10px 7px 12px', background: '#0d1520',
+          fontFamily: 'system-ui, sans-serif',
+        }}
+      >
+        <span aria-hidden style={{ fontSize: 12, opacity: 0.7 }}>⠿</span>
+        <span style={{ fontSize: 11.5, fontWeight: 700, color: 'rgba(255,255,255,0.9)', fontFamily: 'monospace' }}>
+          pathworks-hub-clipboard
+        </span>
+        <button onClick={onClose} title="schließen" style={{
+          marginLeft: 'auto', cursor: 'pointer', border: '1px solid #2a3a50',
+          background: 'transparent', color: 'rgba(255,255,255,0.7)', borderRadius: 5,
+          fontSize: 12, padding: '1px 7px',
+        }}>✕</button>
+      </div>
+      <div style={{ overflowY: 'auto', padding: '12px 14px 16px' }}>
+        <PathworksHubClipboard />
       </div>
     </div>
   );

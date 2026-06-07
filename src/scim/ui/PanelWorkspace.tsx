@@ -125,8 +125,11 @@ function TabBar({
   );
 }
 
-// Schauglas-Verlauf (Felder/Grenzen) als CSS — identisch zur P01-Logik
-// (Farbe je Feld an dessen Mitte, unten = Last 0 → „to top").
+const NAV_BG = '#0d1520';   // Navigator-Hintergrund — der Verlauf startet damit.
+
+// Schauglas-Verlauf (Felder/Grenzen) als CSS — horizontal (links→rechts), deckend.
+// Beginnt mit der Navigator-Hintergrundfarbe (links), geht dann in die Schauglas-
+// Farben über (Feldmitten wie P01, in das Band 30 %→100 % gelegt).
 function headerGradientCss(stops: string[], borders: number[]): string {
   const n = stops.length;
   const center = (i: number) => {
@@ -134,10 +137,11 @@ function headerGradientCss(stops: string[], borders: number[]): string {
     const hi = i === n - 1 ? 1 : borders[i];
     return (lo + hi) / 2;
   };
-  const parts = [`${stops[0]} 0%`];
-  for (let i = 0; i < n; i++) parts.push(`${stops[i]} ${(center(i) * 100).toFixed(2)}%`);
+  const map = (t: number) => 30 + 70 * t;            // Load 0..1 → Headerbreite 30..100 %
+  const parts = [`${NAV_BG} 0%`, `${NAV_BG} 18%`, `${stops[0]} 30%`];
+  for (let i = 0; i < n; i++) parts.push(`${stops[i]} ${map(center(i)).toFixed(1)}%`);
   parts.push(`${stops[n - 1]} 100%`);
-  return `linear-gradient(to top, ${parts.join(', ')})`;
+  return `linear-gradient(to right, ${parts.join(', ')})`;
 }
 
 // Kurz-Code im Gradientenblock: nummerierte Panels = ihre ID; die Drehscheibe
@@ -197,25 +201,22 @@ function PanelHeader({ id, title, subtitle, icon, dimmed }: { id: string; title:
   const variant = headerVariant(id);
   const code = headerCode(id);
 
-  // ── Region-Dashboard: Schauglas-Verlauf, läuft horizontal ins Weiß aus ──
+  // ── Region-Dashboard: Schauglas-Verlauf, horizontal & deckend, beginnt mit Navigator-BG ──
   if (variant === 'region') {
     const grad = headerGradientCss(cs.stops, cs.borders);
-    const topColor = cs.stops[cs.stops.length - 1];
-    const fade = 'linear-gradient(to right, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.92) 14%, rgba(0,0,0,0.5) 24%, rgba(0,0,0,0) 34%)';
     return (
       <div style={{
-        position: 'relative', borderBottom: '1px solid #e2e8f0', background: '#fff',
+        position: 'relative', borderBottom: '1px solid #1a2535', background: grad,
         flexShrink: 0, overflow: 'hidden', opacity: dimmed ? 0.65 : 1,
       }}>
-        <div aria-hidden style={{ position: 'absolute', inset: 0, background: grad, WebkitMaskImage: fade, maskImage: fade }} />
-        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 14, padding: '11px 20px', fontFamily: 'system-ui, sans-serif' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '11px 20px', fontFamily: 'system-ui, sans-serif' }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 48, gap: 2 }}>
-            {icon && <span style={{ fontSize: 22, lineHeight: 1, color: '#fff', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.45))' }}>{icon}</span>}
-            {code && <span style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: 12.5, letterSpacing: '0.04em', color: '#fff', textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}>{code}</span>}
+            {icon && <span style={{ fontSize: 22, lineHeight: 1, color: '#fff', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.55))' }}>{icon}</span>}
+            {code && <span style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: 12.5, letterSpacing: '0.04em', color: '#fff', textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}>{code}</span>}
           </div>
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 15.5, fontWeight: 700, letterSpacing: '-0.01em', color: topColor }}>{title}</div>
-            {subtitle && <div style={{ fontSize: 12, color: '#5a6b80', marginTop: 2 }}>{subtitle}</div>}
+            <div style={{ fontSize: 15.5, fontWeight: 700, letterSpacing: '-0.01em', color: '#fff', textShadow: '0 1px 3px rgba(0,0,0,0.55)' }}>{title}</div>
+            {subtitle && <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)', marginTop: 2, textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}>{subtitle}</div>}
           </div>
         </div>
       </div>
