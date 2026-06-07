@@ -594,6 +594,32 @@ export default {
       return json({ roles });
     }
 
+    // ── PUT /api/regio-assets/:id — Region-/Rep-Icon in die Cloud (auth) ──────
+    // regio-assets: gepflegte reg-*/rep-*-Icons, vom Editor publiziert, vom
+    // Launcher/Collector per id gezogen (ersetzt den Legacy-Bundle-Fallback).
+    if (request.method === 'PUT' && pathname.match(/^\/api\/regio-assets\/[^/]+$/)) {
+      if (!checkAuth(request, env)) return err('Unauthorized', 401);
+      const id = pathname.split('/')[3];
+      if (!KEY_PATTERN.test(id)) return err('Invalid id', 422);
+      const svg = await request.text();
+      if (!svg || svg.length > 200_000) return err('Empty or too large SVG', 422);
+      await env.PACKAGES.put(`regio-assets/${id}.svg`, svg, {
+        httpMetadata: { contentType: 'image/svg+xml', cacheControl: 'public, max-age=300' },
+      });
+      return json({ ok: true, id });
+    }
+
+    // ── GET /api/regio-assets/:id — Icon (read-only, kein Key) ────────────────
+    if (request.method === 'GET' && pathname.match(/^\/api\/regio-assets\/[^/]+$/)) {
+      const id = pathname.split('/')[3];
+      if (!KEY_PATTERN.test(id)) return err('Invalid id', 422);
+      const obj = await env.PACKAGES.get(`regio-assets/${id}.svg`);
+      if (!obj) return err('Not found', 404);
+      return new Response(await obj.text(), {
+        headers: { ...CORS_HEADERS, 'Content-Type': 'image/svg+xml', 'Cache-Control': 'public, max-age=300' },
+      });
+    }
+
     return err('Not found', 404);
   },
 } satisfies ExportedHandler<Env>;

@@ -31,6 +31,17 @@ export async function publishOriginBundle(repId: string, bundle: unknown) {
   return res.json() as Promise<{ ok: boolean; repId: string; bytes: number; uploadedAt: string }>;
 }
 
+/** regio-asset (Region-/Rep-Icon) in die Cloud (R2) publizieren — für Launcher/Collector. */
+export async function publishRegioAsset(id: string, svg: string) {
+  const res = await fetch(`${WORKER_URL}/api/regio-assets/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'image/svg+xml', 'X-Scim-Key': UPLOAD_API_KEY ?? '' },
+    body: svg,
+  });
+  if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
+  return res.json() as Promise<{ ok: boolean; id: string }>;
+}
+
 /** Die App „klopft": Presence registrieren + ersten Snapshot zurückbekommen. */
 export async function knockPresence(repId: string, t?: number) {
   const qs = t != null ? `?t=${Math.round(t)}` : '';
