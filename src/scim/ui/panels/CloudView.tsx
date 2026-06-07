@@ -60,6 +60,18 @@ export function CloudOverview() {
             Die {REGIO_ASSETS.length} Region-/Rep-Icons (reg-*/rep-*) in die Cloud (R2) publizieren →
             Launcher/Collector ziehen sie per id (statt Legacy-Fallback).
           </p>
+          {/* Vorschau: die zu publizierenden Icons (svg_cleaned) — prüfen VOR dem Hochladen. */}
+          <style>{`.regio-asset svg { width: 100%; height: auto; max-height: 44px; display: block; }`}</style>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, margin: '2px 0 12px' }}>
+            {REGIO_ASSETS.map((a) => (
+              <div key={a.id} style={{ width: 84 }}>
+                <div style={{ width: 84, height: 64, border: '1px solid #e2e8f0', borderRadius: 8, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 8, boxSizing: 'border-box' }}>
+                  <div className="regio-asset" style={{ width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }} dangerouslySetInnerHTML={{ __html: a.svg_cleaned }} />
+                </div>
+                <div style={{ fontSize: 9, color: '#718096', fontFamily: 'monospace', marginTop: 3, textAlign: 'center', wordBreak: 'break-all' }}>{a.id}</div>
+              </div>
+            ))}
+          </div>
           <button
             onClick={publishAssets}
             disabled={!configured || phase === 'running'}
