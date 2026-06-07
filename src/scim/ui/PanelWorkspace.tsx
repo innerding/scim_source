@@ -3,7 +3,6 @@ import { useRepresentationContext } from '../../runtime/repContext';
 import { useAuftraggeberRep } from '../../runtime/useAuftraggeberRep';
 import type { TabId } from './panelRegistry';
 import {
-  KOSMOLOGIE_IDS,
   PANEL_REGISTRY, SYSTEM_DESCRIPTOR, AI_INTERFACE_DESCRIPTOR, IPILLS_DESCRIPTOR, CLOUD_DESCRIPTOR,
   RUNTIME_BUILDER_REGISTRY, VERSIONEN_REGISTRY, WORKSPACE_DESCRIPTOR,
   DRAWER_DESCRIPTOR, CATALOG_DESCRIPTOR,
@@ -158,7 +157,9 @@ function headerCode(id: string): string {
 //  yellow : Müllwagen (ungenutzte Panels) — grell-gelb.
 //  white  : operator-only / vom Analyst NICHT sichtbar (Substrat) — invertiert weiß.
 //  black  : analyst-sichtbar (Mond · Transmitter · Komposit · Cloud) — schwarz.
-const REGION_DASHBOARD_IDS = new Set(['P01', 'P02', 'workspace', 'geometry_editor', 'catalog']);
+// Die 4 Regio-Dashboard-Panels = die 4 Tetraeder-Faces (Thresholds löst Publishing ab):
+// Thresholds(P01) · Pathworks(workspace) · Drawer(geometry_editor) · Katalog(catalog).
+const REGION_DASHBOARD_IDS = new Set(['P01', 'workspace', 'geometry_editor', 'catalog']);
 const BROCKEN_IDS = new Set(['P05']);
 const MUELL_IDS = new Set(['P03', 'P10', 'P12', 'P13', 'P14', 'R03', 'R04', 'R05', 'R06', 'R07', 'R08']);
 const OPERATOR_ONLY_IDS = new Set(['ai_interface', 'ipills', 'system']);   // Substrat
@@ -182,7 +183,7 @@ const SOLID_HEADER: Record<Exclude<HeaderVariant, 'region'>, {
   green:  { bg: '#33ff66', fg: '#06210d',                sub: '#0c4a1f',                chipBg: 'rgba(0,0,0,0.14)',      chipFg: '#06210d',                border: '#1fd94c' },
 };
 
-function PanelHeader({ id, title, subtitle, icon, dimmed }: { id: string; title: string; subtitle: string; icon?: string; dimmed?: boolean }) {
+function PanelHeader({ id, title, subtitle, icon }: { id: string; title: string; subtitle: string; icon?: string }) {
   // Header-Farbe nach Panel-Kategorie (headerVariant). Region-Dashboard = Lila→Weiß
   // (Icon+Kürzel mittig, Titel schwarz rechts); solide Varianten je Kategorie.
   const variant = headerVariant(id);
@@ -216,11 +217,12 @@ function PanelHeader({ id, title, subtitle, icon, dimmed }: { id: string; title:
   }
 
   // ── Solide Varianten: schwarz (analyst) · weiß (operator-only) · gelb (Müll) · grün (Brocken) ──
+  // Kein Dimmen mehr (Transparenz-Relikt entfernt) → Schwarz bleibt schwarz.
   const p = SOLID_HEADER[variant];
   return (
     <div style={{
       position: 'relative', borderBottom: `1px solid ${p.border}`, background: p.bg,
-      flexShrink: 0, overflow: 'hidden', opacity: dimmed ? 0.65 : 1,
+      flexShrink: 0, overflow: 'hidden',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '11px 20px', fontFamily: 'system-ui, sans-serif' }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 48, gap: 3 }}>
@@ -1408,7 +1410,7 @@ export default function PanelWorkspace({ activeId, activeTab, onTabChange, resul
       overflow: 'hidden',
       minWidth: 0,
     }}>
-      <PanelHeader id={entry.id} title={entry.label} subtitle={subtitle} icon={(entry as { icon?: string }).icon} dimmed={KOSMOLOGIE_IDS.has(activeId)} />
+      <PanelHeader id={entry.id} title={entry.label} subtitle={subtitle} icon={(entry as { icon?: string }).icon} />
       {/* P09 (Origin-Capsuler) rendert die Sampling-Pipeline als Vergleich — ohne Tabs. */}
       {!['P01', 'P02'].includes(activeId) && <TabBar tabs={tabs} active={safeTab} onSelect={onTabChange} />}
       {/* Geometry-Editor braucht volle Hoehe ohne Padding */}
