@@ -53,9 +53,10 @@ function tilt(p: { x: number; y: number; z: number }) {
 
 // Position-basiertes Panel-Mapping fuer die 3 sichtbaren 2D-Regionen — die
 // Heimat des Operators (vom Row-Open/Close entbunden). Upper (oben) = AI-Interface,
-// Lower-Left = Operator-Zonen (P05), Lower-Right = System.
+// Lower-Left = i-Pills (Builder-Infos), Lower-Right = System. (P05 Operator-Zonen ist
+// herausgelöst und sitzt jetzt als Brocken im Grund / NavMetaSpace.)
 const REGION_UPPER_PANEL = 'ai_interface';
-const REGION_LOWER_LEFT_PANEL = 'P05';
+const REGION_LOWER_LEFT_PANEL = 'ipills';
 const REGION_LOWER_RIGHT_PANEL = 'system';
 
 // Der Voll-Frontal-Winkel pro Face (in Grad). Empirisch: die Face zeigt
@@ -252,7 +253,7 @@ export default function NavDepthTetraeder({ activeId, onFaceClick, size = 208 }:
     const backTop  = tops[backIdx];
     return [
       { vertices: [leftTop, rightTop, backTop], panelId: REGION_UPPER_PANEL,       label: 'AI-Interface (oben)' },
-      { vertices: [apex,    leftTop,  backTop], panelId: REGION_LOWER_LEFT_PANEL,  label: 'Operator-Zonen (links)' },
+      { vertices: [apex,    leftTop,  backTop], panelId: REGION_LOWER_LEFT_PANEL,  label: 'i-Pills (links)' },
       { vertices: [apex,    rightTop, backTop], panelId: REGION_LOWER_RIGHT_PANEL, label: 'System (rechts)' },
     ];
   })();

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { StatusColor } from './panelRegistry';
 import {
   KOSMOLOGIE_IDS,
-  PANEL_REGISTRY, SYSTEM_DESCRIPTOR, AI_INTERFACE_DESCRIPTOR,
+  PANEL_REGISTRY, SYSTEM_DESCRIPTOR, AI_INTERFACE_DESCRIPTOR, IPILLS_DESCRIPTOR,
   RUNTIME_BUILDER_REGISTRY, VERSIONEN_REGISTRY, WORKSPACE_DESCRIPTOR,
   DRAWER_DESCRIPTOR, CATALOG_DESCRIPTOR,
 } from './panelRegistry';
@@ -97,9 +97,9 @@ const COSMO_GROUPS: { label: string; ids: string[]; sub?: string }[] = [
   { label: 'Mond', ids: ['V03', 'V01', 'V02'], sub: 'url: diesenpark.com' },
   { label: 'Transmitter', ids: ['P06', 'P01', 'P04', 'P02'] },
   { label: 'Komposit-Tetraeder', ids: ['P11', 'P07', 'P08', 'P09', 'workspace', 'geometry_editor', 'catalog'] },
-  { label: 'Substrat', ids: ['ai_interface', 'P05', 'system'] },
-  // Grund (Brocken/Meta-Space): R01 ist hierher gesunken (klickbarer Brocken).
-  { label: 'Grund', ids: ['R01'] },
+  { label: 'Substrat', ids: ['ai_interface', 'ipills', 'system'] },
+  // Grund (Brocken/Meta-Space): R01 + P05 (Operator-Zonen, herausgelöst) als klickbare Brocken.
+  { label: 'Grund', ids: ['R01', 'P05'] },
 ];
 // Der Rest — was bislang keinen Platz fand (flach, mit Icons).
 const REST_IDS = ['P03', 'P10', 'P12', 'P13', 'P14', 'R02', 'R03', 'R04', 'R05', 'R06', 'R07', 'R08'];
@@ -107,7 +107,7 @@ const REST_IDS = ['P03', 'P10', 'P12', 'P13', 'P14', 'R02', 'R03', 'R04', 'R05',
 function descById(id: string): { id: string; icon: string; label: string } | null {
   const p = PANEL_REGISTRY.find((x) => x.id === id);
   if (p) return { id, icon: p.icon, label: p.label };
-  for (const d of [WORKSPACE_DESCRIPTOR, DRAWER_DESCRIPTOR, CATALOG_DESCRIPTOR, SYSTEM_DESCRIPTOR, AI_INTERFACE_DESCRIPTOR]) {
+  for (const d of [WORKSPACE_DESCRIPTOR, DRAWER_DESCRIPTOR, CATALOG_DESCRIPTOR, SYSTEM_DESCRIPTOR, AI_INTERFACE_DESCRIPTOR, IPILLS_DESCRIPTOR]) {
     if (d.id === id) return { id, icon: d.icon, label: d.label };
   }
   const r = RUNTIME_BUILDER_REGISTRY.find((x) => x.id === id);

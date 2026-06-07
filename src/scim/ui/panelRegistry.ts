@@ -60,6 +60,14 @@ export interface AiInterfaceDescriptor {
   tabs: TabDescriptor[];
 }
 
+export interface IPillsDescriptor {
+  kind: 'ipills';
+  id: 'ipills';
+  label: string;
+  icon: string;
+  tabs: TabDescriptor[];
+}
+
 const STANDARD_TABS: TabDescriptor[] = [
   { id: 'input',      label: 'Eingabe',    icon: '✎' },
   { id: 'result',     label: 'Ergebnis',   icon: '◎' },
@@ -515,6 +523,14 @@ export const SYSTEM_DESCRIPTOR: SystemDescriptor = {
     { id: 'leistungsblatt', label: 'Leistungsblatt',  icon: '◈' },
     { id: 'raw',            label: 'Rohdaten',        icon: '{}' },
   ],
+};
+
+export const IPILLS_DESCRIPTOR: IPillsDescriptor = {
+  kind: 'ipills',
+  id: 'ipills',
+  label: 'i-Pills',
+  icon: 'ⓘ',
+  tabs: [{ id: 'input', label: 'Übersicht', icon: 'ⓘ' }],
 };
 
 export const AI_INTERFACE_DESCRIPTOR: AiInterfaceDescriptor = {

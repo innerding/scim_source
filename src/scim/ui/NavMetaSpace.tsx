@@ -30,7 +30,8 @@ const ROCKS: Rock[] = [
   { cx: 92, cy: 11, r: 4.8, fill: '#232d3b', shape: 3 },
   { cx: 60, cy: 23, r: 7.5, fill: '#1f2835', shape: 0 },
   { cx: 104, cy: 29, r: 6.6, fill: '#1f2835', shape: 4 },
-  { cx: 22, cy: 39, r: 9.5, fill: '#1a2330', shape: 2 },
+  // Linker Brocken = P05 (Operator-Zonen, aus dem Substrat herausgelöst). Klickbar.
+  { cx: 22, cy: 39, r: 9.5, fill: '#1a2330', shape: 2, pick: 'P05', label: 'Operator-Zonen (P05)' },
   // Vorderster Brocken = R01 (die geräteseitige Runtime Shell, in den Grund gesunken). Klickbar.
   { cx: 74, cy: 46, r: 11, fill: '#18212d', shape: 1, pick: 'R01', label: 'Runtime Shell (R01)' },
 ];

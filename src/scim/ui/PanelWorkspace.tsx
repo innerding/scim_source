@@ -4,7 +4,7 @@ import { useAuftraggeberRep } from '../../runtime/useAuftraggeberRep';
 import type { TabId } from './panelRegistry';
 import {
   KOSMOLOGIE_IDS,
-  PANEL_REGISTRY, SYSTEM_DESCRIPTOR, AI_INTERFACE_DESCRIPTOR,
+  PANEL_REGISTRY, SYSTEM_DESCRIPTOR, AI_INTERFACE_DESCRIPTOR, IPILLS_DESCRIPTOR,
   RUNTIME_BUILDER_REGISTRY, VERSIONEN_REGISTRY, WORKSPACE_DESCRIPTOR,
   DRAWER_DESCRIPTOR, CATALOG_DESCRIPTOR,
 } from './panelRegistry';
@@ -23,6 +23,7 @@ import { BoundaryView, WegnetzCompareView, IntroView, RingSvg } from './panels/S
 import HighShellIconAssets from './panels/HighShellIconAssets';
 import ShellStudio from './panels/ShellStudio';
 import RuntimeShellView from './panels/RuntimeShellView';
+import IPillsPanel from './panels/IPillsPanel';
 import TransmissionView from './panels/TransmissionView';
 import ThresholdsView from './panels/ThresholdsView';
 import PanelResult from './panels/PanelResult';
@@ -1082,6 +1083,9 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
     return <AiInterfacePanel activeTab={activeTab} />;
   }
 
+  // i-Pills: zentrale Builder-Info-Übersicht (über das Substrat-Feld erreichbar).
+  if (activeId === 'ipills') return <IPillsPanel />;
+
   // R01 Runtime Shell: echte Erklär-/Aussichts-Ansicht statt Stub.
   if (activeId === 'R01') return <RuntimeShellView />;
   const runtimeModule = RUNTIME_BUILDER_REGISTRY.find((m) => m.id === activeId);
@@ -1284,6 +1288,7 @@ export default function PanelWorkspace({ activeId, activeTab, onTabChange, resul
     activeId === CATALOG_DESCRIPTOR.id          ? CATALOG_DESCRIPTOR :
     activeId === SYSTEM_DESCRIPTOR.id           ? SYSTEM_DESCRIPTOR :
     activeId === AI_INTERFACE_DESCRIPTOR.id ? AI_INTERFACE_DESCRIPTOR :
+    activeId === IPILLS_DESCRIPTOR.id ? IPILLS_DESCRIPTOR :
     RUNTIME_BUILDER_REGISTRY.find((m) => m.id === activeId) ??
     VERSIONEN_REGISTRY.find((v) => v.id === activeId) ??
     PANEL_REGISTRY.find((p) => p.id === activeId);
