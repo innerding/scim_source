@@ -18,7 +18,7 @@ const ROLE_META: Record<string, { label: string; color: string }> = {
   operator: { label: 'Operator', color: '#48bb78' },
   analyst:  { label: 'Analyst',  color: '#4299e1' },
 };
-const EDITOR_ROLE_ORDER = ['operator', 'analyst'];
+const EDITOR_ROLE_ORDER: Role[] = ['operator', 'analyst'];
 
 export default function Scim3Footer({ realRole, preview, onPreviewChange }: {
   realRole: Role;
@@ -35,6 +35,7 @@ export default function Scim3Footer({ realRole, preview, onPreviewChange }: {
   const [errored, setErrored] = useState(false);
   const [editorPresence, setEditorPresence] = useState<EditorPresence | null>(null);
   const [editorErrored, setEditorErrored] = useState(false);
+  const [roleMenuOpen, setRoleMenuOpen] = useState(false);   // Drop-up: Ansicht-Rolle wählen
 
   useEffect(() => {
     if (!configured) return;
@@ -102,48 +103,71 @@ export default function Scim3Footer({ realRole, preview, onPreviewChange }: {
             // Name: eigene Rolle = eigener Login-Name; andere = aus dem Worker.
             const nm = r === role ? userName : (rp?.name ?? '');
             const dur = rp?.durationMin ?? 0;
+            const detail = nm ? <span style={{ color: '#718096' }}> · {nm}{dur > 0 ? ` · ${dur} min` : ''}</span> : null;
+
+            // Eigene Rolle + Operator → klickbar: Drop-up zur Ansicht-Rollenwahl.
+            // (Operator darf jede Rolle annehmen; Presence bleibt echt = Operator.)
+            if (r === role && realRole === 'operator') {
+              return (
+                <span key={r} style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
+                  <button
+                    onClick={() => setRoleMenuOpen((o) => !o)}
+                    title="Ansicht-Rolle wählen (hinauf/hinunter)"
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 5, cursor: 'pointer',
+                      background: 'transparent', border: 'none', font: 'inherit', color: '#a0aec0', padding: 0,
+                    }}
+                  >
+                    <span style={{ color: m.color }}>●</span>
+                    {m.label}{detail}
+                    {preview && (
+                      <span style={{ color: '#dd6b20', fontWeight: 700 }}> · 👁 {(ROLE_META[preview]?.label ?? preview)}-Sicht</span>
+                    )}
+                    <span style={{ color: '#4a5568' }}> ▴</span>
+                  </button>
+                  {roleMenuOpen && (
+                    <>
+                      <div onClick={() => setRoleMenuOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 40 }} />
+                      <div style={{
+                        position: 'absolute', bottom: '100%', left: 0, marginBottom: 8, zIndex: 50,
+                        background: '#16202e', border: '1px solid #2d3748', borderRadius: 6, padding: 4,
+                        minWidth: 150, boxShadow: '0 -8px 24px rgba(0,0,0,0.45)',
+                      }}>
+                        <div style={{ fontSize: 9, color: '#718096', padding: '2px 8px 4px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Ansicht als …</div>
+                        {EDITOR_ROLE_ORDER.map((rr) => {
+                          const rm = ROLE_META[rr] ?? { label: rr, color: '#48bb78' };
+                          const active = (preview ?? realRole) === rr;
+                          return (
+                            <button
+                              key={rr}
+                              onClick={() => { onPreviewChange(rr === realRole ? null : rr); setRoleMenuOpen(false); }}
+                              style={{
+                                display: 'flex', alignItems: 'center', gap: 7, width: '100%', textAlign: 'left',
+                                cursor: 'pointer', background: active ? '#1e3a5f' : 'transparent', border: 'none',
+                                borderRadius: 4, color: '#cbd5e0', font: 'inherit', fontSize: 11, padding: '4px 8px',
+                              }}
+                            >
+                              <span style={{ color: rm.color }}>●</span>
+                              {rm.label}{rr === realRole ? ' (voll)' : ''}
+                              <span style={{ marginLeft: 'auto', color: '#63b3ed' }}>{active ? '✓' : ''}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+                </span>
+              );
+            }
             return (
               <span key={r} style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
                 <span style={{ color: m.color }}>●</span>
-                {m.label}
-                {/* Dauer-Anzeige ist an einen Namen gekoppelt: ohne Namen nichts. */}
-                {nm && (
-                  <span style={{ color: '#718096' }}>· {nm}{dur > 0 ? ` · ${dur} min` : ''}</span>
-                )}
+                {m.label}{detail}
               </span>
             );
           })}
         {(!configured || editorErrored) && <span style={{ color: '#718096', fontSize: 10 }}>· lokal</span>}
       </span>
-      {/* Modul C: „Als Analyst ansehen" — lokaler Rollen-Override (operator-only,
-          ohne Logout). Vorschau-Zustand amber + auffällig (Rückweg immer sichtbar). */}
-      {realRole === 'operator' && (
-        preview ? (
-          <button
-            onClick={() => onPreviewChange(null)}
-            title="Zurück zur Operator-Ansicht"
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: 5, cursor: 'pointer',
-              background: '#dd6b20', border: 'none', borderRadius: 4, font: 'inherit',
-              fontSize: 10.5, fontWeight: 700, color: '#fff', padding: '2px 9px',
-            }}
-          >
-            👁 Analyst-Vorschau · zurück zu Operator
-          </button>
-        ) : (
-          <button
-            onClick={() => onPreviewChange('analyst')}
-            title="Lokal in die Analyst-Ansicht wechseln (ohne Logout)"
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: 5, cursor: 'pointer',
-              background: 'transparent', border: '1px solid #2d3748', borderRadius: 4,
-              font: 'inherit', fontSize: 10, color: '#718096', padding: '1px 7px',
-            }}
-          >
-            👁 als Analyst ansehen
-          </button>
-        )
-      )}
       <button
         onClick={() => goStation('V03', 't1')}
         title="Publishing-Monitor öffnen (V03 · Presence-Origin)"
