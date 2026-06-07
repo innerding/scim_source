@@ -70,6 +70,27 @@ export async function fetchPresence(repId: string): Promise<PresenceStatus> {
   return res.json() as Promise<PresenceStatus>;
 }
 
+// ── Editor-Presence (Mehrbenutzer) ──────────────────────────────────────────
+export type EditorRolePresence = { present: boolean; lastSeen: string | null; durationMin: number };
+export interface EditorPresence { roles: Record<string, EditorRolePresence> }
+
+/** Heartbeat: die eigene Editor-Rolle als „im System" melden. */
+export async function postEditorPresence(role: string): Promise<void> {
+  const res = await fetch(`${WORKER_URL}/api/editor/presence`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ role }),
+  });
+  if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
+}
+
+/** Welche Editor-Rollen sind gerade im System (read-only). */
+export async function fetchEditorPresence(): Promise<EditorPresence> {
+  const res = await fetch(`${WORKER_URL}/api/editor/presence`);
+  if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
+  return res.json() as Promise<EditorPresence>;
+}
+
 /** Aktuellen Snapshot ziehen (presence-gegated; 425 wenn kalt). */
 export async function fetchAnthem(repId: string, t?: number) {
   const qs = t != null ? `?t=${Math.round(t)}` : '';

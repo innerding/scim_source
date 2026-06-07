@@ -7,9 +7,17 @@ import { useContext, useEffect, useState } from 'react';
 import { RoleContext } from './RoleContext';
 import { useWorkspaceNav } from './workspaceNav';
 import { useAuftraggeberRep } from '../../runtime/useAuftraggeberRep';
-import { fetchPresence, anthemReadConfigured, type PresenceStatus } from '../../runtime/anthemApi';
+import { fetchPresence, anthemReadConfigured, postEditorPresence, fetchEditorPresence, type PresenceStatus, type EditorPresence } from '../../runtime/anthemApi';
 
 const POLL_MS = 15000;
+const HEARTBEAT_MS = 30000;
+
+// Editor-Rollen — Anzeige + Farbe (Operator grün · Analyst blau).
+const ROLE_META: Record<string, { label: string; color: string }> = {
+  operator: { label: 'Operator', color: '#48bb78' },
+  analyst:  { label: 'Analyst',  color: '#4299e1' },
+};
+const EDITOR_ROLE_ORDER = ['operator', 'analyst'];
 
 export default function Scim3Footer() {
   const role = useContext(RoleContext);
@@ -18,6 +26,8 @@ export default function Scim3Footer() {
   const configured = anthemReadConfigured();
   const [status, setStatus] = useState<PresenceStatus | null>(null);
   const [errored, setErrored] = useState(false);
+  const [editorPresence, setEditorPresence] = useState<EditorPresence | null>(null);
+  const [editorErrored, setEditorErrored] = useState(false);
 
   useEffect(() => {
     if (!configured) return;
@@ -31,6 +41,30 @@ export default function Scim3Footer() {
     const id = setInterval(tick, POLL_MS);
     return () => { alive = false; clearInterval(id); };
   }, [rep.id, configured]);
+
+  // Heartbeat: eigene Rolle als „im System" melden (Mehrbenutzer-Presence).
+  useEffect(() => {
+    if (!configured || !role) return;
+    let alive = true;
+    const beat = () => { if (alive) postEditorPresence(role).catch(() => {}); };
+    beat();
+    const id = setInterval(beat, HEARTBEAT_MS);
+    return () => { alive = false; clearInterval(id); };
+  }, [configured, role]);
+
+  // Poll: welche Editor-Rollen sind gerade im System.
+  useEffect(() => {
+    if (!configured) return;
+    let alive = true;
+    const tick = () => {
+      fetchEditorPresence()
+        .then((e) => { if (alive) { setEditorPresence(e); setEditorErrored(false); } })
+        .catch(() => { if (alive) setEditorErrored(true); });
+    };
+    tick();
+    const id = setInterval(tick, POLL_MS);
+    return () => { alive = false; clearInterval(id); };
+  }, [configured]);
 
   const present = status?.present ?? false;
   const t = status?.lastSeen ? new Date(status.lastSeen) : null;
@@ -50,9 +84,21 @@ export default function Scim3Footer() {
       fontFamily: 'system-ui, sans-serif', fontSize: 11, color: '#a0aec0', userSelect: 'none',
     }}>
       <span style={{ fontWeight: 700, letterSpacing: 0.5, color: '#cbd5e0' }}>SCIM3</span>
-      <span title="Operator ist eingeloggt">
-        <span style={{ color: role ? '#48bb78' : '#718096' }}>●</span>{' '}
-        {role ? 'Operator online' : 'kein Operator'}
+      {/* Mehrbenutzer-Presence: jede Editor-Rolle, die gerade im System ist (eigene
+          immer dabei). Operator grün · Analyst blau. */}
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 12 }} title="Editor-Rollen im System">
+        {EDITOR_ROLE_ORDER
+          .filter((r) => r === role || (editorPresence?.roles[r]?.present ?? false))
+          .map((r) => {
+            const m = ROLE_META[r] ?? { label: r, color: '#48bb78' };
+            return (
+              <span key={r} style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ color: m.color }}>●</span>
+                {m.label}{r === role ? ' (du)' : ''}
+              </span>
+            );
+          })}
+        {(!configured || editorErrored) && <span style={{ color: '#718096', fontSize: 10 }}>· lokal</span>}
       </span>
       <button
         onClick={() => goStation('V03', 't1')}

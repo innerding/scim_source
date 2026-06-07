@@ -72,6 +72,20 @@ function sessionDurationMin(p: PresenceRec): number {
   return Math.max(0, Math.round((Date.parse(p.lastSeen) - Date.parse(p.firstSeen)) / 60000));
 }
 
+// Editor-Presence (Mehrbenutzer): welche Editor-ROLLEN sind gerade im System.
+// Eigener Schlüssel je Rolle, kurzes TTL-Fenster (aktive Sitzung, Heartbeat ~30 s).
+const EDITOR_PRESENCE_TTL_MS = 90 * 1000; // 90 s
+const EDITOR_ROLES = ['operator', 'analyst'] as const;
+
+async function readEditorPresence(env: Env, role: string): Promise<PresenceRec | null> {
+  const obj = await env.PACKAGES.get(`presence/editor/${role}.json`);
+  if (!obj) return null;
+  return await obj.json() as PresenceRec;
+}
+function isWarmEditor(p: PresenceRec | null): boolean {
+  return !!p && (Date.now() - Date.parse(p.lastSeen)) <= EDITOR_PRESENCE_TTL_MS;
+}
+
 export interface Env {
   PACKAGES: R2Bucket;
   DB: D1Database;
@@ -545,6 +559,35 @@ export default {
       const net = await readOriginMesh(env, repId);
       if (!net) return err(`No published origin-mesh for "${repId}".`, 404);
       return json(produceAnthem(net, repId, simMinFromUrl(url)));
+    }
+
+    // ── POST /api/editor/presence — Editor-Sitzung klopft (Rolle im Body) ─────
+    // Mehrbenutzer-Presence: registriert/erneuert die Anwesenheit EINER Editor-Rolle.
+    if (request.method === 'POST' && pathname === '/api/editor/presence') {
+      let body: { role?: string };
+      try { body = await request.json(); } catch { return err('Invalid JSON', 400); }
+      const role = String(body.role ?? '');
+      if (!EDITOR_ROLES.includes(role as typeof EDITOR_ROLES[number])) return err('Invalid role', 422);
+      const lastSeen = new Date().toISOString();
+      const prev = await readEditorPresence(env, role);
+      const continues = !!prev && prev.firstSeen != null && isWarmEditor(prev);
+      const firstSeen = continues ? prev!.firstSeen! : lastSeen;
+      await env.PACKAGES.put(`presence/editor/${role}.json`, JSON.stringify({ firstSeen, lastSeen }), {
+        httpMetadata: { contentType: 'application/json', cacheControl: 'no-store' },
+      });
+      return json({ ok: true, role, firstSeen, lastSeen });
+    }
+
+    // ── GET /api/editor/presence — wer ist im System (read-only, je Rolle) ────
+    if (request.method === 'GET' && pathname === '/api/editor/presence') {
+      const roles: Record<string, { present: boolean; lastSeen: string | null; durationMin: number }> = {};
+      for (const role of EDITOR_ROLES) {
+        const p = await readEditorPresence(env, role);
+        roles[role] = p
+          ? { present: isWarmEditor(p), lastSeen: p.lastSeen, durationMin: sessionDurationMin(p) }
+          : { present: false, lastSeen: null, durationMin: 0 };
+      }
+      return json({ roles });
     }
 
     return err('Not found', 404);
