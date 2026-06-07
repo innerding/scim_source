@@ -9,6 +9,7 @@
 import paperclip from './paperclip.svg?raw';
 import cloudFilled from './cosmo-cloud.svg?raw';
 import { PANEL_GLYPHS } from './panelGlyphs';
+import { GLYPH_ICONS } from './glyphIcons';
 
 export const SYSTEM_ICONS: Record<string, string> = {
   paperclip,           // Büroklammer — Pathworks (Hub)
@@ -17,6 +18,15 @@ export const SYSTEM_ICONS: Record<string, string> = {
 
 // Panel-Glyphen (strichbasiert, keyed nach Panel-ID) ins Set aufnehmen.
 export const PANEL_ICON_BY_ID: Record<string, string> = PANEL_GLYPHS;
+
+// Tab-/Unicode-Glyphen → SVG (keyed nach Glyph-Zeichen).
+export const GLYPH_ICON_SVG: Record<string, string> = GLYPH_ICONS;
+
+// Auflösung eines icon-Werts (Glyph oder sys:token) zu SVG-Markup, falls vorhanden.
+export function glyphIconSvg(icon: string | undefined): string | undefined {
+  if (!icon) return undefined;
+  return GLYPH_ICON_SVG[icon];
+}
 
 export const SYS_ICON_PREFIX = 'sys:';
 

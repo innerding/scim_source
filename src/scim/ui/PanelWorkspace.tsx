@@ -116,7 +116,7 @@ function TabBar({
               transition: 'color 0.1s',
             }}
           >
-            <span style={{ fontSize: 11 }}>{t.icon}</span>
+            <PanelIcon icon={t.icon} size={13} />
             {t.label}
           </button>
         );
@@ -1420,8 +1420,11 @@ export default function PanelWorkspace({ activeId, activeTab, onTabChange, resul
         <div style={{ flex: 1, minHeight: 0, position: 'relative', overflow: 'hidden' }}>
           {/* Großes, blasses Panel-Icon-Wasserzeichen auf der untersten Ebene */}
           {(entry as { icon?: string }).icon && (
-            <div aria-hidden style={{ position: 'absolute', right: -24, bottom: -56, zIndex: 0, pointerEvents: 'none', userSelect: 'none' }}>
-              <PanelIcon id={entry.id} icon={(entry as { icon?: string }).icon} size={320} color="#0d1520" opacity={0.035} />
+            <div aria-hidden style={{
+              position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+              width: '50%', aspectRatio: '1 / 1', zIndex: 0, pointerEvents: 'none', userSelect: 'none',
+            }}>
+              <PanelIcon id={entry.id} icon={(entry as { icon?: string }).icon} fill color="#0d1520" opacity={0.05} />
             </div>
           )}
           <div style={{ position: 'absolute', inset: 0, overflowY: 'auto', padding: 20, zIndex: 1 }}>
