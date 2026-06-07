@@ -11,6 +11,7 @@ import logoHexNaked from '../../assets/logo-hex-naked.svg';
 import { useRole } from './RoleContext';
 import type { Role } from './RoleContext';
 import RepresentBuildTetrahedron from './RepresentBuildTetrahedron';
+import RegioDashboardControl from './RegioDashboardControl';
 
 // ── Navigator-Tönung je Rolle ────────────────────────────────────────────────
 // Operator: wie bisher (dunkel) · Analyst: amber Grundton (dunkel) · Rep-Editor:
@@ -427,6 +428,25 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
     descById(id) && !(id === 'ai_interface' && role !== 'operator')).length, 0);
 
   const navTheme = NAV_THEMES[role] ?? NAV_THEMES.operator;
+
+  // Rep-Editor: reduzierter Navigator — NUR die SCIM-Kartography-Drehscheibe
+  // (Faces + Sicheln + Deko-Bögen). Alles andere (Mond · Cloud · Transmitter ·
+  // Substrat · Grund · Müllwagen · Visibility) ist tot + unsichtbar.
+  if (role === 'regio_editor') {
+    return (
+      <NavThemeContext.Provider value={navTheme}>
+        <nav style={{
+          width: 210, flexShrink: 0, background: navTheme.bg,
+          borderRight: `1px solid ${navTheme.border}`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '12px 8px', position: 'relative', transition: 'background 0.2s, border-color 0.2s',
+        }}>
+          <RegioDashboardControl activeId={activeId} onJumpTo={go} size={186} variant="light" arcsDeco />
+        </nav>
+      </NavThemeContext.Provider>
+    );
+  }
+
   return (
     <NavThemeContext.Provider value={navTheme}>
     <nav style={{
