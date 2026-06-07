@@ -13,8 +13,7 @@
 
 import React, { useMemo, useState } from 'react';
 import RepresentationWizard from './RepresentationWizard';
-import RepresentBuildTetrahedron from '../RepresentBuildTetrahedron';
-import type { RepresentBuildFace } from '../RepresentBuildTetrahedron';
+import RegioDashboardControl from '../RegioDashboardControl';
 import { parsePoiCatalog } from '../../poi-catalog/poiCatalog.parser';
 import { GEOMETRIES, REPRESENTATIONS } from '../../workspace/workspace.registry';
 import type { CatalogRef } from '../../workspace/workspace.types';
@@ -312,17 +311,6 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
     });
   }, []);
 
-  const onTetraFace = (f: RepresentBuildFace) => {
-    if (f === 'geometry_draw') onJumpTo('geometry_editor');
-    else if (f === 'catalog_magazination') onJumpTo('catalog');
-    else if (f === 'represent_organisation') onJumpTo('workspace');
-    else if (f === 'sensus_core_build') onJumpTo('P11');
-  };
-  const onTetraArc = (a: string) => {
-    if (a === 'system_adjust') onJumpTo('P01');
-    else if (a === 'regio_content') onJumpTo('P02');
-    else if (a === 'load_thresholds') onJumpTo('P09');
-  };
 
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 760 }}>
@@ -333,13 +321,7 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
         display: 'flex', gap: 18, alignItems: 'center',
       }}>
         <div style={{ flexShrink: 0, background: '#fff', padding: 8, borderRadius: 4 }}>
-          <RepresentBuildTetrahedron
-            activeFace="represent_organisation"
-            variant="light"
-            onFaceClick={onTetraFace}
-            onArcClick={onTetraArc}
-            size={80}
-          />
+          <RegioDashboardControl activeId="workspace" onJumpTo={onJumpTo} size={104} />
         </div>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 9, opacity: 0.65, fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.08em' }}>

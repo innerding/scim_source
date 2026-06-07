@@ -50,6 +50,10 @@ interface Props {
   //  - 'input': Schirme rotieren 60° im Uhrzeigersinn — der Apex-Spalt wandert
   //    weg vom Mond, die konkaven Schirme stehen empfangend.
   transmissionMode?: 'default' | 'input';
+  // Dashboard-Modus (Regio-Editor-Control): Bogensegmente weg, der Apex-Face
+  // „Sensus Core Publishing" wird zu Thresholds (Slider-Glyph), Netz füllt mehr
+  // Fläche (größere Faces). Sicheln bleiben (Zusatzfunktion).
+  dashboard?: boolean;
 }
 
 // ─── Geometrie ──────────────────────────────────────────────────────────────
@@ -295,6 +299,7 @@ export default function RepresentBuildTetrahedron({
   variant = 'dark',
   showLabels = false,
   transmissionMode = 'default',
+  dashboard = false,
 }: Props) {
   const isDark = variant === 'dark';
 
@@ -311,9 +316,10 @@ export default function RepresentBuildTetrahedron({
   const arcLabelInactive = isDark ? '#a0aec0' : '#4a5568';
   const arcLabelActive = '#fff';
 
-  // viewBox mit Padding fuer Bogen-Beschriftung
+  // viewBox: im Dashboard-Modus eng ums Netz (keine Bögen → größere Faces),
+  // sonst mit Padding für die Bogen-Beschriftung.
   const labelPadding = 14;
-  const totalRadius = R + ARC_THICKNESS / 2 + labelPadding;
+  const totalRadius = dashboard ? R + 4 : R + ARC_THICKNESS / 2 + labelPadding;
   const vb = -totalRadius - 2;
   const vbSize = 2 * (totalRadius + 2);
 
@@ -324,9 +330,8 @@ export default function RepresentBuildTetrahedron({
       viewBox={`${vb} ${vb} ${vbSize} ${vbSize}`}
       style={{ overflow: 'visible', display: 'block' }}
     >
-      {/* Bogensegmente — in einer rotierenden Gruppe gewrappt, damit der
-          Input-/Output-Schwenk smooth animiert. transform-box: view-box
-          verankert die Drehung um den SVG-Ursprung (Tetraeder-Zentrum). */}
+      {/* Bogensegmente — im Dashboard-Modus ausgeblendet (Thresholds ist dort ein Face). */}
+      {!dashboard && (
       <g
         style={{
           transformBox: 'view-box',
@@ -372,6 +377,7 @@ export default function RepresentBuildTetrahedron({
         );
       })}
       </g>
+      )}
 
       {/* Sicheln — bewusst AUSSERHALB der rotierenden Bogen-Gruppe: sie drehen
           beim Transmissions-Schwenk NICHT mit. Kreissegmente, klickbar. */}
@@ -412,6 +418,10 @@ export default function RepresentBuildTetrahedron({
         const strokeWidth = isActive ? 1.0 : 1;
         const opacity = isActive ? 1 : 0.85;
         const clickable = !isActive && !!onFaceClick;
+        // Dashboard: Apex „Sensus Core Publishing" → Thresholds (Slider-Glyph + Label).
+        const isApexThresholds = dashboard && f.id === 'sensus_core_build';
+        const glyphId = isApexThresholds ? 'system_adjust' : f.id;
+        const title = isApexThresholds ? 'Thresholds' : f.longLabel;
         return (
           <g
             key={f.id}
@@ -427,10 +437,10 @@ export default function RepresentBuildTetrahedron({
               opacity={opacity}
               className={isActive ? 'rb-active-tile' : undefined}
             >
-              <title>{f.longLabel}</title>
+              <title>{title}</title>
             </polygon>
             {showLabels && (
-              <TetraGlyph id={f.id} x={f.labelX} y={f.labelY} color={isActive ? triangleLabelActive : triangleLabelInactive} />
+              <TetraGlyph id={glyphId} x={f.labelX} y={f.labelY} color={isActive ? triangleLabelActive : triangleLabelInactive} />
             )}
           </g>
         );

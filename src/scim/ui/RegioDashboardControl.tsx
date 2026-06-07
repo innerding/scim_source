@@ -1,0 +1,48 @@
+// RegioDashboardControl — die Navigations-Drehscheibe der 4 Regio-Dashboard-Panels.
+// Basiert auf dem Represent-Build-Tetraeder im Dashboard-Modus (keine Bögen, größere
+// Faces, Apex = Thresholds statt Sensus-Core-Publishing). Sicheln bleiben (Zusatzfunktion).
+//
+// Face ↔ Panel:
+//   geometry_draw         ↔ geometry_editor (Drawer)
+//   catalog_magazination  ↔ catalog (Katalog)
+//   represent_organisation↔ workspace (Pathworks Hub)
+//   sensus_core_build     ↔ P01 (Thresholds)  ← im Dashboard als „Thresholds" beschriftet
+import RepresentBuildTetrahedron from './RepresentBuildTetrahedron';
+import type { RepresentBuildFace } from './RepresentBuildTetrahedron';
+
+const FACE_TO_PANEL: Record<RepresentBuildFace, string> = {
+  geometry_draw: 'geometry_editor',
+  catalog_magazination: 'catalog',
+  represent_organisation: 'workspace',
+  sensus_core_build: 'P01',
+};
+const PANEL_TO_FACE: Record<string, RepresentBuildFace> = {
+  geometry_editor: 'geometry_draw',
+  catalog: 'catalog_magazination',
+  workspace: 'represent_organisation',
+  P01: 'sensus_core_build',
+};
+
+export default function RegioDashboardControl({
+  activeId, onJumpTo, size = 116, variant = 'light',
+}: {
+  activeId: string;
+  onJumpTo: (panelId: string) => void;
+  size?: number;
+  variant?: 'dark' | 'light';
+}) {
+  const activeFace = PANEL_TO_FACE[activeId];
+  return (
+    <RepresentBuildTetrahedron
+      dashboard
+      showLabels
+      size={size}
+      variant={variant}
+      activeFace={activeFace}
+      onFaceClick={(f) => {
+        const panel = FACE_TO_PANEL[f];
+        if (panel) onJumpTo(panel);
+      }}
+    />
+  );
+}
