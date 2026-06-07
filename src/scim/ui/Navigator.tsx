@@ -84,7 +84,7 @@ function NavItem({
     >
       {/* Icon: System-Icon-SVG (sys:…) oder Unicode-Glyph, monochrom (erbt color) */}
       <span style={{ width: 32, textAlign: 'center', flexShrink: 0, display: 'inline-flex', justifyContent: 'center', ...dimStyle }}>
-        <PanelIcon icon={icon} size={23} />
+        <PanelIcon id={id} icon={icon} size={23} />
       </span>
       <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', ...dimStyle }}>
         {label}

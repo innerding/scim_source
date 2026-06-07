@@ -183,7 +183,7 @@ function PanelHeader({ id, title, subtitle, icon, dimmed }: { id: string; title:
           <div style={{ flex: 1 }} />
           {/* Mitte: Icon + Kürzel */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, flexShrink: 0 }}>
-            {icon && <PanelIcon icon={icon} size={22} color="#3b1d6e" />}
+            {icon && <PanelIcon id={id} icon={icon} size={22} color="#3b1d6e" />}
             {code && <span style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: 12, letterSpacing: '0.04em', color: '#3b1d6e' }}>{code}</span>}
           </div>
           {/* Rechts: Titel schwarz */}
@@ -205,7 +205,7 @@ function PanelHeader({ id, title, subtitle, icon, dimmed }: { id: string; title:
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '11px 20px', fontFamily: 'system-ui, sans-serif' }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 48, gap: 3 }}>
-          {icon && <PanelIcon icon={icon} size={22} color={p.fg} />}
+          {icon && <PanelIcon id={id} icon={icon} size={22} color={p.fg} />}
           {code && (
             <span style={{
               fontFamily: 'monospace', fontWeight: 800, fontSize: 11.5, letterSpacing: '0.04em',
@@ -1402,7 +1402,7 @@ export default function PanelWorkspace({ activeId, activeTab, onTabChange, resul
           {/* Großes, blasses Panel-Icon-Wasserzeichen auf der untersten Ebene */}
           {(entry as { icon?: string }).icon && (
             <div aria-hidden style={{ position: 'absolute', right: -24, bottom: -56, zIndex: 0, pointerEvents: 'none', userSelect: 'none' }}>
-              <PanelIcon icon={(entry as { icon?: string }).icon} size={320} color="#0d1520" opacity={0.035} />
+              <PanelIcon id={entry.id} icon={(entry as { icon?: string }).icon} size={320} color="#0d1520" opacity={0.035} />
             </div>
           )}
           <div style={{ position: 'absolute', inset: 0, overflowY: 'auto', padding: 20, zIndex: 1 }}>

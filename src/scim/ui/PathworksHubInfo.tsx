@@ -194,7 +194,7 @@ function AnalystSheet() {
       </p>
       <p style={{ margin: '0 0 9px' }}>
         Der Hub ist für dich <strong>read-only</strong>. Du kannst nachvollziehen, auf welchem Stand
-        eine Representation ist, ohne in die Produktion einzugreifen — ideal zum <em>Prüfen</em> und
+        eine Representation ist, ohne in die Produktion einzugreifen — ideal zum <em>Prüfen</em> und{' '}
         <em>Verstehen</em>.
       </p>
       <p style={{ margin: 0, fontSize: 10, color: '#718096' }}>
@@ -268,12 +268,14 @@ export function PathworksInfoClipboard({ onClose }: { onClose: () => void }) {
 
   return (
     <div style={{ position: 'fixed', left: pos.x, top: pos.y, zIndex: 901, width: 372 }}>
-      {/* Klemmbrett (Hartfaser) */}
+      {/* Klemmbrett — Glass-Look, an den Navigator angelehnt (dunkel, transluzent, Blur) */}
       <div style={{
         position: 'relative',
-        background: 'linear-gradient(150deg, #c69a63 0%, #b0824a 100%)',
-        borderRadius: 12, padding: '26px 16px 18px',
-        boxShadow: '0 16px 46px rgba(15,23,35,0.32), inset 0 1px 0 rgba(255,255,255,0.25)',
+        background: 'linear-gradient(155deg, rgba(20,30,44,0.82) 0%, rgba(10,16,26,0.82) 100%)',
+        backdropFilter: 'blur(13px)', WebkitBackdropFilter: 'blur(13px)',
+        border: '1px solid rgba(255,255,255,0.13)',
+        borderRadius: 14, padding: '26px 16px 18px',
+        boxShadow: '0 18px 48px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.10)',
       }}>
         {/* Klemme */}
         <div onMouseDown={startDrag} style={{
