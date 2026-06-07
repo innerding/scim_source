@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ScimMap from './scim/ui/ScimMap';
 import Navigator from './scim/ui/Navigator';
 import PanelWorkspace from './scim/ui/PanelWorkspace';
@@ -17,7 +17,11 @@ export default function App() {
   const [userName, setUserName] = useState<string>('');
   const [preview, setPreview] = useState<Role | null>(null);   // Modul C: „Als Analyst ansehen"
   const result = useScimPipeline();
-  const [activeId, setActiveId] = useState('P01');
+  // Default-Panel: zuletzt geöffnetes (gemerkt), sonst Pathworks (Hub) — nicht mehr P01.
+  const [activeId, setActiveId] = useState<string>(() => {
+    try { return localStorage.getItem('scim3_last_panel') || 'workspace'; } catch { return 'workspace'; }
+  });
+  useEffect(() => { try { localStorage.setItem('scim3_last_panel', activeId); } catch { /* noop */ } }, [activeId]);
   const [activeTab, setActiveTab] = useState<TabId>('input');
   // Inspector startet eingeklappt → ScimMap wird NICHT beim Start gemountet
   // (kein Off-screen-Rechnen beim Kaltstart). Aber: nach dem 1. Öffnen bleibt sie
@@ -26,6 +30,18 @@ export default function App() {
   const [mapCollapsed, setMapCollapsed] = useState(true);
   const [mapEverOpened, setMapEverOpened] = useState(false);
   const [showManual, setShowManual] = useState(false);
+  // Analyst-Geste: bei den ersten 2 Anmeldungen eines Analysten das Usage-Manual
+  // automatisch öffnen (Einstiegshilfe). Zähler in localStorage; Operator unberührt.
+  useEffect(() => {
+    if (role !== 'analyst') return;
+    try {
+      const seen = Number(localStorage.getItem('scim3_manual_seen') || '0');
+      if (seen < 2) {
+        setShowManual(true);
+        localStorage.setItem('scim3_manual_seen', String(seen + 1));
+      }
+    } catch { /* noop */ }
+  }, [role]);
   // Beim Sprung in den Geometry-Editor optional die zu oeffnende Boundary mitgeben.
   const [pendingGeometryId, setPendingGeometryId] = useState<string | null>(null);
   // Beim Sprung ins Katalog-Panel optional die zu oeffnende Katalog-Region mitgeben.

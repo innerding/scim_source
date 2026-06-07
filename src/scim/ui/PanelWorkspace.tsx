@@ -64,6 +64,8 @@ import { AnthemCycleBadge } from './AnthemCycleInfo';
 import { ShellRunBadge } from './ShellRunInfo';
 import { publishOriginMesh, anthemPublishConfigured, knockPresence, anthemReadConfigured } from '../../runtime/anthemApi';
 import { resampleNet } from '../wegnetz/netResample';
+import { useColourRegionSlug } from '../../runtime/useAuftraggeberRep';
+import { loadColourSettings, COLOUR_SETTINGS_EVENT } from '../sensus/colourSettings';
 
 interface Props {
   activeId: string;
@@ -123,47 +125,98 @@ function TabBar({
   );
 }
 
-function PanelHeader({ id, title, subtitle, dimmed }: { id: string; title: string; subtitle: string; dimmed?: boolean }) {
-  // Header passt zum dunklen Navigator-Strip: dunkler Hintergrund,
-  // Titel in Weiss mit 90 % Opacity, Untertitel in halber Helligkeit.
-  // dimmed=true (Panel ist in der Kosmologie schon visuell vertreten):
-  // gesamter Header auf 60 % opacity — kein Doppel-Schrei. Siehe ann_051.
-  //
-  // Vor dem Titel sitzt die Panel-ID als kleines Monospace-Chip, damit
-  // der Operator zwischen P01..P14 / R01..R09 / V01..V03 nie raten muss,
-  // wo er gerade ist. Bei nicht-nummerierten Panels (Workspace, Catalog,
-  // Editor, System, AI) wird das Chip einfach uebersprungen.
-  const showChip = /^(P\d{2}|R\d{2}|V\d{2})$/.test(id);
+// Schauglas-Verlauf (Felder/Grenzen) als CSS — identisch zur P01-Logik
+// (Farbe je Feld an dessen Mitte, unten = Last 0 → „to top").
+function headerGradientCss(stops: string[], borders: number[]): string {
+  const n = stops.length;
+  const center = (i: number) => {
+    const lo = i === 0 ? 0 : borders[i - 1];
+    const hi = i === n - 1 ? 1 : borders[i];
+    return (lo + hi) / 2;
+  };
+  const parts = [`${stops[0]} 0%`];
+  for (let i = 0; i < n; i++) parts.push(`${stops[i]} ${(center(i) * 100).toFixed(2)}%`);
+  parts.push(`${stops[n - 1]} 100%`);
+  return `linear-gradient(to top, ${parts.join(', ')})`;
+}
+
+// Kurz-Code im Gradientenblock: nummerierte Panels = ihre ID; die Drehscheibe
+// Pathworks bekommt „HUB". Sonst kein Code (nur Icon).
+function headerCode(id: string): string {
+  if (/^(P\d{2}|R\d{2}|V\d{2})$/.test(id)) return id;
+  if (id === 'workspace') return 'HUB';
+  return '';
+}
+
+function PanelHeader({ id, title, subtitle, icon, dimmed }: { id: string; title: string; subtitle: string; icon?: string; dimmed?: boolean }) {
+  // Header bindet an den Schauglas-Verlauf (wie P01 Thresholds): links ein
+  // Gradientenblock (selber Verlauf), der rasch ins Weiß ausläuft. Die Nummer
+  // sitzt fett im Gradientenblock, Titel/Untertitel im Weißraum, der Titel in
+  // der obersten gesetzten Schauglas-Farbe (Last 1). Icon = dasselbe Glyph wie
+  // im Navigator. dimmed (Kosmologie) senkt nur die Opacity.
+  const slug = useColourRegionSlug();
+  const [cs, setCs] = useState(() => loadColourSettings(slug));
+  useEffect(() => {
+    setCs(loadColourSettings(slug));
+    const reload = () => setCs(loadColourSettings(slug));
+    window.addEventListener(COLOUR_SETTINGS_EVENT, reload);
+    return () => window.removeEventListener(COLOUR_SETTINGS_EVENT, reload);
+  }, [slug]);
+
+  const grad = headerGradientCss(cs.stops, cs.borders);
+  const topColor = cs.stops[cs.stops.length - 1];
+  const code = headerCode(id);
+  // horizontaler Auslauf ins Weiß: Verlauf nur links, ab ~34 % transparent.
+  const fade = 'linear-gradient(to right, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.92) 14%, rgba(0,0,0,0.5) 24%, rgba(0,0,0,0) 34%)';
+
   return (
     <div style={{
-      padding: '14px 20px 12px',
-      borderBottom: '1px solid #1a2535',
-      background: '#0d1520',
+      position: 'relative',
+      borderBottom: '1px solid #e2e8f0',
+      background: '#fff',
       flexShrink: 0,
-      opacity: dimmed ? 0.6 : 1,
+      overflow: 'hidden',
+      opacity: dimmed ? 0.65 : 1,
     }}>
+      {/* Gradientenband, links voll, läuft horizontal ins Weiß aus */}
+      <div aria-hidden style={{
+        position: 'absolute', inset: 0,
+        background: grad,
+        WebkitMaskImage: fade, maskImage: fade,
+      }} />
       <div style={{
-        display: 'flex', alignItems: 'baseline', gap: 8,
+        position: 'relative',
+        display: 'flex', alignItems: 'center', gap: 14,
+        padding: '11px 20px',
         fontFamily: 'system-ui, sans-serif',
       }}>
-        {showChip && (
-          <span style={{
-            fontSize: 10, fontFamily: 'monospace', fontWeight: 700,
-            letterSpacing: '0.05em',
-            padding: '2px 7px', borderRadius: 3,
-            background: 'rgba(255, 255, 255, 0.08)',
-            color: 'rgba(255, 255, 255, 0.55)',
-            border: '1px solid rgba(255, 255, 255, 0.12)',
-          }}>
-            {id}
-          </span>
-        )}
-        <div style={{ fontSize: 15, fontWeight: 600, color: 'rgba(255, 255, 255, 0.9)' }}>
-          {title}
+        {/* Gradientenblock-Inhalt: Icon (wie Navigator) + fette Nummer in Weiß */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 48, gap: 2 }}>
+          {icon && (
+            <span style={{ fontSize: 22, lineHeight: 1, color: '#fff', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.45))' }}>
+              {icon}
+            </span>
+          )}
+          {code && (
+            <span style={{
+              fontFamily: 'monospace', fontWeight: 800, fontSize: 12.5, letterSpacing: '0.04em',
+              color: '#fff', textShadow: '0 1px 3px rgba(0,0,0,0.5)',
+            }}>
+              {code}
+            </span>
+          )}
         </div>
-      </div>
-      <div style={{ fontSize: 12, color: 'rgba(255, 255, 255, 0.5)', marginTop: 3, fontFamily: 'system-ui, sans-serif' }}>
-        {subtitle}
+        {/* Texte im Weißraum, Titel in der obersten Schauglas-Farbe */}
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: 15.5, fontWeight: 700, letterSpacing: '-0.01em', color: topColor }}>
+            {title}
+          </div>
+          {subtitle && (
+            <div style={{ fontSize: 12, color: '#5a6b80', marginTop: 2 }}>
+              {subtitle}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -1335,7 +1388,7 @@ export default function PanelWorkspace({ activeId, activeTab, onTabChange, resul
       overflow: 'hidden',
       minWidth: 0,
     }}>
-      <PanelHeader id={entry.id} title={entry.label} subtitle={subtitle} dimmed={KOSMOLOGIE_IDS.has(activeId)} />
+      <PanelHeader id={entry.id} title={entry.label} subtitle={subtitle} icon={(entry as { icon?: string }).icon} dimmed={KOSMOLOGIE_IDS.has(activeId)} />
       {/* P09 (Origin-Capsuler) rendert die Sampling-Pipeline als Vergleich — ohne Tabs. */}
       {!['P01', 'P02'].includes(activeId) && <TabBar tabs={tabs} active={safeTab} onSelect={onTabChange} />}
       {/* Geometry-Editor braucht volle Hoehe ohne Padding */}
@@ -1344,8 +1397,20 @@ export default function PanelWorkspace({ activeId, activeTab, onTabChange, resul
           <PanelContent activeId={activeId} activeTab={safeTab} result={result} onJumpTo={onJumpTo} openGeometryId={openGeometryId} onGeometryConsumed={onGeometryConsumed} openCatalogId={openCatalogId} onCatalogConsumed={onCatalogConsumed} />
         </div>
       ) : (
-        <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
-          <PanelContent activeId={activeId} activeTab={safeTab} result={result} onJumpTo={onJumpTo} openGeometryId={openGeometryId} onGeometryConsumed={onGeometryConsumed} openCatalogId={openCatalogId} onCatalogConsumed={onCatalogConsumed} />
+        <div style={{ flex: 1, minHeight: 0, position: 'relative', overflow: 'hidden' }}>
+          {/* Großes, blasses Panel-Icon-Wasserzeichen auf der untersten Ebene */}
+          {(entry as { icon?: string }).icon && (
+            <div aria-hidden style={{
+              position: 'absolute', right: -24, bottom: -56, zIndex: 0,
+              fontSize: 320, lineHeight: 1, color: '#0d1520',
+              opacity: 0.035, pointerEvents: 'none', userSelect: 'none',
+            }}>
+              {(entry as { icon?: string }).icon}
+            </div>
+          )}
+          <div style={{ position: 'absolute', inset: 0, overflowY: 'auto', padding: 20, zIndex: 1 }}>
+            <PanelContent activeId={activeId} activeTab={safeTab} result={result} onJumpTo={onJumpTo} openGeometryId={openGeometryId} onGeometryConsumed={onGeometryConsumed} openCatalogId={openCatalogId} onCatalogConsumed={onCatalogConsumed} />
+          </div>
         </div>
       )}
     </div>

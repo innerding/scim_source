@@ -1599,7 +1599,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
         display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px 0',
         background: '#edf2f7', borderBottom: '1px solid #e2e8f0',
       }}>
-        <div title="Represent Build · Seite 1 · Geometry Draw" style={{ flexShrink: 0, marginRight: 4, marginBottom: 4 }}>
+        <div title="Geometry Draw" style={{ flexShrink: 0, marginRight: 4, marginBottom: 4 }}>
           <RepresentBuildTetrahedron
             activeFace="geometry_draw"
             variant="light"

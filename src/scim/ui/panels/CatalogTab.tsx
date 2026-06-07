@@ -1459,7 +1459,7 @@ export default function CatalogTab({ onJumpTo, openCatalogId, onCatalogConsumed 
         display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, flexWrap: 'wrap',
       }}>
         {onJumpTo && (
-          <div title="Represent Build · Seite 2 · Catalog Magazination" style={{ flexShrink: 0 }}>
+          <div title="Catalog Magazination" style={{ flexShrink: 0 }}>
             <RepresentBuildTetrahedron
               activeFace="catalog_magazination"
               variant="light"

@@ -105,7 +105,7 @@ function Section({
               background: 'white', color: action.disabled ? '#a0aec0' : '#2b6cb0',
               fontFamily: 'system-ui, sans-serif',
             }}
-            title={action.disabled ? 'Wave 2b — kommt noch' : ''}
+            title={action.disabled ? 'noch nicht gebaut' : ''}
           >
             {action.label}
           </button>
@@ -338,10 +338,10 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
         </div>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 9, opacity: 0.65, fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-            Represent Build · Seite 4
+            Arbeitstitel · Representations-Drehscheibe
           </div>
           <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: '-0.01em', marginTop: 2 }}>
-            Represent Organisation
+            Pathworks (Hub)
           </div>
           <div style={{ fontSize: 11, opacity: 0.85, marginTop: 4, lineHeight: 1.5 }}>
             Empfangshalle der drei Produktions-Seiten. Hier laufen alle Geometrien, Kataloge und Representations zusammen. Komposition neuer Representations passiert ausschließlich hier.
@@ -575,7 +575,7 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
         }}
       >
         {REPRESENTATIONS.length === 0 ? (
-          <EmptyHint text="Noch keine Representations. Wave 2b baut den Wizard: Geometry + Katalog + Name → Representation. Erst dann werden SystemAdjust-Settings, Regio-Content und QR-Code für diese Representation aktiv." />
+          <EmptyHint text="Noch keine Representations. Der Wizard (Knopf »+ neue Representation«) baut: Geometry + Katalog + Name → Representation. Erst dann werden Thresholds-Settings, Regio-Content und QR-Code für diese Representation aktiv." />
         ) : (
           REPRESENTATIONS.map((r) => (
             <ListItem
@@ -589,17 +589,6 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
           ))
         )}
       </Section>
-
-      {/* Footer-Info */}
-      <div style={{
-        marginTop: 24, padding: '10px 14px',
-        background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 4,
-        fontSize: 11, color: '#0c4a6e',
-      }}>
-        <strong>Wave 2b — was geht:</strong> Geometry-Editor mit POI-Overlay (Tab nebenan), Representation-Wizard (Knopf oben), P01-Polygon-Migration (Knopf im Editor wenn Legacy-Daten gefunden).
-        <br />
-        <strong>Was noch fehlt:</strong> P01-Entrümpelung (Polygon-Section aus P01 raus). Wartet, bis dein Lichtenberg-Polygon migriert ist — sonst Datenverlust.
-      </div>
 
       {showWizard && <RepresentationWizard onClose={() => setShowWizard(false)} />}
     </div>

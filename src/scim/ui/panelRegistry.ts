@@ -477,8 +477,8 @@ export interface WorkspaceDescriptor {
 
 export const WORKSPACE_DESCRIPTOR: WorkspaceDescriptor = {
   kind: 'workspace',
-  id: 'workspace',
-  label: 'Workspace',
+  id: 'workspace',                 // ID eingefroren (load-bearing); nur das Label wandert.
+  label: 'Pathworks (Hub)',        // Arbeitstitel: wird die Drehscheibe des Pathworks-Umbaus.
   icon: '⌂',
   tabs: [
     { id: 'input', label: 'Übersicht', icon: '⌂' },
