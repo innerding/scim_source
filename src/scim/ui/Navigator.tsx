@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { StatusColor } from './panelRegistry';
 import {
   KOSMOLOGIE_IDS,
-  PANEL_REGISTRY, SYSTEM_DESCRIPTOR, AI_INTERFACE_DESCRIPTOR, IPILLS_DESCRIPTOR,
+  PANEL_REGISTRY, SYSTEM_DESCRIPTOR, AI_INTERFACE_DESCRIPTOR, IPILLS_DESCRIPTOR, CLOUD_DESCRIPTOR,
   RUNTIME_BUILDER_REGISTRY, VERSIONEN_REGISTRY, WORKSPACE_DESCRIPTOR,
   DRAWER_DESCRIPTOR, CATALOG_DESCRIPTOR,
 } from './panelRegistry';
@@ -100,16 +100,17 @@ const COSMO_GROUPS: { label: string; ids: string[]; sub?: string }[] = [
   { label: 'Transmitter', ids: ['P06', 'P01', 'P04', 'P02'] },
   { label: 'Komposit-Tetraeder', ids: ['P11', 'P07', 'P08', 'P09', 'workspace', 'geometry_editor', 'catalog'] },
   { label: 'Substrat', ids: ['ai_interface', 'ipills', 'system'] },
-  // Grund (Brocken/Meta-Space): R01 + P05 (Operator-Zonen, herausgelöst) als klickbare Brocken.
-  { label: 'Grund', ids: ['R01', 'P05'] },
+  // Grund (Brocken/Meta-Space): P05 (Operator-Zonen, herausgelöst). R01 ist in V03 aufgegangen.
+  { label: 'Grund', ids: ['P05'] },
 ];
 // Der Rest — was bislang keinen Platz fand (flach, mit Icons).
-const REST_IDS = ['P03', 'P10', 'P12', 'P13', 'P14', 'R02', 'R03', 'R04', 'R05', 'R06', 'R07', 'R08'];
+// R02 „Link & QR" ist in die Cloud-Schicht befördert (nicht mehr im Müllwagen).
+const REST_IDS = ['P03', 'P10', 'P12', 'P13', 'P14', 'R03', 'R04', 'R05', 'R06', 'R07', 'R08'];
 
 function descById(id: string): { id: string; icon: string; label: string } | null {
   const p = PANEL_REGISTRY.find((x) => x.id === id);
   if (p) return { id, icon: p.icon, label: p.label };
-  for (const d of [WORKSPACE_DESCRIPTOR, DRAWER_DESCRIPTOR, CATALOG_DESCRIPTOR, SYSTEM_DESCRIPTOR, AI_INTERFACE_DESCRIPTOR, IPILLS_DESCRIPTOR]) {
+  for (const d of [WORKSPACE_DESCRIPTOR, DRAWER_DESCRIPTOR, CATALOG_DESCRIPTOR, SYSTEM_DESCRIPTOR, AI_INTERFACE_DESCRIPTOR, IPILLS_DESCRIPTOR, CLOUD_DESCRIPTOR]) {
     if (d.id === id) return { id, icon: d.icon, label: d.label };
   }
   const r = RUNTIME_BUILDER_REGISTRY.find((x) => x.id === id);
@@ -634,8 +635,8 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
 
       {/* Cloud — our-side Auslieferungs-/Eintritts-Schicht (Launcher · globe-switcher ·
           collector). Sitzt im Spalt zwischen Mond und Transmissionsfeld; System-Icon aus
-          src/assets/system. D1 Probe-Platzierung — Klick provisorisch auf P11. */}
-      <NavCloud onClick={() => go('P11')} />
+          src/assets/system. Klick öffnet das Cloud-Panel (Übersicht/Launcher/Globe/Collector). */}
+      <NavCloud onClick={() => go('cloud')} active={activeId === 'cloud'} />
 
       {/* Transmissionsfeld — animiertes Mesh-Dreieck zwischen Mond und Tetraeder.
           Nimmt keinen Flow-Platz (height: 0), fuellt die Luecke ueber dem

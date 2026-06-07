@@ -114,17 +114,17 @@ export const SHELL_RUN_STEPS: ShellStep[] = [
     blurb: 'Der Consumer drosselt sich selbst: liest die angekündigte nextAt des Snapshots und fordert erst ab nextAt + Gap neu an. Bündelt viele Interaktionen zu höchstens einer Anforderung pro Fenster. Kein eigener Screen.',
   },
   {
-    n: 13, word: 'globe-switcher', title: 'globe-switcher', kind: 'edge', home: 'P11 · Globe-Switcher', panelId: 'P11', tabId: 'globe_switcher',
-    status: 'open',
+    n: 13, word: 'globe-switcher', title: 'globe-switcher', kind: 'edge', home: 'Cloud · Globe-Switcher', panelId: 'cloud', tabId: 'globe_switcher',
+    status: 'partial',
     blurb: 'Die Eintritts-Weiche an der Request-Grenze: liest, WIE der User kommt. QR-Code → Launcher überspringen, direkt zur festen Rep (Liste nicht nötig). diesenpark.com nackt → den Launcher zeigen. Kein Engine-Stück, sondern Dispatcher; braucht höchstens eine rep-id-Auflösung, nicht den ganzen Katalog.',
   },
   {
-    n: 14, word: 'collector', title: 'Collector-Path', kind: 'feed', home: 'P11 · Collector', panelId: 'P11', tabId: 'collector',
+    n: 14, word: 'collector', title: 'Collector-Path', kind: 'feed', home: 'Cloud · Collector', panelId: 'cloud', tabId: 'collector',
     status: 'open',
     blurb: 'Cross-Rep-Fan-in: aggregiert den Katalog Nation → Region → Representation aus den per-Rep-Fakten, die jeder Origin-Capsuler deklariert (Nation/Region/Icon). Wohnt auf dem Publishing-Layer (Sensus Core P / V01-V02-Kaskade), NICHT in der Deep-Shell (deren Animationen sind generisch). Speist den Launcher. Nation-Ebene nur als Minimal-Pfad anlegen.',
   },
   {
-    n: 15, word: 'launcher', title: 'Launcher · globale Auswahl', kind: 'surface', home: '— · our-side (Runtime src/launcher) · Heimat: Cloud-Schicht (geplant)',
+    n: 15, word: 'launcher', title: 'Launcher · globale Auswahl', kind: 'surface', home: 'Cloud · Launcher', panelId: 'cloud', tabId: 'launcher',
     status: 'partial',
     blurb: 'Die globale-Auswahl-Fassung: rendert die Kacheln (Nation →) Region → Representation und lädt die gewählte Rep. Der EIGENTLICHE Konsument des Collector-Path. our-side Eintritts-Surface, publishing-gespeist, lebt AUSSERHALB des Rep-Bundles. Vom globe-switcher gezeigt (nackte URL) oder übersprungen (QR). GEBAUT (Runtime src/launcher, minimal/statisch: Lichtenberg aktiv · Grünberg abgedimmt · Gaisberg prepared); kosmologische Heimat = neue Cloud-Schicht zwischen Transmission und Mond (Modell B, geplant); Collector/Pathworks-Hub speisen den Inhalt künftig.',
   },

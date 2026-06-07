@@ -4,7 +4,7 @@ import { useAuftraggeberRep } from '../../runtime/useAuftraggeberRep';
 import type { TabId } from './panelRegistry';
 import {
   KOSMOLOGIE_IDS,
-  PANEL_REGISTRY, SYSTEM_DESCRIPTOR, AI_INTERFACE_DESCRIPTOR, IPILLS_DESCRIPTOR,
+  PANEL_REGISTRY, SYSTEM_DESCRIPTOR, AI_INTERFACE_DESCRIPTOR, IPILLS_DESCRIPTOR, CLOUD_DESCRIPTOR,
   RUNTIME_BUILDER_REGISTRY, VERSIONEN_REGISTRY, WORKSPACE_DESCRIPTOR,
   DRAWER_DESCRIPTOR, CATALOG_DESCRIPTOR,
 } from './panelRegistry';
@@ -24,6 +24,7 @@ import HighShellIconAssets from './panels/HighShellIconAssets';
 import ShellStudio from './panels/ShellStudio';
 import RuntimeShellView from './panels/RuntimeShellView';
 import IPillsPanel from './panels/IPillsPanel';
+import { CloudOverview, CloudLauncherView } from './panels/CloudView';
 import TransmissionView from './panels/TransmissionView';
 import ThresholdsView from './panels/ThresholdsView';
 import PanelResult from './panels/PanelResult';
@@ -76,7 +77,7 @@ interface Props {
   onCatalogConsumed?: () => void;
 }
 
-const TAB_ORDER: TabId[] = ['catalog', 't1', 't2', 't3', 't4', 't5', 't6', 'signal_intake', 'analysis', 'adjust', 'globe_switcher', 'collector', 'transfer', 'input', 'icon', 'simulation', 'result', 'validation', 'leistungsblatt', 'raw'];
+const TAB_ORDER: TabId[] = ['catalog', 't1', 't2', 't3', 't4', 't5', 't6', 'signal_intake', 'analysis', 'adjust', 'launcher', 'globe_switcher', 'collector', 'transfer', 'input', 'icon', 'simulation', 'result', 'validation', 'leistungsblatt', 'raw'];
 
 function TabBar({
   tabs, active, onSelect,
@@ -1089,6 +1090,15 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
   // i-Pills: zentrale Builder-Info-Übersicht (über das Substrat-Feld erreichbar).
   if (activeId === 'ipills') return <IPillsPanel />;
 
+  // Cloud — our-side Auslieferungs-/Eintritts-Schicht (Wolke). Tabs: Übersicht ·
+  // Launcher · Globe-Switcher · Collector (letzte zwei aus P11 hierher gewandert).
+  if (activeId === 'cloud') {
+    if (activeTab === 'launcher') return <CloudLauncherView />;
+    if (activeTab === 'globe_switcher') return <GlobeSwitcherView />;
+    if (activeTab === 'collector') return <CollectorView />;
+    return <CloudOverview />;
+  }
+
   // R01 Runtime Shell: echte Erklär-/Aussichts-Ansicht statt Stub.
   if (activeId === 'R01') return <RuntimeShellView />;
   const runtimeModule = RUNTIME_BUILDER_REGISTRY.find((m) => m.id === activeId);
@@ -1098,8 +1108,12 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
 
   if (activeId === 'V01') return <V01PackagesPanel />;
   if (activeId === 'V02') return <V02RegionDetailPanel />;
-  // V03 Publishing-Monitor: t1 Presence-Origin (Call-Log) · t2 Active-Monitor (CDN/QR).
-  if (activeId === 'V03') return activeTab === 't2' ? <V03ActiveMonitorPanel /> : <V03PresenceOriginPanel />;
+  // V03 Publishing-Monitor: t1 Presence-Origin (Call-Log) · t2 Active-Monitor (CDN/QR) ·
+  // t3 Runtime Shell (R01 hier aufgegangen — die Runtime ist der Mond).
+  if (activeId === 'V03') {
+    if (activeTab === 't3') return <RuntimeShellView />;
+    return activeTab === 't2' ? <V03ActiveMonitorPanel /> : <V03PresenceOriginPanel />;
+  }
 
   const versionenEntry = VERSIONEN_REGISTRY.find((v) => v.id === activeId);
   if (versionenEntry) {
@@ -1133,10 +1147,7 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
       return <P09Artifact d={d} rep={inspectedRep} origin={p09Origin} />;
     }
   }
-  // P11 Globe-Switcher: die Eintritts-Weiche (QR ↔ URL) vor dem Publishing.
-  if (panel.id === 'P11' && activeTab === 'globe_switcher') return <GlobeSwitcherView />;
-  // P11 Collector-Path: Cross-Rep-Fan-in Nation→Region→Rep (Publishing-Aggregat).
-  if (panel.id === 'P11' && activeTab === 'collector') return <CollectorView />;
+  // (globe_switcher + collector sind in die Cloud-Schicht gewandert — siehe oben.)
   // P11 Transfer: der Publishing-Handoff (schnüren · versionieren · stempeln · ausliefern).
   if (panel.id === 'P11' && activeTab === 'transfer') return <TransferView />;
   // P11 Sensus Core Service: die drei Horizont-Pakete (Eingabe-Tab).
@@ -1292,6 +1303,7 @@ export default function PanelWorkspace({ activeId, activeTab, onTabChange, resul
     activeId === SYSTEM_DESCRIPTOR.id           ? SYSTEM_DESCRIPTOR :
     activeId === AI_INTERFACE_DESCRIPTOR.id ? AI_INTERFACE_DESCRIPTOR :
     activeId === IPILLS_DESCRIPTOR.id ? IPILLS_DESCRIPTOR :
+    activeId === CLOUD_DESCRIPTOR.id ? CLOUD_DESCRIPTOR :
     RUNTIME_BUILDER_REGISTRY.find((m) => m.id === activeId) ??
     VERSIONEN_REGISTRY.find((v) => v.id === activeId) ??
     PANEL_REGISTRY.find((p) => p.id === activeId);

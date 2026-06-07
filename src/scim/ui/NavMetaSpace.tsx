@@ -32,8 +32,9 @@ const ROCKS: Rock[] = [
   { cx: 104, cy: 29, r: 6.6, fill: '#1f2835', shape: 4 },
   // Linker Brocken = P05 (Operator-Zonen, aus dem Substrat herausgelöst). Klickbar.
   { cx: 22, cy: 39, r: 9.5, fill: '#1a2330', shape: 2, pick: 'P05', label: 'Operator-Zonen (P05)' },
-  // Vorderster Brocken = R01 (die geräteseitige Runtime Shell, in den Grund gesunken). Klickbar.
-  { cx: 74, cy: 46, r: 11, fill: '#18212d', shape: 1, pick: 'R01', label: 'Runtime Shell (R01)' },
+  // Vorderster Brocken — reine Deko. R01 „Runtime Shell" ist in V03 (Publishing-Monitor)
+  // aufgegangen; die Runtime hat im Mond ihre Heimat, kein eigener Brocken mehr.
+  { cx: 74, cy: 46, r: 11, fill: '#18212d', shape: 1 },
 ];
 
 function pts(cx: number, cy: number, r: number, shape: [number, number][]): string {

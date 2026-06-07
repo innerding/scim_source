@@ -13,7 +13,9 @@ export type TabId =
   // panel-eigene Tab-Gliederungen (P07/P08/P09)
   | 't1' | 't2' | 't3' | 't4' | 't5' | 't6'
   // P11 · Publishing-/Edge-Layer (eigene Tabs)
-  | 'globe_switcher' | 'collector' | 'transfer';
+  | 'globe_switcher' | 'collector' | 'transfer'
+  // Cloud (our-side Eintritts-/Auslieferungs-Schicht): Launcher-Tab
+  | 'launcher';
 
 export interface TabDescriptor {
   id: TabId;
@@ -63,6 +65,14 @@ export interface AiInterfaceDescriptor {
 export interface IPillsDescriptor {
   kind: 'ipills';
   id: 'ipills';
+  label: string;
+  icon: string;
+  tabs: TabDescriptor[];
+}
+
+export interface CloudDescriptor {
+  kind: 'cloud';
+  id: 'cloud';
   label: string;
   icon: string;
   tabs: TabDescriptor[];
@@ -311,8 +321,8 @@ export const PANEL_REGISTRY: PanelDescriptor[] = [
     isBlocking: true,
     contextKey: 'sensus_core_package',
     tabs: [
-      { id: 'globe_switcher', label: 'Globe-Switcher', icon: '⤧' },
-      { id: 'collector', label: 'Collector', icon: '⇊' },
+      // globe_switcher + collector sind in die Cloud-Schicht gewandert (CLOUD_DESCRIPTOR);
+      // P11 bleibt reines Publishing.
       { id: 'transfer', label: 'Transfer', icon: '⏩' },
       { id: 'input', label: 'Publishing', icon: '▣' },
       { id: 't1', label: 'Shell-ID', icon: '⬡' },
@@ -382,12 +392,8 @@ export const RUNTIME_BUILDER_REGISTRY: RuntimeModuleDescriptor[] = [
     shortDescription: 'App-Grundhülle, Routing und Fehlerzustände',
     tabs: [{ id: 'input', label: 'Übersicht', icon: 'ℹ' }],
   },
-  {
-    kind: 'runtime_module', id: 'R02', icon: '⊞',
-    label: 'Link & QR',
-    shortDescription: 'Paketlink- und QR-Code-Startfall',
-    tabs: [{ id: 'input', label: 'Übersicht', icon: 'ℹ' }],
-  },
+  // R02 „Link & QR" wurde in die Cloud-Schicht befördert (CLOUD_DESCRIPTOR) —
+  // Link/QR = Eintritt = our-side Wolke. Daher hier entfernt (war ein ungenutzter Stub).
   {
     kind: 'runtime_module', id: 'R03', icon: '↓',
     label: 'Package Loader',
@@ -457,6 +463,7 @@ export const VERSIONEN_REGISTRY: VersionenDescriptor[] = [
     tabs: [
       { id: 't1', label: 'Presence-Origin', icon: '◉' },
       { id: 't2', label: 'Active-Monitor', icon: '◈' },
+      { id: 't3', label: 'Runtime Shell', icon: '◻' },   // R01 hier aufgegangen
     ],
   },
 ];
@@ -531,6 +538,22 @@ export const IPILLS_DESCRIPTOR: IPillsDescriptor = {
   label: 'i-Pills',
   icon: 'ⓘ',
   tabs: [{ id: 'input', label: 'Übersicht', icon: 'ⓘ' }],
+};
+
+// Cloud — our-side Auslieferungs-/Eintritts-Schicht (Wolke). Recycelt aus dem
+// ungenutzten R02 „Link & QR"; beherbergt die Eintritts-Funktionen als Tabs.
+// globe_switcher + collector sind aus P11 hierher gewandert.
+export const CLOUD_DESCRIPTOR: CloudDescriptor = {
+  kind: 'cloud',
+  id: 'cloud',
+  label: 'Cloud',
+  icon: '☁',
+  tabs: [
+    { id: 'input',          label: 'Übersicht',      icon: '☁' },
+    { id: 'launcher',       label: 'Launcher',        icon: '▦' },
+    { id: 'globe_switcher', label: 'Globe-Switcher',  icon: '⤧' },
+    { id: 'collector',      label: 'Collector',       icon: '⇊' },
+  ],
 };
 
 export const AI_INTERFACE_DESCRIPTOR: AiInterfaceDescriptor = {
