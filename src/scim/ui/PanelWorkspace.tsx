@@ -1241,7 +1241,7 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
   }
 
   // P01 (Thresholds · T1): die drei Schwellen gestaffelt (System/Region/Load), ohne Tabs.
-  if (panel.id === 'P01') return <ThresholdsView />;
+  if (panel.id === 'P01') return <ThresholdsView onJumpTo={onJumpTo} />;
 
   // T2: P04 = Telco, P02 = Coder. Die Schwellen-Regler leben jetzt im Thresholds-
   // Panel (P01); der echte Inhalt zieht in T3 (Telco) bzw. T4 (Coder) ein.

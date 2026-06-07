@@ -8,7 +8,7 @@
 //   represent_organisation↔ workspace (Pathworks Hub)
 //   sensus_core_build     ↔ P01 (Thresholds)  ← im Dashboard als „Thresholds" beschriftet
 import RepresentBuildTetrahedron from './RepresentBuildTetrahedron';
-import type { RepresentBuildFace } from './RepresentBuildTetrahedron';
+import type { RepresentBuildFace, RepresentBuildSickle } from './RepresentBuildTetrahedron';
 
 const FACE_TO_PANEL: Record<RepresentBuildFace, string> = {
   geometry_draw: 'geometry_editor',
@@ -21,6 +21,12 @@ const PANEL_TO_FACE: Record<string, RepresentBuildFace> = {
   catalog: 'catalog_magazination',
   workspace: 'represent_organisation',
   P01: 'sensus_core_build',
+};
+// Sichel-Zusatzfunktionen → Zielpanel (Vorschlag): Vorschau · Publish · Versionen.
+const SICKLE_TO_PANEL: Record<RepresentBuildSickle, string> = {
+  boundary: 'V03',          // Vorschau am Gerät (Monitor/QR)
+  engine_prep: 'P11',       // Publish / Transfer (Sensus Core)
+  wegnetz_sampling: 'V01',  // Versionen / Verlauf (All-Publications)
 };
 
 export default function RegioDashboardControl({
@@ -41,6 +47,10 @@ export default function RegioDashboardControl({
       activeFace={activeFace}
       onFaceClick={(f) => {
         const panel = FACE_TO_PANEL[f];
+        if (panel) onJumpTo(panel);
+      }}
+      onSickleClick={(sk) => {
+        const panel = SICKLE_TO_PANEL[sk];
         if (panel) onJumpTo(panel);
       }}
     />

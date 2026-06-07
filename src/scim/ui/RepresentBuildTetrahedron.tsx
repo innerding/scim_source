@@ -230,6 +230,13 @@ const SICKLES: Array<{
 
 // Minimalistische Glyphs statt der 3-Letter-Labels. Entworfen in einer ±5-Box,
 // zentriert auf der Label-Position, leicht skaliert. Farbe = Label-Farbe.
+// Dashboard-Sichel-Zusatzfunktionen (Vorschläge): links=Vorschau, rechts=Publish, unten=Versionen.
+const DASH_SICKLE: Record<string, { glyph: string; title: string }> = {
+  boundary:         { glyph: 'dash_preview',  title: 'Vorschau am Gerät' },
+  engine_prep:      { glyph: 'dash_publish',  title: 'Publish / Transfer' },
+  wegnetz_sampling: { glyph: 'dash_versions', title: 'Versionen / Verlauf' },
+};
+
 function TetraGlyph({ id, x, y, color }: { id: string; x: number; y: number; color: string }) {
   const s = { fill: 'none', stroke: color, strokeWidth: 0.8, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
   const f = { fill: color, stroke: 'none' };
@@ -259,6 +266,15 @@ function TetraGlyph({ id, x, y, color }: { id: string; x: number; y: number; col
       break;
     case 'boundary': // Mobile Device — High-Shell (P07, App-UI/UX)
       body = <><rect x={-2.7} y={-4} width={5.4} height={8} rx={1} {...s} /><line x1={-0.9} y1={-3} x2={0.9} y2={-3} {...s} /><circle cx={0} cy={3} r={0.5} {...f} /></>;
+      break;
+    case 'dash_preview': // Vorschau am Gerät — Mobile Device
+      body = <><rect x={-2.7} y={-4} width={5.4} height={8} rx={1} {...s} /><line x1={-0.9} y1={-3} x2={0.9} y2={-3} {...s} /><circle cx={0} cy={3} r={0.5} {...f} /></>;
+      break;
+    case 'dash_publish': // Publish/Transfer — Pfeil aufwärts über Linie
+      body = <><path d="M0 2.2 L0 -3.4 M-2 -1.4 L0 -3.4 L2 -1.4" {...s} /><line x1={-3} y1={3.4} x2={3} y2={3.4} {...s} /></>;
+      break;
+    case 'dash_versions': // Versionen/Verlauf — gestapelte Schichten
+      body = <><path d="M0 -3.4 L3.8 -1.5 L0 0.4 L-3.8 -1.5 Z" {...s} /><path d="M-3.8 1.2 L0 3.1 L3.8 1.2" {...s} /></>;
       break;
     case 'system_adjust': // Thresholds — drei gestaffelte Slider
       body = <><line x1={-3.5} y1={-2.4} x2={3.5} y2={-2.4} {...s} /><circle cx={-1.5} cy={-2.4} r={0.8} {...f} /><line x1={-3.5} y1={0} x2={3.5} y2={0} {...s} /><circle cx={1.3} cy={0} r={0.8} {...f} /><line x1={-3.5} y1={2.4} x2={3.5} y2={2.4} {...s} /><circle cx={-0.3} cy={2.4} r={0.8} {...f} /></>;
@@ -386,6 +402,10 @@ export default function RepresentBuildTetrahedron({
         const clickable = !isActive && !!onSickleClick;
         const fill = isActive ? triangleActiveFill : 'transparent';
         const stroke = isActive ? triangleActiveStroke : triangleInactiveStroke;
+        // Dashboard-Modus: Sicheln = Zusatzfunktionen (eigene Glyphen + Titel).
+        const ov = dashboard ? DASH_SICKLE[s.id] : undefined;
+        const glyphId = ov?.glyph ?? s.id;
+        const title = ov?.title ?? s.longLabel;
         return (
           <g
             key={s.id}
@@ -401,10 +421,10 @@ export default function RepresentBuildTetrahedron({
               opacity={isActive ? 1 : 0.85}
               className={isActive ? 'rb-active-tile' : undefined}
             >
-              <title>{s.longLabel}</title>
+              <title>{title}</title>
             </path>
             {showLabels && (
-              <TetraGlyph id={s.id} x={s.labelX} y={s.labelY} color={isActive ? triangleLabelActive : triangleLabelInactive} />
+              <TetraGlyph id={glyphId} x={s.labelX} y={s.labelY} color={isActive ? triangleLabelActive : triangleLabelInactive} />
             )}
           </g>
         );
