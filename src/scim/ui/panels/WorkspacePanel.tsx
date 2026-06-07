@@ -25,7 +25,7 @@ const bytesOf = (obj: unknown): number => new TextEncoder().encode(JSON.stringif
 import { commitToRepo } from '../../../runtime/commitBridge';
 import { useRepresentationContext } from '../../../runtime/repContext';
 import { useRole } from '../RoleContext';
-import { PathworksHubFloating } from '../PathworksHubInfo';
+import { PathworksHubFloating, PathworksInfoClipboard } from '../PathworksHubInfo';
 import type { BoundaryGeometryFile, WegnetzFile, RepresentationFile } from '../../workspace/workspace.types';
 import type { Position } from 'geojson';
 import {
@@ -204,7 +204,8 @@ function EyeButton({ shown, onClick }: { shown: boolean; onClick: () => void }) 
 
 export default function WorkspacePanel({ onJumpTo }: Props) {
   const [showWizard, setShowWizard] = useState(false);
-  const [showClip, setShowClip] = useState(false);   // schwebendes pathworks-hub-clipboard
+  const [showClip, setShowClip] = useState(false);   // schwebendes Arbeitsblatt (Notizen)
+  const [showInfo, setShowInfo] = useState(false);   // schwebendes Infoblatt-Klemmbrett (3 Versionen)
   const role = useRole();
   // 👁 Inspector-Sicht: welches Workspace-Objekt der rechte Inspector zeigt
   // (Katalog → nur POIs, Boundary → nur Umriss, Representation → alles).
@@ -352,21 +353,34 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
           </div>
         </div>
         {role === 'operator' && (
-          <button
-            onClick={() => setShowClip((v) => !v)}
-            title="pathworks-hub-clipboard als schwebendes Panel (Hintergrund bleibt bedienbar)"
-            style={{
-              flexShrink: 0, alignSelf: 'flex-start', cursor: 'pointer',
-              border: '1px solid rgba(255,255,255,0.35)', background: 'rgba(255,255,255,0.12)',
-              color: '#fff', borderRadius: 999, fontSize: 10.5, padding: '3px 10px',
-              fontFamily: 'system-ui, sans-serif', display: 'inline-flex', alignItems: 'center', gap: 5,
-            }}
-          >
-            <span aria-hidden>ⓘ</span> clipboard
-          </button>
+          <div style={{ flexShrink: 0, alignSelf: 'flex-start', display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <button
+              onClick={() => setShowClip((v) => !v)}
+              title="Arbeitsblatt — offene Notizen, als schwebendes Panel (Hintergrund bleibt bedienbar)"
+              style={{
+                cursor: 'pointer', border: '1px solid rgba(255,255,255,0.35)', background: 'rgba(255,255,255,0.12)',
+                color: '#fff', borderRadius: 999, fontSize: 10.5, padding: '3px 10px',
+                fontFamily: 'system-ui, sans-serif', display: 'inline-flex', alignItems: 'center', gap: 5,
+              }}
+            >
+              <span aria-hidden>✎</span> Arbeitsblatt
+            </button>
+            <button
+              onClick={() => setShowInfo((v) => !v)}
+              title="Infoblatt — Erklärung des Pathworks Hubs (Operator · Analyst · Regio-Editor), schwebendes Klemmbrett"
+              style={{
+                cursor: 'pointer', border: '1px solid rgba(255,255,255,0.35)', background: 'rgba(255,255,255,0.12)',
+                color: '#fff', borderRadius: 999, fontSize: 10.5, padding: '3px 10px',
+                fontFamily: 'system-ui, sans-serif', display: 'inline-flex', alignItems: 'center', gap: 5,
+              }}
+            >
+              <span aria-hidden>ⓘ</span> Infoblatt
+            </button>
+          </div>
         )}
       </div>
       {showClip && <PathworksHubFloating onClose={() => setShowClip(false)} />}
+      {showInfo && <PathworksInfoClipboard onClose={() => setShowInfo(false)} />}
 
 
       {/* Package-Pipeline (F4) — Intake → Draft → gespeicherter Draft (+Katalog) */}

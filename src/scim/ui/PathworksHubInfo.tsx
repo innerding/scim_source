@@ -147,6 +147,201 @@ export function PathworksHubFloating({ onClose }: { onClose: () => void }) {
   );
 }
 
+// ── Infoblatt-Clipboard ─────────────────────────────────────────────────────
+// Ein echtes Klemmbrett mit 3 leicht gefächerten A4-Blättern (Operator · Analyst ·
+// Regio-Editor-Basis). Die Blätter sind Hitboxen: Klick fächert das gewählte nach
+// vorn. X rechts oben schließt. Non-modal & verschiebbar (Hintergrund bedienbar).
+// Gedacht als späteres Hilfe-Panel für Regio-Editoren.
+
+const OP = '#b7791f';   // Farbe für operator-only Zusatztexte
+
+function RegioSheet() {
+  return (
+    <div style={{ fontSize: 10.8, color: '#2d3748', lineHeight: 1.62 }}>
+      <h3 style={{ margin: '0 0 8px', fontSize: 13, color: '#1a202c' }}>Was ist der Pathworks&nbsp;Hub?</h3>
+      <p style={{ margin: '0 0 9px' }}>
+        Der <strong>Pathworks&nbsp;Hub</strong> ist die Drehscheibe, an der eine <strong>Region</strong> zu
+        einer auslieferbaren <strong>Representation</strong> zusammenläuft — der Sache, die später
+        als App auf dem Gerät landet.
+      </p>
+      <p style={{ margin: '0 0 9px' }}>
+        Drei Bausteine treffen hier zusammen:
+      </p>
+      <ul style={{ margin: '0 0 9px', paddingLeft: 18 }}>
+        <li><strong>Boundary</strong> — der gezeichnete Umriss der Region (Geometrie).</li>
+        <li><strong>Katalog</strong> — die Points of Interest der Region.</li>
+        <li><strong>Schwellen &amp; Farben</strong> — wie Auslastung auf Farbe abgebildet wird.</li>
+      </ul>
+      <p style={{ margin: '0 0 9px' }}>
+        Aus ihnen entsteht — <strong>benannt und versioniert</strong> — eine Representation. Der Hub
+        baut nichts heimlich: jede Representation wird hier <em>bewusst komponiert</em>.
+      </p>
+      <p style={{ margin: 0, fontSize: 10, color: '#718096' }}>
+        Künftig hängt jede Region in einem Baum <em>Nation → Region → Rep</em>. Als Regio-Editor
+        pflegst du den Inhalt genau einer Region.
+      </p>
+    </div>
+  );
+}
+
+function AnalystSheet() {
+  return (
+    <div style={{ fontSize: 10.8, color: '#2d3748', lineHeight: 1.62 }}>
+      <h3 style={{ margin: '0 0 8px', fontSize: 13, color: '#1a202c' }}>Der Hub für Analyst:innen</h3>
+      <p style={{ margin: '0 0 9px' }}>
+        Du siehst den Hub als <strong>Übersicht</strong>: Geometrien, Kataloge und Representations
+        einer Region — und wie sie zusammengesetzt sind.
+      </p>
+      <p style={{ margin: '0 0 9px' }}>
+        Der Hub ist für dich <strong>read-only</strong>. Du kannst nachvollziehen, auf welchem Stand
+        eine Representation ist, ohne in die Produktion einzugreifen — ideal zum <em>Prüfen</em> und
+        <em>Verstehen</em>.
+      </p>
+      <p style={{ margin: 0, fontSize: 10, color: '#718096' }}>
+        Die Basis-Erklärung (Blatt „Regio-Editor") gilt unverändert auch für dich — sie ist das
+        Fundament, auf dem die Operator-Funktionen aufsetzen.
+      </p>
+    </div>
+  );
+}
+
+function OperatorSheet() {
+  return (
+    <div style={{ fontSize: 10.8, color: '#2d3748', lineHeight: 1.62 }}>
+      <h3 style={{ margin: '0 0 8px', fontSize: 13, color: '#1a202c' }}>Der Hub für Operator</h3>
+      <p style={{ margin: '0 0 9px' }}>
+        Die Basis gilt (Blatt „Regio-Editor"): drei Bausteine → benannte, versionierte Representation.
+        <span style={{ color: OP }}> Zusätzlich komponierst <strong>du</strong> hier aktiv:</span>
+      </p>
+      <ul style={{ margin: '0 0 9px', paddingLeft: 18, color: OP }}>
+        <li><strong>»&nbsp;+ neue Representation&nbsp;«</strong> öffnet den Wizard (Geometrie + Katalog + Name).</li>
+        <li><strong>»&nbsp;+ neuer Katalog&nbsp;«</strong> ist bewusst noch <strong>nicht</strong> gebaut.</li>
+        <li>Drafts werden <strong>benannt gespeichert</strong> — kein stiller Autospeicher.</li>
+      </ul>
+      <p style={{ margin: '0 0 6px', fontSize: 10.5, color: OP, fontWeight: 600 }}>
+        Was dir zuletzt noch abgeht:
+      </p>
+      <ul style={{ margin: 0, paddingLeft: 18, color: OP, fontSize: 10.3 }}>
+        <li>der Katalog-Anlege-Flow (»&nbsp;+ neuer Katalog&nbsp;«),</li>
+        <li>die Auslagerung der Repr-Panels ins Regio-Dashboard (Roadmap ann_106),</li>
+        <li>Versionierung &amp; Governance (Rollen/Logs) — kommt nach dem Umbau.</li>
+      </ul>
+    </div>
+  );
+}
+
+const INFO_VERSIONS: { key: string; label: string; color: string; body: React.ReactNode }[] = [
+  { key: 'operator', label: 'OPERATOR',      color: OP,        body: <OperatorSheet /> },
+  { key: 'analyst',  label: 'ANALYST',       color: '#2b6cb0', body: <AnalystSheet /> },
+  { key: 'regio',    label: 'REGIO-EDITOR',  color: '#2f855a', body: <RegioSheet /> },
+];
+
+function useDragPos(initX: number, initY: number) {
+  const [pos, setPos] = useState(() => ({ x: initX, y: initY }));
+  const dragRef = useRef<{ ox: number; oy: number } | null>(null);
+  useEffect(() => {
+    const move = (e: MouseEvent) => {
+      if (!dragRef.current) return;
+      setPos({
+        x: Math.max(8, Math.min(window.innerWidth - 120, e.clientX - dragRef.current.ox)),
+        y: Math.max(8, Math.min(window.innerHeight - 60, e.clientY - dragRef.current.oy)),
+      });
+    };
+    const up = () => { dragRef.current = null; document.body.style.userSelect = ''; };
+    window.addEventListener('mousemove', move);
+    window.addEventListener('mouseup', up);
+    return () => { window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up); };
+  }, []);
+  const startDrag = (e: React.MouseEvent) => {
+    dragRef.current = { ox: e.clientX - pos.x, oy: e.clientY - pos.y };
+    document.body.style.userSelect = 'none';
+  };
+  return { pos, startDrag };
+}
+
+export function PathworksInfoClipboard({ onClose }: { onClose: () => void }) {
+  const { pos, startDrag } = useDragPos(
+    Math.max(16, (typeof window !== 'undefined' ? window.innerWidth : 1200) - 470), 96,
+  );
+  const [active, setActive] = useState(0);
+  const SHEET_W = 290, SHEET_H = 408;
+
+  return (
+    <div style={{ position: 'fixed', left: pos.x, top: pos.y, zIndex: 901, width: 372 }}>
+      {/* Klemmbrett (Hartfaser) */}
+      <div style={{
+        position: 'relative',
+        background: 'linear-gradient(150deg, #c69a63 0%, #b0824a 100%)',
+        borderRadius: 12, padding: '26px 16px 18px',
+        boxShadow: '0 16px 46px rgba(15,23,35,0.32), inset 0 1px 0 rgba(255,255,255,0.25)',
+      }}>
+        {/* Klemme */}
+        <div onMouseDown={startDrag} style={{
+          position: 'absolute', top: -11, left: '50%', transform: 'translateX(-50%)',
+          width: 96, height: 30, cursor: 'grab', zIndex: 40,
+          background: 'linear-gradient(180deg, #e8edf2 0%, #aab4bf 55%, #cfd6dd 100%)',
+          borderRadius: 6, boxShadow: '0 3px 7px rgba(0,0,0,0.3)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <div style={{ width: 46, height: 6, borderRadius: 3, background: 'rgba(0,0,0,0.22)' }} />
+        </div>
+        {/* Schließen */}
+        <button onClick={onClose} title="schließen" style={{
+          position: 'absolute', top: 6, right: 8, zIndex: 50, cursor: 'pointer',
+          width: 22, height: 22, borderRadius: 5, border: '1px solid rgba(0,0,0,0.25)',
+          background: 'rgba(255,255,255,0.85)', color: '#3b2f1c', fontSize: 13, lineHeight: 1,
+        }}>✕</button>
+
+        {/* Blätter-Fächer */}
+        <div style={{ position: 'relative', height: SHEET_H, marginLeft: 'auto', marginRight: 'auto' }}>
+          {INFO_VERSIONS.map((v, i) => {
+            const off = i - active;
+            const isA = i === active;
+            return (
+              <div
+                key={v.key}
+                onClick={() => setActive(i)}
+                title={isA ? v.label : `zu „${v.label}" blättern`}
+                style={{
+                  position: 'absolute', top: 0, left: '50%', width: SHEET_W, height: SHEET_H,
+                  marginLeft: -SHEET_W / 2,
+                  transformOrigin: 'top center',
+                  transform: `rotate(${off * 5}deg)`,
+                  zIndex: 30 - Math.abs(off),
+                  background: '#fff', borderRadius: 3,
+                  boxShadow: isA ? '0 6px 16px rgba(0,0,0,0.28)' : '0 3px 9px rgba(0,0,0,0.22)',
+                  cursor: isA ? 'default' : 'pointer',
+                  overflow: 'hidden', transition: 'transform 180ms ease, box-shadow 180ms ease',
+                }}
+              >
+                {/* obere Klemm-Lasche (unter der Klemme) */}
+                <div style={{ height: 16, background: '#f1f3f5', borderBottom: '1px solid #e6e9ec' }} />
+                {/* Inhalt nur auf dem aktiven Blatt */}
+                {isA && (
+                  <div style={{ position: 'absolute', top: 16, left: 0, right: 0, bottom: 22, overflowY: 'auto', padding: '12px 14px' }}>
+                    {v.body}
+                  </div>
+                )}
+                {/* Farbiger Audience-Streifen am Fuß = sichtbarer Hitbox-Reiter */}
+                <div style={{
+                  position: 'absolute', bottom: 0, left: 0, right: 0, height: 22,
+                  background: v.color, color: '#fff',
+                  fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', fontFamily: 'monospace',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  opacity: isA ? 1 : 0.92,
+                }}>{v.label}</div>
+              </div>
+            );
+          })}
+        </div>
+        <div style={{ marginTop: 8, textAlign: 'center', fontSize: 9, color: 'rgba(255,255,255,0.85)', fontFamily: 'monospace' }}>
+          Infoblatt · Blätter klicken zum Umblättern
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function PathworksHubModal({ onClose }: { onClose: () => void }) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
