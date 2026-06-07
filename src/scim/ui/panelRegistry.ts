@@ -386,14 +386,9 @@ export interface RuntimeModuleDescriptor {
 }
 
 export const RUNTIME_BUILDER_REGISTRY: RuntimeModuleDescriptor[] = [
-  {
-    kind: 'runtime_module', id: 'R01', icon: '◻',
-    label: 'Runtime Shell',
-    shortDescription: 'App-Grundhülle, Routing und Fehlerzustände',
-    tabs: [{ id: 'input', label: 'Übersicht', icon: 'ℹ' }],
-  },
-  // R02 „Link & QR" wurde in die Cloud-Schicht befördert (CLOUD_DESCRIPTOR) —
-  // Link/QR = Eintritt = our-side Wolke. Daher hier entfernt (war ein ungenutzter Stub).
+  // R01 „Runtime Shell" ist in V03 (Publishing-Monitor · Tab „Runtime Shell") aufgegangen —
+  // die Runtime ist der Mond. R02 „Link & QR" wurde in die Cloud-Schicht befördert
+  // (CLOUD_DESCRIPTOR). Beide hier entfernt (waren ungenutzte Stubs).
   {
     kind: 'runtime_module', id: 'R03', icon: '↓',
     label: 'Package Loader',

@@ -1099,8 +1099,7 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
     return <CloudOverview />;
   }
 
-  // R01 Runtime Shell: echte Erklär-/Aussichts-Ansicht statt Stub.
-  if (activeId === 'R01') return <RuntimeShellView />;
+  // (R01 „Runtime Shell" ist in V03 · Tab „Runtime Shell" aufgegangen — siehe oben.)
   const runtimeModule = RUNTIME_BUILDER_REGISTRY.find((m) => m.id === activeId);
   if (runtimeModule) {
     return <StubPanel id={runtimeModule.id} description={runtimeModule.shortDescription} />;
