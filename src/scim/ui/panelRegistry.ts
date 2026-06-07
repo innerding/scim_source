@@ -226,7 +226,6 @@ export const PANEL_REGISTRY: PanelDescriptor[] = [
       ] },
       { id: 't4', label: 'Icon-Assets', icon: '⊞' },
       { id: 't5', label: 'Shell-Studio', icon: '▥' },
-      { id: 't6', label: 'Clipboard', icon: '📋' },
     ],
   },
   {

@@ -11,6 +11,7 @@ import { ComfortSliders } from 'shell-kit';
 import { SHELL_FUNCTIONS, TARGET_PLATFORMS, STUB, type ShellFunction, type TargetPlatform } from '../../shell-studio/shellStudio';
 import { useWorkspaceNav } from '../workspaceNav';
 import { ShellRunBadge } from '../ShellRunInfo';
+import { BuilderClipboardBadge } from '../BuilderClipboardInfo';
 import { useAuftraggeberRep } from '../../../runtime/useAuftraggeberRep';
 import { buildOriginPackage } from '../../sensus/originPackage';
 import { produceAnthem, dayPhase } from '../../sensus/anthemProducer';
@@ -278,6 +279,7 @@ export default function ShellStudio() {
             Shell-Studio · <span style={{ color: '#2b6cb0' }}>SIM = Oberfläche + Code</span> | <span style={{ color: '#805ad5' }}>Produktion = Ziel-App-Code (generiert)</span>
           </div>
           <ShellRunBadge />
+          <BuilderClipboardBadge compact />
         </div>
         <p style={{ fontSize: 11.5, color: '#718096', lineHeight: 1.5, margin: '6px 0 0', maxWidth: 640 }}>
           Was SCIM3 in die Ziel-App bringt — je Funktion ein Block. Links die <strong>SIM</strong> (Vorschau + der Code,

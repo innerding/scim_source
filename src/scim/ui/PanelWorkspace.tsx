@@ -22,7 +22,6 @@ import TransferView from './panels/TransferView';
 import { BoundaryView, WegnetzCompareView, IntroView, RingSvg } from './panels/SichelViews';
 import HighShellIconAssets from './panels/HighShellIconAssets';
 import ShellStudio from './panels/ShellStudio';
-import BuilderClipboard from './panels/BuilderClipboard';
 import RuntimeShellView from './panels/RuntimeShellView';
 import TransmissionView from './panels/TransmissionView';
 import ThresholdsView from './panels/ThresholdsView';
@@ -1224,7 +1223,6 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
 
   // P07 t5: Shell-Studio (Dual-Lane: High=Oberfläche | Deep=Code, je Funktion ein Block).
   if (panel.id === 'P07' && activeTab === 't5') return <ShellStudio />;
-  if (panel.id === 'P07' && activeTab === 't6') return <BuilderClipboard />;
 
   // P07 t1: Boundary-View (Ring). Notiz ist entfernt; falls wieder gesetzt,
   // erscheint sie darunter.
