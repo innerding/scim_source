@@ -66,6 +66,7 @@ import { publishOriginMesh, anthemPublishConfigured, knockPresence, anthemReadCo
 import { resampleNet } from '../wegnetz/netResample';
 import PanelIcon from './PanelIcon';
 import RegionHeaderMesh from './RegionHeaderMesh';
+import RegioDashboardControl from './RegioDashboardControl';
 
 interface Props {
   activeId: string;
@@ -1412,6 +1413,37 @@ function ModeTabs() {
   );
 }
 
+// ── Geteilte Modus-Ansichten der Regio-Panels (zentral, identisch auf allen 4) ──
+// Kartography (Rep-Editor): die geteilte Drehscheibe. Review (Analyst): vorerst leer.
+function SharedKartographyView({ activeId, onJumpTo }: { activeId: string; onJumpTo: (id: string) => void }) {
+  return (
+    <div style={{
+      fontFamily: 'system-ui, sans-serif', minHeight: 360,
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, textAlign: 'center',
+    }}>
+      <RegioDashboardControl activeId={activeId} onJumpTo={onJumpTo} size={260} arcsDeco />
+      <div>
+        <div style={{ fontSize: 15, fontWeight: 800, color: '#1a365d', letterSpacing: '-0.01em' }}>SCIM-Kartography</div>
+        <div style={{ fontSize: 11.5, color: '#718096', marginTop: 3, maxWidth: 360 }}>
+          Representation-Produktion. Faces wechseln den Arbeitsschritt, Sicheln sind Zusatzfunktionen
+          (Vorschau · Publish · Versionen). Bögen sind hier nur Dekoration.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ReviewPlaceholder() {
+  return (
+    <div style={{ fontFamily: 'system-ui, sans-serif', minHeight: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: '#718096', fontFamily: 'monospace' }}>SCIM-Review</div>
+        <div style={{ marginTop: 5, fontSize: 11.5, color: '#a0aec0' }}>Vorerst leer — Inhalt wird je Panel in Ruhe festgelegt.</div>
+      </div>
+    </div>
+  );
+}
+
 export default function PanelWorkspace({ activeId, activeTab, onTabChange, result, onJumpTo, openGeometryId, onGeometryConsumed, openCatalogId, onCatalogConsumed }: Props) {
   const role = useRole();
 
@@ -1447,6 +1479,10 @@ export default function PanelWorkspace({ activeId, activeTab, onTabChange, resul
   const subtitle =
     'shortDescription' in entry ? (entry as { shortDescription: string }).shortDescription : '';
 
+  // Regio-Panel + non-operator: zentral Kartography (Rep-Editor) bzw. Review (Analyst);
+  // Operator behält den vollen Panel-Inhalt (nicht-destruktiv).
+  const regionAlt = REGION_DASHBOARD_IDS.has(activeId) && role !== 'operator';
+
   return (
     <div style={{
       flex: 1,
@@ -1457,12 +1493,18 @@ export default function PanelWorkspace({ activeId, activeTab, onTabChange, resul
       minWidth: 0,
     }}>
       <PanelHeader id={entry.id} title={entry.label} subtitle={subtitle} icon={(entry as { icon?: string }).icon} />
-      {/* Regio-Panel: Modus-Tabs (Rollen-Kaskade Kartography/Review/Operations). Vorerst nur Pathworks. */}
-      {activeId === 'workspace' && <ModeTabs />}
-      {/* P09 (Origin-Capsuler) rendert die Sampling-Pipeline als Vergleich — ohne Tabs. */}
-      {!['P01', 'P02', 'workspace'].includes(activeId) && tabs.length > 1 && <TabBar tabs={tabs} active={safeTab} onSelect={onTabChange} />}
+      {/* Regio-Panel: Modus-Tabs (Rollen-Kaskade Kartography/Review/Operations) auf allen 4. */}
+      {REGION_DASHBOARD_IDS.has(activeId) && <ModeTabs />}
+      {/* Funktions-TabBar nur im Operator-Inhalt (nicht in Review/Kartography). */}
+      {!['P01', 'P02', 'workspace'].includes(activeId) && !regionAlt && tabs.length > 1 && <TabBar tabs={tabs} active={safeTab} onSelect={onTabChange} />}
       {/* Geometry-Editor braucht volle Hoehe ohne Padding */}
-      {activeId === DRAWER_DESCRIPTOR.id ? (
+      {regionAlt ? (
+        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 20 }}>
+          {role === 'regio_editor'
+            ? <SharedKartographyView activeId={activeId} onJumpTo={onJumpTo ?? (() => {})} />
+            : <ReviewPlaceholder />}
+        </div>
+      ) : activeId === DRAWER_DESCRIPTOR.id ? (
         <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
           <PanelContent activeId={activeId} activeTab={safeTab} result={result} onJumpTo={onJumpTo} openGeometryId={openGeometryId} onGeometryConsumed={onGeometryConsumed} openCatalogId={openCatalogId} onCatalogConsumed={onCatalogConsumed} />
         </div>

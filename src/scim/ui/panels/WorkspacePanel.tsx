@@ -202,61 +202,6 @@ function EyeButton({ shown, onClick }: { shown: boolean; onClick: () => void }) 
 
 // ─── Hauptpanel ─────────────────────────────────────────────────────────────
 
-// ── Rep-Editor-Modus: SCIM3-Kartography — die Drehscheibe pur (Faces + Sicheln,
-//    Bögen als Deko), tab-los. Reduzierte Produktions-Oberfläche. ──
-function KartographyView({ onJumpTo }: { onJumpTo: (id: string) => void }) {
-  return (
-    <div style={{
-      fontFamily: 'system-ui, sans-serif', minHeight: 360,
-      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16,
-      textAlign: 'center',
-    }}>
-      <RegioDashboardControl activeId="workspace" onJumpTo={onJumpTo} size={260} arcsDeco />
-      <div>
-        <div style={{ fontSize: 15, fontWeight: 800, color: '#1a365d', letterSpacing: '-0.01em' }}>SCIM-Kartography</div>
-        <div style={{ fontSize: 11.5, color: '#718096', marginTop: 3, maxWidth: 360 }}>
-          Representation-Produktion. Faces wechseln den Arbeitsschritt, Sicheln sind Zusatzfunktionen
-          (Vorschau · Publish · Versionen). Bögen sind hier nur Dekoration.
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Analyst-Modus: read-only-Übersicht der Region (Bestände + Drehscheibe). ──
-function PathworksAnalystView({ onJumpTo }: { onJumpTo: (id: string) => void }) {
-  const counts = [
-    { label: 'Representations', n: REPRESENTATIONS.length },
-    { label: 'Geometrien', n: GEOMETRIES.length },
-  ];
-  return (
-    <div style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 620 }}>
-      <div style={{ display: 'flex', gap: 18, alignItems: 'center', marginBottom: 18 }}>
-        <div style={{ flexShrink: 0, background: '#fff', padding: 8, borderRadius: 4, border: '1px solid #e2e8f0' }}>
-          <RegioDashboardControl activeId="workspace" onJumpTo={onJumpTo} size={92} />
-        </div>
-        <div>
-          <div style={{ fontSize: 14, fontWeight: 700, color: '#1a365d' }}>Pathworks (Hub) · Analyst</div>
-          <div style={{ fontSize: 11.5, color: '#718096', marginTop: 3, lineHeight: 1.5 }}>
-            Read-only-Übersicht der Region. Du siehst Bestände und Zusammensetzung, greifst aber nicht
-            in die Produktion ein.
-          </div>
-        </div>
-      </div>
-      <div style={{ display: 'flex', gap: 12 }}>
-        {counts.map((c) => (
-          <div key={c.label} style={{
-            flex: 1, padding: '12px 14px', borderRadius: 6, border: '1px solid #e2e8f0', background: '#fff',
-          }}>
-            <div style={{ fontSize: 22, fontWeight: 800, color: '#2b6cb0' }}>{c.n}</div>
-            <div style={{ fontSize: 11, color: '#718096', marginTop: 2 }}>{c.label}</div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export default function WorkspacePanel({ onJumpTo }: Props) {
   const [showWizard, setShowWizard] = useState(false);
   const [showClip, setShowClip] = useState(false);   // schwebendes Arbeitsblatt (Notizen)
@@ -367,10 +312,8 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
     });
   }, []);
 
-  // Rollen-Kaskade: die effektive Rolle bestimmt den Modus (vom Footer durchgeschaltet).
-  if (role === 'regio_editor') return <KartographyView onJumpTo={onJumpTo} />;
-  if (role === 'analyst') return <PathworksAnalystView onJumpTo={onJumpTo} />;
-
+  // Operations-Modus (Operator): voller Pathworks-Inhalt. Review/Kartography werden
+  // zentral in PanelWorkspace gerendert (für alle 4 Regio-Panels gleich).
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 760 }}>
       {/* Intro mit Tetraeder */}
