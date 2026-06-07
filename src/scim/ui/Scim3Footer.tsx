@@ -4,7 +4,7 @@
 //    Ziel-App präsent? Eigentümer/Detail = V03 · Publishing-Monitor (t1).
 // Macht die sonst unsichtbare Presence global greifbar (Anthem-Pulse).
 import { useContext, useEffect, useState } from 'react';
-import { RoleContext, UserNameContext } from './RoleContext';
+import { UserNameContext, type Role } from './RoleContext';
 import { clearPasskey } from './passkey';
 import { useWorkspaceNav } from './workspaceNav';
 import { useAuftraggeberRep } from '../../runtime/useAuftraggeberRep';
@@ -20,8 +20,13 @@ const ROLE_META: Record<string, { label: string; color: string }> = {
 };
 const EDITOR_ROLE_ORDER = ['operator', 'analyst'];
 
-export default function Scim3Footer() {
-  const role = useContext(RoleContext);
+export default function Scim3Footer({ realRole, preview, onPreviewChange }: {
+  realRole: Role;
+  preview: Role | null;
+  onPreviewChange: (r: Role | null) => void;
+}) {
+  // Presence/Lichter hängen an der ECHTEN Rolle (nicht an der Vorschau-Rolle).
+  const role = realRole;
   const userName = useContext(UserNameContext);
   const rep = useAuftraggeberRep();
   const { goStation } = useWorkspaceNav();
@@ -110,6 +115,35 @@ export default function Scim3Footer() {
           })}
         {(!configured || editorErrored) && <span style={{ color: '#718096', fontSize: 10 }}>· lokal</span>}
       </span>
+      {/* Modul C: „Als Analyst ansehen" — lokaler Rollen-Override (operator-only,
+          ohne Logout). Vorschau-Zustand amber + auffällig (Rückweg immer sichtbar). */}
+      {realRole === 'operator' && (
+        preview ? (
+          <button
+            onClick={() => onPreviewChange(null)}
+            title="Zurück zur Operator-Ansicht"
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 5, cursor: 'pointer',
+              background: '#dd6b20', border: 'none', borderRadius: 4, font: 'inherit',
+              fontSize: 10.5, fontWeight: 700, color: '#fff', padding: '2px 9px',
+            }}
+          >
+            👁 Analyst-Vorschau · zurück zu Operator
+          </button>
+        ) : (
+          <button
+            onClick={() => onPreviewChange('analyst')}
+            title="Lokal in die Analyst-Ansicht wechseln (ohne Logout)"
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 5, cursor: 'pointer',
+              background: 'transparent', border: '1px solid #2d3748', borderRadius: 4,
+              font: 'inherit', fontSize: 10, color: '#718096', padding: '1px 7px',
+            }}
+          >
+            👁 als Analyst ansehen
+          </button>
+        )
+      )}
       <button
         onClick={() => goStation('V03', 't1')}
         title="Publishing-Monitor öffnen (V03 · Presence-Origin)"

@@ -15,6 +15,7 @@ import Scim3Footer from './scim/ui/Scim3Footer';
 export default function App() {
   const [role, setRole] = useState<Role | null>(null);
   const [userName, setUserName] = useState<string>('');
+  const [preview, setPreview] = useState<Role | null>(null);   // Modul C: „Als Analyst ansehen"
   const result = useScimPipeline();
   const [activeId, setActiveId] = useState('P01');
   const [activeTab, setActiveTab] = useState<TabId>('input');
@@ -45,8 +46,11 @@ export default function App() {
     return <IntroScreen onAuth={(r, n) => { setUserName(n); setRole(r); }} />;
   }
 
+  // Effektive Rolle: Operator kann lokal in die Analyst-Ansicht wechseln (Präsentation).
+  const effectiveRole: Role = role === 'operator' && preview ? preview : role;
+
   return (
-    <RoleContext.Provider value={role}>
+    <RoleContext.Provider value={effectiveRole}>
      <UserNameContext.Provider value={userName}>
      <RepresentationProvider>
       <WorkspaceNavProvider value={{ goStation: goTo, activeId, activeTab }}>
@@ -99,7 +103,7 @@ export default function App() {
         </div>
         {showManual && <RepresentBuildManualModal onClose={() => setShowManual(false)} />}
       </div>
-      <Scim3Footer />
+      <Scim3Footer realRole={role} preview={preview} onPreviewChange={setPreview} />
       </div>
       </WorkspaceNavProvider>
      </RepresentationProvider>
