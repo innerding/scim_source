@@ -16,7 +16,7 @@ export default function NavCloud({ onClick, active = false }: { onClick?: () => 
       title="Cloud — Auslieferung & Eintritt (Launcher · globe-switcher · collector)"
       style={{
         display: 'flex', justifyContent: 'center', flexShrink: 0,
-        cursor: onClick ? 'pointer' : 'default', color, margin: '-14px 0 1px 0',
+        cursor: onClick ? 'pointer' : 'default', color, margin: '-14px 0 7px 0',
         transition: 'color 0.15s', userSelect: 'none',
       }}
     >
