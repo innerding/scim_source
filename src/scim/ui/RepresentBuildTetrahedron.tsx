@@ -54,6 +54,9 @@ interface Props {
   // „Sensus Core Publishing" wird zu Thresholds (Slider-Glyph), Netz füllt mehr
   // Fläche (größere Faces). Sicheln bleiben (Zusatzfunktion).
   dashboard?: boolean;
+  // Bögen als reine Deko (REP-Manufactur): trotz Dashboard-Modus sichtbar, aber
+  // blass und NICHT klickbar, ohne Beschriftung.
+  arcsDeco?: boolean;
 }
 
 // ─── Geometrie ──────────────────────────────────────────────────────────────
@@ -316,6 +319,7 @@ export default function RepresentBuildTetrahedron({
   showLabels = false,
   transmissionMode = 'default',
   dashboard = false,
+  arcsDeco = false,
 }: Props) {
   const isDark = variant === 'dark';
 
@@ -335,7 +339,8 @@ export default function RepresentBuildTetrahedron({
   // viewBox: im Dashboard-Modus eng ums Netz (keine Bögen → größere Faces),
   // sonst mit Padding für die Bogen-Beschriftung.
   const labelPadding = 14;
-  const totalRadius = dashboard ? R + 4 : R + ARC_THICKNESS / 2 + labelPadding;
+  const tight = dashboard && !arcsDeco;   // eng nur ohne Deko-Bögen
+  const totalRadius = tight ? R + 4 : R + ARC_THICKNESS / 2 + labelPadding;
   const vb = -totalRadius - 2;
   const vbSize = 2 * (totalRadius + 2);
 
@@ -346,20 +351,22 @@ export default function RepresentBuildTetrahedron({
       viewBox={`${vb} ${vb} ${vbSize} ${vbSize}`}
       style={{ overflow: 'visible', display: 'block' }}
     >
-      {/* Bogensegmente — im Dashboard-Modus ausgeblendet (Thresholds ist dort ein Face). */}
-      {!dashboard && (
+      {/* Bogensegmente — im Dashboard-Modus aus (Thresholds ist dort ein Face),
+          außer arcsDeco: dann blass & nicht klickbar als Deko (REP-Manufactur). */}
+      {(!dashboard || arcsDeco) && (
       <g
         style={{
           transformBox: 'view-box',
           transformOrigin: '0 0',
           transform: `rotate(${transmissionMode === 'input' ? 60 : 0}deg) scale(${ARC_SCALE})`,
           transition: 'transform 480ms cubic-bezier(0.45, 0, 0.55, 1)',
+          opacity: arcsDeco ? 0.4 : 1,
         }}
       >
       {ARCS.map((a) => {
         const path = describeArcSegment(a.startDeg, a.endDeg, ARC_GAP_DEG);
         const [lx, ly] = polarToCartesian(a.labelAngleDeg, R + ARC_THICKNESS / 2 + 6);
-        const clickable = !!onArcClick;
+        const clickable = !arcsDeco && !!onArcClick;
         const isActive = a.id === activeArc;
         const fill = isActive ? arcFillActive : arcFillInactive;
         const stroke = isActive ? arcStrokeActive : arcStrokeInactive;
@@ -380,7 +387,7 @@ export default function RepresentBuildTetrahedron({
             >
               <title>{a.longLabel}</title>
             </path>
-            {showLabels && (
+            {showLabels && !arcsDeco && (
               <>
                 {/* transparente Hitbox hinter dem Kuerzel: der Klick aufs Label
                     trifft so den Bogen (onClick des umgebenden <g>) statt

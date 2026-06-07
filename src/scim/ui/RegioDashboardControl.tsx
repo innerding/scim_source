@@ -30,17 +30,19 @@ const SICKLE_TO_PANEL: Record<RepresentBuildSickle, string> = {
 };
 
 export default function RegioDashboardControl({
-  activeId, onJumpTo, size = 116, variant = 'light',
+  activeId, onJumpTo, size = 116, variant = 'light', arcsDeco = false,
 }: {
   activeId: string;
   onJumpTo: (panelId: string) => void;
   size?: number;
   variant?: 'dark' | 'light';
+  arcsDeco?: boolean;   // REP-Manufactur: Bögen als blasse Deko zeigen
 }) {
   const activeFace = PANEL_TO_FACE[activeId];
   return (
     <RepresentBuildTetrahedron
       dashboard
+      arcsDeco={arcsDeco}
       showLabels
       size={size}
       variant={variant}

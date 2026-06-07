@@ -480,8 +480,12 @@ export const WORKSPACE_DESCRIPTOR: WorkspaceDescriptor = {
   id: 'workspace',                 // ID eingefroren (load-bearing); nur das Label wandert.
   label: 'Pathworks (Hub)',        // Arbeitstitel: wird die Drehscheibe des Pathworks-Umbaus.
   icon: 'sys:paperclip',           // Büroklammer aus dem System-Icons-Set (statt Home-Glyph).
+  // Rollen-Kaskade (Modus-Tabs): Operator=alle 3 · Analyst=Analyst+Rep-Editor · Rep-Editor=nur Rep-Editor (tab-los).
+  // Sichtbarkeit pro Rolle in PanelWorkspace (MODE_TAB_ROLES).
   tabs: [
-    { id: 'input', label: 'Übersicht', icon: '⌂' },
+    { id: 'input',      label: 'Operator',   icon: '⚙' },
+    { id: 'result',     label: 'Analyst',    icon: 'ⓘ' },
+    { id: 'validation', label: 'Rep-Editor', icon: 'sys:paperclip' },
   ],
 };
 
