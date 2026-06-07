@@ -5,8 +5,9 @@
 
 const LOCKED: { name: string; note: string }[] = [
   { name: 'Substrat',        note: 'AI-Interface · i-Pills · System — Faces stille Deko, Panels gesperrt' },
-  { name: 'Brocken (Grund)', note: 'R01 Runtime Shell · P05 Operator-Zonen' },
-  { name: 'Müllwagen',       note: 'ungenutzte Panels (P03 · P10 · P12–P14 · R02–R08)' },
+  { name: 'Brocken (Grund)', note: 'P05 Operator-Zonen (R01 ist in V03 aufgegangen)' },
+  { name: 'Müllwagen',       note: 'ungenutzte Panels (P03 · P10 · P12–P14 · R03–R08)' },
+  { name: 'Drawer · Icon-Tab', note: 'Icon-Build-Tab nur für Operator (Katalog dagegen offen)' },
   { name: 'Visibility',      note: 'diese Liste selbst — nur für Operator sichtbar' },
 ];
 

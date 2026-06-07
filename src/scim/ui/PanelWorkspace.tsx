@@ -1076,7 +1076,7 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
     return <DrawerPanel onJumpTo={onJumpTo ?? (() => {})} openGeometryId={openGeometryId} onGeometryConsumed={onGeometryConsumed} iconView={activeTab === 'icon'} />;
   }
   if (activeId === CATALOG_DESCRIPTOR.id) {
-    if (role !== 'operator') return null;
+    // Katalog ist auch für Analyst sichtbar (operator-Gate entfernt).
     return <CatalogTab onJumpTo={onJumpTo} openCatalogId={openCatalogId} onCatalogConsumed={onCatalogConsumed} />;
   }
   if (activeId === SYSTEM_DESCRIPTOR.id) {
@@ -1317,7 +1317,7 @@ export default function PanelWorkspace({ activeId, activeTab, onTabChange, resul
 
   const tabs = entry.tabs.filter((t) => {
     if (!TAB_ORDER.includes(t.id as TabId)) return false;
-    if (t.id === 'catalog' && role !== 'operator') return false;
+    if (t.id === 'icon' && role !== 'operator') return false;   // Drawer · Icon-Tab nur Operator
     return true;
   });
   // Aktiver Tab wird beim Panelwechsel auf 'input' gesetzt; Panels mit eigenen

@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useRole } from '../RoleContext';
 import { parsePoiCatalog } from '../../poi-catalog/poiCatalog.parser';
 import { CONTAINER_SYSTEM, containerOf, geometryOf } from '../../poi-catalog/poiCatalog.containerSystem';
 import { buildPoiComposite, resolveIcon } from '../../poi-catalog/poiCatalog.composite';
@@ -1232,8 +1231,6 @@ function ExportModal({ originalMd, newMd, fileName, onClose, onCommitted }: {
 // ─── Haupt-Komponente ─────────────────────────────────────────────────────────
 
 export default function CatalogTab({ onJumpTo, openCatalogId, onCatalogConsumed }: { onJumpTo?: (panelId: string) => void; openCatalogId?: string | null; onCatalogConsumed?: () => void } = {}) {
-  const role = useRole();
-  if (role !== 'operator') return null;
 
   const [regionId, setRegionId] = useState<string>(REGIONS[0].id);
   const region = REGIONS.find((r) => r.id === regionId)!;

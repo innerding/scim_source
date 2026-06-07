@@ -403,7 +403,7 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
   // non-operator: die Gruppen „Substrat" + „Grund" (alles unter dem Komposit) ausblenden.
   const visibleCosmoGroups = COSMO_GROUPS.filter((g) => !locked || (g.label !== 'Substrat' && g.label !== 'Grund'));
   const cosmoCount = visibleCosmoGroups.reduce((n, g) => n + g.ids.filter((id) =>
-    descById(id) && !((id === 'catalog' || id === 'ai_interface') && role !== 'operator')).length, 0);
+    descById(id) && !(id === 'ai_interface' && role !== 'operator')).length, 0);
 
   return (
     <nav style={{
@@ -811,7 +811,7 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
           const items = g.ids
             .map(descById)
             .filter((d): d is { id: string; icon: string; label: string } => d !== null)
-            .filter((d) => !((d.id === 'catalog' || d.id === 'ai_interface') && role !== 'operator'));
+            .filter((d) => !(d.id === 'ai_interface' && role !== 'operator'));
           if (items.length === 0) return null;
           return (
             <div key={g.label}>

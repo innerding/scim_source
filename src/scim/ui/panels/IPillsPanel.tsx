@@ -5,11 +5,13 @@
 import { ShellRunBadge } from '../ShellRunInfo';
 import { AnthemCycleBadge } from '../AnthemCycleInfo';
 import { BuilderClipboardBadge } from '../BuilderClipboardInfo';
+import { AppManifestBadge } from '../AppManifestInfo';
 
 const PILLS: { badge: React.ReactNode; name: string; desc: string }[] = [
   { badge: <ShellRunBadge />,          name: 'shell-run',       desc: 'Die lineare Shell-Strecke — Funktionen, Reihenfolge, Art & Status (transfer am Ende).' },
   { badge: <AnthemCycleBadge />,       name: 'anthem-run',      desc: 'Der zyklische Anthem-Pulse: 5-Min-Takt, Last-Mathematik und Refresh-Takt der Ziel-App.' },
   { badge: <BuilderClipboardBadge />,  name: 'build-clipboard', desc: 'Ziel-App-UX-Details fürs Bauen — Manifest, POI-Interaktion, BAK-Kaskade, Guidance.' },
+  { badge: <AppManifestBadge />,       name: 'i-manifest',      desc: 'Das App-Manifest der Ziel-App — Marke & UX (Slogan „Geh deinen Weg", Leitsätze).' },
 ];
 
 export default function IPillsPanel() {
