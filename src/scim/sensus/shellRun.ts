@@ -124,9 +124,9 @@ export const SHELL_RUN_STEPS: ShellStep[] = [
     blurb: 'Cross-Rep-Fan-in: aggregiert den Katalog Nation → Region → Representation aus den per-Rep-Fakten, die jeder Origin-Capsuler deklariert (Nation/Region/Icon). Wohnt auf dem Publishing-Layer (Sensus Core P / V01-V02-Kaskade), NICHT in der Deep-Shell (deren Animationen sind generisch). Speist den Launcher. Nation-Ebene nur als Minimal-Pfad anlegen.',
   },
   {
-    n: 15, word: 'launcher', title: 'Launcher · globale Auswahl', kind: 'surface', home: '— · High-Shell-Surface, noch nicht filetiert',
-    status: 'open',
-    blurb: 'Die globale-Auswahl-Fassung: rendert die Kacheln Nation → Region → Representation und löst die Bundle-Auslieferung aus. Der EIGENTLICHE Konsument des Collector-Path. Generische High-Shell-Surface, publishing-gespeist, lebt AUSSERHALB des Rep-Bundles. Wird vom globe-switcher gezeigt (URL) oder übersprungen (QR).',
+    n: 15, word: 'launcher', title: 'Launcher · globale Auswahl', kind: 'surface', home: '— · our-side (Runtime src/launcher) · Heimat: Cloud-Schicht (geplant)',
+    status: 'partial',
+    blurb: 'Die globale-Auswahl-Fassung: rendert die Kacheln (Nation →) Region → Representation und lädt die gewählte Rep. Der EIGENTLICHE Konsument des Collector-Path. our-side Eintritts-Surface, publishing-gespeist, lebt AUSSERHALB des Rep-Bundles. Vom globe-switcher gezeigt (nackte URL) oder übersprungen (QR). GEBAUT (Runtime src/launcher, minimal/statisch: Lichtenberg aktiv · Grünberg abgedimmt · Gaisberg prepared); kosmologische Heimat = neue Cloud-Schicht zwischen Transmission und Mond (Modell B, geplant); Collector/Pathworks-Hub speisen den Inhalt künftig.',
   },
   {
     n: 16, word: 'lade-treiber', title: 'Lade-Kaskade-Treiber', kind: 'engine', home: 'Deep-Shell · DEPLOY_ORDER',

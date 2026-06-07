@@ -39,7 +39,7 @@ import { colorAt, DEFAULT_SCALE } from 'shell-kit';
 // (inkl. Expand/Collapse/Positionierung) — keine erfundene Nachbildung.
 // APP_URL/mvpUrl = EINE Quelle (runtime/appUrl), geteilt mit V03 (App-QR).
 // MVP-Lichtenberg: gleiche Domain + ?rep=rep-lichtenberg (lädt das echte Lichtenberg-Origin).
-// Demo bleibt der Default (bare URL).
+// Seit dem Launcher-Umbau: nackte URL = LAUNCHER (Default), Demo nur noch über ?demo=1 (privat).
 const MVP_URL = mvpUrl('rep-lichtenberg');
 
 const FRAME_H = 649; // Handy-Proportion 390:844 bei fester Breite 300 → 300 × 844/390 ≈ 649
@@ -221,7 +221,8 @@ export default function ShellStudio() {
   //   Origin → buildOriginPackage (per-Rep, tief) · Anthem → simSegmentLoads (Last).
   // (NICHT der Collector — der ist die über-Rep-Liste.)
   const rep = useAuftraggeberRep();
-  const [vorschauMvp, setVorschauMvp] = useState(false); // Vorschau-iframe: Demo (Bestand) ↔ MVP-Lichtenberg
+  // Vorschau-iframe: Launcher (nackte URL = neuer Default) · MVP-Lichtenberg (?rep=) · Demo (?demo=1, privat).
+  const [preview, setPreview] = useState<'launcher' | 'mvp' | 'demo'>('launcher');
   const [originOn, setOriginOn] = useState(false);
   const [anthemOn, setAnthemOn] = useState(false);
   const [turboHour, setTurboHour] = useState(13); // anthem-sim Zeit (Time/Turbo) — bei echtem Last-Paket weg
@@ -318,13 +319,13 @@ export default function ShellStudio() {
         {/* LINKS: zwei fixe Devices (Vorschau live · Shell-Neu) — geteilt, nicht pro Block */}
         <div style={{ flex: '0 0 auto', display: 'flex', gap: 12, alignSelf: 'flex-start' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <DeviceFrame><AppIframe src={vorschauMvp ? MVP_URL : APP_URL} /></DeviceFrame>
-            {/* Switcher UNTER dem iframe: Demo (Bestand) ↔ MVP-Lichtenberg (neu, ?rep=lichtenberg) */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, width: DEV_W, padding: '6px 8px', border: '1px solid #e2e8f0', borderRadius: 8, background: '#f7fafc' }}>
+            <DeviceFrame><AppIframe src={preview === 'mvp' ? MVP_URL : preview === 'demo' ? `${APP_URL}&demo=1` : APP_URL} /></DeviceFrame>
+            {/* Switcher UNTER dem iframe: Launcher (nackt, neuer Default) · MVP-Lichtenberg (?rep=) · Demo (?demo=1, privat) */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, width: DEV_W, padding: '6px 8px', border: '1px solid #e2e8f0', borderRadius: 8, background: '#f7fafc', flexWrap: 'wrap' }}>
               <span style={{ fontSize: 9, fontWeight: 800, color: '#718096', letterSpacing: 0.4 }}>VORSCHAU</span>
-              <button onClick={() => setVorschauMvp(false)} style={{ fontSize: 10, fontWeight: 700, padding: '3px 9px', borderRadius: 6, cursor: 'pointer', border: `1px solid ${!vorschauMvp ? '#2b6cb0' : '#cbd5e0'}`, background: !vorschauMvp ? '#2b6cb0' : '#fff', color: !vorschauMvp ? '#fff' : '#4a5568' }}>Demo</button>
-              <button onClick={() => setVorschauMvp(true)} style={{ fontSize: 10, fontWeight: 700, padding: '3px 9px', borderRadius: 6, cursor: 'pointer', border: `1px solid ${vorschauMvp ? '#276749' : '#cbd5e0'}`, background: vorschauMvp ? '#38a169' : '#fff', color: vorschauMvp ? '#fff' : '#4a5568' }}>MVP-Lichtenberg</button>
-              {vorschauMvp && <span style={{ fontSize: 8.5, color: '#a0aec0', fontStyle: 'italic' }}>füllt sich ab Phase 0</span>}
+              <button onClick={() => setPreview('launcher')} style={{ fontSize: 10, fontWeight: 700, padding: '3px 9px', borderRadius: 6, cursor: 'pointer', border: `1px solid ${preview === 'launcher' ? '#2b6cb0' : '#cbd5e0'}`, background: preview === 'launcher' ? '#2b6cb0' : '#fff', color: preview === 'launcher' ? '#fff' : '#4a5568' }}>Launcher</button>
+              <button onClick={() => setPreview('mvp')} style={{ fontSize: 10, fontWeight: 700, padding: '3px 9px', borderRadius: 6, cursor: 'pointer', border: `1px solid ${preview === 'mvp' ? '#276749' : '#cbd5e0'}`, background: preview === 'mvp' ? '#38a169' : '#fff', color: preview === 'mvp' ? '#fff' : '#4a5568' }}>MVP-Lichtenberg</button>
+              <button onClick={() => setPreview('demo')} style={{ fontSize: 10, fontWeight: 700, padding: '3px 9px', borderRadius: 6, cursor: 'pointer', border: `1px solid ${preview === 'demo' ? '#a0aec0' : '#cbd5e0'}`, background: preview === 'demo' ? '#718096' : '#fff', color: preview === 'demo' ? '#fff' : '#4a5568' }}>Demo (privat)</button>
             </div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
