@@ -148,6 +148,37 @@ function headerCode(id: string): string {
   return '';
 }
 
+// ── Header-Klassifizierung (Farbe nach Panel-Kategorie) ─────────────────────
+//  region : Schauglas-Verlauf  — die Repr-/Colour-Mesh-Panels (künftiges Regio-
+//           Dashboard „Pathworks"): Thresholds · Coder · Pathworks · Drawer · Katalog.
+//  green  : Brocken/Grund (P05 Operator-Zonen) — grell-grün.
+//  yellow : Müllwagen (ungenutzte Panels) — grell-gelb.
+//  white  : operator-only / vom Analyst NICHT sichtbar (Substrat) — invertiert weiß.
+//  black  : analyst-sichtbar (Mond · Transmitter · Komposit · Cloud) — schwarz.
+const REGION_DASHBOARD_IDS = new Set(['P01', 'P02', 'workspace', 'geometry_editor', 'catalog']);
+const BROCKEN_IDS = new Set(['P05']);
+const MUELL_IDS = new Set(['P03', 'P10', 'P12', 'P13', 'P14', 'R03', 'R04', 'R05', 'R06', 'R07', 'R08']);
+const OPERATOR_ONLY_IDS = new Set(['ai_interface', 'ipills', 'system']);   // Substrat
+
+type HeaderVariant = 'region' | 'green' | 'yellow' | 'white' | 'black';
+function headerVariant(id: string): HeaderVariant {
+  if (REGION_DASHBOARD_IDS.has(id)) return 'region';
+  if (BROCKEN_IDS.has(id)) return 'green';
+  if (MUELL_IDS.has(id)) return 'yellow';
+  if (OPERATOR_ONLY_IDS.has(id)) return 'white';
+  return 'black';
+}
+
+// Solide Header-Paletten (alle Varianten außer 'region').
+const SOLID_HEADER: Record<Exclude<HeaderVariant, 'region'>, {
+  bg: string; fg: string; sub: string; chipBg: string; chipFg: string; border: string;
+}> = {
+  black:  { bg: '#0d1520', fg: 'rgba(255,255,255,0.92)', sub: 'rgba(255,255,255,0.5)',  chipBg: 'rgba(255,255,255,0.10)', chipFg: 'rgba(255,255,255,0.72)', border: '#1a2535' },
+  white:  { bg: '#ffffff', fg: '#0d1520',                sub: '#5a6b80',                chipBg: 'rgba(13,21,32,0.07)',   chipFg: '#0d1520',                border: '#e2e8f0' },
+  yellow: { bg: '#ffe600', fg: '#1a1600',                sub: '#5c4f00',                chipBg: 'rgba(0,0,0,0.14)',      chipFg: '#1a1600',                border: '#d8c400' },
+  green:  { bg: '#33ff66', fg: '#06210d',                sub: '#0c4a1f',                chipBg: 'rgba(0,0,0,0.14)',      chipFg: '#06210d',                border: '#1fd94c' },
+};
+
 function PanelHeader({ id, title, subtitle, icon, dimmed }: { id: string; title: string; subtitle: string; icon?: string; dimmed?: boolean }) {
   // Header bindet an den Schauglas-Verlauf (wie P01 Thresholds): links ein
   // Gradientenblock (selber Verlauf), der rasch ins Weiß ausläuft. Die Nummer
@@ -163,59 +194,55 @@ function PanelHeader({ id, title, subtitle, icon, dimmed }: { id: string; title:
     return () => window.removeEventListener(COLOUR_SETTINGS_EVENT, reload);
   }, [slug]);
 
-  const grad = headerGradientCss(cs.stops, cs.borders);
-  const topColor = cs.stops[cs.stops.length - 1];
+  const variant = headerVariant(id);
   const code = headerCode(id);
-  // horizontaler Auslauf ins Weiß: Verlauf nur links, ab ~34 % transparent.
-  const fade = 'linear-gradient(to right, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.92) 14%, rgba(0,0,0,0.5) 24%, rgba(0,0,0,0) 34%)';
 
+  // ── Region-Dashboard: Schauglas-Verlauf, läuft horizontal ins Weiß aus ──
+  if (variant === 'region') {
+    const grad = headerGradientCss(cs.stops, cs.borders);
+    const topColor = cs.stops[cs.stops.length - 1];
+    const fade = 'linear-gradient(to right, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.92) 14%, rgba(0,0,0,0.5) 24%, rgba(0,0,0,0) 34%)';
+    return (
+      <div style={{
+        position: 'relative', borderBottom: '1px solid #e2e8f0', background: '#fff',
+        flexShrink: 0, overflow: 'hidden', opacity: dimmed ? 0.65 : 1,
+      }}>
+        <div aria-hidden style={{ position: 'absolute', inset: 0, background: grad, WebkitMaskImage: fade, maskImage: fade }} />
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 14, padding: '11px 20px', fontFamily: 'system-ui, sans-serif' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 48, gap: 2 }}>
+            {icon && <span style={{ fontSize: 22, lineHeight: 1, color: '#fff', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.45))' }}>{icon}</span>}
+            {code && <span style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: 12.5, letterSpacing: '0.04em', color: '#fff', textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}>{code}</span>}
+          </div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 15.5, fontWeight: 700, letterSpacing: '-0.01em', color: topColor }}>{title}</div>
+            {subtitle && <div style={{ fontSize: 12, color: '#5a6b80', marginTop: 2 }}>{subtitle}</div>}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Solide Varianten: schwarz (analyst) · weiß (operator-only) · gelb (Müll) · grün (Brocken) ──
+  const p = SOLID_HEADER[variant];
   return (
     <div style={{
-      position: 'relative',
-      borderBottom: '1px solid #e2e8f0',
-      background: '#fff',
-      flexShrink: 0,
-      overflow: 'hidden',
-      opacity: dimmed ? 0.65 : 1,
+      position: 'relative', borderBottom: `1px solid ${p.border}`, background: p.bg,
+      flexShrink: 0, overflow: 'hidden', opacity: dimmed ? 0.65 : 1,
     }}>
-      {/* Gradientenband, links voll, läuft horizontal ins Weiß aus */}
-      <div aria-hidden style={{
-        position: 'absolute', inset: 0,
-        background: grad,
-        WebkitMaskImage: fade, maskImage: fade,
-      }} />
-      <div style={{
-        position: 'relative',
-        display: 'flex', alignItems: 'center', gap: 14,
-        padding: '11px 20px',
-        fontFamily: 'system-ui, sans-serif',
-      }}>
-        {/* Gradientenblock-Inhalt: Icon (wie Navigator) + fette Nummer in Weiß */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 48, gap: 2 }}>
-          {icon && (
-            <span style={{ fontSize: 22, lineHeight: 1, color: '#fff', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.45))' }}>
-              {icon}
-            </span>
-          )}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '11px 20px', fontFamily: 'system-ui, sans-serif' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 48, gap: 3 }}>
+          {icon && <span style={{ fontSize: 22, lineHeight: 1, color: p.fg }}>{icon}</span>}
           {code && (
             <span style={{
-              fontFamily: 'monospace', fontWeight: 800, fontSize: 12.5, letterSpacing: '0.04em',
-              color: '#fff', textShadow: '0 1px 3px rgba(0,0,0,0.5)',
-            }}>
-              {code}
-            </span>
+              fontFamily: 'monospace', fontWeight: 800, fontSize: 11.5, letterSpacing: '0.04em',
+              color: p.chipFg, background: p.chipBg, border: `1px solid ${p.border}`,
+              padding: '1px 6px', borderRadius: 3,
+            }}>{code}</span>
           )}
         </div>
-        {/* Texte im Weißraum, Titel in der obersten Schauglas-Farbe */}
         <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: 15.5, fontWeight: 700, letterSpacing: '-0.01em', color: topColor }}>
-            {title}
-          </div>
-          {subtitle && (
-            <div style={{ fontSize: 12, color: '#5a6b80', marginTop: 2 }}>
-              {subtitle}
-            </div>
-          )}
+          <div style={{ fontSize: 15.5, fontWeight: 700, letterSpacing: '-0.01em', color: p.fg }}>{title}</div>
+          {subtitle && <div style={{ fontSize: 12, color: p.sub, marginTop: 2 }}>{subtitle}</div>}
         </div>
       </div>
     </div>
