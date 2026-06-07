@@ -16,6 +16,17 @@ const USERS: Record<string, { code: string; role: Role }> = {
   'michael moser': { code: import.meta.env.VITE_CODE_ANALYST  ?? '', role: 'analyst'  },
 };
 
+// Merkbarer Wiederherstellungs-Code — IMMER gültig (UX-Gate, keine Krypto-Sperre;
+// das JS-Bundle lädt ohnehin). Verhindert Aussperrer; der Env-Code bleibt zusätzlich
+// gültig. Normalisiert (Groß/Klein + Satzzeichen egal): „full visibility" == „FULL-VISIBILITY".
+const RECOVERY_CODE = 'FULL-VISIBILITY';
+const normCode = (s: string) => s.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+function codeMatches(envCode: string, typed: string): boolean {
+  const t = normCode(typed);
+  if (t === normCode(RECOVERY_CODE)) return true;
+  return !!envCode && t === normCode(envCode);
+}
+
 type Phase = 'idle' | 'confirming' | 'fading';
 
 const HEX_ORIGIN = '29.1% 59.1%';
@@ -375,7 +386,7 @@ export default function IntroScreen({ onAuth }: Props) {
     if (!canSubmit) return;
     const userKey = name.trim().toLowerCase();
     const user = USERS[userKey];
-    if (!user || user.code !== code.trim().toUpperCase()) {
+    if (!user || !codeMatches(user.code, code)) {
       setError('Unbekannter Nutzer oder falscher Code');
       return;
     }
