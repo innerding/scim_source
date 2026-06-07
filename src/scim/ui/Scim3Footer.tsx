@@ -5,6 +5,7 @@
 // Macht die sonst unsichtbare Presence global greifbar (Anthem-Pulse).
 import { useContext, useEffect, useState } from 'react';
 import { RoleContext, UserNameContext } from './RoleContext';
+import { clearPasskey } from './passkey';
 import { useWorkspaceNav } from './workspaceNav';
 import { useAuftraggeberRep } from '../../runtime/useAuftraggeberRep';
 import { fetchPresence, anthemReadConfigured, postEditorPresence, fetchEditorPresence, type PresenceStatus, type EditorPresence } from '../../runtime/anthemApi';
@@ -120,6 +121,24 @@ export default function Scim3Footer() {
         <span style={{ color, fontSize: 12 }}>{dot}</span>
         <span>{text}</span>
         <span style={{ color: '#4a5568' }}>· V03 ›</span>
+      </button>
+      {/* Abmelden + Passkey zurücksetzen → frischer Name+Code-Login (Name wird neu
+          gespeichert; danach trägt auch der Fingerprint den Namen). */}
+      <button
+        onClick={() => {
+          if (window.confirm('Abmelden & Passkey zurücksetzen? Beim nächsten Login Name + Code eingeben — danach wieder per Fingerprint (mit Namen).')) {
+            clearPasskey();
+            window.location.reload();
+          }
+        }}
+        title="Abmelden & Passkey zurücksetzen — neu mit Name + Code einloggen"
+        style={{
+          display: 'inline-flex', alignItems: 'center', gap: 4, cursor: 'pointer',
+          background: 'transparent', border: '1px solid #2d3748', borderRadius: 4,
+          font: 'inherit', fontSize: 10, color: '#718096', padding: '1px 7px',
+        }}
+      >
+        ⎋ abmelden
       </button>
     </div>
   );
