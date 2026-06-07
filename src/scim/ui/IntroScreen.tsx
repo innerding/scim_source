@@ -14,6 +14,7 @@ interface Props {
 const USERS: Record<string, { code: string; role: Role }> = {
   'dietmar': { code: import.meta.env.VITE_CODE_OPERATOR ?? '', role: 'operator' },
   'michael moser': { code: import.meta.env.VITE_CODE_ANALYST  ?? '', role: 'analyst'  },
+  'rep editor': { code: import.meta.env.VITE_CODE_REGIO ?? '', role: 'regio_editor' },
 };
 
 // Merkbarer Wiederherstellungs-Code — IMMER gültig (UX-Gate, keine Krypto-Sperre;

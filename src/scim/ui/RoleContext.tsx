@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react';
 
-export type Role = 'operator' | 'analyst';
+export type Role = 'operator' | 'analyst' | 'regio_editor';
 
 export const RoleContext = createContext<Role>('operator');
 

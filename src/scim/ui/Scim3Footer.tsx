@@ -13,12 +13,13 @@ import { fetchPresence, anthemReadConfigured, postEditorPresence, fetchEditorPre
 const POLL_MS = 15000;
 const HEARTBEAT_MS = 30000;
 
-// Editor-Rollen — Anzeige + Farbe (Operator grün · Analyst blau).
+// Editor-Rollen — Anzeige + Farbe (SCIM-Operator grün · Data-Analyst blau · Rep-Editor violett).
 const ROLE_META: Record<string, { label: string; color: string }> = {
-  operator: { label: 'Operator', color: '#48bb78' },
-  analyst:  { label: 'Analyst',  color: '#4299e1' },
+  operator:     { label: 'SCIM-Operator', color: '#48bb78' },
+  analyst:      { label: 'Data-Analyst',  color: '#4299e1' },
+  regio_editor: { label: 'Rep-Editor',    color: '#805ad5' },
 };
-const EDITOR_ROLE_ORDER: Role[] = ['operator', 'analyst'];
+const EDITOR_ROLE_ORDER: Role[] = ['operator', 'analyst', 'regio_editor'];
 
 export default function Scim3Footer({ realRole, preview, onPreviewChange }: {
   realRole: Role;
