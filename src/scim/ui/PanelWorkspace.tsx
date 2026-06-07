@@ -193,8 +193,8 @@ function PanelHeader({ id, title, subtitle, icon, dimmed }: { id: string; title:
   if (variant === 'region') {
     return (
       <div style={{
-        position: 'relative', borderBottom: '1px solid #1a2535',
-        flexShrink: 0, overflow: 'hidden', opacity: dimmed ? 0.65 : 1,
+        position: 'relative', borderBottom: '1px solid #1a2535', background: '#03050f',
+        flexShrink: 0, overflow: 'hidden', opacity: 1,   // kein Dimmen: Schwarz bleibt schwarz
       }}>
         <style>{REGION_HEADER_CSS}</style>
         <RegionHeaderMesh />
