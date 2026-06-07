@@ -18,6 +18,7 @@ import NavDepthTetraeder from './NavDepthTetraeder';
 import NavTrashTruck from './NavTrashTruck';
 import NavVisibility from './NavVisibility';
 import NavCloud from './NavCloud';
+import PanelIcon from './PanelIcon';
 
 interface Props {
   activeId: string;
@@ -81,8 +82,10 @@ function NavItem({
         if (!isActive) (e.currentTarget as HTMLDivElement).style.background = 'transparent';
       }}
     >
-      {/* Icon-Glyph: monochrom, Faktor 1.8 ggue. urspruenglichem 13 -> 23 */}
-      <span style={{ fontSize: 23, width: 32, textAlign: 'center', flexShrink: 0, ...dimStyle }}>{icon}</span>
+      {/* Icon: System-Icon-SVG (sys:…) oder Unicode-Glyph, monochrom (erbt color) */}
+      <span style={{ width: 32, textAlign: 'center', flexShrink: 0, display: 'inline-flex', justifyContent: 'center', ...dimStyle }}>
+        <PanelIcon icon={icon} size={23} />
+      </span>
       <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', ...dimStyle }}>
         {label}
       </span>

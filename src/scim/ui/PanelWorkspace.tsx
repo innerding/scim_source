@@ -64,8 +64,7 @@ import { AnthemCycleBadge } from './AnthemCycleInfo';
 import { ShellRunBadge } from './ShellRunInfo';
 import { publishOriginMesh, anthemPublishConfigured, knockPresence, anthemReadConfigured } from '../../runtime/anthemApi';
 import { resampleNet } from '../wegnetz/netResample';
-import { useColourRegionSlug } from '../../runtime/useAuftraggeberRep';
-import { loadColourSettings, COLOUR_SETTINGS_EVENT } from '../sensus/colourSettings';
+import PanelIcon from './PanelIcon';
 
 interface Props {
   activeId: string;
@@ -125,24 +124,8 @@ function TabBar({
   );
 }
 
-const NAV_BG = '#0d1520';   // Navigator-Hintergrund — der Verlauf startet damit.
-
-// Schauglas-Verlauf (Felder/Grenzen) als CSS — horizontal (links→rechts), deckend.
-// Beginnt mit der Navigator-Hintergrundfarbe (links), geht dann in die Schauglas-
-// Farben über (Feldmitten wie P01, in das Band 30 %→100 % gelegt).
-function headerGradientCss(stops: string[], borders: number[]): string {
-  const n = stops.length;
-  const center = (i: number) => {
-    const lo = i === 0 ? 0 : borders[i - 1];
-    const hi = i === n - 1 ? 1 : borders[i];
-    return (lo + hi) / 2;
-  };
-  const map = (t: number) => 30 + 70 * t;            // Load 0..1 → Headerbreite 30..100 %
-  const parts = [`${NAV_BG} 0%`, `${NAV_BG} 18%`, `${stops[0]} 30%`];
-  for (let i = 0; i < n; i++) parts.push(`${stops[i]} ${map(center(i)).toFixed(1)}%`);
-  parts.push(`${stops[n - 1]} 100%`);
-  return `linear-gradient(to right, ${parts.join(', ')})`;
-}
+// Region-Header-Verlauf: links Lila, rechts Weiß (horizontal, deckend, kein Schwarz).
+const REGION_HEADER_GRADIENT = 'linear-gradient(to right, #8b5cf6 0%, #c4b5fd 20%, #ffffff 68%)';
 
 // Kurz-Code im Gradientenblock: nummerierte Panels = ihre ID; die Drehscheibe
 // Pathworks bekommt „HUB". Sonst kein Code (nur Icon).
@@ -184,39 +167,29 @@ const SOLID_HEADER: Record<Exclude<HeaderVariant, 'region'>, {
 };
 
 function PanelHeader({ id, title, subtitle, icon, dimmed }: { id: string; title: string; subtitle: string; icon?: string; dimmed?: boolean }) {
-  // Header bindet an den Schauglas-Verlauf (wie P01 Thresholds): links ein
-  // Gradientenblock (selber Verlauf), der rasch ins Weiß ausläuft. Die Nummer
-  // sitzt fett im Gradientenblock, Titel/Untertitel im Weißraum, der Titel in
-  // der obersten gesetzten Schauglas-Farbe (Last 1). Icon = dasselbe Glyph wie
-  // im Navigator. dimmed (Kosmologie) senkt nur die Opacity.
-  const slug = useColourRegionSlug();
-  const [cs, setCs] = useState(() => loadColourSettings(slug));
-  useEffect(() => {
-    setCs(loadColourSettings(slug));
-    const reload = () => setCs(loadColourSettings(slug));
-    window.addEventListener(COLOUR_SETTINGS_EVENT, reload);
-    return () => window.removeEventListener(COLOUR_SETTINGS_EVENT, reload);
-  }, [slug]);
-
+  // Header-Farbe nach Panel-Kategorie (headerVariant). Region-Dashboard = Lila→Weiß
+  // (Icon+Kürzel mittig, Titel schwarz rechts); solide Varianten je Kategorie.
   const variant = headerVariant(id);
   const code = headerCode(id);
 
-  // ── Region-Dashboard: Schauglas-Verlauf, horizontal & deckend, beginnt mit Navigator-BG ──
+  // ── Region-Dashboard: Verlauf Lila (links) → Weiß (rechts), Icon+Kürzel mittig, Titel schwarz rechts ──
   if (variant === 'region') {
-    const grad = headerGradientCss(cs.stops, cs.borders);
     return (
       <div style={{
-        position: 'relative', borderBottom: '1px solid #1a2535', background: grad,
+        position: 'relative', borderBottom: '1px solid #e2e8f0', background: REGION_HEADER_GRADIENT,
         flexShrink: 0, overflow: 'hidden', opacity: dimmed ? 0.65 : 1,
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '11px 20px', fontFamily: 'system-ui, sans-serif' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 48, gap: 2 }}>
-            {icon && <span style={{ fontSize: 22, lineHeight: 1, color: '#fff', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.55))' }}>{icon}</span>}
-            {code && <span style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: 12.5, letterSpacing: '0.04em', color: '#fff', textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}>{code}</span>}
+        <div style={{ display: 'flex', alignItems: 'center', padding: '11px 20px', fontFamily: 'system-ui, sans-serif' }}>
+          <div style={{ flex: 1 }} />
+          {/* Mitte: Icon + Kürzel */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, flexShrink: 0 }}>
+            {icon && <PanelIcon icon={icon} size={22} color="#3b1d6e" />}
+            {code && <span style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: 12, letterSpacing: '0.04em', color: '#3b1d6e' }}>{code}</span>}
           </div>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 15.5, fontWeight: 700, letterSpacing: '-0.01em', color: '#fff', textShadow: '0 1px 3px rgba(0,0,0,0.55)' }}>{title}</div>
-            {subtitle && <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)', marginTop: 2, textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}>{subtitle}</div>}
+          {/* Rechts: Titel schwarz */}
+          <div style={{ flex: 1, minWidth: 0, textAlign: 'right' }}>
+            <div style={{ fontSize: 15.5, fontWeight: 700, letterSpacing: '-0.01em', color: '#111' }}>{title}</div>
+            {subtitle && <div style={{ fontSize: 12, color: '#4a5568', marginTop: 2 }}>{subtitle}</div>}
           </div>
         </div>
       </div>
@@ -232,7 +205,7 @@ function PanelHeader({ id, title, subtitle, icon, dimmed }: { id: string; title:
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '11px 20px', fontFamily: 'system-ui, sans-serif' }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 48, gap: 3 }}>
-          {icon && <span style={{ fontSize: 22, lineHeight: 1, color: p.fg }}>{icon}</span>}
+          {icon && <PanelIcon icon={icon} size={22} color={p.fg} />}
           {code && (
             <span style={{
               fontFamily: 'monospace', fontWeight: 800, fontSize: 11.5, letterSpacing: '0.04em',
@@ -1428,12 +1401,8 @@ export default function PanelWorkspace({ activeId, activeTab, onTabChange, resul
         <div style={{ flex: 1, minHeight: 0, position: 'relative', overflow: 'hidden' }}>
           {/* Großes, blasses Panel-Icon-Wasserzeichen auf der untersten Ebene */}
           {(entry as { icon?: string }).icon && (
-            <div aria-hidden style={{
-              position: 'absolute', right: -24, bottom: -56, zIndex: 0,
-              fontSize: 320, lineHeight: 1, color: '#0d1520',
-              opacity: 0.035, pointerEvents: 'none', userSelect: 'none',
-            }}>
-              {(entry as { icon?: string }).icon}
+            <div aria-hidden style={{ position: 'absolute', right: -24, bottom: -56, zIndex: 0, pointerEvents: 'none', userSelect: 'none' }}>
+              <PanelIcon icon={(entry as { icon?: string }).icon} size={320} color="#0d1520" opacity={0.035} />
             </div>
           )}
           <div style={{ position: 'absolute', inset: 0, overflowY: 'auto', padding: 20, zIndex: 1 }}>

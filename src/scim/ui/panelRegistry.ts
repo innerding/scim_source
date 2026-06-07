@@ -479,7 +479,7 @@ export const WORKSPACE_DESCRIPTOR: WorkspaceDescriptor = {
   kind: 'workspace',
   id: 'workspace',                 // ID eingefroren (load-bearing); nur das Label wandert.
   label: 'Pathworks (Hub)',        // Arbeitstitel: wird die Drehscheibe des Pathworks-Umbaus.
-  icon: '⌂',
+  icon: 'sys:paperclip',           // Büroklammer aus dem System-Icons-Set (statt Home-Glyph).
   tabs: [
     { id: 'input', label: 'Übersicht', icon: '⌂' },
   ],
