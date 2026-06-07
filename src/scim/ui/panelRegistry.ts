@@ -532,7 +532,11 @@ export const IPILLS_DESCRIPTOR: IPillsDescriptor = {
   id: 'ipills',
   label: 'i-Pills',
   icon: 'ⓘ',
-  tabs: [{ id: 'input', label: 'Übersicht', icon: 'ⓘ' }],
+  tabs: [
+    { id: 'input',      label: 'Operator', icon: 'ⓘ' },
+    { id: 'result',     label: 'Analyst',  icon: 'ⓘ' },
+    { id: 'validation', label: 'Editor',   icon: 'ⓘ' },
+  ],
 };
 
 // Cloud — our-side Auslieferungs-/Eintritts-Schicht (Wolke). Recycelt aus dem

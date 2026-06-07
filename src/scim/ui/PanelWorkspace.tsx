@@ -65,6 +65,7 @@ import { ShellRunBadge } from './ShellRunInfo';
 import { publishOriginMesh, anthemPublishConfigured, knockPresence, anthemReadConfigured } from '../../runtime/anthemApi';
 import { resampleNet } from '../wegnetz/netResample';
 import PanelIcon from './PanelIcon';
+import RegionHeaderMesh from './RegionHeaderMesh';
 
 interface Props {
   activeId: string;
@@ -124,8 +125,23 @@ function TabBar({
   );
 }
 
-// Region-Header-Verlauf: links Lila, rechts Weiß (horizontal, deckend, kein Schwarz).
-const REGION_HEADER_GRADIENT = 'linear-gradient(to right, #8b5cf6 0%, #c4b5fd 20%, #ffffff 68%)';
+// Amber↔Violett-Verlauf-Animation (wie SCIM3-Intro): als Schrift-Fill (background-clip:text)
+// und Logo-Fill (CSS-Maske, siehe PanelIcon gradientClass). Bewegt die Gradient-Position.
+const REGION_HEADER_CSS = `
+@keyframes region-av-wave { from { background-position: 0% 50%; } to { background-position: 200% 50%; } }
+.region-av-text {
+  background-image: linear-gradient(90deg, #f59e0b, #a855f7, #7c3aed, #f59e0b);
+  background-size: 200% 100%;
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+  animation: region-av-wave 6s linear infinite;
+}
+.region-av-fill {
+  background-image: linear-gradient(90deg, #f59e0b, #a855f7, #7c3aed, #f59e0b);
+  background-size: 200% 100%;
+  animation: region-av-wave 6s linear infinite;
+}
+`;
 
 // Kurz-Code im Gradientenblock: nummerierte Panels = ihre ID; die Drehscheibe
 // Pathworks bekommt „HUB". Sonst kein Code (nur Icon).
@@ -172,24 +188,27 @@ function PanelHeader({ id, title, subtitle, icon, dimmed }: { id: string; title:
   const variant = headerVariant(id);
   const code = headerCode(id);
 
-  // ── Region-Dashboard: Verlauf Lila (links) → Weiß (rechts), Icon+Kürzel mittig, Titel schwarz rechts ──
+  // ── Region-Dashboard: animierter Colour-Mesh (Intro-„Empty Sea"), Amber↔Violett-
+  //    Gradient als Schrift- und Logo-Fill. Icon+Kürzel mittig, Titel rechts. ──
   if (variant === 'region') {
     return (
       <div style={{
-        position: 'relative', borderBottom: '1px solid #e2e8f0', background: REGION_HEADER_GRADIENT,
+        position: 'relative', borderBottom: '1px solid #1a2535',
         flexShrink: 0, overflow: 'hidden', opacity: dimmed ? 0.65 : 1,
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', padding: '11px 20px', fontFamily: 'system-ui, sans-serif' }}>
+        <style>{REGION_HEADER_CSS}</style>
+        <RegionHeaderMesh />
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', padding: '13px 20px', fontFamily: 'system-ui, sans-serif' }}>
           <div style={{ flex: 1 }} />
-          {/* Mitte: Icon + Kürzel */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, flexShrink: 0 }}>
-            {icon && <PanelIcon id={id} icon={icon} size={22} color="#3b1d6e" />}
-            {code && <span style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: 12, letterSpacing: '0.04em', color: '#3b1d6e' }}>{code}</span>}
+          {/* Mitte: Icon (Logo-Fill) + Kürzel (Schrift-Fill) */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, flexShrink: 0 }}>
+            {icon && <PanelIcon id={id} icon={icon} size={24} gradientClass="region-av-fill" />}
+            {code && <span className="region-av-text" style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: 12, letterSpacing: '0.04em' }}>{code}</span>}
           </div>
-          {/* Rechts: Titel schwarz */}
+          {/* Rechts: Titel (Schrift-Fill) */}
           <div style={{ flex: 1, minWidth: 0, textAlign: 'right' }}>
-            <div style={{ fontSize: 15.5, fontWeight: 700, letterSpacing: '-0.01em', color: '#111' }}>{title}</div>
-            {subtitle && <div style={{ fontSize: 12, color: '#4a5568', marginTop: 2 }}>{subtitle}</div>}
+            <div className="region-av-text" style={{ fontSize: 16, fontWeight: 800, letterSpacing: '-0.01em' }}>{title}</div>
+            {subtitle && <div style={{ fontSize: 12, color: 'rgba(220,225,240,0.72)', marginTop: 2 }}>{subtitle}</div>}
           </div>
         </div>
       </div>
@@ -1141,8 +1160,8 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
     return <AiInterfacePanel activeTab={activeTab} />;
   }
 
-  // i-Pills: zentrale Builder-Info-Übersicht (über das Substrat-Feld erreichbar).
-  if (activeId === 'ipills') return <IPillsPanel />;
+  // i-Pills: per-Audience (Operator/Analyst/Editor) über das Substrat-Feld.
+  if (activeId === 'ipills') return <IPillsPanel activeTab={activeTab} />;
 
   // Cloud — our-side Auslieferungs-/Eintritts-Schicht (Wolke). Tabs: Übersicht ·
   // Launcher · Globe-Switcher · Collector (letzte zwei aus P11 hierher gewandert).
