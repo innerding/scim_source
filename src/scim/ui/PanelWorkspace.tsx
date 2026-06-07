@@ -36,7 +36,8 @@ import type { TelcoLoadState } from '../telco-load/telcoLoad.types';
 import SystemPanel from './panels/SystemPanel';
 import AiInterfacePanel from './panels/AiInterfacePanel';
 import CatalogTab from './panels/CatalogTab';
-import { useRole } from './RoleContext';
+import { useRole, useModeSwitch, ROLE_ORDER } from './RoleContext';
+import type { Role } from './RoleContext';
 import V01PackagesPanel from './panels/V01PackagesPanel';
 import V02RegionDetailPanel from './panels/V02RegionDetailPanel';
 import V03ActiveMonitorPanel from './panels/V03ActiveMonitorPanel';
@@ -1366,6 +1367,51 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
   return tabContent;
 }
 
+// ── Modus-Tabs (Rollen-Kaskade) auf den Regio-Panels ─────────────────────────
+// Reihenfolge von links: Kartography (alle) · Review (Analyst+Operator) · Operations (nur Operator).
+// Ein Rolle sieht die Tabs ab ihrer Stufe abwärts; der aktive Tab = effektive Rolle (= Footer-Diode).
+// Klick schaltet den Modus (nur abwärts). Rep-Editor: nur Kartography (kein Schalten).
+const MODE_META: Record<Role, { label: string; color: string }> = {
+  regio_editor: { label: 'SCIM-Kartography', color: '#805ad5' },
+  analyst:      { label: 'SCIM-Review',      color: '#4299e1' },
+  operator:     { label: 'SCIM-Operations',  color: '#48bb78' },
+};
+
+function ModeTabs() {
+  const mode = useModeSwitch();
+  if (!mode) return null;
+  const realIdx = ROLE_ORDER.indexOf(mode.real);
+  // sichtbar: Rollen ab der eigenen Stufe abwärts; Anzeige Kartography→…→Operations (Index absteigend).
+  const visible = ROLE_ORDER
+    .map((r, i) => ({ r, i }))
+    .filter((x) => x.i >= realIdx)
+    .sort((a, b) => b.i - a.i);
+  return (
+    <div style={{ display: 'flex', flexShrink: 0, background: '#fff', borderBottom: '1px solid #e2e8f0' }}>
+      {visible.map(({ r }) => {
+        const meta = MODE_META[r];
+        const active = r === mode.effective;
+        const clickable = r !== mode.effective;
+        return (
+          <button
+            key={r}
+            onClick={clickable ? () => mode.set(r) : undefined}
+            style={{
+              padding: '8px 16px', fontSize: 12, fontFamily: 'monospace',
+              border: 'none', background: 'transparent', cursor: clickable ? 'pointer' : 'default',
+              color: active ? meta.color : '#718096', fontWeight: active ? 700 : 400,
+              borderBottom: active ? `2px solid ${meta.color}` : '2px solid transparent',
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+            }}
+          >
+            <span style={{ color: meta.color }}>●</span>{meta.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function PanelWorkspace({ activeId, activeTab, onTabChange, result, onJumpTo, openGeometryId, onGeometryConsumed, openCatalogId, onCatalogConsumed }: Props) {
   const role = useRole();
 
@@ -1411,9 +1457,10 @@ export default function PanelWorkspace({ activeId, activeTab, onTabChange, resul
       minWidth: 0,
     }}>
       <PanelHeader id={entry.id} title={entry.label} subtitle={subtitle} icon={(entry as { icon?: string }).icon} />
-      {/* P09 (Origin-Capsuler) rendert die Sampling-Pipeline als Vergleich — ohne Tabs.
-          Regio-Panels für Rep-Editor: nur 1 Modus-Tab → tab-los (keine TabBar). */}
-      {!['P01', 'P02'].includes(activeId) && tabs.length > 1 && <TabBar tabs={tabs} active={safeTab} onSelect={onTabChange} />}
+      {/* Regio-Panel: Modus-Tabs (Rollen-Kaskade Kartography/Review/Operations). Vorerst nur Pathworks. */}
+      {activeId === 'workspace' && <ModeTabs />}
+      {/* P09 (Origin-Capsuler) rendert die Sampling-Pipeline als Vergleich — ohne Tabs. */}
+      {!['P01', 'P02', 'workspace'].includes(activeId) && tabs.length > 1 && <TabBar tabs={tabs} active={safeTab} onSelect={onTabChange} />}
       {/* Geometry-Editor braucht volle Hoehe ohne Padding */}
       {activeId === DRAWER_DESCRIPTOR.id ? (
         <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>

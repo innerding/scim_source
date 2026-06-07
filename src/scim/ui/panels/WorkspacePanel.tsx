@@ -213,7 +213,7 @@ function KartographyView({ onJumpTo }: { onJumpTo: (id: string) => void }) {
     }}>
       <RegioDashboardControl activeId="workspace" onJumpTo={onJumpTo} size={260} arcsDeco />
       <div>
-        <div style={{ fontSize: 15, fontWeight: 800, color: '#1a365d', letterSpacing: '-0.01em' }}>SCIM3-Kartography</div>
+        <div style={{ fontSize: 15, fontWeight: 800, color: '#1a365d', letterSpacing: '-0.01em' }}>SCIM-Kartography</div>
         <div style={{ fontSize: 11.5, color: '#718096', marginTop: 3, maxWidth: 360 }}>
           Representation-Produktion. Faces wechseln den Arbeitsschritt, Sicheln sind Zusatzfunktionen
           (Vorschau · Publish · Versionen). Bögen sind hier nur Dekoration.

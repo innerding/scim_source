@@ -18,6 +18,7 @@ export interface ModeSwitch {
   real: Role;
   effective: Role;
   cycle: () => void;
+  set: (r: Role) => void;   // gezielt einen Modus setzen (nur abwärts in der Kaskade)
 }
 export const ModeSwitchContext = createContext<ModeSwitch | null>(null);
 export function useModeSwitch(): ModeSwitch | null {

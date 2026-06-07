@@ -72,10 +72,15 @@ export default function App() {
     const next = allowed[(allowed.indexOf(effectiveRole) + 1) % allowed.length];
     setPreview(next === role ? null : next);
   };
+  // Gezielt einen Modus setzen (nur abwärts in der Kaskade erlaubt).
+  const setMode = (target: Role) => {
+    if (ROLE_ORDER.indexOf(target) < ROLE_ORDER.indexOf(role)) return;
+    setPreview(target === role ? null : target);
+  };
 
   return (
     <RoleContext.Provider value={effectiveRole}>
-     <ModeSwitchContext.Provider value={{ real: role, effective: effectiveRole, cycle: cycleMode }}>
+     <ModeSwitchContext.Provider value={{ real: role, effective: effectiveRole, cycle: cycleMode, set: setMode }}>
      <UserNameContext.Provider value={userName}>
      <RepresentationProvider>
       <WorkspaceNavProvider value={{ goStation: goTo, activeId, activeTab }}>
