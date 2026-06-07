@@ -100,7 +100,7 @@ export default function Scim3Footer() {
             return (
               <span key={r} style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
                 <span style={{ color: m.color }}>●</span>
-                {m.label}{r === role ? ' (du)' : ''}
+                {m.label}
                 {/* Dauer-Anzeige ist an einen Namen gekoppelt: ohne Namen nichts. */}
                 {nm && (
                   <span style={{ color: '#718096' }}>· {nm}{dur > 0 ? ` · ${dur} min` : ''}</span>
