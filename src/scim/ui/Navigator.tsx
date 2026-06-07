@@ -17,6 +17,7 @@ import NavMetaSpace from './NavMetaSpace';
 import NavDepthTetraeder from './NavDepthTetraeder';
 import NavTrashTruck from './NavTrashTruck';
 import NavVisibility from './NavVisibility';
+import NavCloud from './NavCloud';
 
 interface Props {
   activeId: string;
@@ -630,6 +631,11 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
           }
         `}</style>
       </div>
+
+      {/* Cloud — our-side Auslieferungs-/Eintritts-Schicht (Launcher · globe-switcher ·
+          collector). Sitzt im Spalt zwischen Mond und Transmissionsfeld; System-Icon aus
+          src/assets/system. D1 Probe-Platzierung — Klick provisorisch auf P11. */}
+      <NavCloud onClick={() => go('P11')} />
 
       {/* Transmissionsfeld — animiertes Mesh-Dreieck zwischen Mond und Tetraeder.
           Nimmt keinen Flow-Platz (height: 0), fuellt die Luecke ueber dem
