@@ -8,7 +8,7 @@ import {
 } from './passkey';
 
 interface Props {
-  onAuth: (role: Role) => void;
+  onAuth: (role: Role, name: string) => void;
 }
 
 const USERS: Record<string, { code: string; role: Role }> = {
@@ -360,7 +360,7 @@ export default function IntroScreen({ onAuth }: Props) {
 
   const canSubmit = name.trim().length > 0 && code.trim().length > 0 && phase === 'idle';
 
-  const runSuccessAnimation = (role: Role) => {
+  const runSuccessAnimation = (role: Role, userName: string) => {
     setError(null);
     setPhase('confirming');
     [1, 2, 3, 4].forEach((i) => {
@@ -368,7 +368,7 @@ export default function IntroScreen({ onAuth }: Props) {
     });
     const spinEnd = 620 + 4 * 180;
     setTimeout(() => setPhase('fading'), spinEnd);
-    setTimeout(() => onAuth(role), spinEnd + 520);
+    setTimeout(() => onAuth(role, userName), spinEnd + 520);
   };
 
   const handleSubmit = () => {
@@ -384,7 +384,7 @@ export default function IntroScreen({ onAuth }: Props) {
       setOfferRegister({ role: user.role, userName: userKey });
       return;
     }
-    runSuccessAnimation(user.role);
+    runSuccessAnimation(user.role, userKey);
   };
 
   // Auto-Passkey-Versuch sobald das Panel geöffnet wird (nur wenn registriert)
@@ -393,9 +393,9 @@ export default function IntroScreen({ onAuth }: Props) {
     if (!hasStoredPasskey) return;
     passkeyAttempted.current = true;
     setPasskeyBusy(true);
-    tryPasskeyLogin().then((role) => {
+    tryPasskeyLogin().then((res) => {
       setPasskeyBusy(false);
-      if (role) runSuccessAnimation(role);
+      if (res) runSuccessAnimation(res.role, res.userName);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [panelVisible]);
@@ -409,23 +409,25 @@ export default function IntroScreen({ onAuth }: Props) {
       setError('Touch ID nicht eingerichtet — Login dennoch erfolgreich');
     }
     const role = offerRegister.role;
+    const userName = offerRegister.userName;
     setOfferRegister(null);
-    runSuccessAnimation(role);
+    runSuccessAnimation(role, userName);
   };
 
   const handleSkipRegister = () => {
     if (!offerRegister) return;
     const role = offerRegister.role;
+    const userName = offerRegister.userName;
     setOfferRegister(null);
-    runSuccessAnimation(role);
+    runSuccessAnimation(role, userName);
   };
 
   const handleRetryPasskey = () => {
     if (!hasStoredPasskey) return;
     setPasskeyBusy(true);
-    tryPasskeyLogin().then((role) => {
+    tryPasskeyLogin().then((res) => {
       setPasskeyBusy(false);
-      if (role) runSuccessAnimation(role);
+      if (res) runSuccessAnimation(res.role, res.userName);
     });
   };
 

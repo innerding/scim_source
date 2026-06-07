@@ -4,7 +4,7 @@ import Navigator from './scim/ui/Navigator';
 import PanelWorkspace from './scim/ui/PanelWorkspace';
 import { useScimPipeline } from './scim/ui/useScimPipeline';
 import IntroScreen from './scim/ui/IntroScreen';
-import { RoleContext } from './scim/ui/RoleContext';
+import { RoleContext, UserNameContext } from './scim/ui/RoleContext';
 import type { Role } from './scim/ui/RoleContext';
 import type { TabId } from './scim/ui/panelRegistry';
 import RepresentBuildManualModal from './scim/ui/RepresentBuildManualModal';
@@ -14,6 +14,7 @@ import Scim3Footer from './scim/ui/Scim3Footer';
 
 export default function App() {
   const [role, setRole] = useState<Role | null>(null);
+  const [userName, setUserName] = useState<string>('');
   const result = useScimPipeline();
   const [activeId, setActiveId] = useState('P01');
   const [activeTab, setActiveTab] = useState<TabId>('input');
@@ -41,11 +42,12 @@ export default function App() {
   });
 
   if (role === null) {
-    return <IntroScreen onAuth={setRole} />;
+    return <IntroScreen onAuth={(r, n) => { setUserName(n); setRole(r); }} />;
   }
 
   return (
     <RoleContext.Provider value={role}>
+     <UserNameContext.Provider value={userName}>
      <RepresentationProvider>
       <WorkspaceNavProvider value={{ goStation: goTo, activeId, activeTab }}>
       <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
@@ -101,6 +103,7 @@ export default function App() {
       </div>
       </WorkspaceNavProvider>
      </RepresentationProvider>
+     </UserNameContext.Provider>
     </RoleContext.Provider>
   );
 }

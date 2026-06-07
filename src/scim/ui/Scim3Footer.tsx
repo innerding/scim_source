@@ -4,7 +4,7 @@
 //    Ziel-App präsent? Eigentümer/Detail = V03 · Publishing-Monitor (t1).
 // Macht die sonst unsichtbare Presence global greifbar (Anthem-Pulse).
 import { useContext, useEffect, useState } from 'react';
-import { RoleContext } from './RoleContext';
+import { RoleContext, UserNameContext } from './RoleContext';
 import { useWorkspaceNav } from './workspaceNav';
 import { useAuftraggeberRep } from '../../runtime/useAuftraggeberRep';
 import { fetchPresence, anthemReadConfigured, postEditorPresence, fetchEditorPresence, type PresenceStatus, type EditorPresence } from '../../runtime/anthemApi';
@@ -21,6 +21,7 @@ const EDITOR_ROLE_ORDER = ['operator', 'analyst'];
 
 export default function Scim3Footer() {
   const role = useContext(RoleContext);
+  const userName = useContext(UserNameContext);
   const rep = useAuftraggeberRep();
   const { goStation } = useWorkspaceNav();
   const configured = anthemReadConfigured();
@@ -44,13 +45,13 @@ export default function Scim3Footer() {
 
   // Heartbeat: eigene Rolle als „im System" melden (Mehrbenutzer-Presence).
   useEffect(() => {
-    if (!configured || !role) return;
+    if (!configured || !role || !userName) return;   // ohne Namen keine Presence/Dauer
     let alive = true;
-    const beat = () => { if (alive) postEditorPresence(role).catch(() => {}); };
+    const beat = () => { if (alive) postEditorPresence(role, userName).catch(() => {}); };
     beat();
     const id = setInterval(beat, HEARTBEAT_MS);
     return () => { alive = false; clearInterval(id); };
-  }, [configured, role]);
+  }, [configured, role, userName]);
 
   // Poll: welche Editor-Rollen sind gerade im System.
   useEffect(() => {
@@ -86,15 +87,23 @@ export default function Scim3Footer() {
       <span style={{ fontWeight: 700, letterSpacing: 0.5, color: '#cbd5e0' }}>SCIM3</span>
       {/* Mehrbenutzer-Presence: jede Editor-Rolle, die gerade im System ist (eigene
           immer dabei). Operator grün · Analyst blau. */}
-      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 12 }} title="Editor-Rollen im System">
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 12 }} title="Editor-Rollen im System (Dauer nur bei Namen)">
         {EDITOR_ROLE_ORDER
           .filter((r) => r === role || (editorPresence?.roles[r]?.present ?? false))
           .map((r) => {
             const m = ROLE_META[r] ?? { label: r, color: '#48bb78' };
+            const rp = editorPresence?.roles[r];
+            // Name: eigene Rolle = eigener Login-Name; andere = aus dem Worker.
+            const nm = r === role ? userName : (rp?.name ?? '');
+            const dur = rp?.durationMin ?? 0;
             return (
               <span key={r} style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
                 <span style={{ color: m.color }}>●</span>
                 {m.label}{r === role ? ' (du)' : ''}
+                {/* Dauer-Anzeige ist an einen Namen gekoppelt: ohne Namen nichts. */}
+                {nm && (
+                  <span style={{ color: '#718096' }}>· {nm}{dur > 0 ? ` · ${dur} min` : ''}</span>
+                )}
               </span>
             );
           })}

@@ -55,7 +55,7 @@ async function readOriginMesh(env: Env, repId: string): Promise<PublishedMesh | 
   return await obj.json() as PublishedMesh;
 }
 
-interface PresenceRec { firstSeen?: string; lastSeen: string }
+interface PresenceRec { firstSeen?: string; lastSeen: string; name?: string }
 
 async function readPresence(env: Env, repId: string): Promise<PresenceRec | null> {
   const obj = await env.PACKAGES.get(`presence/${repId}.json`);
@@ -564,28 +564,32 @@ export default {
     // ── POST /api/editor/presence — Editor-Sitzung klopft (Rolle im Body) ─────
     // Mehrbenutzer-Presence: registriert/erneuert die Anwesenheit EINER Editor-Rolle.
     if (request.method === 'POST' && pathname === '/api/editor/presence') {
-      let body: { role?: string };
+      let body: { role?: string; name?: string };
       try { body = await request.json(); } catch { return err('Invalid JSON', 400); }
       const role = String(body.role ?? '');
       if (!EDITOR_ROLES.includes(role as typeof EDITOR_ROLES[number])) return err('Invalid role', 422);
+      const name = typeof body.name === 'string' ? body.name.slice(0, 64) : undefined;
+      if (!name) return err('Missing name', 422);   // Dauer ist an einen Namen gekoppelt
       const lastSeen = new Date().toISOString();
       const prev = await readEditorPresence(env, role);
-      const continues = !!prev && prev.firstSeen != null && isWarmEditor(prev);
+      // Session läuft weiter, solange warm UND derselbe Name; sonst neue Session.
+      const continues = !!prev && prev.firstSeen != null && isWarmEditor(prev) && prev.name === name;
       const firstSeen = continues ? prev!.firstSeen! : lastSeen;
-      await env.PACKAGES.put(`presence/editor/${role}.json`, JSON.stringify({ firstSeen, lastSeen }), {
+      await env.PACKAGES.put(`presence/editor/${role}.json`, JSON.stringify({ firstSeen, lastSeen, name }), {
         httpMetadata: { contentType: 'application/json', cacheControl: 'no-store' },
       });
-      return json({ ok: true, role, firstSeen, lastSeen });
+      return json({ ok: true, role, name, firstSeen, lastSeen });
     }
 
     // ── GET /api/editor/presence — wer ist im System (read-only, je Rolle) ────
     if (request.method === 'GET' && pathname === '/api/editor/presence') {
-      const roles: Record<string, { present: boolean; lastSeen: string | null; durationMin: number }> = {};
+      const roles: Record<string, { present: boolean; name: string | null; lastSeen: string | null; durationMin: number }> = {};
       for (const role of EDITOR_ROLES) {
         const p = await readEditorPresence(env, role);
-        roles[role] = p
-          ? { present: isWarmEditor(p), lastSeen: p.lastSeen, durationMin: sessionDurationMin(p) }
-          : { present: false, lastSeen: null, durationMin: 0 };
+        const warm = isWarmEditor(p);
+        roles[role] = p && warm
+          ? { present: true, name: p.name ?? null, lastSeen: p.lastSeen, durationMin: sessionDurationMin(p) }
+          : { present: false, name: null, lastSeen: null, durationMin: 0 };
       }
       return json({ roles });
     }

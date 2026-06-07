@@ -10,6 +10,7 @@ const RP_NAME = 'SCIM3';
 interface StoredPasskey {
   credentialId: string;
   role: Role;
+  userName?: string;
 }
 
 function b64urlEncode(buf: ArrayBuffer): string {
@@ -94,6 +95,7 @@ export async function registerPasskey(role: Role, userName: string): Promise<boo
     const stored: StoredPasskey = {
       credentialId: b64urlEncode(cred.rawId),
       role,
+      userName,
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
     return true;
@@ -102,7 +104,7 @@ export async function registerPasskey(role: Role, userName: string): Promise<boo
   }
 }
 
-export async function tryPasskeyLogin(): Promise<Role | null> {
+export async function tryPasskeyLogin(): Promise<{ role: Role; userName: string } | null> {
   if (!isPasskeySupported()) return null;
   const stored = getStoredPasskey();
   if (!stored) return null;
@@ -120,7 +122,7 @@ export async function tryPasskeyLogin(): Promise<Role | null> {
       },
     });
     if (!assertion) return null;
-    return stored.role;
+    return { role: stored.role, userName: stored.userName ?? '' };
   } catch {
     return null;
   }

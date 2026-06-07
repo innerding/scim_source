@@ -71,15 +71,17 @@ export async function fetchPresence(repId: string): Promise<PresenceStatus> {
 }
 
 // ── Editor-Presence (Mehrbenutzer) ──────────────────────────────────────────
-export type EditorRolePresence = { present: boolean; lastSeen: string | null; durationMin: number };
+export type EditorRolePresence = { present: boolean; name: string | null; lastSeen: string | null; durationMin: number };
 export interface EditorPresence { roles: Record<string, EditorRolePresence> }
 
-/** Heartbeat: die eigene Editor-Rolle als „im System" melden. */
-export async function postEditorPresence(role: string): Promise<void> {
+/** Heartbeat: die eigene Editor-Rolle (+ Login-Name) als „im System" melden.
+ *  Ohne Namen wird die Presence nicht gemeldet — Dauer ist an einen Namen gekoppelt. */
+export async function postEditorPresence(role: string, name: string): Promise<void> {
+  if (!name) return;   // kein Name → keine Presence/Dauer
   const res = await fetch(`${WORKER_URL}/api/editor/presence`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ role }),
+    body: JSON.stringify({ role, name }),
   });
   if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
 }
