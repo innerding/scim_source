@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import type { StatusColor } from './panelRegistry';
 import {
   KOSMOLOGIE_IDS,
@@ -9,7 +9,22 @@ import {
 import logoBaseNaked from '../../assets/logo-base-naked.svg';
 import logoHexNaked from '../../assets/logo-hex-naked.svg';
 import { useRole } from './RoleContext';
+import type { Role } from './RoleContext';
 import RepresentBuildTetrahedron from './RepresentBuildTetrahedron';
+
+// ── Navigator-Tönung je Rolle ────────────────────────────────────────────────
+// Operator: wie bisher (dunkel) · Analyst: amber Grundton (dunkel) · Rep-Editor:
+// sehr helles Blassblau (heller Grund → dunkle Schrift).
+interface NavTheme {
+  bg: string; border: string; fg: string; fgActive: string; activeBg: string; hover: string; sub: string; divider: string;
+}
+const NAV_THEMES: Record<Role, NavTheme> = {
+  operator:     { bg: '#0d1520', border: '#1a2535', fg: '#a0aec0', fgActive: '#e0eeff', activeBg: '#1e3a5f', hover: '#1a2535', sub: '#3d556f', divider: '#1a2d3e' },
+  analyst:      { bg: '#16110a', border: '#2c2310', fg: '#cbb083', fgActive: '#ffe6b0', activeBg: '#4a3410', hover: '#241a0b', sub: '#6b5630', divider: '#2c2310' },
+  regio_editor: { bg: '#e9f1fb', border: '#cbdcef', fg: '#3b5168', fgActive: '#12365e', activeBg: '#cfe1f6', hover: '#dce9f8', sub: '#8198ad', divider: '#d4e0ee' },
+};
+const NavThemeContext = createContext<NavTheme>(NAV_THEMES.operator);
+const useNavTheme = () => useContext(NavThemeContext);
 import type { RepresentBuildFace, RepresentBuildArc, RepresentBuildSickle } from './RepresentBuildTetrahedron';
 import type { TabId } from './panelRegistry';
 import NavTransmissionField from './NavTransmissionField';
@@ -58,6 +73,7 @@ function NavItem({
   // Navigator-Listenteil auf 60 % gedimmt — kein Doppel-Schrei. Siehe ann_051.
   const inKosmologie = KOSMOLOGIE_IDS.has(id);
   const dimStyle = inKosmologie ? { opacity: 0.6 } : undefined;
+  const t = useNavTheme();
   return (
     <div
       onClick={onClick}
@@ -68,15 +84,15 @@ function NavItem({
         padding: '7px 12px',
         cursor: 'pointer',
         borderRadius: 4,
-        background: isActive ? '#1e3a5f' : 'transparent',
-        color: isActive ? '#e0eeff' : '#a0aec0',
+        background: isActive ? t.activeBg : 'transparent',
+        color: isActive ? t.fgActive : t.fg,
         fontSize: 11,                          // Label: Faktor 0.9 (12 -> 11)
         fontFamily: 'monospace',
         userSelect: 'none',
         transition: 'background 0.1s',
       }}
       onMouseEnter={(e) => {
-        if (!isActive) (e.currentTarget as HTMLDivElement).style.background = '#1a2535';
+        if (!isActive) (e.currentTarget as HTMLDivElement).style.background = t.hover;
       }}
       onMouseLeave={(e) => {
         if (!isActive) (e.currentTarget as HTMLDivElement).style.background = 'transparent';
@@ -124,30 +140,32 @@ function descById(id: string): { id: string; icon: string; label: string } | nul
 }
 
 function CosmoSubLabel({ text, sub }: { text: string; sub?: string }) {
+  const t = useNavTheme();
   return (
     <div style={{ padding: '6px 12px 2px 12px', userSelect: 'none' }}>
       <div style={{
-        fontSize: 8.5, color: '#3d556f', textTransform: 'uppercase', letterSpacing: '0.10em',
+        fontSize: 8.5, color: t.sub, textTransform: 'uppercase', letterSpacing: '0.10em',
         fontFamily: 'monospace',
       }}>{text}</div>
-      {sub && <div style={{ fontSize: 8, color: '#2f4459', fontFamily: 'monospace', marginTop: 1 }}>{sub}</div>}
+      {sub && <div style={{ fontSize: 8, color: t.sub, opacity: 0.8, fontFamily: 'monospace', marginTop: 1 }}>{sub}</div>}
     </div>
   );
 }
 
 function CosmoItem({ id, label, isActive, onClick }: { id: string; label: string; isActive: boolean; onClick: () => void }) {
+  const t = useNavTheme();
   return (
     <div
       onClick={onClick}
       data-id={id}
       style={{
         padding: '2.5px 12px 2.5px 22px', cursor: 'pointer', borderRadius: 3,
-        background: isActive ? '#1e3a5f' : 'transparent',
-        color: isActive ? '#e0eeff' : '#8b97a8',
+        background: isActive ? t.activeBg : 'transparent',
+        color: isActive ? t.fgActive : t.fg,
         fontSize: 11, fontFamily: 'monospace', whiteSpace: 'nowrap',
         overflow: 'hidden', textOverflow: 'ellipsis', userSelect: 'none', transition: 'background 0.1s',
       }}
-      onMouseEnter={(e) => { if (!isActive) (e.currentTarget as HTMLDivElement).style.background = '#1a2535'; }}
+      onMouseEnter={(e) => { if (!isActive) (e.currentTarget as HTMLDivElement).style.background = t.hover; }}
       onMouseLeave={(e) => { if (!isActive) (e.currentTarget as HTMLDivElement).style.background = 'transparent'; }}
     >{label}</div>
   );
@@ -408,17 +426,20 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
   const cosmoCount = visibleCosmoGroups.reduce((n, g) => n + g.ids.filter((id) =>
     descById(id) && !(id === 'ai_interface' && role !== 'operator')).length, 0);
 
+  const navTheme = NAV_THEMES[role] ?? NAV_THEMES.operator;
   return (
+    <NavThemeContext.Provider value={navTheme}>
     <nav style={{
       width: 210,
       flexShrink: 0,
-      background: '#0d1520',
-      borderRight: '1px solid #1a2535',
+      background: navTheme.bg,
+      borderRight: `1px solid ${navTheme.border}`,
       display: 'flex',
       flexDirection: 'column',
       overflowY: 'auto',
       padding: '12px 6px 12px',
       position: 'relative',
+      transition: 'background 0.2s, border-color 0.2s',
     }}>
       {/* Inspector — Pergament-Trapez ueber dem Mond.
           Perspektivisch: oben breit (Gap zu li/re/oben), unten schmaler.
@@ -866,5 +887,6 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
         />
       )}
     </nav>
+    </NavThemeContext.Provider>
   );
 }
