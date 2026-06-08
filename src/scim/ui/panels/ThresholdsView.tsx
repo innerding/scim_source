@@ -221,18 +221,11 @@ export default function ThresholdsView() {
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 600 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
-        <span style={{ display: 'inline-block', padding: '2px 8px', fontSize: 10, fontFamily: 'monospace', color: '#2b6cb0', background: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: 4 }}>
-          P01 · Thresholds · Felder-Modell · Region „{regionSlug}"
-        </span>
         <AnthemCycleBadge />
       </div>
 
-      <div style={{ fontSize: 12.5, fontWeight: 700, color: '#1a365d', marginBottom: 2 }}>
-        Felder & Grenzen <span style={{ fontWeight: 400, fontSize: 10.5, color: '#a0aec0' }}>· Klick = Mittelfeld · Grenz-Griffe ziehen</span>
-      </div>
-      <div style={{ fontSize: 10, color: '#718096', marginBottom: 10, maxWidth: 420 }}>
-        <strong>Links</strong>: ein Strich = Mitte — ziehen wählt das Mittelfeld (rückt in die Mitte, bleibt zentriert).
-        <strong> Rechts</strong>: ein Strich je Grenze — ziehen verschiebt sie. Die zwei <span style={{ color: '#2b6cb0' }}>blauen</span> Mittelfeld-Grenzen sind gekoppelt (Größe frei, Mitte bleibt zentriert).
+      <div style={{ fontSize: 12.5, fontWeight: 700, color: '#1a365d', marginBottom: 10 }}>
+        Visualisierung der Auslastung
       </div>
 
       <div style={{ display: 'flex', gap: 18, alignItems: 'flex-start' }}>
@@ -277,7 +270,7 @@ export default function ThresholdsView() {
           </div>
 
           <span style={{ fontSize: 8.5, color: '#a0aec0' }}>Mitte · Grenzen</span>
-          <button onClick={resetEven} style={{ fontSize: 9, padding: '1px 6px', borderRadius: 3, border: '1px solid #e2e8f0', background: '#f7fafc', color: '#718096', cursor: 'pointer' }}>↺ gleichverteilen</button>
+          <button onClick={resetEven} style={{ fontSize: 9, padding: '1px 6px', borderRadius: 3, border: '1px solid #e2e8f0', background: '#f7fafc', color: '#718096', cursor: 'pointer' }}>↺ zurücksetzen</button>
         </div>
 
         {/* Farb-Felder: Verlauf-Richtung, Drag&Drop, je Feld zur Mitte */}

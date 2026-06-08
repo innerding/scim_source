@@ -204,7 +204,7 @@ function PanelHeader({ id, title, subtitle, icon }: { id: string; title: string;
           <div style={{ flex: 1 }} />
           {/* Mitte: Icon (Logo-Fill) + Kürzel (Schrift-Fill) */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, flexShrink: 0 }}>
-            {icon && <PanelIcon id={id} icon={icon} size={24} gradientClass="region-av-fill" />}
+            {icon && <PanelIcon id={id} icon={icon} size={28} gradientClass="region-av-fill" />}
             {code && <span className="region-av-text" style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: 12, letterSpacing: '0.04em' }}>{code}</span>}
           </div>
           {/* Rechts: Titel (Schrift-Fill) */}
@@ -1476,7 +1476,8 @@ export default function PanelWorkspace({ activeId, activeTab, onTabChange, resul
   // Tabs (z.B. Threshold-Panels) haben kein 'input' → auf den ersten Tab fallen.
   const safeTab: TabId = tabs.some((t) => t.id === activeTab) ? activeTab : (tabs[0]?.id ?? activeTab);
   const subtitle =
-    'shortDescription' in entry ? (entry as { shortDescription: string }).shortDescription : '';
+    activeId === 'P01' ? ''   // Thresholds: Subline gestrichen
+    : 'shortDescription' in entry ? (entry as { shortDescription: string }).shortDescription : '';
 
   // Inhalt folgt dem AKTIVEN TAB (activeMode), nicht der Diode: Operations=voller Inhalt,
   // Review=leer, Kartography=Platzhalter (Drehscheibe lebt in der Nav).
