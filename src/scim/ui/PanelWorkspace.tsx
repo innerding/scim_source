@@ -1464,8 +1464,8 @@ export default function PanelWorkspace({ activeId, activeTab, onTabChange, resul
         </div>
       ) : (
         <div style={{ flex: 1, minHeight: 0, position: 'relative', overflow: 'hidden' }}>
-          {/* Großes, blasses Panel-Icon-Wasserzeichen auf der untersten Ebene */}
-          {(entry as { icon?: string }).icon && (
+          {/* Großes, blasses Panel-Icon-Wasserzeichen auf der untersten Ebene (Catalog: aus). */}
+          {activeId !== 'catalog' && (entry as { icon?: string }).icon && (
             <div aria-hidden style={{
               position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
               width: '50%', aspectRatio: '1 / 1', zIndex: 0, pointerEvents: 'none', userSelect: 'none',
