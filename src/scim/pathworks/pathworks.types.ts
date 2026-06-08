@@ -38,14 +38,17 @@ export type LifecycleState = 'local' | 'submitted' | 'committed';
 export interface Nation { id: NationId; name: string; }
 export interface Region { id: RegionId; nationId: NationId; name: string; }
 
-// Ein Bauteil-Draft VOR dem Commit. Nach dem Commit wird sein Inhalt als PartRef
-// in ein Versions-Manifest eingefroren.
+// Ein Bauteil-Draft VOR dem Commit. „ES GIBT NUR REPRESENTATIONEN" (Konsens
+// 2026-06-08): jedes Bauteil gehört IMMER einem Rep — kein loses `repId = null`.
+// Katalog/Boundary/Wegnetz/Thresholds/Farbe entstehen AUS einem Rep-Draft heraus.
+// Intern bleibt der Inhalt adressiert (contentHash) für Versions-Diff & Freeze;
+// nach dem Commit lebt er als PartRef im Manifest.
 export interface PartDraft {
   id: string;
   kind: PartKind;
   name: string;
   ownerId: ActorId;
-  repId: RepId | null;        // Ziel-Rep (null = lose/noch keiner Rep zugeordnet)
+  repId: RepId;               // immer einem Rep zugeordnet (kein loses Bauteil)
   state: LifecycleState;      // 'local' | 'submitted' (committet lebt als PartRef)
   contentHash: string;        // Inhalts-Fingerabdruck → trägt die Versionierung
   updatedAt: number;

@@ -46,8 +46,7 @@ export function canCommit(actor: Actor): boolean {
   return actor.role === 'operator';
 }
 
-// Wegnetz BESCHNEIDEN (Crop/Maske) bleibt beim Editor dysfunktional. Heute nur
-// der Operator; ob regio_editor das auch darf, ist eine offene Entscheidung (doc).
-export function canCropWegnetz(actor: Actor): boolean {
-  return actor.role === 'operator';
-}
+// Wegnetz BESCHNEIDEN (Crop/Maske) ist BEWUSST nicht gesperrt: ein nicht-
+// committetes Wegnetz ist reversibel, das Zuschneiden also folgenlos bis zum
+// Commit. „Gültig" wird das Wegnetz ohnehin erst durch den Operator-Commit,
+// nicht durchs Croppen → keine eigene Crop-Sperre nötig (Konsens 2026-06-08).

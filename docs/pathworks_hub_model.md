@@ -7,6 +7,20 @@ Code: `src/scim/pathworks/` — `pathworks.types.ts` (Vokabular), `lifecycle.ts`
 (Lebenszyklus/Commit/Version), `visibility.ts` (Rechte-Matrix), `store.ts`
 (Persistenz-Naht). Noch **nicht** an die UI verdrahtet.
 
+## Leitsatz: es gibt nur Representationen (Konsens 2026-06-08)
+Die nutzerseitige **Einheit und der Eingang** ist immer die **Representation**.
+Keine freischwebenden Kataloge/Geometrien als eigene Ziele — alles lebt **in**
+einer Representation. Man legt zuerst einen **Rep-Draft** an (der zwingt eine
+Region, `regional` oder `unbound`); **aus ihm heraus** entstehen Katalog, Boundary,
+Wegnetz, Thresholds, Farbe. Folgen:
+- **Bestandteile gehören immer einem Rep** (`PartDraft.repId` ist nicht-null).
+  Intern bleiben sie inhalts-adressiert (`contentHash`) für Versions-Diff & Freeze.
+- **Committete Rep = nur lesbar:** ihre Karte öffnet Katalog/Drawer als
+  **Betrachter** dieser Version; editieren geht nicht → neuer Draft → neue Version.
+- **UI-Konsequenz (Schicht 2):** Katalog/Drawer/Thresholds sind keine
+  freistehenden Panels mit eigenem Region-Wähler mehr, sondern **Werkzeuge im
+  Kontext einer Representation** (geöffnet über deren Karte).
+
 ## Zwei Achsen
 - **Baum:** `Nation → Region → Representation`. Eine Representation hängt an einer
   Region, mit Bindung **`regional`** (geografisch, Anthem-Last wie gehabt) oder
@@ -32,8 +46,9 @@ erzeugen nie eine Version, sie befüllen die Einreichung.
 | **editor** (ohne Bindung) | eigener unbound-Kram | Eigenes | nein |
 | **analyst** | wie Operator, **read-only** | — (Sandbox) | nein |
 
-Zusatz-Regel: **Editor darf das Wegnetz nicht beschneiden** (Crop) → `canCropWegnetz`
-heute operator-only. *(Offen: regio_editor auch?)*
+Keine Crop-Sperre: ein nicht-committetes Wegnetz ist reversibel, das Zuschneiden
+also folgenlos bis zum Commit. „Gültig" wird das Wegnetz erst durch den
+Operator-Commit, nicht durchs Croppen → der Editor darf beschneiden.
 
 ## Versionierung (`lifecycle.ts`)
 - **Version = unveränderliches Manifest** `{ repId, version, regionId, binding,
@@ -63,8 +78,9 @@ Operators.**
 1. **Rollen-Mapping:** Login kennt `reg_editor`/`rep_editor`; das Domain-Modell
    kennt zusätzlich `editor` (unbound) und nutzt `regio_editor` als „Region-Aufsicht".
    Die saubere Zuordnung Login-Role ↔ Pathworks-ActorRole ist Governance (ann_105).
-2. **Wegnetz-Crop für regio_editor** — erlauben oder nicht?
-3. **unbound/Event-Runtime** (device-emergentes Mesh statt Anthem) — Flag steht,
+2. **unbound/Event-Runtime** (device-emergentes Mesh statt Anthem) — Flag steht,
    Runtime später.
-4. **Region-Pflicht bei Erstanlage:** Operator legt bei der ersten Representation
+3. **Region-Pflicht bei Erstanlage:** Operator legt bei der ersten Representation
    einer Region die Region an (Baustein der Erstanlage-Flows, Schicht 2).
+4. **Werkzeuge-im-Rep-Kontext:** Katalog/Drawer/Thresholds vom freistehenden Panel
+   zum Rep-Werkzeug umbauen — der konkrete Schicht-2-Schritt.
