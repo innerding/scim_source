@@ -5,15 +5,14 @@
 // (Der Nation→Region→Rep-Baum ist hier noch flach — kommt mit dem Operator-Index.)
 import { useMemo, useState } from 'react';
 import { useRole, useModeSwitch, useUserName } from '../RoleContext';
-import { actorFrom, repsForActor, withdrawRep, setRepPlacement, knownPlacements } from '../../pathworks/localStore';
-import { commitDraftToRepo, isDraftCommittable, type CommitDraftResult } from '../../pathworks/commitDraft';
-import { getDraft } from '../../workspace/draftStore';
+import { actorFrom, repsForActor } from '../../pathworks/localStore';
 import { useOriginVersionsMap } from '../../../runtime/useDelivered';
 import { type OriginVersions } from '../../../runtime/anthemApi';
 import { REPRESENTATIONS } from '../../workspace/workspace.registry';
 import { useRepresentationContext } from '../../../runtime/repContext';
 import { releaseRep } from '../../sensus/release';
 import { anthemPublishConfigured } from '../../../runtime/anthemApi';
+import SubmissionsQueue from './SubmissionsQueue';
 import type { RepView } from '../../pathworks/pathworks.types';
 
 export interface ReleaseState { busyId: string | null; msg: { id: string; ok: boolean; text: string } | null; canRelease: boolean; onRelease: (rep: RepView) => void; }
@@ -59,12 +58,8 @@ export default function OperatorRepsHome({ onJumpTo }: { onJumpTo: (panelId: str
   const userName = useUserName();
   const activeMode = mode?.activeMode ?? role;
   const live = (mode?.real ?? role) === activeMode && activeMode !== 'analyst';   // committen nur live (Operator)
-  const [tick, setTick] = useState(0);
-  const [busyId, setBusyId] = useState<string | null>(null);
-  const [msg, setMsg] = useState<CommitDraftResult | null>(null);
 
-  const reps = useMemo(() => repsForActor(actorFrom(userName, activeMode)), [userName, activeMode, tick]);
-  const submissions = reps.filter((r) => r.state === 'submitted');
+  const reps = useMemo(() => repsForActor(actorFrom(userName, activeMode)), [userName, activeMode]);
   const committed = reps.filter((r) => r.state === 'committed');
   // Phase 1: „ausgeliefert vM" je committeter Rep (Origin-Bundle in R2). Graceful.
   const [deliveredNonce, setDeliveredNonce] = useState(0);
@@ -91,106 +86,14 @@ export default function OperatorRepsHome({ onJumpTo }: { onJumpTo: (panelId: str
   };
   const release: ReleaseState = { busyId: releaseBusy, msg: releaseMsg, canRelease: live && anthemPublishConfigured(), onRelease };
 
-  const placements = useMemo(() => knownPlacements(), []);
-  const onCommit = async (rep: RepView) => {
-    const d = getDraft(rep.id);
-    if (!d) return;
-    setBusyId(rep.id); setMsg(null);
-    const today = new Date().toISOString().slice(0, 10);
-    // Verortung (Editor gesetzt, Operator bis hier änderbar) wandert in die Geometrie.
-    const res = await commitDraftToRepo(d, today, { nation: rep.nationLabel, region: rep.regionLabel });
-    setBusyId(null); setMsg(res);
-    if (res.ok) setTick((t) => t + 1);   // Draft ist weg → aus den Einreichungen raus
-  };
-  const onReturn = (rep: RepView) => {
-    if (withdrawRep(rep.id, actorFrom(userName, activeMode))) setTick((t) => t + 1);
-  };
-  const onPlace = (rep: RepView, nation: string, region: string) => {
-    setRepPlacement(rep.id, nation, region);
-    setTick((t) => t + 1);
-  };
-
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 720 }}>
-      <datalist id="pw-op-nations">{placements.nations.map((n) => <option key={n} value={n} />)}</datalist>
-      <datalist id="pw-op-regions">{placements.regions.map((r) => <option key={r} value={r} />)}</datalist>
-      {/* Einreichungen */}
-      <SectionTitle label="Einreichungen" count={submissions.length} hint="Representations, die zur Prüfung & zum Committen eingereicht sind." />
-      {submissions.length === 0 ? (
-        <Empty text="Keine offenen Einreichungen. Editoren senden ihre Representations hier herein." />
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 22 }}>
-          {submissions.map((rep) => {
-            const d = getDraft(rep.id);
-            const committable = !!d && isDraftCommittable(d);
-            return (
-              <div key={rep.id} style={{
-                border: '1px solid #fbd38d', background: '#fffaf0', borderRadius: 8, padding: '12px 14px',
-                display: 'flex', flexDirection: 'column', gap: 8,
-              }}>
-                {repHead(rep, (
-                  <span style={{
-                    fontSize: 9.5, fontFamily: 'monospace', padding: '1px 7px', borderRadius: 999,
-                    border: '1px solid #fbd38d', background: '#fffaf0', color: '#c05621', fontWeight: 700,
-                  }}>eingereicht</span>
-                ))}
-                {partRow(rep)}
-                {/* Verortung — bis zum Commit änderbar (Operator-Hoheit). */}
-                {(() => {
-                  const nationVal = rep.nationLabel ?? '';
-                  const regionVal = rep.regionLabel && rep.regionLabel !== '—' ? rep.regionLabel : '';
-                  return live ? (
-                    <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                      <span style={{ fontSize: 10.5, color: '#718096', whiteSpace: 'nowrap' }}>gehört zu:</span>
-                      <input list="pw-op-nations" placeholder="Nation" value={nationVal}
-                        onChange={(e) => onPlace(rep, e.target.value, regionVal)}
-                        style={{ flex: 1, fontSize: 11.5, padding: '4px 8px', borderRadius: 5, border: '1px solid #cbd5e0' }} />
-                      <input list="pw-op-regions" placeholder="Region" value={regionVal}
-                        onChange={(e) => onPlace(rep, nationVal, e.target.value)}
-                        style={{ flex: 1, fontSize: 11.5, padding: '4px 8px', borderRadius: 5, border: '1px solid #cbd5e0' }} />
-                    </div>
-                  ) : (
-                    <div style={{ fontSize: 10.5, color: '#718096' }}>gehört zu: {nationVal || '—'} · {regionVal || '—'}</div>
-                  );
-                })()}
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <button onClick={() => onJumpTo('geometry_editor', rep.id)} style={ghostBtn}>ansehen</button>
-                  <span style={{ flex: 1 }} />
-                  {live && (
-                    <button onClick={() => onReturn(rep)} style={{ ...ghostBtn }}>↩ zurückgeben</button>
-                  )}
-                  {live && (
-                    <button
-                      onClick={() => onCommit(rep)}
-                      disabled={!committable || busyId === rep.id}
-                      title={committable ? 'Committen + versiegeln (Boundary + Netz + Representation)' : 'Noch nicht committbar (braucht Boundary + maskiertes Netz)'}
-                      style={{
-                        fontSize: 12, fontWeight: 700, padding: '6px 14px', borderRadius: 5,
-                        border: `1px solid ${committable ? '#276749' : '#cbd5e0'}`,
-                        background: !committable ? '#edf2f7' : busyId === rep.id ? '#c6f6d5' : '#276749',
-                        color: !committable ? '#a0aec0' : busyId === rep.id ? '#22543d' : '#fff',
-                        cursor: committable ? 'pointer' : 'not-allowed',
-                      }}
-                    >{busyId === rep.id ? 'Committe …' : '⬛ Committen'}</button>
-                  )}
-                  {!live && <span style={{ fontSize: 10.5, color: '#c05621', fontStyle: 'italic' }}>Sandbox</span>}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-      {msg && (
-        <div style={{
-          marginBottom: 20, fontSize: 11, lineHeight: 1.5, padding: '8px 10px', borderRadius: 4,
-          background: msg.ok ? '#f0fff4' : '#fff5f5',
-          border: `1px solid ${msg.ok ? '#9ae6b4' : '#feb2b2'}`,
-          color: msg.ok ? '#22543d' : '#742a2a',
-        }}>
-          {msg.ok ? '✓ ' : '✗ '}{msg.text}
-          {msg.url && (<>{' · '}<a href={msg.url} target="_blank" rel="noreferrer" style={{ color: '#276749' }}>Commit ansehen</a></>)}
-        </div>
-      )}
+      {/* Einreichungen — Cross-User über den Server (Phase 3) */}
+      <div style={{ marginBottom: 8 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: '#1a202c' }}>Einreichungen</div>
+        <div style={{ fontSize: 11, color: '#718096', lineHeight: 1.4 }}>Zur Prüfung & zum Committen eingereicht — von jedem Editor-Gerät.</div>
+      </div>
+      <SubmissionsQueue live={live} onCommitted={() => setDeliveredNonce((n) => n + 1)} />
 
       {/* Committete Representations — Nation → Region → Rep (Akkordeon) */}
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
@@ -398,7 +301,3 @@ function RepTree({ reps, lib, release }: { reps: RepView[]; lib: Record<string, 
   );
 }
 
-const ghostBtn: React.CSSProperties = {
-  fontSize: 11, padding: '5px 12px', borderRadius: 5, border: '1px solid #cbd5e0',
-  background: '#fff', color: '#4a5568', cursor: 'pointer', fontWeight: 600,
-};

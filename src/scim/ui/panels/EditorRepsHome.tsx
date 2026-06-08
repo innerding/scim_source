@@ -11,7 +11,8 @@
 import { useMemo, useState } from 'react';
 import { useRole, useModeSwitch, useUserName } from '../RoleContext';
 import { actorFrom, repsForActor, submitRep, withdrawRep, setRepBinding, deleteRep, setRepPlacement, knownPlacements } from '../../pathworks/localStore';
-import { createDraft } from '../../workspace/draftStore';
+import { createDraft, getDraft } from '../../workspace/draftStore';
+import { submitToReview, pathworksConfigured } from '../../../runtime/pathworksApi';
 import { useRepresentationContext } from '../../../runtime/repContext';
 import type { Binding, RepView } from '../../pathworks/pathworks.types';
 
@@ -42,8 +43,28 @@ function RepCard({ rep, onOpen, onChanged, live, bound, onDelete }: {
   const userName = useUserName();
   const sm = STATE_META[rep.state];
   const committed = rep.state === 'committed';
+  const [sending, setSending] = useState(false);
+  const [sendErr, setSendErr] = useState<string | null>(null);
 
-  const doSubmit = () => { if (submitRep(rep.id, actorFrom(userName, role), Date.now())) onChanged(); };
+  // Senden zur Review = Cross-User (Phase 3): den Draft-Snapshot auf den Server
+  // laden, damit der Operator (anderes Gerät) ihn sieht. Lokal markieren („eingereicht").
+  // Ohne Worker: nur lokales Flag (Single-Browser-Fallback).
+  const doSubmit = async () => {
+    setSendErr(null);
+    const d = getDraft(rep.id);
+    if (pathworksConfigured() && d) {
+      setSending(true);
+      try {
+        await submitToReview({
+          repId: rep.id, name: rep.name, owner: userName || 'anon', binding: rep.binding,
+          nation: rep.nationLabel, region: rep.regionLabel && rep.regionLabel !== '—' ? rep.regionLabel : undefined,
+          draft: d,
+        });
+      } catch (e) { setSendErr((e as Error).message); setSending(false); return; }
+      setSending(false);
+    }
+    if (submitRep(rep.id, actorFrom(userName, role), Date.now())) onChanged();
+  };
   const doWithdraw = () => { if (withdrawRep(rep.id, actorFrom(userName, role))) onChanged(); };
 
   return (
@@ -102,9 +123,10 @@ function RepCard({ rep, onOpen, onChanged, live, bound, onDelete }: {
         ) : rep.state === 'submitted' ? (
           <button onClick={doWithdraw} style={{ ...actBtn, borderColor: '#cbd5e0', background: '#fff', color: '#4a5568' }}>↩ Zurückziehen</button>
         ) : (
-          <button onClick={doSubmit} style={{ ...actBtn, borderColor: '#dd6b20', background: '#dd6b20', color: '#fff' }}>⤴ Senden zur Review</button>
+          <button onClick={doSubmit} disabled={sending} style={{ ...actBtn, borderColor: '#dd6b20', background: sending ? '#fffaf0' : '#dd6b20', color: sending ? '#dd6b20' : '#fff' }}>{sending ? '⤴ sende …' : '⤴ Senden zur Review'}</button>
         )}
       </div>
+      {sendErr && <div style={{ fontSize: 10.5, fontFamily: 'monospace', color: '#c05621' }}>✗ {sendErr}</div>}
     </div>
   );
 }

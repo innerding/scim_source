@@ -617,6 +617,46 @@ export default {
       return json({ ok: true, repId, active: av });
     }
 
+    // ── Pathworks Cross-User: Einreichungs-Queue ──────────────────────────────
+    // Editor (Gerät A) reicht einen Draft-Snapshot ein → R2 submissions/<id>.json.
+    // Operator (Gerät B) zieht die Queue, committet, zieht zurück. „owner" = der
+    // angegebene Login-Name (UX-Gate, nicht server-verifiziert — ACCESS folgt).
+
+    // POST /api/pathworks/submit — Editor reicht ein (auth).
+    if (request.method === 'POST' && pathname === '/api/pathworks/submit') {
+      if (!checkAuth(request, env)) return err('Unauthorized', 401);
+      let sb: Record<string, unknown>;
+      try { sb = await request.json() as Record<string, unknown>; } catch { return err('Invalid JSON body', 400); }
+      if (!sb || typeof sb !== 'object' || !sb.draft) return err('Expected submission { repId, name, owner, draft, … }', 422);
+      const id = crypto.randomUUID();
+      const submission = { id, submittedAt: new Date().toISOString(), ...sb };
+      await env.PACKAGES.put(`submissions/${id}.json`, JSON.stringify(submission), {
+        httpMetadata: { contentType: 'application/json', cacheControl: 'no-store' },
+      });
+      return json({ ok: true, id });
+    }
+
+    // GET /api/pathworks/submissions — Operator-Queue (read-only).
+    if (request.method === 'GET' && pathname === '/api/pathworks/submissions') {
+      const list = await env.PACKAGES.list({ prefix: 'submissions/' });
+      const out: unknown[] = [];
+      for (const o of list.objects) {
+        const obj = await env.PACKAGES.get(o.key);
+        if (obj) { try { out.push(await obj.json()); } catch { /* skip */ } }
+      }
+      return json(out);
+    }
+
+    // POST /api/pathworks/withdraw — Einreichung entfernen (auth): zurückziehen ODER nach Commit.
+    if (request.method === 'POST' && pathname === '/api/pathworks/withdraw') {
+      if (!checkAuth(request, env)) return err('Unauthorized', 401);
+      let wb: { id?: unknown };
+      try { wb = await request.json(); } catch { return err('Invalid JSON body', 400); }
+      if (typeof wb.id !== 'string') return err('Expected { id }', 422);
+      await env.PACKAGES.delete(`submissions/${wb.id}.json`);
+      return json({ ok: true });
+    }
+
     // ── GET /api/origin/:repId/bundle ─────────────────────────────────────────
     // Read-only: die Ziel-App holt das volle Origin-Bundle (Modell B, statisch). Kein Key.
     if (request.method === 'GET' && pathname.match(/^\/api\/origin\/[^/]+\/bundle$/)) {
