@@ -12,6 +12,7 @@ import {
 } from '../../poi-catalog/poiCatalog.editor';
 import { compactDiff, diffLines, serializeCatalogToMd } from '../../poi-catalog/poiCatalog.serializer';
 import { fetchLatestCatalogMd, type CatalogSource } from '../../poi-catalog/catalogRuntime';
+import { useModeSwitch, isEditorRole, type Role } from '../RoleContext';
 import { listDrafts, updateDraft } from '../../workspace/draftStore';
 import {
   buildPrefix, isToken, mintToken, sanitizeSlug, sanitizeVerbund, SLUG_MAX_LEN, VERBUND_MAX_LEN,
@@ -362,9 +363,10 @@ interface RowProps {
   onDelete: () => void;
   onUndelete: () => void;
   identityByCluster?: Map<string, string>;   // cluster → poi.id der aktuellen Identity
+  clusterEdit?: boolean;                      // false = Editor: keine Cluster-Bildung (zuweisen/Identity)
 }
 
-function PoiRow({ poi, editMode, incoming, onPatch, onDelete, onUndelete, identityByCluster }: RowProps) {
+function PoiRow({ poi, editMode, incoming, onPatch, onDelete, onUndelete, identityByCluster, clusterEdit = true }: RowProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
   // Cluster-Identity-Regel: hält ein ANDERER POI im selben Cluster bereits die Identity,
   // ist dieses Häkchen gesperrt (grau) — erst das aktuelle abwählen (deselect-before-switch).
@@ -479,13 +481,18 @@ function PoiRow({ poi, editMode, incoming, onPatch, onDelete, onUndelete, identi
       </td>
       <td style={{ ...cellStyle, minWidth: 140 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <TextEdit
-            value={poi.cluster ?? ''}
-            onChange={(v) => onPatch({ cluster: v.trim() === '' ? '' : v })}
-          />
+          {/* Cluster-Bildung (zuweisen/Identity) nur wenn clusterEdit; sonst read-only. */}
+          {clusterEdit ? (
+            <TextEdit
+              value={poi.cluster ?? ''}
+              onChange={(v) => onPatch({ cluster: v.trim() === '' ? '' : v })}
+            />
+          ) : (
+            <span style={{ fontSize: 12, color: '#718096' }}>{poi.cluster || '—'}</span>
+          )}
           {/* Ghost-POI: ID-Checkbox versteckt — Ghost IST der Cluster-Repraesentant,
               kann nicht zusaetzlich Member-Identity sein. */}
-          {poi.subcategory !== 'Cluster' && (
+          {clusterEdit && poi.subcategory !== 'Cluster' && (
             <label
               title={idLocked ? 'Cluster hat schon ein Identity-Icon — erst das aktuelle abwählen' : 'Cluster-Icon'}
               style={{ display: 'flex', alignItems: 'center', fontSize: 10, color: idLocked ? '#cbd5e0' : '#c8389b', cursor: idLocked ? 'not-allowed' : 'pointer' }}
@@ -542,7 +549,7 @@ const btnStyle: React.CSSProperties = {
 };
 
 function SubcategorySection({
-  subcategory, pois, editMode, incomingIds, onPatchPoi, onDeletePoi, onUndeletePoi, onAddPoi, identityByCluster,
+  subcategory, pois, editMode, incomingIds, onPatchPoi, onDeletePoi, onUndeletePoi, onAddPoi, identityByCluster, clusterEdit = true,
 }: {
   subcategory: Subcategory;
   pois: MergedPoi[];
@@ -553,6 +560,7 @@ function SubcategorySection({
   onUndeletePoi: (id: string) => void;
   onAddPoi: (sub: Subcategory) => void;
   identityByCluster?: Map<string, string>;
+  clusterEdit?: boolean;
 }) {
   const spec = containerOf(subcategory);
   if (!spec) return null;
@@ -594,11 +602,13 @@ function SubcategorySection({
               onDelete={() => onDeletePoi(p.id)}
               onUndelete={() => onUndeletePoi(p.id)}
               identityByCluster={identityByCluster}
+              clusterEdit={clusterEdit}
             />
           ))}
         </tbody>
       </table>
-      {editMode && (
+      {/* Ghost-Anlegen (Cluster-Subkategorie) = Cluster-Bildung → nur wenn clusterEdit. */}
+      {editMode && (subcategory !== 'Cluster' || clusterEdit) && (
         <button onClick={() => onAddPoi(subcategory)} style={{ ...btnStyle, marginTop: 6, fontSize: 11 }}>
           + POI hinzufügen
         </button>
@@ -610,7 +620,7 @@ function SubcategorySection({
 // ─── Cluster-Sort-Sektion (eine Sektion je Cluster, Mitglieder gemischt) ─────
 
 function ClusterGroupSection({
-  name, pois, editMode, incomingIds, onPatchPoi, onDeletePoi, onUndeletePoi, identityByCluster,
+  name, pois, editMode, incomingIds, onPatchPoi, onDeletePoi, onUndeletePoi, identityByCluster, clusterEdit = true,
 }: {
   name: string;
   pois: MergedPoi[];
@@ -620,6 +630,7 @@ function ClusterGroupSection({
   onDeletePoi: (id: string) => void;
   onUndeletePoi: (id: string) => void;
   identityByCluster?: Map<string, string>;
+  clusterEdit?: boolean;
 }) {
   const liveCount = pois.filter((p) => !p._isDeleted).length;
   return (
@@ -665,6 +676,7 @@ function ClusterGroupSection({
               onDelete={() => onDeletePoi(p.id)}
               onUndelete={() => onUndeletePoi(p.id)}
               identityByCluster={identityByCluster}
+              clusterEdit={clusterEdit}
             />
           ))}
         </tbody>
@@ -1278,6 +1290,16 @@ export default function CatalogTab({ openCatalogId, onCatalogConsumed }: { onJum
 
   const [editState, setEditState] = useState<PoiCatalogEditState>(() => loadEditState(region.id));
   const [editMode, setEditMode] = useState(false);
+
+  // Rollen-Maske: Footer-Diode = activeMode (Sicht), echtes Login = Effekt-Gate.
+  const mode = useModeSwitch();
+  const activeMode: Role = mode?.activeMode ?? 'operator';
+  const realRole: Role = mode?.real ?? 'operator';
+  // live = echtes Login besitzt die Sicht und nicht Review → speichert; sonst Sandbox (folgenlos).
+  const live = realRole === activeMode && activeMode !== 'analyst';
+  // Cluster-Bildung (Cluster zuweisen / Identity / Ghost anlegen) NUR für Operator/Review,
+  // NICHT für Editor (der darf nur Cluster-Sort + ansehen).
+  const clusterEdit = !isEditorRole(activeMode);
   // POIs, die frisch aus dem „Brief" (Drawer-Export) reingefallen sind und noch
   // nicht bearbeitet wurden → leicht rot markiert, bis angefasst.
   const [incomingIds, setIncomingIds] = useState<Set<string>>(new Set());
@@ -1319,11 +1341,13 @@ export default function CatalogTab({ openCatalogId, onCatalogConsumed }: { onJum
     }
   }, [openCatalogId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-save bei jeder State-Änderung (nur wenn Edits vorhanden, sonst Storage leerräumen)
+  // Auto-save bei jeder State-Änderung (nur wenn Edits vorhanden, sonst Storage leerräumen).
+  // SANDBOX (Review/Vorschau, !live): NICHT persistieren — der Operator-Stand bleibt unangetastet.
   useEffect(() => {
+    if (!live) return;
     if (hasEdits(editState)) saveEditState(editState);
     else clearEditState(region.id);
-  }, [editState, region.id]);
+  }, [editState, region.id, live]);
 
   const merged = useMemo(() => mergeEdits(baseCatalog, editState), [baseCatalog, editState]);
   // Anzahl POIs mit poi_NNN-Platzhalter (noch kein echter Fixstern-Token).
@@ -1504,6 +1528,16 @@ export default function CatalogTab({ openCatalogId, onCatalogConsumed }: { onJum
         >
           i
         </button>
+        {!live && (
+          <span style={{ fontSize: 9.5, fontFamily: 'monospace', color: '#a0aec0', border: '1px solid #e2e8f0', borderRadius: 4, padding: '1px 6px' }}>
+            {activeMode === 'analyst' ? 'Review · Sandbox (folgenlos)' : isEditorRole(activeMode) ? 'Editor · Sandbox (folgenlos)' : 'Vorschau · Sandbox'}
+          </span>
+        )}
+        {isEditorRole(activeMode) && (
+          <span style={{ fontSize: 9.5, fontFamily: 'monospace', color: '#a0aec0', border: '1px solid #e2e8f0', borderRadius: 4, padding: '1px 6px' }}>
+            Editor · ohne Cluster-Bildung
+          </span>
+        )}
 
         {/* Token-Präfix: <verbund (≤4)>-<representation (≤12)>-<code (4, generiert)>.
             Nur in Bearbeiten editierbar; betrifft NUR neu angelegte POIs. */}
@@ -1690,6 +1724,7 @@ export default function CatalogTab({ openCatalogId, onCatalogConsumed }: { onJum
           onDeletePoi={handleDelete}
           onUndeletePoi={handleUndelete}
           identityByCluster={identityByCluster}
+          clusterEdit={clusterEdit}
         />
       ))}
 
@@ -1706,6 +1741,7 @@ export default function CatalogTab({ openCatalogId, onCatalogConsumed }: { onJum
           onUndeletePoi={handleUndelete}
           onAddPoi={handleAdd}
           identityByCluster={identityByCluster}
+          clusterEdit={clusterEdit}
         />
       ))}
 
