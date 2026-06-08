@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { ShellRunBadge } from '../ShellRunInfo';
 import { useWorkspaceNav } from '../workspaceNav';
 import { useAuftraggeberRep } from '../../../runtime/useAuftraggeberRep';
-import { buildOriginBundle } from '../../sensus/originPackage';
+import { resolveOriginReference } from '../../sensus/originReference';
 import { publishOriginBundle, anthemPublishConfigured } from '../../../runtime/anthemApi';
 import { mvpUrl } from '../../../runtime/appUrl';
 import QrCell from '../QrCell';
@@ -28,7 +28,9 @@ export default function TransferView() {
   const publish = async () => {
     setPhase('publishing'); setMsg('');
     try {
-      const res = await publishOriginBundle(rep.id, buildOriginBundle(rep));
+      // Publish ruft die EINE Origin-Resolve-Quelle (Phase 0) → genau das
+      // Referenzpaket, das auch das Shell-Studio bekommt.
+      const res = await publishOriginBundle(rep.id, resolveOriginReference(rep).bundle);
       const kb = (res.bytes / 1024).toFixed(1);
       setMsg(`✓ veröffentlicht: origin/${res.repId}/bundle.json · ${kb} kB · ${new Date(res.uploadedAt).toLocaleString('de')}`);
       setPhase('done');

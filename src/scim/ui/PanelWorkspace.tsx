@@ -51,7 +51,7 @@ import { buildOriginPackage, MVP_RESAMPLE_TARGET_METERS } from '../sensus/origin
 import { parseCatalogById } from '../poi-catalog/catalogRegistry';
 import { iconById } from '../poi-catalog/iconRegistry';
 import { resolveIcon } from '../poi-catalog/poiCatalog.composite';
-import { buildOriginManifest } from '../sensus/originManifest';
+import { resolveOriginReference, offerToStudio, type OriginReference } from '../sensus/originReference';
 import type { OriginManifest } from '../sensus/packageContract';
 import type { OriginPackage } from '../sensus/originPackage';
 import { nextAtFor } from '../sensus/anthemEncoder';
@@ -735,6 +735,16 @@ function OriginCapsulerView({ tab }: { tab: TabId }) {
   const { setInspectorAsset } = useRepresentationContext();
   const [capsule, setCapsule] = useState<OriginManifest | null>(null);
   const capsuleFresh = capsule != null && capsule.repId === rep.id;
+  // Origin-auflösen (Phase 0): das volle Referenzpaket + Anthem-Option + Studio-Angebot.
+  const [withAnthem, setWithAnthem] = useState(false);
+  const [reference, setReference] = useState<OriginReference | null>(null);
+  const refFresh = reference != null && reference.repId === rep.id;
+  const resolveOrigin = () => {
+    const ref = resolveOriginReference(rep, { withAnthem });
+    setReference(ref);
+    setCapsule(ref.manifest);
+    offerToStudio(ref);           // manueller Ausgang → Shell-Studio bekommt GENAU das
+  };
   const [publishing, setPublishing] = useState(false);
   const [publishMsg, setPublishMsg] = useState<string | null>(null);
   const onPublishMesh = async () => {
@@ -823,8 +833,9 @@ function OriginCapsulerView({ tab }: { tab: TabId }) {
           <div style={{ flex: '0 0 auto' }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: '#1a365d', marginBottom: 4 }}>cap origin-boundary <span style={{ fontSize: 10.5, fontWeight: 400, color: '#a0aec0' }}>· L0 · Manifest-Anker</span></div>
             <p style={{ fontSize: 12, color: '#4a5568', lineHeight: 1.55, margin: '0 0 10px', maxWidth: 560 }}>
-              Die Boundary rahmt OSM (bbox) und verlinkt die übrigen Caps + den Anthem-Endpoint. „Origin auflösen" baut
-              das Manifest (lokal); das <em>Publizieren</em> des Boundary-Caps folgt.
+              <strong>Origin auflösen</strong> = die EINE Resolve-Quelle: schnürt das Referenzpaket (Bundle ⊕ Mesh ⊕ Manifest,
+              optional Anthem). Genau das spielt der <em>Publish</em> automatisch aus — und es wird hier ans
+              <strong> Shell-Studio</strong> angeboten (Test gegen den echten Ship-Payload).
             </p>
             {/* Inhalt: der Außenring der Representation. */}
             <div style={{ fontSize: 11.5, fontFamily: 'ui-monospace, Menlo, monospace', color: '#4a5568', marginBottom: 8 }}>
@@ -841,13 +852,32 @@ function OriginCapsulerView({ tab }: { tab: TabId }) {
                 }}
               >👁 auf Karte zeigen (Inspector)</button>
               <button
-                onClick={() => setCapsule(buildOriginManifest(rep))}
+                onClick={resolveOrigin}
                 style={{
                   fontSize: 12, padding: '4px 12px', borderRadius: 4, cursor: 'pointer',
                   border: '1px solid #2f855a', background: '#f0fff4', color: '#22543d', fontWeight: 600,
                 }}
-              >▣ Origin auflösen (Manifest)</button>
+              >▣ Origin auflösen → ans Shell-Studio</button>
+              <button
+                onClick={() => setWithAnthem((v) => !v)}
+                title="Beim Auflösen eine simulierte Last (Anthem) mitschicken — das Studio testet Origin + Anthem."
+                style={{
+                  fontSize: 12, padding: '4px 12px', borderRadius: 999, cursor: 'pointer', fontWeight: 600,
+                  border: `1px solid ${withAnthem ? '#38a169' : '#cbd5e0'}`,
+                  background: withAnthem ? '#f0fff4' : '#fff', color: withAnthem ? '#276749' : '#718096',
+                }}
+              >{withAnthem ? '✓ + Anthem' : '+ Anthem'}</button>
             </div>
+            {refFresh && reference && (
+              <div style={{ border: '1px solid #b794f4', background: '#faf5ff', borderRadius: 8, padding: '10px 12px', marginBottom: 8 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#6b46c1' }}>▣ Referenzpaket · „{reference.repName}" v{reference.version} <span style={{ fontWeight: 400, color: '#9f7aea' }}>→ angeboten ans Shell-Studio</span></div>
+                <div style={{ fontSize: 11.5, fontFamily: 'ui-monospace, Menlo, monospace', color: '#553c9a', lineHeight: 1.7, marginTop: 4 }}>
+                  <div>bundle · {reference.bundle.boundary.length} Boundary-Punkte · {reference.bundle.net?.segmentCount ?? 0} Segmente · {reference.bundle.pois.length} POIs · {Object.keys(reference.bundle.assets).length} Assets</div>
+                  <div>anthem · {reference.anthem ? `${reference.anthem.loads.length} Last-Werte (sim ${Math.floor((reference.simMin ?? 0) / 60)}:00)` : '— (ohne; „+ Anthem" zum Mitschicken)'}</div>
+                  <div style={{ color: '#718096' }}>Publish spielt genau dieses Bundle aus (PUT origin/{reference.repId}/bundle.json).</div>
+                </div>
+              </div>
+            )}
             {capsuleFresh && capsule && (
               <div style={{ border: '1px solid #c6f6d5', background: '#f0fff4', borderRadius: 8, padding: '10px 12px', marginBottom: 8 }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: '#22543d' }}>Manifest · „{capsule.repName}" v{capsule.version}</div>

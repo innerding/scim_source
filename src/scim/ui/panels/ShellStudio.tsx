@@ -14,6 +14,7 @@ import { ShellRunBadge } from '../ShellRunInfo';
 import { BuilderClipboardBadge } from '../BuilderClipboardInfo';
 import { useAuftraggeberRep } from '../../../runtime/useAuftraggeberRep';
 import { buildOriginPackage } from '../../sensus/originPackage';
+import { useStudioReference } from '../../sensus/originReference';
 import { produceAnthem, dayPhase } from '../../sensus/anthemProducer';
 import { fmtBytes } from '../../sensus/formatBytes';
 import { APP_URL, mvpUrl } from '../../../runtime/appUrl';
@@ -227,10 +228,21 @@ export default function ShellStudio() {
   const [anthemOn, setAnthemOn] = useState(false);
   const [turboHour, setTurboHour] = useState(13); // anthem-sim Zeit (Time/Turbo) — bei echtem Last-Paket weg
   const simMin = turboHour * 60;
-  const originPkg = useMemo(() => (originOn || anthemOn) ? buildOriginPackage(rep) : null, [originOn, anthemOn, rep]);
+  // Manuell angebotenes Referenzpaket („Origin auflösen → ans Shell-Studio")?
+  // Dann testet das Studio gegen GENAU den Ship-Payload (+ ggf. mitgeschickte Last).
+  const studioRef = useStudioReference();
+  const refForRep = studioRef && studioRef.repId === rep.id ? studioRef : null;
+  const originPkg = useMemo(
+    () => (originOn || anthemOn) ? (refForRep?.pkg ?? buildOriginPackage(rep)) : null,
+    [originOn, anthemOn, rep, refForRep],
+  );
   const loads = useMemo(
-    () => (anthemOn && originPkg?.originNet) ? produceAnthem(originPkg.originNet, rep.id, simMin).loads : null,
-    [anthemOn, originPkg, rep, simMin],
+    () => {
+      if (!anthemOn) return null;
+      if (refForRep?.anthem) return refForRep.anthem.loads;             // mitgeschickte Last
+      return originPkg?.originNet ? produceAnthem(originPkg.originNet, rep.id, simMin).loads : null;
+    },
+    [anthemOn, originPkg, rep, simMin, refForRep],
   );
   const phaseLabel = dayPhase(simMin) > 0.85 ? 'Spitze' : dayPhase(simMin) > 0.5 ? 'Mittag' : dayPhase(simMin) > 0.2 ? 'Rand' : 'ruhig';
 
@@ -300,6 +312,13 @@ export default function ShellStudio() {
               <input type="range" min={6} max={20} step={0.5} value={turboHour} onChange={(e) => setTurboHour(+e.target.value)} style={{ width: 88 }} />
               <span style={{ fontSize: 10, color: '#276749', fontFamily: 'monospace', minWidth: 72 }}>{String(Math.floor(turboHour)).padStart(2, '0')}:{turboHour % 1 ? '30' : '00'} · {phaseLabel}</span>
             </span>
+          )}
+          {refForRep && (
+            <span title="Referenzpaket vom »Origin auflösen« — das Studio rendert GENAU den Ship-Payload (kein Live-Recompute)."
+              style={{
+                fontSize: 9.5, fontFamily: 'monospace', fontWeight: 700, padding: '2px 8px', borderRadius: 999,
+                border: '1px solid #b794f4', background: '#faf5ff', color: '#6b46c1',
+              }}>▣ Referenzpaket v{refForRep.version}{refForRep.anthem ? ' · +Anthem' : ''}</span>
           )}
           <span style={{ fontSize: 10.5, color: '#a0aec0', fontFamily: 'monospace' }}>Rep: {rep.name}</span>
           <span style={{ fontSize: 10.5, color: '#4a5568', flex: 1, minWidth: 180 }}>
