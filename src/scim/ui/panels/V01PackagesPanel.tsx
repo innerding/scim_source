@@ -96,13 +96,19 @@ export default function V01PackagesPanel() {
           <div style={{ fontSize: 14, fontWeight: 600, color: '#1a365d' }}>Alle Pakete</div>
           <div style={{ fontSize: 11, color: '#718096' }}>Region · Representation · Version · Status</div>
         </div>
-        {role === 'operator' && <AppManifestBadge />}
+        {role === 'operator' && <span style={{ marginLeft: 'auto' }}><AppManifestBadge /></span>}
+      </div>
+
+      {/* Laden-Knopf zentriert & prominent — auf großem Screen sofort findbar. */}
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 18 }}>
         <button onClick={() => void reload()} disabled={loading} style={{
-          marginLeft: 'auto', padding: '5px 12px', fontSize: 11,
-          background: '#fff', border: '1px solid #e2e8f0', borderRadius: 5,
-          cursor: loading ? 'default' : 'pointer', color: '#4a5568',
+          padding: '9px 22px', fontSize: 13, fontWeight: 700,
+          background: loading ? '#bee3f8' : '#2b6cb0', color: '#fff',
+          border: '1px solid #2b6cb0', borderRadius: 8,
+          cursor: loading ? 'default' : 'pointer',
+          boxShadow: '0 1px 3px rgba(43,108,176,0.25)',
         }}>
-          {loading ? '…' : '↺ Laden'}
+          {loading ? '… lädt' : '↺ Pakete laden'}
         </button>
       </div>
 
