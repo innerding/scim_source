@@ -104,7 +104,7 @@ export function repsForActor(actor: Actor): RepView[] {
     const binding: Binding = 'regional';
     if (!canSee(actor, { ownerId: actor.id, regionId, binding, state: 'committed' })) continue;
     views.push({
-      id: r.id, name: r.name, regionId, regionLabel: geo?.region ?? '—',
+      id: r.id, name: r.name, regionId, regionLabel: geo?.region ?? '—', nationLabel: geo?.nation ?? undefined,
       binding, state: 'committed', currentVersion: r.version ?? 1, origin: 'committed',
       catalogId: r.catalog_id ?? null, geometryId: r.geometry_id ?? null,
       parts: { geometry: !!r.geometry_id, wegnetz: !!r.wegnetz_id, catalog: !!r.catalog_id, thresholds: true },

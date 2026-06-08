@@ -134,27 +134,12 @@ export default function OperatorRepsHome({ onJumpTo }: { onJumpTo: (panelId: str
         </div>
       )}
 
-      {/* Committete Representations */}
-      <SectionTitle label="Committete Representations" count={committed.length} hint="Eingefroren & versioniert. (Nation→Region→Rep-Baum folgt.)" />
+      {/* Committete Representations — Nation → Region → Rep (Akkordeon) */}
+      <SectionTitle label="Committete Representations" count={committed.length} hint="Nation → Region → Rep. Eingefroren & versioniert." />
       {committed.length === 0 ? (
         <Empty text="Noch keine committete Representation." />
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {committed.map((rep) => (
-            <div key={rep.id} style={{
-              border: '1px solid #9ae6b4', background: '#f0fff4', borderRadius: 8, padding: '12px 14px',
-              display: 'flex', flexDirection: 'column', gap: 8,
-            }}>
-              {repHead(rep, (
-                <span style={{
-                  fontSize: 9.5, fontFamily: 'monospace', padding: '1px 7px', borderRadius: 999,
-                  border: '1px solid #9ae6b4', background: '#f0fff4', color: '#22543d', fontWeight: 700,
-                }}>committet v{rep.currentVersion}</span>
-              ))}
-              {partRow(rep)}
-            </div>
-          ))}
-        </div>
+        <RepTree reps={committed} />
       )}
     </div>
   );
@@ -174,6 +159,114 @@ function SectionTitle({ label, count, hint }: { label: string; count: number; hi
 
 function Empty({ text }: { text: string }) {
   return <div style={{ fontSize: 12, color: '#718096', fontStyle: 'italic', padding: '6px 2px 18px' }}>{text}</div>;
+}
+
+// ─── Nation → Region → Rep (Akkordeon) ──────────────────────────────────────
+interface RegionNode { region: string; reps: RepView[]; }
+interface NationNode { nation: string; regions: RegionNode[]; }
+
+function buildTree(reps: RepView[]): NationNode[] {
+  const byNation = new Map<string, Map<string, RepView[]>>();
+  for (const r of reps) {
+    const nation = r.nationLabel || '— ohne Nation';
+    const region = r.regionLabel || '— ohne Region';
+    if (!byNation.has(nation)) byNation.set(nation, new Map());
+    const byRegion = byNation.get(nation)!;
+    if (!byRegion.has(region)) byRegion.set(region, []);
+    byRegion.get(region)!.push(r);
+  }
+  return [...byNation.entries()].map(([nation, byRegion]) => ({
+    nation,
+    regions: [...byRegion.entries()].map(([region, rs]) => ({ region, reps: rs })),
+  }));
+}
+
+const committedBadge: React.CSSProperties = {
+  fontSize: 9.5, fontFamily: 'monospace', padding: '1px 7px', borderRadius: 999,
+  border: '1px solid #9ae6b4', background: '#f0fff4', color: '#22543d', fontWeight: 700,
+};
+
+function CommittedRow({ rep }: { rep: RepView }) {
+  return (
+    <div style={{
+      border: '1px solid #9ae6b4', background: '#f0fff4', borderRadius: 8, padding: '10px 12px',
+      display: 'flex', flexDirection: 'column', gap: 7,
+    }}>
+      {repHead(rep, <span style={committedBadge}>committet v{rep.currentVersion}</span>)}
+      {partRow(rep)}
+    </div>
+  );
+}
+
+function Caret({ label, count, open, onClick, level }: {
+  label: string; count: number; open: boolean; onClick: () => void; level: 0 | 1;
+}) {
+  return (
+    <button onClick={onClick} style={{
+      display: 'flex', alignItems: 'center', gap: 7, width: '100%', textAlign: 'left',
+      cursor: 'pointer', border: '1px solid #e2e8f0', borderRadius: 6,
+      background: level === 0 ? '#edf2f7' : '#f7fafc', padding: '6px 10px', fontFamily: 'system-ui, sans-serif',
+    }}>
+      <span style={{ fontSize: 10, color: '#718096', width: 10 }}>{open ? '▾' : '▸'}</span>
+      <span style={{ fontSize: level === 0 ? 12.5 : 12, fontWeight: 700, color: '#2d3748' }}>{level === 0 ? '🏳 ' : '◎ '}{label}</span>
+      <span style={{ fontSize: 10, fontFamily: 'monospace', color: '#a0aec0' }}>{count}</span>
+    </button>
+  );
+}
+
+function BindingGroup({ label, reps }: { label: string; reps: RepView[] }) {
+  return (
+    <div>
+      <div style={{ fontSize: 9.5, fontFamily: 'monospace', color: '#a0aec0', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 5 }}>{label}</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {reps.map((rep) => <CommittedRow key={rep.id} rep={rep} />)}
+      </div>
+    </div>
+  );
+}
+
+function RepTree({ reps }: { reps: RepView[] }) {
+  const tree = useMemo(() => buildTree(reps), [reps]);
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  const open = (k: string) => !collapsed.has(k);
+  const toggle = (k: string) => setCollapsed((s) => {
+    const n = new Set(s);
+    if (n.has(k)) n.delete(k); else n.add(k);
+    return n;
+  });
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      {tree.map((nat) => {
+        const nk = `n:${nat.nation}`;
+        const repCount = nat.regions.reduce((s, r) => s + r.reps.length, 0);
+        return (
+          <div key={nk}>
+            <Caret label={nat.nation} count={repCount} open={open(nk)} onClick={() => toggle(nk)} level={0} />
+            {open(nk) && (
+              <div style={{ marginLeft: 14, marginTop: 4, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {nat.regions.map((reg) => {
+                  const rk = `${nk}/r:${reg.region}`;
+                  const regional = reg.reps.filter((x) => x.binding === 'regional');
+                  const unbound = reg.reps.filter((x) => x.binding === 'unbound');
+                  return (
+                    <div key={rk}>
+                      <Caret label={reg.region} count={reg.reps.length} open={open(rk)} onClick={() => toggle(rk)} level={1} />
+                      {open(rk) && (
+                        <div style={{ marginLeft: 14, marginTop: 5, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                          {regional.length > 0 && <BindingGroup label="regional gebunden" reps={regional} />}
+                          {unbound.length > 0 && <BindingGroup label="ohne regionale Bindung" reps={unbound} />}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 const ghostBtn: React.CSSProperties = {

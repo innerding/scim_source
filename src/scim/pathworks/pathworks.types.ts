@@ -117,6 +117,7 @@ export interface RepView {
   name: string;
   regionId: RegionId | null;
   regionLabel: string;        // menschlich (Geometry-Region oder „—")
+  nationLabel?: string;       // menschlich (Geometry-Nation) — für den Baum
   binding: Binding;
   state: LifecycleState;      // local | submitted | committed
   currentVersion: number;     // 0 = nie committet
