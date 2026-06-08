@@ -1,15 +1,16 @@
 // Eine Quelle für die Kennzahlen — das Leistungsblatt (System ◈) UND das Usage-
 // Manual (Reader-Diode) lesen DARAUS, damit sie nie mehr auseinanderlaufen.
 // Hier pflegen → beide aktuell. Commits/Zeilen real gemessen über die drei
-// Auslieferungs-Repos (SCIM3-Werkbank + Runtime + shell-kit). Stand 2026-06-06.
+// Auslieferungs-Repos (SCIM3-Werkbank + Runtime + shell-kit). Stand 2026-06-09.
 
-export const LEISTUNGEN_STAND = '2026-06-06';
+export const LEISTUNGEN_STAND = '2026-06-09';
 
 export interface Kennzahl { label: string; wert: string; detail: string; }
 
 export const LEISTUNGEN: Kennzahl[] = [
-  { label: 'Quellcode',      wert: '~56.000 Zeilen',          detail: 'Gesamtsystem (TS/TSX): SCIM3 50.122 · Runtime 4.381 · shell-kit 1.493 · gemessen' },
-  { label: 'Git-Commits',    wert: '934',                     detail: 'SCIM3 762 · Runtime 130 · shell-kit 42 · Auto-Deploy je main-Push' },
+  { label: 'Entwicklungszeit', wert: '~1 Monat',              detail: 'eine Person (Dietmar Broda) · Konzept + Bau · dichte tägliche Arbeit' },
+  { label: 'Quellcode',      wert: '~60.500 Zeilen',          detail: 'Gesamtsystem (TS/TSX): SCIM3 54.253 · Runtime 4.528 · shell-kit 1.793 · gemessen' },
+  { label: 'Git-Commits',    wert: '1.039',                   detail: 'SCIM3 863 · Runtime 134 · shell-kit 42 · Auto-Deploy je main-Push' },
   { label: 'Test-Dateien',   wert: '45 + Node',               detail: 'Vitest (SCIM3) · shell-kit Node-Tests (bak/Skala)' },
   { label: 'Pipeline',       wert: '14 P-Panels + 7 Compute', detail: 'stabile Architektur seit v0.2' },
   { label: 'Region-Katalog', wert: '3 Regionen · 55 POIs',    detail: 'publiziert: Grünberg 31 · Lichtenberg 24 · Gaisberg prepared' },
