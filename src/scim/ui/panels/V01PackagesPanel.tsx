@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { usePackagesApi, type PackageEntry } from './usePackagesApi';
 import { AppManifestBadge } from '../AppManifestInfo';
+import { useRole } from '../RoleContext';
 import packagesIcon    from '../../../assets/Packages.svg';
 import skgIcon         from '../../../assets/SKG.svg';
 import gruenbergIcon   from '../../../assets/Grünberg.svg';
@@ -60,6 +61,7 @@ function StatusChip({ status }: { status: PackageEntry['status'] }) {
 }
 
 export default function V01PackagesPanel() {
+  const role = useRole();
   const { packages, loading, error, reload, activate, archive, isConfigured } = usePackagesApi();
   const [actionError, setActionError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -94,7 +96,7 @@ export default function V01PackagesPanel() {
           <div style={{ fontSize: 14, fontWeight: 600, color: '#1a365d' }}>Alle Pakete</div>
           <div style={{ fontSize: 11, color: '#718096' }}>Region · Representation · Version · Status</div>
         </div>
-        <AppManifestBadge />
+        {role === 'operator' && <AppManifestBadge />}
         <button onClick={() => void reload()} disabled={loading} style={{
           marginLeft: 'auto', padding: '5px 12px', fontSize: 11,
           background: '#fff', border: '1px solid #e2e8f0', borderRadius: 5,
