@@ -234,7 +234,6 @@ function ThresholdColumn({ title, settings, onChange, onReset, resetLabel, coupl
               })}
             </div>
           </div>
-          <span style={{ fontSize: 8.5, color: '#a0aec0' }}>{full ? 'Mitte · Grenzen' : 'Grenzen'}</span>
           <button onClick={resetEven} title={onReset ? 'auf den Default der nächsthöheren Instanz zurücksetzen' : 'gleichverteilen'} style={{ fontSize: 9, padding: '1px 6px', borderRadius: 3, border: '1px solid #e2e8f0', background: '#f7fafc', color: '#718096', cursor: 'pointer' }}>↺ {resetLabel ?? 'zurücksetzen'}</button>
         </div>
 
@@ -279,6 +278,16 @@ const TITLE: Record<Col, string> = {
   rep_editor: 'Rep-Editor-Rep', reg_editor: 'Reg-Editor-Reg',
   representation: 'Representation', region: 'Region', global: 'Global',
 };
+// In den Editor-Sichten heißen die Editor-Säulen schlicht Representation/Region,
+// die abgedimmten Operator-Refs „Default".
+function titleFor(col: Col, activeMode: Role): string {
+  if (isEditorRole(activeMode)) {
+    if (col === 'rep_editor') return 'Representation';
+    if (col === 'reg_editor') return 'Region';
+    if (col === 'representation' || col === 'region') return 'Default';
+  }
+  return TITLE[col];
+}
 const COL_EDITABLE: Record<Col, 'full' | 'borders'> = {
   rep_editor: 'borders', reg_editor: 'borders', representation: 'full', region: 'full', global: 'full',
 };
@@ -440,7 +449,7 @@ export default function ThresholdsView() {
           return (
             <ThresholdColumn
               key={col}
-              title={TITLE[col]}
+              title={titleFor(col, activeMode)}
               settings={vals[col]}
               dimmed={dimmed}
               editable={COL_EDITABLE[col]}
