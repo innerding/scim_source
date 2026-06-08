@@ -140,14 +140,21 @@ export default function EditorRepsHome({ onJumpTo }: Props) {
         </div>
       </div>
 
-      {/* Neue Representation anlegen — hier, nicht im Drawer. */}
-      {live && (
-        <div style={{ marginBottom: 12 }}>
+      {/* Neue Representation anlegen — hier, nicht im Drawer. Sichtbar als
+          Affordanz; in der Vorschau/Sandbox (nicht live) gesperrt. */}
+      <div style={{ marginBottom: 12 }}>
           {!showCreate ? (
-            <button onClick={() => setShowCreate(true)} style={{
-              fontSize: 12, fontWeight: 700, padding: '7px 14px', borderRadius: 6,
-              border: '1px solid #2b6cb0', background: '#2b6cb0', color: '#fff', cursor: 'pointer',
-            }}>+ neue Representation</button>
+            <button
+              onClick={() => { if (live) setShowCreate(true); }}
+              disabled={!live}
+              title={live ? 'Neue Representation anlegen' : 'Nur mit echtem Editor-Login — in der Vorschau gesperrt (Sandbox)'}
+              style={{
+                fontSize: 12, fontWeight: 700, padding: '7px 14px', borderRadius: 6,
+                border: `1px solid ${live ? '#2b6cb0' : '#cbd5e0'}`,
+                background: live ? '#2b6cb0' : '#edf2f7', color: live ? '#fff' : '#a0aec0',
+                cursor: live ? 'pointer' : 'not-allowed',
+              }}
+            >+ neue Representation</button>
           ) : (
             <div style={{
               border: '1px solid #bee3f8', background: '#f7fbff', borderRadius: 8, padding: '12px 14px',
@@ -184,8 +191,7 @@ export default function EditorRepsHome({ onJumpTo }: Props) {
               </div>
             </div>
           )}
-        </div>
-      )}
+      </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {drafts.length === 0 && committed.length === 0 && (
