@@ -441,18 +441,10 @@ export default function IntroScreen({ onAuth }: Props) {
     proceedAfterAuth(role, userName);
   };
 
-  // Auto-Passkey-Versuch sobald das Panel geöffnet wird (nur wenn registriert)
-  useEffect(() => {
-    if (!panelVisible || passkeyAttempted.current) return;
-    if (!hasStoredPasskey) return;
-    passkeyAttempted.current = true;
-    setPasskeyBusy(true);
-    tryPasskeyLogin().then((res) => {
-      setPasskeyBusy(false);
-      if (res) afterPasskey(res);
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [panelVisible]);
+  // KEIN Auto-Passkey-Login mehr: das Formular ist immer der Eingang, damit man
+  // jederzeit einen ANDEREN Nutzer (z.B. dietmar statt michael moser) eintippen
+  // kann. Touch ID bleibt als bewusster Knopf („👆 Mit Touch ID anmelden").
+  // (Früher feuerte Touch ID automatisch und sperrte faktisch auf einen Nutzer.)
 
   const handleRegisterAndEnter = async () => {
     if (!offerRegister) return;

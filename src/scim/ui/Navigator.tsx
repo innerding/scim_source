@@ -449,20 +449,36 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
         }}>
           <div style={{ height: 280, flexShrink: 0 }} />
           <RegioDashboardControl activeId={activeId} onJumpTo={go} variant="dark" size={171} arcsDeco toolsEnabled={!!boundRep} />
-          {/* Brotkrumen: woran die Werkzeuge gerade hängen. Ohne Bindung ein Hinweis. */}
-          <div style={{ marginTop: 10, textAlign: 'center', maxWidth: 188, fontFamily: 'system-ui, sans-serif' }}>
+          {/* Status-Bild: welche Rep · Region · Version die Werkzeuge gerade bearbeiten. */}
+          <div style={{ marginTop: 12, width: 190, fontFamily: 'system-ui, sans-serif' }}>
             {boundRep ? (
-              <>
-                <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>gebunden an</div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.92)', lineHeight: 1.3, marginTop: 1 }}>{boundRep.name}</div>
+              <div style={{
+                border: '1px solid rgba(255,255,255,0.16)', borderRadius: 8, padding: '9px 11px',
+                background: 'rgba(255,255,255,0.05)',
+              }}>
+                <div style={{ fontSize: 8.5, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 3 }}>
+                  in Bearbeitung
+                </div>
+                <div style={{ fontSize: 12.5, fontWeight: 700, color: 'rgba(255,255,255,0.94)', lineHeight: 1.25 }}>{boundRep.name}</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 5 }}>
+                  <span style={{
+                    fontSize: 8.5, fontFamily: 'monospace', padding: '1px 6px', borderRadius: 999,
+                    border: '1px solid rgba(255,255,255,0.18)', color: 'rgba(255,255,255,0.7)',
+                  }}>{boundRep.binding === 'unbound' ? '◍ ohne Bindung' : `◎ ${boundRep.regionLabel ?? '—'}`}</span>
+                  <span style={{
+                    fontSize: 8.5, fontFamily: 'monospace', padding: '1px 6px', borderRadius: 999,
+                    border: `1px solid ${boundRep.origin === 'committed' ? 'rgba(154,230,180,0.5)' : 'rgba(251,211,141,0.5)'}`,
+                    color: boundRep.origin === 'committed' ? 'rgba(154,230,180,0.95)' : 'rgba(251,211,141,0.95)',
+                  }}>{boundRep.origin === 'committed' ? `committet v${boundRep.version ?? 1} · nur lesbar` : 'Draft'}</span>
+                </div>
                 <button onClick={() => go('workspace')} style={{
-                  marginTop: 5, cursor: 'pointer', fontSize: 10, fontFamily: 'system-ui, sans-serif',
+                  marginTop: 8, cursor: 'pointer', fontSize: 10, fontFamily: 'system-ui, sans-serif',
                   border: '1px solid rgba(255,255,255,0.2)', background: 'transparent',
                   color: 'rgba(255,255,255,0.7)', borderRadius: 999, padding: '2px 10px',
-                }}>↩ wechseln</button>
-              </>
+                }}>↩ andere Rep</button>
+              </div>
             ) : (
-              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', fontStyle: 'italic', lineHeight: 1.4 }}>
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', fontStyle: 'italic', lineHeight: 1.4, textAlign: 'center' }}>
                 Werkzeuge: erst eine Representation im Pathworks-Editor öffnen
               </div>
             )}

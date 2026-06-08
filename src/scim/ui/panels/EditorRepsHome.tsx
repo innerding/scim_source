@@ -135,7 +135,10 @@ export default function EditorRepsHome({ onJumpTo }: Props) {
       ? { kind: 'representation' as const, id: rep.id }
       : (rep.catalogId ? { kind: 'catalog' as const, id: rep.catalogId } : null);
     if (asset) setInspectorAsset(asset);
-    bindRep({ id: rep.id, name: rep.name, origin: rep.origin, catalogId: rep.catalogId, geometryId: rep.geometryId });
+    bindRep({
+      id: rep.id, name: rep.name, origin: rep.origin, catalogId: rep.catalogId, geometryId: rep.geometryId,
+      regionLabel: rep.regionLabel, binding: rep.binding, version: rep.currentVersion,
+    });
     onJumpTo(panel, target);
   };
   const deleteRepHandler = (rep: RepView) => {

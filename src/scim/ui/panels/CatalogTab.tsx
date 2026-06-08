@@ -1538,15 +1538,27 @@ export default function CatalogTab({ openCatalogId, onCatalogConsumed }: { onJum
         display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, flexWrap: 'wrap',
       }}>
         <label style={{ fontSize: 12, color: '#4a5568' }}>Representation:</label>
-        <select
-          value={regionId}
-          onChange={(e) => setRegionId(e.target.value)}
-          style={{ fontSize: 13, padding: '4px 8px', borderRadius: 4, border: '1px solid #cbd5e0' }}
-        >
-          {REGIONS.map((r) => (
-            <option key={r.id} value={r.id}>{r.name}</option>
-          ))}
-        </select>
+        {boundRep ? (
+          // An eine Rep gebunden → fest auf deren Region, keine Auswahl anderer
+          // Regionen (Grünberg o.ä. steht nicht zur Wahl).
+          <span style={{
+            fontSize: 13, fontWeight: 700, color: '#2d3748', padding: '4px 10px',
+            borderRadius: 4, border: '1px solid #bee3f8', background: '#ebf8ff',
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+          }} title="Fest an die gebundene Representation — Region wechseln im Pathworks-Editor">
+            {region.name} <span style={{ fontSize: 10, color: '#2b6cb0' }}>· gebunden</span>
+          </span>
+        ) : (
+          <select
+            value={regionId}
+            onChange={(e) => setRegionId(e.target.value)}
+            style={{ fontSize: 13, padding: '4px 8px', borderRadius: 4, border: '1px solid #cbd5e0' }}
+          >
+            {REGIONS.map((r) => (
+              <option key={r.id} value={r.id}>{r.name}</option>
+            ))}
+          </select>
+        )}
         <button
           onClick={() => setShowFlowInfo(true)}
           title="Icon-Flow im SCIM (Hilfe)"

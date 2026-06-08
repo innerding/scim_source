@@ -56,6 +56,10 @@ export interface BoundRep {
   origin: 'draft' | 'committed';
   catalogId: string | null;
   geometryId: string | null;
+  // Für das Status-Bild in der Control-Spalte:
+  regionLabel?: string;
+  binding?: 'regional' | 'unbound';
+  version?: number;        // committete Version (0/undefined = Draft)
 }
 
 export interface RepresentationContextValue {
