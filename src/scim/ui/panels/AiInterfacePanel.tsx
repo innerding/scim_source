@@ -55,6 +55,14 @@ const SEED_ANNOTATIONS: Annotation[] = [
     related_panel: 'catalog',
     date: '2026-06-08',
   },
+  {
+    id: 'ann_110',
+    category: 'next_intent',
+    label: 'PATHWORKS HUB — Modell & Versionierung (Logik-Schicht zuerst)',
+    content: 'PATHWORKS HUB — Modell & Versionierung (Stand 2026-06-08, LOGIK-SCHICHT gebaut, UI-frei). Code: src/scim/pathworks/ (pathworks.types · lifecycle · visibility · store). Doc: docs/pathworks_hub_model.md. — ZWEI ACHSEN: (1) BAUM Nation→Region→Representation; Rep-Bindung regional (geografisch, Anthem wie gehabt) ODER unbound (Regions-Zugehörigkeit OHNE geografische Bindung = privat/Event; KEIN Anthem in dieser Form, Mesh entsteht aus den User-Geräten). (2) ZUSTAND git-artig local→submitted→committed. — LEBENSZYKLUS: local=Speichern (jeder) · submitted=Senden zur Review (jeder AUSSER Operator) · committed=Version N (NUR Operator, direkt ohne Review). „Ab wann Version?" = beim Operator-Commit; Editor-Sends erzeugen NIE eine Version. — RECHTE-MATRIX (visibility.ts): operator sieht committet (sein Reich)+Einreichungen+eigene Drafts, NICHT fremde un-eingereichte Drafts, committet direkt · regio_editor sieht ALLE Reps seiner Region · rep_editor eigene Reps/Drafts/Kataloge · editor (OHNE Bindung) eigener unbound-Kram · analyst = Operator-Sicht read-only (Sandbox). Zusatz: Editor darf Wegnetz NICHT beschneiden (canCropWegnetz heute operator-only). — VERSIONIERUNG (lifecycle.ts): Version = unveränderliches Manifest {repId,version,regionId,binding,parts:PartRef[],committedBy,committedAt,note}. Granularität = PART-REFS (catalog/geometry/wegnetz/thresholds/colour als {kind,draftId,contentHash} eingefroren). „Einzelteile in einer Version gibt es nicht mehr frei" = isFrozen; Ändern = neuer Draft (Fork) → neue Version (dafür die Notiz). commitRepresentation rein (now als Param). — PERSISTENZ-NAHT (store.ts): Logik spricht nur mit PathworksStore; heute später localStorage (1 Browser), morgen Worker/R2/D1 (echtes Cross-User Editor↔Operator). Interface steht, Impl folgt. — EDITOR-BLICK (Schicht 2, später): radikal schmal = scoped Liste „mein Kram" (Name·Art·Zustand-Badge·Speichern/Senden), KEIN Baum; die Nation→Region→Rep-Navigation + Einreichungs-Queue ist die Last des OPERATORS. Review = Sandbox-Sicht des Operators. — OFFEN: Rollen-Mapping Login(reg/rep_editor) ↔ Domain(+editor unbound, regio_editor=Aufsicht) = Governance ann_105; Crop für regio_editor?; unbound-Runtime; Region-Pflicht bei Erstanlage. Defaults: Part-Refs · unbound nur Flag · localStorage+Server-Naht.',
+    related_panel: 'workspace',
+    date: '2026-06-08',
+  },
 
   // ── Plan & Stand (2026-06-04) ───────────────────────────────────────────────
 
