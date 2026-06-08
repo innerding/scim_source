@@ -1632,8 +1632,6 @@ export default function DrawerPanel({ openGeometryId, onGeometryConsumed, iconVi
       {/* Oberer Tab „Icon": Voll-Overlay ueber Header + Karte (Karte bleibt
           gemountet). Umriss/Wegnetz liegen darunter und sind so verdeckt. */}
       {iconView && <IconBuildNotiz />}
-      {/* Technik-Tab „Synchronizer": Voll-Overlay über der Karte (Karte bleibt gemountet). */}
-      {tab === 'synchronizer' && <SynchronizerNotiz />}
       {/* Tab-Strip Umriss / Wegnetz / Synchronizer (Technik, Operator/Review) */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px 0',
@@ -1850,8 +1848,11 @@ export default function DrawerPanel({ openGeometryId, onGeometryConsumed, iconVi
         </div>
       </div>
 
-      {/* Inhaltszeile: optionales Wegnetz-Filtermenue + gemeinsamer Map-Canvas */}
-      <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
+      {/* Inhaltszeile: optionales Wegnetz-Filtermenue + gemeinsamer Map-Canvas.
+          Synchronizer-Overlay liegt NUR über diesem Bereich (nicht über dem
+          Tab-Streifen) → man bleibt gleichwertig bei Umriss/Wegnetz und kommt zurück. */}
+      <div style={{ display: 'flex', flex: 1, minHeight: 0, position: 'relative' }}>
+        {tab === 'synchronizer' && <SynchronizerNotiz />}
         {tab === 'wegnetz' && (
           <PathFilterMenu
             gebiet={inspectorView?.geometry.id ?? ''}

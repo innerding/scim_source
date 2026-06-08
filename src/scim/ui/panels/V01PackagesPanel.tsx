@@ -105,8 +105,8 @@ export default function V01PackagesPanel() {
       </div>
 
       {(error ?? actionError) && (
-        <div style={{ padding: '8px 12px', background: '#fff5f5', border: '1px solid #feb2b2',
-          borderRadius: 6, color: '#c53030', fontSize: 12, marginBottom: 16 }}>
+        <div style={{ padding: '8px 12px', background: '#fffaf0', border: '1px solid #fbd38d',
+          borderRadius: 6, color: '#975a16', fontSize: 12, marginBottom: 16 }}>
           {error ?? actionError}
         </div>
       )}

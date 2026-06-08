@@ -42,7 +42,10 @@ export function usePackagesApi(regionId?: string) {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setPackages(await res.json() as PackageEntry[]);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      // Freundliche Meldung: das ist die LEGACY-Paket-Liste (Worker/R2). Scheitert
+      // sie, ist meist der Worker-Endpoint nicht erreichbar — kein App-Fehler.
+      const detail = e instanceof Error ? e.message : String(e);
+      setError(`Paket-Liste nicht erreichbar (Sensus-Core-Worker /api/packages prüfen) · ${detail}`);
     } finally {
       setLoading(false);
     }
