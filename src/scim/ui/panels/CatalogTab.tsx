@@ -5,7 +5,6 @@ import { buildPoiComposite, resolveIcon } from '../../poi-catalog/poiCatalog.com
 import { ICON_REGISTRY, findIcons, iconById } from '../../poi-catalog/iconRegistry';
 import type { IconRegistryEntry } from '../../poi-catalog/iconRegistry';
 import { DIGIT_GLYPHS, GLYPHS, glyphsForNumber } from '../../poi-catalog/digitGlyphs';
-import RepresentBuildTetrahedron from '../RepresentBuildTetrahedron';
 import { extractElevation } from '../../poi-catalog/decorations';
 import {
   addNewPoi, clearEditState, deletePoi, hasEdits, loadEditState,
@@ -1230,7 +1229,7 @@ function ExportModal({ originalMd, newMd, fileName, onClose, onCommitted }: {
 
 // ─── Haupt-Komponente ─────────────────────────────────────────────────────────
 
-export default function CatalogTab({ onJumpTo, openCatalogId, onCatalogConsumed }: { onJumpTo?: (panelId: string) => void; openCatalogId?: string | null; onCatalogConsumed?: () => void } = {}) {
+export default function CatalogTab({ openCatalogId, onCatalogConsumed }: { onJumpTo?: (panelId: string) => void; openCatalogId?: string | null; onCatalogConsumed?: () => void } = {}) {
 
   const [regionId, setRegionId] = useState<string>(REGIONS[0].id);
   const region = REGIONS.find((r) => r.id === regionId)!;
@@ -1458,26 +1457,7 @@ export default function CatalogTab({ onJumpTo, openCatalogId, onCatalogConsumed 
       <div style={{
         display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, flexWrap: 'wrap',
       }}>
-        {onJumpTo && (
-          <div title="Catalog Magazination" style={{ flexShrink: 0 }}>
-            <RepresentBuildTetrahedron
-              activeFace="catalog_magazination"
-              variant="light"
-              size={44}
-              onFaceClick={(f) => {
-                if (f === 'geometry_draw') onJumpTo('geometry_editor');
-                else if (f === 'represent_organisation') onJumpTo('workspace');
-                else if (f === 'sensus_core_build') onJumpTo('P11');
-              }}
-              onArcClick={(a) => {
-                if (a === 'system_adjust') onJumpTo('P01');
-                else if (a === 'regio_content') onJumpTo('P02');
-                else if (a === 'load_thresholds') onJumpTo('P09');
-              }}
-            />
-          </div>
-        )}
-        <label style={{ fontSize: 12, color: '#4a5568' }}>Region:</label>
+        <label style={{ fontSize: 12, color: '#4a5568' }}>Representation:</label>
         <select
           value={regionId}
           onChange={(e) => setRegionId(e.target.value)}
