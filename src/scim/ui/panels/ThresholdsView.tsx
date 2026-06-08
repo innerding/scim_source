@@ -456,6 +456,15 @@ export default function ThresholdsView() {
           </div>
         </>
       )}
+
+      {activeMode === 'operator' && (
+        <div style={{ marginTop: 16, padding: '8px 10px', fontSize: 10, lineHeight: 1.5, color: '#744210', background: '#fffaf0', border: '1px solid #feebc8', borderRadius: 6, maxWidth: 560 }}>
+          <strong>Notiz:</strong> Die aufgelöste Farbe (rep-editor-rep → representation → global) reist im
+          Origin-Bundle mit und ist an die <strong>Representation-Version</strong> gebunden (beim Re-Publish
+          mitgeschnitten). Offen/zurückgestellt: <strong>Farb-Ansicht + Versions-Diff im Publishing-Monitor (V03)</strong>.
+          Siehe <code>docs/thresholds_umbauplan.md</code>.
+        </div>
+      )}
     </div>
   );
 }

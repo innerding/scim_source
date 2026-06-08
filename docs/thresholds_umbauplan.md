@@ -82,3 +82,25 @@ Orientierung**. Intern bleibt jeder Wert seinem Horizont zugeordnet (Versionieru
 ## Abgrenzung
 Design fix. Bau in einem Durchgang nach Freigabe. Mesh-Farbe und Comfort-Schieber bleiben
 zwei Darstellungen einer Last; nur der Wrap ist Comfort-exklusiv.
+
+---
+
+## Nachtrag 2026-06-08 — Wiring gebaut, Versionierung & Publishing-Monitor
+
+**Gebaut:** Default-Kaskade (Representation·Region·Global + Editor-Säulen), Rollen-Maske
+(operator/analyst/reg_editor/rep_editor), Effekt-Gate (live/Sandbox/abgedimmt), und der
+**Resolver** `effectiveRepColour(slug) = rep-editor-rep → representation → global → Region(Fallback)`.
+Konsumenten: `buildOriginBundle`, `ScimMap`-Vorschau, `ShellNewMonitor`. Kopplung entfernt.
+
+**Architektur-Befund (autoritativ):** Farb-Settings reisen in **ORIGIN** (statisch, via Publish),
+**nicht** im Anthem (der trägt nur `loads[]`). Gerät rechnet Farbe lokal (`colorize`).
+
+**Versionierung:** Die aufgelöste Farbe steckt im `origin_bundle_v1.colour` und ist damit
+**an die Representation-/Bundle-Version gebunden** (beim Re-Publish mitgeschnitten). Keine
+eigenständige Farb-Versionierung — bewusst.
+
+**OFFEN (bewusst zurückgestellt):**
+- **Publishing-Monitor (V03): Farb-Ansicht der ausgespielten Version** + **Versions-Diff**
+  (neu vs. vorherige Version). Eigener ruhiger Schritt, nicht kritisch.
+- Säulen/Rollen-Muster auf **Katalog/Drawer** übertragen.
+- **Per-Rep-Keying**, sobald es mehrere Representations pro Region gibt (heute per regionSlug).
