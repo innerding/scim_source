@@ -8,6 +8,7 @@ import { useRole, useModeSwitch, useUserName } from '../RoleContext';
 import { actorFrom, repsForActor, withdrawRep, setRepPlacement, knownPlacements } from '../../pathworks/localStore';
 import { commitDraftToRepo, isDraftCommittable, type CommitDraftResult } from '../../pathworks/commitDraft';
 import { getDraft } from '../../workspace/draftStore';
+import { useDeliveredVersions, type Delivered } from '../../../runtime/useDelivered';
 import type { RepView } from '../../pathworks/pathworks.types';
 
 function PartBadge({ on, label }: { on: boolean; label: string }) {
@@ -58,6 +59,8 @@ export default function OperatorRepsHome({ onJumpTo }: { onJumpTo: (panelId: str
   const reps = useMemo(() => repsForActor(actorFrom(userName, activeMode)), [userName, activeMode, tick]);
   const submissions = reps.filter((r) => r.state === 'submitted');
   const committed = reps.filter((r) => r.state === 'committed');
+  // Phase 1: „ausgeliefert vM" je committeter Rep (Origin-Bundle in R2). Graceful.
+  const delivered = useDeliveredVersions(committed.map((r) => r.id));
 
   const placements = useMemo(() => knownPlacements(), []);
   const onCommit = async (rep: RepView) => {
@@ -165,7 +168,7 @@ export default function OperatorRepsHome({ onJumpTo }: { onJumpTo: (panelId: str
       {committed.length === 0 ? (
         <Empty text="Noch keine committete Representation." />
       ) : (
-        <RepTree reps={committed} />
+        <RepTree reps={committed} delivered={delivered} />
       )}
     </div>
   );
@@ -212,7 +215,30 @@ const committedBadge: React.CSSProperties = {
   border: '1px solid #9ae6b4', background: '#f0fff4', color: '#22543d', fontWeight: 700,
 };
 
-function CommittedRow({ rep }: { rep: RepView }) {
+function VersionLine({ rep, delivered }: { rep: RepView; delivered?: Delivered }) {
+  // Quell-Version (committet) vs. Auslieferungs-Version (in R2). Diff = liegt daneben.
+  const src = rep.currentVersion;
+  const dvRaw = delivered?.version ?? null;
+  const dvNum = typeof dvRaw === 'number' ? dvRaw : (typeof dvRaw === 'string' ? parseInt(dvRaw.replace(/^v/i, ''), 10) : NaN);
+  const out = delivered?.published && dvRaw != null ? `v${dvRaw}` : '—';
+  const behind = delivered?.published && Number.isFinite(dvNum) && src > dvNum;
+  const ahead = !delivered?.published; // committet, aber nichts ausgeliefert
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 10.5, fontFamily: 'monospace' }}>
+      <span style={{ color: '#4a5568' }}>Quelle <strong>v{src}</strong></span>
+      <span style={{ color: '#cbd5e0' }}>·</span>
+      <span style={{ color: out === '—' ? '#a0aec0' : '#276749' }}>ausgeliefert <strong>{out}</strong></span>
+      {(behind || ahead) && (
+        <span style={{
+          padding: '0 6px', borderRadius: 999, border: '1px solid #fbd38d',
+          background: '#fffaf0', color: '#c05621', fontWeight: 700,
+        }}>{ahead ? 'nicht ausgeliefert' : `${src - dvNum} ungeliefert`}</span>
+      )}
+    </div>
+  );
+}
+
+function CommittedRow({ rep, delivered }: { rep: RepView; delivered?: Delivered }) {
   return (
     <div style={{
       border: '1px solid #9ae6b4', background: '#f0fff4', borderRadius: 8, padding: '10px 12px',
@@ -220,6 +246,7 @@ function CommittedRow({ rep }: { rep: RepView }) {
     }}>
       {repHead(rep, <span style={committedBadge}>committet v{rep.currentVersion}</span>)}
       {partRow(rep)}
+      <VersionLine rep={rep} delivered={delivered} />
     </div>
   );
 }
@@ -240,18 +267,18 @@ function Caret({ label, count, open, onClick, level }: {
   );
 }
 
-function BindingGroup({ label, reps }: { label: string; reps: RepView[] }) {
+function BindingGroup({ label, reps, delivered }: { label: string; reps: RepView[]; delivered: Record<string, Delivered> }) {
   return (
     <div>
       <div style={{ fontSize: 9.5, fontFamily: 'monospace', color: '#a0aec0', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 5 }}>{label}</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {reps.map((rep) => <CommittedRow key={rep.id} rep={rep} />)}
+        {reps.map((rep) => <CommittedRow key={rep.id} rep={rep} delivered={delivered[rep.id]} />)}
       </div>
     </div>
   );
 }
 
-function RepTree({ reps }: { reps: RepView[] }) {
+function RepTree({ reps, delivered }: { reps: RepView[]; delivered: Record<string, Delivered> }) {
   const tree = useMemo(() => buildTree(reps), [reps]);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const open = (k: string) => !collapsed.has(k);
@@ -279,8 +306,8 @@ function RepTree({ reps }: { reps: RepView[] }) {
                       <Caret label={reg.region} count={reg.reps.length} open={open(rk)} onClick={() => toggle(rk)} level={1} />
                       {open(rk) && (
                         <div style={{ marginLeft: 14, marginTop: 5, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                          {regional.length > 0 && <BindingGroup label="regional gebunden" reps={regional} />}
-                          {unbound.length > 0 && <BindingGroup label="ohne regionale Bindung" reps={unbound} />}
+                          {regional.length > 0 && <BindingGroup label="regional gebunden" reps={regional} delivered={delivered} />}
+                          {unbound.length > 0 && <BindingGroup label="ohne regionale Bindung" reps={unbound} delivered={delivered} />}
                         </div>
                       )}
                     </div>

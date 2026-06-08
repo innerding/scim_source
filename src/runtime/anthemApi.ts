@@ -56,6 +56,11 @@ export interface OriginMeta {
   stretches: number | null;
   bytes: number | null;
   uploadedAt: string | null;
+  // Auslieferungs-Version + Bundle-Status (Phase 1: „ausgeliefert vM"). Älterer
+  // Worker ohne diese Felder → undefined (graceful).
+  version?: number | string | null;
+  bundlePublished?: boolean;
+  bundleUploadedAt?: string | null;
   anthemEndpoint: string;
 }
 

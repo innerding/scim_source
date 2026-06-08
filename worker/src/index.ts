@@ -471,7 +471,13 @@ export default {
       await env.PACKAGES.put(`origin/${repId}/bundle.json`, bundleJson, {
         httpMetadata: { contentType: 'application/json', cacheControl: 'public, max-age=300' },
       });
-      const meta = { bytes: bundleJson.length, uploadedAt: new Date().toISOString() };
+      // Auslieferungs-Version = die Version, mit der das Bundle gebaut wurde
+      // (origin_bundle_v1.version). Für die „ausgeliefert vM"-Anzeige in SCIM.
+      const bv = (body as { version?: unknown }).version;
+      const meta = {
+        bytes: bundleJson.length, uploadedAt: new Date().toISOString(),
+        version: (typeof bv === 'number' || typeof bv === 'string') ? bv : null,
+      };
       await env.PACKAGES.put(`origin/${repId}/bundle-meta.json`, JSON.stringify(meta), {
         httpMetadata: { contentType: 'application/json', cacheControl: 'no-store' },
       });
@@ -498,15 +504,22 @@ export default {
       const repId = pathname.split('/')[3];
       if (!KEY_PATTERN.test(repId)) return err('Invalid repId', 422);
       const anthemEndpoint = `/api/anthem/${repId}`;
+      // Auslieferungs-Version + Bundle-Status aus der Bundle-Meta (das, was die
+      // Ziel-App via ?rep= lädt). „ausgeliefert vM" in SCIM (Phase 1).
+      const bundleMetaObj = await env.PACKAGES.get(`origin/${repId}/bundle-meta.json`);
+      const bm = bundleMetaObj ? await bundleMetaObj.json() as { version?: unknown; uploadedAt?: string } : null;
+      const version = bm && (typeof bm.version === 'number' || typeof bm.version === 'string') ? bm.version : null;
+      const bundlePublished = !!bm;
+      const bundleUploadedAt = bm?.uploadedAt ?? null;
       const metaObj = await env.PACKAGES.get(`origin/${repId}/meta.json`);
       if (metaObj) {
         const m = await metaObj.json() as { stretches: number; bytes: number; uploadedAt: string };
-        return json({ repId, published: true, ...m, anthemEndpoint });
+        return json({ repId, published: true, ...m, version, bundlePublished, bundleUploadedAt, anthemEndpoint });
       }
       // Fallback: Netz da, aber (älter) ohne meta → Größe via head.
       const head = await env.PACKAGES.head(`origin/${repId}/mesh.json`);
-      if (head) return json({ repId, published: true, stretches: null, bytes: head.size, uploadedAt: null, anthemEndpoint });
-      return json({ repId, published: false, stretches: null, bytes: null, uploadedAt: null, anthemEndpoint });
+      if (head) return json({ repId, published: true, stretches: null, bytes: head.size, uploadedAt: null, version, bundlePublished, bundleUploadedAt, anthemEndpoint });
+      return json({ repId, published: bundlePublished, stretches: null, bytes: null, uploadedAt: null, version, bundlePublished, bundleUploadedAt, anthemEndpoint });
     }
 
     // ── POST /api/anthem/:repId/presence ─────────────────────────────────────
