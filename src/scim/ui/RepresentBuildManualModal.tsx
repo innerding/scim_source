@@ -57,7 +57,7 @@ MOON (Release Artifacts: App-Shell, Packages, Breath-Colour-Mesh)
                        der aktiven Region.
 
   Klick Hex          : oeffnet R01 Runtime Shell.
-  Klick Mondkoerper  : oeffnet V01 Pakete.
+  Klick Mondkoerper  : oeffnet V01 Versions-Bibliothek.
   Klick Extension    : oeffnet V02 Region-Detail im zugehoerigen Tab.
                         Top-Left  = Gruenberg / Salzkammergut
                         Top-Right = Lichtenberg / Boehmerwald
@@ -106,9 +106,10 @@ KOMPOSIT-TETRAEDER (Apex up - fire)
     P02  Coder           Regions-spezifische Schwellen, die das
                          System-Default ueberschreiben.
 
-  Stand: architektonisch vorbereitet auf Mehrbenutzer-Betrieb. Die
-  Bauteile tragen mehrere Anwendungsfaelle, die ueber dem heutigen
-  MVP hinausreichen:
+  Stand: erste Stufe gebaut (Pathworks Hub: Cross-User-Review,
+  Provenienz-Namen, Rollen-Gating - siehe STAND JUNI 2026). Darueber
+  hinaus architektonisch vorbereitet auf Mehrbenutzer-Betrieb; die
+  Bauteile tragen mehrere Anwendungsfaelle ueber dem heutigen MVP:
 
     Multi-Editor      Operator und Gestalter schreiben parallel
                       am selben Komposit, konfliktfrei.
@@ -128,9 +129,10 @@ SUBSTRAT-TETRAEDER (Apex down - matter)
             Lower-Left  -> Package Pipeline
             Lower-Right -> Runtime Builder
 
-  Stand: nur ein Bruchteil funktional. Eine rasche SCIM-Ausrollung
-  auf eine Region wie das Salzkammergut braeuchte hier echtes
-  Lifecycle- und Workflow-Werkzeug. Die heute weitgehend
+  Stand: der Versionen-Ast ist jetzt funktional — V01/V02 Versions-
+  Bibliothek (Historie je Rep, aktiv ausgeliefert, Rollback) plus
+  zeitliche Release-Drossel, alles auf dem Origin-Pfad. Package-
+  Pipeline und Runtime-Builder bleiben duenn. Die heute weitgehend
   ungenutzten Panels (P03, P10, P12-P14, R02-R08) sind im
   Navigator im Muellwagen gesammelt — Klick klappt sie aus.
 
@@ -168,6 +170,26 @@ STAND JUNI 2026 (neu)
                  ohne Desktop-Nabel, ohne Umwege, die der Voll-
                  ausbau nicht nutzt. Nicht-Auslieferungs-Pfade
                  sind im Code als @LEGACY ausgewiesen.
+  Pathworks Hub  Leitsatz "es gibt nur Representationen". Editor-
+                 und Operator-Gesicht; die gewaehlte Rep steuert
+                 Drawer, Katalog und Thresholds (Rep-Bindung).
+                 Logik-Schicht gebaut.
+  Versions-Bib   V01/V02: Historie je Rep, aktiv ausgeliefert,
+                 Rollback - alles auf dem Origin-Pfad. Zwei
+                 Versionsnummern: Quelle (Commit) vs. ausgeliefert
+                 (aktives Bundle). Commit != Release.
+  Release-Drossel Zeitliches Fenster (manual/scheduled): ein
+                 Worker-Cron staged neue Bundles und aktiviert sie
+                 erst im Fenster - das Geraet-Erlebnis bleibt stabil.
+  Cross-User     Editor (Geraet A) sendet zur Review -> Server-
+                 Queue (Worker/R2) -> Operator (Geraet B) sieht und
+                 committet. Kein 1-Browser-Limit mehr.
+  ACCESS-light   Provenienz-Namen reisen mit (Ersteller, Committer,
+                 Publisher). Publish/Release/Activate = operator-
+                 only; Editor sieht die Panels read-only. Echte
+                 Per-User-Auth (Server/Edge) folgt spaeter.
+  Rollen/Presence Navigator fuer non-operator gesperrt; Footer mit
+                 Mehrbenutzer-Presence und Login-Namen.
 
 ────────────────────────────────────────────────────────
 
@@ -175,9 +197,11 @@ SUMMARY
 
   Der architektonische Rahmen ist vielversprechend und in Teilen
   bereits am laufenden Beispiel bewiesen — die Kette Werkbank ->
-  Paket -> Geraet traegt (MVP-Lichtenberg). Der Vollausbau —
-  Mehrbenutzer-Betrieb, regionale Pflege, reale Telco-Last — steht
-  aus und wird die erwartete Codefuelle erst beweisen muessen.
+  Paket -> Geraet traegt (MVP-Lichtenberg). Vom Vollausbau steht die
+  erste Stufe: Mehrbenutzer-Betrieb und regionale Pflege haben mit
+  dem Pathworks Hub (Cross-User-Review, Versionierung, Rollen-Gating)
+  ein Fundament. Der Rest — Governance-Tiefe, reale Telco-Last — folgt
+  und wird die erwartete Codefuelle erst beweisen muessen.
 
   released for review
 `;
