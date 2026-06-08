@@ -24,7 +24,7 @@ import type { Actor, ActorRole, Binding, LifecycleState, RepView } from './pathw
 
 const META_KEY = 'scim3:pathworks:meta';
 
-interface DraftMeta { ownerId?: string; binding?: Binding; submitted?: boolean; submittedAt?: number; }
+interface DraftMeta { ownerId?: string; binding?: Binding; submitted?: boolean; submittedAt?: number; nation?: string; region?: string; }
 type MetaMap = Record<string, DraftMeta>;
 
 function loadMeta(): MetaMap {
@@ -79,10 +79,12 @@ export function repsForActor(actor: Actor): RepView[] {
     const ownerId = m.ownerId ?? actor.id;
     const binding: Binding = m.binding ?? 'regional';
     const state: LifecycleState = m.submitted ? 'submitted' : 'local';
-    const region = draftRegion(d);
+    // Verortung: vom Editor gesetzt (Meta), sonst aus der Intake-Geometrie abgeleitet.
+    const region = m.region ? { id: slugify(m.region), label: m.region } : draftRegion(d);
+    const nationLabel = m.nation;
     if (!canSee(actor, { ownerId, regionId: region.id, binding, state })) continue;
     views.push({
-      id: d.id, name: d.name, regionId: region.id, regionLabel: region.label,
+      id: d.id, name: d.name, regionId: region.id, regionLabel: region.label, nationLabel,
       binding, state, currentVersion: 0, origin: 'draft', owner: ownerId,
       catalogId: d.catalog_id ?? null, geometryId: null,
       parts: {
@@ -134,6 +136,22 @@ export function withdrawRep(repId: string, actor: Actor): boolean {
 // Bindung setzen (regional|unbound) — Eigenschaft der Rep, kein Zustandsübergang.
 export function setRepBinding(repId: string, binding: Binding): void {
   patchMeta(repId, { binding });
+}
+
+// Verortung setzen (Nation/Region). Editor beim Anlegen, Operator bis zum Commit.
+export function setRepPlacement(repId: string, nation: string, region: string): void {
+  patchMeta(repId, { nation: nation.trim() || undefined, region: region.trim() || undefined });
+}
+
+// Bekannte Nationen/Regionen (aus committeten Reps) — als Vorschläge für die Eingabe.
+export function knownPlacements(): { nations: string[]; regions: string[] } {
+  const nations = new Set<string>(); const regions = new Set<string>();
+  for (const r of REPRESENTATIONS) {
+    const geo = r.geometry_id ? geometryById(r.geometry_id) : undefined;
+    if (geo?.nation) nations.add(geo.nation);
+    if (geo?.region) regions.add(geo.region);
+  }
+  return { nations: [...nations], regions: [...regions] };
 }
 
 // Draft löschen (committete Reps sind eingefroren → nicht löschbar). Entfernt den

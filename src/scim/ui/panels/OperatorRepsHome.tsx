@@ -5,7 +5,7 @@
 // (Der Nation→Region→Rep-Baum ist hier noch flach — kommt mit dem Operator-Index.)
 import { useMemo, useState } from 'react';
 import { useRole, useModeSwitch, useUserName } from '../RoleContext';
-import { actorFrom, repsForActor, withdrawRep } from '../../pathworks/localStore';
+import { actorFrom, repsForActor, withdrawRep, setRepPlacement, knownPlacements } from '../../pathworks/localStore';
 import { commitDraftToRepo, isDraftCommittable, type CommitDraftResult } from '../../pathworks/commitDraft';
 import { getDraft } from '../../workspace/draftStore';
 import type { RepView } from '../../pathworks/pathworks.types';
@@ -59,21 +59,29 @@ export default function OperatorRepsHome({ onJumpTo }: { onJumpTo: (panelId: str
   const submissions = reps.filter((r) => r.state === 'submitted');
   const committed = reps.filter((r) => r.state === 'committed');
 
+  const placements = useMemo(() => knownPlacements(), []);
   const onCommit = async (rep: RepView) => {
     const d = getDraft(rep.id);
     if (!d) return;
     setBusyId(rep.id); setMsg(null);
     const today = new Date().toISOString().slice(0, 10);
-    const res = await commitDraftToRepo(d, today);
+    // Verortung (Editor gesetzt, Operator bis hier änderbar) wandert in die Geometrie.
+    const res = await commitDraftToRepo(d, today, { nation: rep.nationLabel, region: rep.regionLabel });
     setBusyId(null); setMsg(res);
     if (res.ok) setTick((t) => t + 1);   // Draft ist weg → aus den Einreichungen raus
   };
   const onReturn = (rep: RepView) => {
     if (withdrawRep(rep.id, actorFrom(userName, activeMode))) setTick((t) => t + 1);
   };
+  const onPlace = (rep: RepView, nation: string, region: string) => {
+    setRepPlacement(rep.id, nation, region);
+    setTick((t) => t + 1);
+  };
 
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 720 }}>
+      <datalist id="pw-op-nations">{placements.nations.map((n) => <option key={n} value={n} />)}</datalist>
+      <datalist id="pw-op-regions">{placements.regions.map((r) => <option key={r} value={r} />)}</datalist>
       {/* Einreichungen */}
       <SectionTitle label="Einreichungen" count={submissions.length} hint="Representations, die zur Prüfung & zum Committen eingereicht sind." />
       {submissions.length === 0 ? (
@@ -95,6 +103,24 @@ export default function OperatorRepsHome({ onJumpTo }: { onJumpTo: (panelId: str
                   }}>eingereicht</span>
                 ))}
                 {partRow(rep)}
+                {/* Verortung — bis zum Commit änderbar (Operator-Hoheit). */}
+                {(() => {
+                  const nationVal = rep.nationLabel ?? '';
+                  const regionVal = rep.regionLabel && rep.regionLabel !== '—' ? rep.regionLabel : '';
+                  return live ? (
+                    <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                      <span style={{ fontSize: 10.5, color: '#718096', whiteSpace: 'nowrap' }}>gehört zu:</span>
+                      <input list="pw-op-nations" placeholder="Nation" value={nationVal}
+                        onChange={(e) => onPlace(rep, e.target.value, regionVal)}
+                        style={{ flex: 1, fontSize: 11.5, padding: '4px 8px', borderRadius: 5, border: '1px solid #cbd5e0' }} />
+                      <input list="pw-op-regions" placeholder="Region" value={regionVal}
+                        onChange={(e) => onPlace(rep, nationVal, e.target.value)}
+                        style={{ flex: 1, fontSize: 11.5, padding: '4px 8px', borderRadius: 5, border: '1px solid #cbd5e0' }} />
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: 10.5, color: '#718096' }}>gehört zu: {nationVal || '—'} · {regionVal || '—'}</div>
+                  );
+                })()}
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                   <button onClick={() => onJumpTo('geometry_editor', rep.id)} style={ghostBtn}>ansehen</button>
                   <span style={{ flex: 1 }} />

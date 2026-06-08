@@ -10,7 +10,7 @@
 // der nächste Schritt — heute öffnen die Werkzeug-Knöpfe die Panels.
 import { useMemo, useState } from 'react';
 import { useRole, useModeSwitch, useUserName } from '../RoleContext';
-import { actorFrom, repsForActor, submitRep, withdrawRep, setRepBinding, deleteRep } from '../../pathworks/localStore';
+import { actorFrom, repsForActor, submitRep, withdrawRep, setRepBinding, deleteRep, setRepPlacement, knownPlacements } from '../../pathworks/localStore';
 import { createDraft } from '../../workspace/draftStore';
 import { useRepresentationContext } from '../../../runtime/repContext';
 import type { Binding, RepView } from '../../pathworks/pathworks.types';
@@ -157,13 +157,17 @@ export default function EditorRepsHome({ onJumpTo }: Props) {
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState('');
   const [newBinding, setNewBinding] = useState<Binding>('regional');
+  const [newNation, setNewNation] = useState('');
+  const [newRegion, setNewRegion] = useState('');
+  const placements = useMemo(() => knownPlacements(), []);
   const createRep = () => {
     const name = newName.trim();
     if (!name) return;
     const d = createDraft(name);
     setRepBinding(d.id, newBinding);
-    setNewName('');
-    setNewBinding('regional');
+    // Verortung: der Editor sagt, wohin die Rep gehört (Operator darf bis Commit ändern).
+    setRepPlacement(d.id, newNation, newRegion);
+    setNewName(''); setNewBinding('regional'); setNewNation(''); setNewRegion('');
     setShowCreate(false);
     setTick((t) => t + 1);
   };
@@ -222,6 +226,21 @@ export default function EditorRepsHome({ onJumpTo }: Props) {
                     color: newBinding === b ? '#2b6cb0' : '#4a5568',
                   }}>{b === 'regional' ? '◎ regional' : '◍ ohne Bindung'}</button>
                 ))}
+              </div>
+              {/* Verortung: der Editor sagt, wohin die Rep gehört (Nation/Region). */}
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input
+                  list="pw-nations" placeholder="Nation (z.B. Österreich)" value={newNation}
+                  onChange={(e) => setNewNation(e.target.value)}
+                  style={{ flex: 1, fontSize: 12, padding: '6px 9px', borderRadius: 5, border: '1px solid #cbd5e0' }}
+                />
+                <input
+                  list="pw-regions" placeholder="Region (z.B. Böhmerwald)" value={newRegion}
+                  onChange={(e) => setNewRegion(e.target.value)}
+                  style={{ flex: 1, fontSize: 12, padding: '6px 9px', borderRadius: 5, border: '1px solid #cbd5e0' }}
+                />
+                <datalist id="pw-nations">{placements.nations.map((n) => <option key={n} value={n} />)}</datalist>
+                <datalist id="pw-regions">{placements.regions.map((r) => <option key={r} value={r} />)}</datalist>
               </div>
               <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                 <button onClick={() => { setShowCreate(false); setNewName(''); }} style={{

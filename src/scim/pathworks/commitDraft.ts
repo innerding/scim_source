@@ -38,7 +38,12 @@ function closedRing(polygon: Position[]): Position[] {
 export interface CommitDraftResult { ok: boolean; text: string; url?: string; }
 
 // `today` als Parameter (statt new Date()) hält die Funktion deterministisch.
-export async function commitDraftToRepo(d: Draft, today: string): Promise<CommitDraftResult> {
+// `placement` = Verortung (Nation/Region), vom Editor gesetzt + Operator bis hier
+// änderbar; wird in die Geometrie-Properties geschrieben → der Baum sortiert die
+// committete Rep automatisch richtig ein.
+export async function commitDraftToRepo(
+  d: Draft, today: string, placement?: { nation?: string; region?: string },
+): Promise<CommitDraftResult> {
   if (!isDraftCommittable(d) || !d.boundary || !d.net_masked) {
     return { ok: false, text: 'Nicht committbar (braucht Boundary + maskiertes Netz).' };
   }
@@ -46,7 +51,11 @@ export async function commitDraftToRepo(d: Draft, today: string): Promise<Commit
   const net = d.net_masked;
   const geom: BoundaryGeometryFile = {
     type: 'Feature',
-    properties: { name: d.name || slug, source: 'Pathworks-Commit', drawn_at: today },
+    properties: {
+      name: d.name || slug, source: 'Pathworks-Commit', drawn_at: today,
+      ...(placement?.nation ? { nation: placement.nation } : {}),
+      ...(placement?.region ? { region: placement.region } : {}),
+    },
     geometry: { type: 'Polygon', coordinates: [closedRing(d.boundary)] },
   };
   const weg: WegnetzFile = {
