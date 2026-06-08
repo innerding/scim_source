@@ -1,6 +1,6 @@
 import { useState, useEffect, type CSSProperties } from 'react';
 import QrCell from '../QrCell';
-import { REGION_MAP } from './V01PackagesPanel';
+import { REGION_MAP, canonicalRepId } from './V01PackagesPanel';
 import packageOpenIcon from '../../../assets/Package-open.svg';
 import packageIcon     from '../../../assets/Package.svg';
 import { fetchOriginMeta, fetchPresence, type OriginMeta, type PresenceStatus } from '../../../runtime/anthemApi';
@@ -54,6 +54,8 @@ function RepresentationRow({
 }) {
   // EINE Origin-Meta-Quelle (Phase 1): bundlePublished/version = das aktive Bundle
   // in R2 (was die Ziel-App via ?rep= lädt) + Mesh-/presence-Status. Kein /api/packages mehr.
+  // Kanonische Rep-Id (= REPRESENTATIONS.id) — dort liegt das Bundle, darauf zeigt die QR.
+  const repId = canonicalRepId(rep.id);
   const [origin, setOrigin] = useState<OriginMeta | null>(null);
   const [presence, setPresence] = useState<PresenceStatus | null>(null);
   const [errored, setErrored] = useState(false);
@@ -61,7 +63,7 @@ function RepresentationRow({
   useEffect(() => {
     let alive = true;
     const tick = () => {
-      Promise.allSettled([fetchOriginMeta(rep.id), fetchPresence(rep.id)]).then(([o, p]) => {
+      Promise.allSettled([fetchOriginMeta(repId), fetchPresence(repId)]).then(([o, p]) => {
         if (!alive) return;
         if (o.status === 'fulfilled') { setOrigin(o.value); setErrored(false); } else setErrored(true);
         if (p.status === 'fulfilled') setPresence(p.value);
@@ -70,7 +72,7 @@ function RepresentationRow({
     tick();
     const id = setInterval(tick, 15000);
     return () => { alive = false; clearInterval(id); };
-  }, [rep.id]);
+  }, [repId]);
 
   const live = origin?.bundlePublished ?? false;
   const version = origin?.version ?? null;
@@ -102,7 +104,7 @@ function RepresentationRow({
         {/* Ziel-App · QR — die ECHTE publizierte Origin-App (?rep=, QR → direkt zur Rep). */}
         <div>
           <div style={QR_LABEL}>Ziel-App · QR <span style={{ color: '#a0aec0', fontWeight: 400 }}>(scannen → lädt die Rep aufs Gerät)</span></div>
-          <QrCell url={mvpUrl(rep.id)} />
+          <QrCell url={mvpUrl(repId)} />
         </div>
         <div style={{ fontSize: 11, color: live ? '#276749' : '#a0aec0', fontFamily: 'ui-monospace, Menlo, monospace' }}>
           {live ? `● aktives Origin-Bundle v${version ?? '?'}${origin?.bundleUploadedAt ? ` · ${fmtUploaded(origin.bundleUploadedAt)}` : ''}` : '○ kein aktives Origin-Bundle'}

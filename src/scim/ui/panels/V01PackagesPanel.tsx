@@ -33,6 +33,15 @@ export function representationIcon(representationId: string): string | undefined
   return undefined;
 }
 
+// EINE kanonische Rep-Id (= REPRESENTATIONS.id, z.B. 'rep-lichtenberg') aus einer
+// REGION_MAP-Kurz-Id (z.B. 'lichtenberg') oder einer beliebigen Id/Name. Diese Id
+// ist überall die Wahrheit: Publish (R2 origin/:id), QR (?rep=:id), V01/V02/V03.
+export function canonicalRepId(idOrShort: string): string {
+  const s = idOrShort.toLowerCase();
+  const m = REPRESENTATIONS.find((r) => r.id === idOrShort || r.id.toLowerCase().includes(s) || r.name.toLowerCase().includes(s));
+  return m?.id ?? idOrShort;
+}
+
 const fmtKB = (n: number) => `${(n / 1024).toFixed(1)} kB`;
 
 export default function V01PackagesPanel() {

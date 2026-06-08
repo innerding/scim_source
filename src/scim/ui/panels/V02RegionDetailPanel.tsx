@@ -2,8 +2,7 @@
 // Versions-Bibliothek: Region wählen → je Rep ihre Origin-Versions-Historie +
 // aktiv + Rollback. Gleiche Quelle wie V01 (Origin-Pfad), nur regional gefiltert.
 import { useEffect, useMemo, useState } from 'react';
-import { REGION_MAP } from './V01PackagesPanel';
-import { REPRESENTATIONS } from '../../workspace/workspace.registry';
+import { REGION_MAP, canonicalRepId } from './V01PackagesPanel';
 import { useRole, useModeSwitch } from '../RoleContext';
 import {
   fetchOriginVersions, activateOriginVersion, anthemReadConfigured, anthemPublishConfigured,
@@ -13,13 +12,6 @@ import packageIcon     from '../../../assets/Package.svg';
 import packageOpenIcon from '../../../assets/Package-open.svg';
 
 const fmtKB = (n: number) => `${(n / 1024).toFixed(1)} kB`;
-
-// REGION_MAP-Rep (z.B. 'lichtenberg') → echte Representation (z.B. 'rep-lichtenberg').
-function resolveRepId(shortId: string): string | null {
-  const m = REPRESENTATIONS.find((r) =>
-    r.id.toLowerCase().includes(shortId.toLowerCase()) || r.name.toLowerCase().includes(shortId.toLowerCase()));
-  return m?.id ?? null;
-}
 
 function RepVersionsSection({ repId, repLabel, repIcon, canActivate }: {
   repId: string | null; repLabel: string; repIcon: string; canActivate: boolean;
@@ -150,7 +142,7 @@ export default function V02RegionDetailPanel() {
       {region.representations.map((rep) => (
         <RepVersionsSection
           key={rep.id}
-          repId={resolveRepId(rep.id)}
+          repId={canonicalRepId(rep.id)}
           repLabel={rep.label}
           repIcon={rep.icon}
           canActivate={canActivate}
