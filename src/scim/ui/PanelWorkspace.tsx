@@ -1373,18 +1373,20 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
 // Klick schaltet den Modus (nur abwärts). Rep-Editor: nur Kartography (kein Schalten).
 const MODE_META: Record<Role, { label: string; color: string }> = {
   regio_editor: { label: 'SCIM-Kartography', color: '#805ad5' },
-  analyst:      { label: 'SCIM-Review',      color: '#4299e1' },
-  operator:     { label: 'SCIM-Operations',  color: '#48bb78' },
+  analyst:      { label: 'Review',           color: '#4299e1' },
+  operator:     { label: 'Operations',       color: '#48bb78' },
 };
 
 function ModeTabs() {
   const mode = useModeSwitch();
   if (!mode) return null;
-  const realIdx = ROLE_ORDER.indexOf(mode.real);
-  // sichtbar: Rollen ab der eigenen Stufe abwärts; Anzeige Kartography→…→Operations (Index absteigend).
+  // Sichtbarkeit richtet sich nach der DIODE (effektive Rolle), nicht nach der Login-Rolle:
+  // Rep-Editor→nur Kartography · Analyst→Kartography+Review · Operator→alle.
+  const effIdx = ROLE_ORDER.indexOf(mode.effective);
+  // Anzeige Kartography→…→Operations (Index absteigend).
   const visible = ROLE_ORDER
     .map((r, i) => ({ r, i }))
-    .filter((x) => x.i >= realIdx)
+    .filter((x) => x.i >= effIdx)
     .sort((a, b) => b.i - a.i);
   return (
     <div style={{ display: 'flex', flexShrink: 0, background: '#fff', borderBottom: '1px solid #e2e8f0' }}>
