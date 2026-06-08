@@ -225,7 +225,7 @@ export default function ThresholdsView() {
       </div>
 
       <div style={{ fontSize: 12.5, fontWeight: 700, color: '#1a365d', marginBottom: 10 }}>
-        Visualisierung der Auslastung
+        Representation
       </div>
 
       <div style={{ display: 'flex', gap: 18, alignItems: 'flex-start' }}>
@@ -274,8 +274,7 @@ export default function ThresholdsView() {
         </div>
 
         {/* Farb-Felder: Verlauf-Richtung, Drag&Drop, je Feld zur Mitte */}
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 12.5, fontWeight: 700, color: '#1a365d', marginBottom: 6 }}>Felder <span style={{ fontWeight: 400, fontSize: 10.5, color: '#a0aec0' }}>· {n}/6 · ziehen zum Umsortieren</span></div>
+        <div style={{ width: 140 }}>
           <div style={{ fontSize: 8.5, color: '#a0aec0', marginBottom: 2 }}>↑ oben = Last 1</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
             {order.map((i) => {

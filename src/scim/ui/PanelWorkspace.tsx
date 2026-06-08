@@ -204,7 +204,7 @@ function PanelHeader({ id, title, subtitle, icon }: { id: string; title: string;
           <div style={{ flex: 1 }} />
           {/* Mitte: Icon (Logo-Fill) + Kürzel (Schrift-Fill) */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, flexShrink: 0 }}>
-            {icon && <PanelIcon id={id} icon={icon} size={28} gradientClass="region-av-fill" />}
+            {icon && <PanelIcon id={id} icon={icon} size={28} color="#fbbf24" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }} />}
             {code && <span className="region-av-text" style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: 12, letterSpacing: '0.04em' }}>{code}</span>}
           </div>
           {/* Rechts: Titel (Schrift-Fill) */}
