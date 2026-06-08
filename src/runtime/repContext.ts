@@ -47,6 +47,17 @@ export interface InspectorAsset {
   id: string;
 }
 
+// Die im Pathworks-Editor gebundene Rep, mit allem, was die Werkzeuge zum
+// Selbst-Scopen brauchen: Drawer öffnet Draft (id) bzw. committete Geometrie
+// (geometryId); Katalog scopt auf catalogId.
+export interface BoundRep {
+  id: string;
+  name: string;
+  origin: 'draft' | 'committed';
+  catalogId: string | null;
+  geometryId: string | null;
+}
+
 export interface RepresentationContextValue {
   // ─── Runtime-Schicht ─────────────────────────────────────────────────
   // Was die Endnutzer-App zeigt. Default-Quelle fuer alle Anschauer.
@@ -77,9 +88,11 @@ export interface RepresentationContextValue {
   // ─── Gebundene Rep (Pathworks-Editor) ────────────────────────────────
   // Die Rep, an die die Werkzeug-Faces (Drawer/Katalog/Thresholds) gebunden
   // sind. null = keine gebunden → Werkzeug-Faces inaktiv, man betritt ein
-  // Werkzeug nur über eine Rep-Card. Persistiert über Panel-Wechsel.
-  boundRep: { id: string; name: string } | null;
-  bindRep: (id: string, name: string) => void;
+  // Werkzeug nur über eine Rep-Card. Persistiert über Panel-Wechsel. Trägt die
+  // Ziel-Ids, damit die Werkzeuge sich selbst auf diese Rep scopen — egal ob man
+  // über die Card oder über eine Control-Face hineinwechselt.
+  boundRep: BoundRep | null;
+  bindRep: (rep: BoundRep) => void;
   unbindRep: () => void;
 
   /** Vollstaendige Registry, hilfreich fuer Listen-Panels und Dropdowns. */
@@ -168,8 +181,8 @@ export function RepresentationProvider({ children }: RepresentationProviderProps
   const effectiveInspector = inspectorView ?? active;
 
   // Gebundene Rep (Pathworks-Editor). Startet null → Werkzeug-Faces inaktiv.
-  const [boundRep, setBoundRep] = useState<{ id: string; name: string } | null>(null);
-  const bindRep = useCallback((id: string, name: string) => setBoundRep({ id, name }), []);
+  const [boundRep, setBoundRep] = useState<BoundRep | null>(null);
+  const bindRep = useCallback((rep: BoundRep) => setBoundRep(rep), []);
   const unbindRep = useCallback(() => setBoundRep(null), []);
 
   const value = useMemo<RepresentationContextValue>(() => ({
@@ -234,4 +247,9 @@ export function useInspectorView(): ActiveRepresentation | null {
  */
 export function useInspectorAsset(): InspectorAsset | null {
   return useRepresentationContext().inspectorAsset;
+}
+
+/** Die im Pathworks-Editor gebundene Rep (null = keine). */
+export function useBoundRep(): BoundRep | null {
+  return useRepresentationContext().boundRep;
 }

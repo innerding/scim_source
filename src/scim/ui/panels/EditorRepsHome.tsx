@@ -135,7 +135,7 @@ export default function EditorRepsHome({ onJumpTo }: Props) {
       ? { kind: 'representation' as const, id: rep.id }
       : (rep.catalogId ? { kind: 'catalog' as const, id: rep.catalogId } : null);
     if (asset) setInspectorAsset(asset);
-    bindRep(rep.id, rep.name);
+    bindRep({ id: rep.id, name: rep.name, origin: rep.origin, catalogId: rep.catalogId, geometryId: rep.geometryId });
     onJumpTo(panel, target);
   };
   const deleteRepHandler = (rep: RepView) => {

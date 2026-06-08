@@ -22,7 +22,7 @@ import { type HandoffNet } from '../../workspace/draftHandoff';
 import { getDraft, createDraft, updateDraft, localStorageBytes } from '../../workspace/draftStore';
 import { parsePoiCatalog } from '../../poi-catalog/poiCatalog.parser';
 import { useModeSwitch, isEditorRole, type Role } from '../RoleContext';
-import { useInspectorView } from '../../../runtime/repContext';
+import { useInspectorView, useBoundRep } from '../../../runtime/repContext';
 import {
   loadPathConfig, savePathConfig, type PathConfig, type BridlewayMode,
 } from '../../regio-content/pathConfig';
@@ -522,6 +522,7 @@ export default function DrawerPanel({ openGeometryId, onGeometryConsumed, iconVi
   // als read-only Referenz in Violett unter den Editor gelegt werden
   // (Tracing-Vorlage). Toggle separat, default aus.
   const inspectorView = useInspectorView();
+  const boundRep = useBoundRep();   // gebundene Rep (Pathworks-Editor) — Fallback-Öffnungsziel
   const [showInspectorRef, setShowInspectorRef] = useState(false);
   // Snap-Quelle aus Inspector-R (Umbauplan C): rasten Stuetzpunkte beim Zeichnen
   // auf die Punkte/Kanten der lila Vorlage ein. Nur sinnvoll, wenn die Vorlage
@@ -560,9 +561,14 @@ export default function DrawerPanel({ openGeometryId, onGeometryConsumed, iconVi
   //   - openGeometryId 'draft-…'  → genau diesen Workspace-Draft laden + binden.
   //   - openGeometryId committed  → die Geometry als Referenz laden (kein Draft).
   //   - nichts                    → LEER. Kein stiller Autospeicher mehr.
+  // Effektives Öffnungs-Ziel: explizites openGeometryId (Card-Knopf) ODER — falls
+  // keins kommt (z.B. Eintritt über eine Control-Face) — die GEBUNDENE Rep. So
+  // zeigt der Drawer immer die Rep, an der die Werkzeuge hängen.
+  const effectiveOpenId = openGeometryId
+    ?? (boundRep ? (boundRep.origin === 'draft' ? boundRep.id : boundRep.geometryId) : null);
   const initial = useMemo(() => {
-    if (openGeometryId?.startsWith('draft-')) {
-      const d = getDraft(openGeometryId);
+    if (effectiveOpenId?.startsWith('draft-')) {
+      const d = getDraft(effectiveOpenId);
       // F7.2: Slot 1 (polygon) = B1/Referenz = draft.reference; Slot 2 (maskPolygon)
       // = B2/finale Boundary = draft.boundary.
       if (d) return {
@@ -571,15 +577,15 @@ export default function DrawerPanel({ openGeometryId, onGeometryConsumed, iconVi
         catalogId: d.catalog_id ?? '', pathFetch: d.path_fetch ?? null, opModel: d.op_model ?? null,
       };
     }
-    if (openGeometryId) {
-      const g = GEOMETRIES.find((x) => x.id === openGeometryId);
+    if (effectiveOpenId) {
+      const g = GEOMETRIES.find((x) => x.id === effectiveOpenId);
       if (g) return {
         draftId: null, geometryId: g.id, name: g.name, region: g.region ?? '',
         polygon: g.polygon, maskPolygon: null, catalogId: '', pathFetch: null, opModel: null,
       };
     }
     return { draftId: null, geometryId: 'new' as const, name: '', region: '', polygon: null, maskPolygon: null, catalogId: '', pathFetch: null, opModel: null };
-  }, [openGeometryId]);
+  }, [effectiveOpenId]);
   // Sprung verbraucht — App-State leeren, damit spaetere Navigation leer startet.
   useEffect(() => {
     if (openGeometryId) onGeometryConsumed?.();

@@ -13,6 +13,7 @@ import {
 import { compactDiff, diffLines, serializeCatalogToMd } from '../../poi-catalog/poiCatalog.serializer';
 import { fetchLatestCatalogMd, type CatalogSource } from '../../poi-catalog/catalogRuntime';
 import { useModeSwitch, isEditorRole, type Role } from '../RoleContext';
+import { useBoundRep } from '../../../runtime/repContext';
 import { listDrafts, updateDraft } from '../../workspace/draftStore';
 import {
   buildPrefix, isToken, mintToken, sanitizeSlug, sanitizeVerbund, SLUG_MAX_LEN, VERBUND_MAX_LEN,
@@ -1271,6 +1272,7 @@ export default function CatalogTab({ openCatalogId, onCatalogConsumed }: { onJum
 
   const [regionId, setRegionId] = useState<string>(REGIONS[0].id);
   const region = REGIONS.find((r) => r.id === regionId)!;
+  const boundRep = useBoundRep();   // gebundene Rep (Pathworks-Editor) — Fallback-Region
 
   // Schritt B: Live-Katalog zur Laufzeit von GitHub laden. Der gebündelte
   // region.md ist nur die SAAT (sofort sichtbar, nie leer); sobald die
@@ -1360,6 +1362,15 @@ export default function CatalogTab({ openCatalogId, onCatalogConsumed }: { onJum
       onCatalogConsumed?.();
     }
   }, [openCatalogId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Kein explizites Ziel, aber eine Rep gebunden (Eintritt über Control-Face) →
+  // auf die Region der gebundenen Rep scopen. So folgt der Katalog der Rep.
+  useEffect(() => {
+    if (openCatalogId) return;
+    if (boundRep?.catalogId && REGIONS.some((r) => r.id === boundRep.catalogId)) {
+      setRegionId(boundRep.catalogId);
+    }
+  }, [boundRep, openCatalogId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-save bei jeder State-Änderung (nur wenn Edits vorhanden, sonst Storage leerräumen).
   // SANDBOX (Review/Vorschau, !live): NICHT persistieren — der Operator-Stand bleibt unangetastet.
