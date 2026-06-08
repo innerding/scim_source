@@ -21,8 +21,7 @@ import { GEOMETRIES } from '../../workspace/workspace.registry';
 import { type HandoffNet } from '../../workspace/draftHandoff';
 import { getDraft, createDraft, updateDraft, localStorageBytes } from '../../workspace/draftStore';
 import { parsePoiCatalog } from '../../poi-catalog/poiCatalog.parser';
-import RepresentBuildTetrahedron from '../RepresentBuildTetrahedron';
-import type { RepresentBuildFace } from '../RepresentBuildTetrahedron';
+import { useModeSwitch, isEditorRole, type Role } from '../RoleContext';
 import { useInspectorView } from '../../../runtime/repContext';
 import {
   loadPathConfig, savePathConfig, type PathConfig, type BridlewayMode,
@@ -104,7 +103,7 @@ const DRAFT_STROKE_GELB = '#ecc94b';
 const DRAFT_STROKE_ORANGE = '#ed8936';
 const SLOT2_DASH = '6 4';
 
-type DrawerTab = 'umriss' | 'wegnetz';
+type DrawerTab = 'umriss' | 'wegnetz' | 'synchronizer';
 
 // UÖ1: KEINE Geoman-Default-Toolbar mehr. Zeichnen/Bearbeiten werden über eigene
 // Umriss-Werkzeuge (Tool-Header links) per pm.enableDraw('Polygon') bzw.
@@ -232,7 +231,79 @@ function IconBuildNotiz() {
   );
 }
 
-export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsumed, iconView }: Props) {
+// Technik-Tab „Synchronizer" (Operator/Review). Vorerst nur die Beschreibung —
+// ein OSM ↔ OSM-Mesh-Synchronizer, der die OSM-Grundlage gegen unser Mesh prüft.
+// Overlay über dem Map-Canvas (Karte bleibt darunter gemountet). Kein Editor.
+function SynchronizerNotiz() {
+  const H: React.CSSProperties = { fontSize: 12, fontWeight: 700, color: '#234e52', margin: '12px 0 4px' };
+  const P: React.CSSProperties = { fontSize: 12.5, color: '#4a5568', lineHeight: 1.55, margin: '2px 0' };
+  return (
+    <div style={{
+      position: 'absolute', inset: 0, zIndex: 1200, overflowY: 'auto',
+      background: '#f0fdfa', padding: '18px 22px', fontFamily: 'system-ui, sans-serif',
+    }}>
+      <div style={{
+        display: 'inline-block', padding: '2px 8px', marginBottom: 10,
+        fontSize: 10, fontFamily: 'monospace', color: '#285e61',
+        background: '#d5f1ee', border: '1px solid #81e6d9', borderRadius: 4,
+      }}>
+        Technik · Drawer-Tab „Synchronizer" (OSM ↔ OSM-Mesh)
+      </div>
+      <h2 style={{ fontSize: 16, color: '#234e52', margin: '4px 0 10px' }}>OSM ↔ OSM-Mesh Synchronizer</h2>
+      <p style={P}>
+        Der <strong>Synchronizer überprüft die OSM-Grundlage</strong>, ob unser Mesh noch
+        <strong> kohärent</strong> ist.
+      </p>
+      <div style={H}>Status</div>
+      <p style={P}><em>Beschreibung gesetzt — die Prüf-Mechanik wird später gebaut.</em></p>
+    </div>
+  );
+}
+
+// Senden-zu-Committ-Dialog (Editor). Der Editor committet nicht selbst — sein
+// gespeicherter Draft geht an den Operator (Workspace) zur Prüfung + zum Committen.
+function SendCommitModal({ onSend, onClose }: { onSend: () => void; onClose: () => void }) {
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 2200,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+    }} onClick={onClose}>
+      <div onClick={(e) => e.stopPropagation()} style={{
+        background: 'white', borderRadius: 10, padding: 24, width: 440, maxWidth: '90vw',
+        boxShadow: '0 20px 60px rgba(0,0,0,0.3)', fontSize: 13, color: '#2d3748',
+      }}>
+        <h3 style={{ margin: '0 0 12px', fontSize: 16, color: '#c05621' }}>⤴ Senden zu Committ</h3>
+        <p style={{ margin: '0 0 10px', lineHeight: 1.5 }}>
+          Dein <strong>gespeicherter Draft</strong> (Umriss + Wegnetz) geht an den
+          <strong> Operator</strong> (Pathworks Hub / Workspace) — zur <strong>Prüfung</strong> und
+          zum <strong>Committen</strong>. Der Editor committet nicht selbst.
+        </p>
+        <div style={{
+          background: '#f7fafc', border: '1px solid #e2e8f0', borderRadius: 6,
+          padding: '8px 12px', margin: '0 0 12px', fontSize: 12, lineHeight: 1.6,
+        }}>
+          <div><strong>Speichern</strong> — Draft in den Workspace</div>
+          <div style={{ color: '#c05621', fontWeight: 600 }}>▸ Senden zu Committ — du bist hier</div>
+          <div><strong>Committ</strong> — Operator friert die Geometrie in die Rep-Version ein (im Workspace)</div>
+        </div>
+        <p style={{ margin: '0 0 16px', fontSize: 11, color: '#718096', fontStyle: 'italic' }}>
+          Schale: heute meldet „Senden" den Draft. Der echte Cross-User-Transport (Queue/Server)
+          folgt mit dem Pathworks Hub (ann_105/ann_109).
+        </p>
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          <button onClick={onClose} style={{
+            padding: '6px 14px', borderRadius: 6, border: '1px solid #cbd5e0', background: 'white', cursor: 'pointer', fontSize: 13,
+          }}>Abbrechen</button>
+          <button onClick={onSend} style={{
+            padding: '6px 14px', borderRadius: 6, border: '1px solid #dd6b20', background: '#dd6b20', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 600,
+          }}>⤴ Jetzt senden</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function DrawerPanel({ openGeometryId, onGeometryConsumed, iconView }: Props) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const tileLayerRef = useRef<L.TileLayer | null>(null);
@@ -252,6 +323,23 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   const pathAbortRef = useRef<AbortController | null>(null);
 
   const [tab, setTab] = useState<DrawerTab>('umriss');
+
+  // Rollen-Maske (wie Katalog/Thresholds): Footer-Diode = activeMode (Sicht),
+  // echtes Login = Effekt-Gate. live = echtes Login besitzt die Sicht und nicht
+  // Review → onSave persistiert; sonst Sandbox (folgenlos). Editor: Umriss +
+  // Wegnetz, gibt mit „Senden zu Committ" weiter (Commit lebt im Workspace).
+  // Operator/Review: zusätzlich der Synchronizer-Tab (Technik).
+  const mode = useModeSwitch();
+  const activeMode: Role = mode?.activeMode ?? 'operator';
+  const realRole: Role = mode?.real ?? 'operator';
+  const live = realRole === activeMode && activeMode !== 'analyst';
+  const showSynchronizer = !isEditorRole(activeMode);   // Technik-Tab nur Operator/Review
+  const [showSendCommit, setShowSendCommit] = useState(false);
+  const [sentForCommit, setSentForCommit] = useState(false);
+  // Editor stünde nie auf dem Synchronizer-Tab (existiert für ihn nicht) → zurückholen.
+  useEffect(() => {
+    if (tab === 'synchronizer' && !showSynchronizer) setTab('umriss');
+  }, [tab, showSynchronizer]);
 
   // Wegnetz-Ableitung (Phase 3): Status + letztes Ergebnis fuer die Legende.
   type PathStatus = 'idle' | 'loading' | 'done' | 'error';
@@ -566,6 +654,7 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
   const [saveError, setSaveError] = useState('');
 
   const onSave = () => {
+    if (!live) return;                                // Sandbox (Review/Vorschau) → folgenlos
     if (geometryId !== 'new') return;                 // committete Geometry = nur Ansicht
     if ((!polygon || polygon.length < 3) && (!maskPolygon || maskPolygon.length < 3)) return;
     const gebiet = inspectorView?.geometry.id ?? '';
@@ -1405,18 +1494,6 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
     renderPath();
   }, [maskPolygon]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const onTetraFace = (f: RepresentBuildFace) => {
-    if (f === 'geometry_draw') onJumpTo('geometry_editor');
-    else if (f === 'catalog_magazination') onJumpTo('catalog');
-    else if (f === 'represent_organisation') onJumpTo('workspace');
-    else if (f === 'sensus_core_build') onJumpTo('P11');
-  };
-  const onTetraArc = (a: string) => {
-    if (a === 'system_adjust') onJumpTo('P01');
-    else if (a === 'regio_content') onJumpTo('P02');
-    else if (a === 'load_thresholds') onJumpTo('P09');
-  };
-
   // US1 — Tool-Header-Registry. Adaptierbar: ein Werkzeug = ein Eintrag mit
   // `side` (left=Umriss · center=geteilt · right=Wegnetz) + `tabs`. Die Leiste
   // filtert nach aktivem Tab und ordnet nach Zone. Weitere Werkzeuge (US3) werden
@@ -1594,23 +1671,23 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
       {/* Oberer Tab „Icon": Voll-Overlay ueber Header + Karte (Karte bleibt
           gemountet). Umriss/Wegnetz liegen darunter und sind so verdeckt. */}
       {iconView && <IconBuildNotiz />}
-      {/* Tab-Strip Umriss / Wegnetz */}
+      {/* Technik-Tab „Synchronizer": Voll-Overlay über der Karte (Karte bleibt gemountet). */}
+      {tab === 'synchronizer' && <SynchronizerNotiz />}
+      {showSendCommit && (
+        <SendCommitModal
+          onSend={() => { setSentForCommit(true); setShowSendCommit(false); }}
+          onClose={() => setShowSendCommit(false)}
+        />
+      )}
+      {/* Tab-Strip Umriss / Wegnetz / Synchronizer (Technik, Operator/Review) */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px 0',
         background: '#edf2f7', borderBottom: '1px solid #e2e8f0',
       }}>
-        <div title="Geometry Draw" style={{ flexShrink: 0, marginRight: 4, marginBottom: 4 }}>
-          <RepresentBuildTetrahedron
-            activeFace="geometry_draw"
-            variant="light"
-            onFaceClick={onTetraFace}
-            onArcClick={onTetraArc}
-            size={36}
-          />
-        </div>
         {([
           { id: 'umriss', label: '◇ Umriss' },
           { id: 'wegnetz', label: '⋔ Wegnetz' },
+          ...(showSynchronizer ? [{ id: 'synchronizer' as DrawerTab, label: '⚙ Synchronizer' }] : []),
         ] as { id: DrawerTab; label: string }[]).map((t) => (
           <button
             key={t.id}
@@ -1638,9 +1715,19 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
             Primär-Filter + Konnektoren live · Verschweißen folgt
           </span>
         )}
-        {/* F7-Neufassung: expliziter Speichern-Button (tab-unabhängig). Speichert
-            den Draft in den Workspace; maskiert gespeichert = roter, committbarer Draft. */}
-        {geometryId === 'new' && (
+        {/* Sandbox-Chip (Review/Vorschau, !live): bedienbar, aber folgenlos. */}
+        {!live && (
+          <span style={{
+            fontSize: 10, fontFamily: 'monospace', marginBottom: 4, marginRight: 4,
+            padding: '2px 8px', borderRadius: 10, background: '#fffaf0', color: '#c05621',
+            border: '1px solid #fbd38d', whiteSpace: 'nowrap',
+          }} title="Review/Vorschau — Änderungen werden nicht gespeichert (Operator-Stand bleibt unangetastet).">
+            Sandbox
+          </span>
+        )}
+        {/* F7-Neufassung: expliziter Speichern-Button. NUR live (Operator/Editor mit
+            eigenem Login). Speichert den Draft in den Workspace; der Commit lebt im Workspace. */}
+        {live && geometryId === 'new' && (
           <button
             onClick={onSave}
             disabled={saved || ((!polygon || polygon.length < 3) && (!maskPolygon || maskPolygon.length < 3))}
@@ -1654,6 +1741,22 @@ export default function DrawerPanel({ onJumpTo, openGeometryId, onGeometryConsum
             }}
           >
             {saved ? '✓ Gespeichert' : '💾 Speichern'}
+          </button>
+        )}
+        {/* Editor committet nicht selbst — er gibt den gespeicherten Draft mit
+            „Senden zu Committ" an den Operator (Pathworks Hub / Workspace) weiter. */}
+        {live && isEditorRole(activeMode) && geometryId === 'new' && (
+          <button
+            onClick={() => setShowSendCommit(true)}
+            title="Senden zu Committ: dein gespeicherter Draft geht an den Operator (Workspace) — zur Prüfung und zum Committen. Der Editor committet nicht selbst."
+            style={{
+              fontSize: 12, padding: '6px 14px', marginBottom: 4, marginLeft: 4, fontWeight: 700,
+              border: '1px solid #dd6b20', borderRadius: 5,
+              background: sentForCommit ? '#fffaf0' : '#dd6b20',
+              color: sentForCommit ? '#dd6b20' : '#fff', cursor: 'pointer',
+            }}
+          >
+            {sentForCommit ? '⤴ Gemeldet' : '⤴ Senden zu Committ'}
           </button>
         )}
       </div>

@@ -1437,8 +1437,10 @@ export default function PanelWorkspace({ activeId, activeTab, onTabChange, resul
   // Inhalt folgt dem AKTIVEN TAB (activeMode), nicht der Diode: Operations=voller Inhalt,
   // Review=leer, Kartography=Platzhalter (Drehscheibe lebt in der Nav).
   const viewMode = mode?.activeMode ?? role;
-  // P01/Thresholds und Catalog bringen ihre Moduslogik selbst mit → nicht ans Gerüst geben.
-  const regionAlt = REGION_DASHBOARD_IDS.has(activeId) && viewMode !== 'operator' && activeId !== 'P01' && activeId !== 'catalog';
+  // P01/Thresholds, Catalog und Drawer (geometry_editor) bringen ihre Moduslogik
+  // selbst mit (Rollen-Tabs + Sandbox) → nicht ans generische Gerüst geben.
+  const regionAlt = REGION_DASHBOARD_IDS.has(activeId) && viewMode !== 'operator'
+    && activeId !== 'P01' && activeId !== 'catalog' && activeId !== 'geometry_editor';
 
   return (
     <div style={{
