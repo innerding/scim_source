@@ -1,13 +1,13 @@
-// P01 · Thresholds — Felder-/Grenzen-Modell. Die Wahrheit sind die GRENZEN
-// (Load-Positionen 0..1), die N Farb-Felder trennen; der Verlauf ist nur Ansicht.
+// P01 · Thresholds — Default-Kaskade (Schritt A): drei Säulen Representation · Region ·
+// Global, jede eine eigenständige Editor-Komponente (ThresholdColumn). Kopplung von
+// Region und Representation direkt an Global (flach): gekoppelt = spiegelt Global und
+// folgt dessen Änderungen; Editieren entkoppelt; „an Global koppeln" schnappt zurück.
 //
-// SCHRITT 1: Klick auf ein Feld macht es zum Mittelfeld → es rückt in die Mitte
-//   (Load 0.5); Felder darunter teilen sich die untere, darüber die obere Hälfte
-//   (gleichmäßig, je nach Anzahl). Animiert.
-// SCHRITT 2: an jeder inneren Feldgrenze ein Schieber, der die GRENZE verschiebt
-//   (die zwei angrenzenden Felder ändern ihre Größe). Live, direkt.
-// Dazu: Farb-Liste in Verlauf-Richtung (oben = Last 1), Felder per Drag&Drop
-//   umsortierbar. Wrap bleibt Comfort-only.
+// NICHT-BRECHEND: die Region-Säule schreibt weiter in den bestehenden Region-Storage-
+// Key (regionSlug), den die Live-Pipeline (Mesh/Runtime) liest. Global + Representation
+// sind neue Keys, noch nicht von der Pipeline gelesen (Wiring folgt in späteren Schritten).
+//
+// Rollen-Maske + Effekt-Gate (Sandbox) kommen in Schritt B; hier ist alles operator-live.
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { loadColourSettings, saveColourSettings, COLOUR_SETTINGS_EVENT, evenBorders, type ColourSettings } from '../../sensus/colourSettings';
@@ -18,12 +18,10 @@ const PV_H = 220;
 const GAP = 0.02;                                       // Mindestabstand zwischen Grenzen
 const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
 
-// Feld i = [L_i, R_i]; L_0=0, R_{N-1}=1, innere Grenzen = borders.
-const fieldLo = (b: number[], i: number) => (i === 0 ? 0 : b[i - 1]);
 const fieldHi = (b: number[], i: number, n: number) => (i === n - 1 ? 1 : b[i]);
+const fieldLo = (b: number[], i: number) => (i === 0 ? 0 : b[i - 1]);
 const fieldCenter = (b: number[], i: number, n: number) => (fieldLo(b, i) + fieldHi(b, i, n)) / 2;
 
-// CSS-Verlauf: Farbe je Feld an dessen Mitte; Enden voll (unten = Last 0 → „to top").
 function gradientCss(stops: string[], borders: number[]): string {
   const n = stops.length;
   const parts = [`${stops[0]} 0%`];
@@ -32,73 +30,43 @@ function gradientCss(stops: string[], borders: number[]): string {
   return `linear-gradient(to top, ${parts.join(', ')})`;
 }
 
-// Schritt 1: Grenzen so, dass Feld c ZENTRIERT auf 0.5 liegt (gleiche Hälften),
-// die übrigen Felder teilen sich je Seite gleichmäßig den Rest.
 function centerFieldBorders(n: number, c: number): number[] {
   c = Math.max(0, Math.min(n - 1, c));
-  const half = 1 / (2 * n);                             // halbe Mittelfeld-Breite
-  const lo = 0.5 - half, hi = 0.5 + half;               // Grenzen des Mittelfelds (symmetrisch um 0.5)
+  const half = 1 / (2 * n);
+  const lo = 0.5 - half, hi = 0.5 + half;
   const below = c, above = n - 1 - c;
   const out: number[] = [];
   for (let i = 0; i <= n - 2; i++) {
-    if (i < c) out.push(below > 0 ? (i + 1) * (lo / below) : lo);         // untere Grenzen
-    else if (i === c) out.push(hi);                                       // Oberkante Mittelfeld
-    else out.push(above > 0 ? hi + (i - c) * ((1 - hi) / above) : hi);    // obere Grenzen
+    if (i < c) out.push(below > 0 ? (i + 1) * (lo / below) : lo);
+    else if (i === c) out.push(hi);
+    else out.push(above > 0 ? hi + (i - c) * ((1 - hi) / above) : hi);
   }
   return out.map((x) => Math.min(0.999, Math.max(0.001, x)));
 }
 
-// ── zarter vertikaler Wrap-Slider (Comfort-only) ──────────────────────────────
-function VSlider({ label, value, onChange, accent = '#805ad5' }: {
-  label: string; value: number; onChange: (v: number) => void; accent?: string;
+// ── Eine Säule: Verlauf-Editor (Mitte/Grenzen) + Farb-Liste ───────────────────
+function ThresholdColumn({ title, settings, onChange, coupling }: {
+  title: string;
+  settings: ColourSettings;
+  onChange: (patch: Partial<ColourSettings>) => void;
+  coupling?: { coupled: boolean; onCouple: () => void };
 }) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, width: 48 }}>
-      <div style={{ width: 28, height: 96, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <input type="range" min={0} max={1} step={0.01} value={value}
-          onChange={(e) => onChange(parseFloat(e.target.value))}
-          style={{ width: 96, transform: 'rotate(-90deg)', accentColor: accent }} />
-      </div>
-      <span style={{ fontSize: 9, color: '#4a5568', fontFamily: 'ui-monospace, Menlo, monospace' }}>{value.toFixed(2)}</span>
-      <span style={{ fontSize: 9.5, color: '#1a365d' }}>{label}</span>
-    </div>
-  );
-}
+  const s = settings;
+  const n = s.stops.length;
 
-export default function ThresholdsView() {
-  const regionSlug = useColourRegionSlug();   // = Publish-Region (buildOriginBundle), kein Mismatch
-  const [s, setS] = useState<ColourSettings>(() => loadColourSettings(regionSlug));
-
-  const [tweenB, setTweenB] = useState<number[] | null>(null);   // Schritt-1-Animation
-  const [dragB, setDragB] = useState<number[] | null>(null);     // Schritt-2-Live-Drag
-  const [leftDrag, setLeftDrag] = useState<number | null>(null); // Schritt-1-Strich-Drag
+  const [tweenB, setTweenB] = useState<number[] | null>(null);
+  const [dragB, setDragB] = useState<number[] | null>(null);
+  const [leftDrag, setLeftDrag] = useState<number | null>(null);
   const rafRef = useRef(0);
   const barRef = useRef<HTMLDivElement>(null);
-  const dragIdx = useRef<number | null>(null);                   // Grenz-Drag-Index
+  const dragIdx = useRef<number | null>(null);
   const leftDragging = useRef(false);
-  const dndIdx = useRef<number | null>(null);                    // Drag&Drop-Reorder-Index
+  const dndIdx = useRef<number | null>(null);
 
-  useEffect(() => { setS(loadColourSettings(regionSlug)); setTweenB(null); setDragB(null); }, [regionSlug]);
-
-  const update = useCallback((patch: Partial<ColourSettings>) => {
-    const next = { ...loadColourSettings(regionSlug), ...patch };
-    saveColourSettings(regionSlug, next);
-    setS(next);
-  }, [regionSlug]);
-
-  useEffect(() => {
-    const onEvt = (e: Event) => {
-      const d = (e as CustomEvent).detail as { regionSlug?: string; settings?: ColourSettings } | undefined;
-      if (!d || d.regionSlug !== (regionSlug || 'default') || !d.settings) return;
-      setS(d.settings);
-    };
-    window.addEventListener(COLOUR_SETTINGS_EVENT, onEvt);
-    return () => window.removeEventListener(COLOUR_SETTINGS_EVENT, onEvt);
-  }, [regionSlug]);
-
+  // Bei Settings-Wechsel von außen (Kopplung/Region-Wechsel) Live-Drag verwerfen.
+  useEffect(() => { setTweenB(null); setDragB(null); }, [settings]);
   useEffect(() => () => cancelAnimationFrame(rafRef.current), []);
 
-  const n = s.stops.length;
   const borders = dragB ?? tweenB ?? s.borders;
 
   const animateTo = (from: number[], to: number[]) => {
@@ -114,14 +82,17 @@ export default function ThresholdsView() {
     rafRef.current = requestAnimationFrame(step);
   };
 
-  // Schritt 1: Feld c → Mitte (und als Mittelfeld merken → bleibt fixiert)
+  const loadAt = (clientY: number) => {
+    const r = barRef.current?.getBoundingClientRect(); if (!r) return 0.5;
+    return clamp01(1 - (clientY - r.top) / r.height);
+  };
+
   const centerField = (c: number) => {
     const from = s.borders.slice();
     const to = centerFieldBorders(n, c);
-    update({ borders: to, middleField: c });
+    onChange({ borders: to, middleField: c });
     animateTo(from, to);
   };
-  // Schritt 1: linker Strich ziehen → Feld an dieser Höhe wird Mittelfeld (beim Loslassen)
   const onLeftDown = (e: React.PointerEvent) => {
     e.preventDefault(); (e.target as HTMLElement).setPointerCapture(e.pointerId);
     leftDragging.current = true; setLeftDrag(loadAt(e.clientY));
@@ -138,11 +109,6 @@ export default function ThresholdsView() {
     centerField(c);
   };
 
-  // Schritt 2: Grenze i ziehen
-  const loadAt = (clientY: number) => {
-    const r = barRef.current?.getBoundingClientRect(); if (!r) return 0.5;
-    return clamp01(1 - (clientY - r.top) / r.height);
-  };
   const onBorderDown = (i: number) => (e: React.PointerEvent) => {
     e.stopPropagation(); e.preventDefault();
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
@@ -158,12 +124,11 @@ export default function ThresholdsView() {
   const onBorderUp = (i: number) => (e: React.PointerEvent) => {
     if (dragIdx.current !== i) return;
     try { (e.target as HTMLElement).releasePointerCapture(e.pointerId); } catch { /* */ }
-    if (dragB) update({ borders: dragB });
+    if (dragB) onChange({ borders: dragB });
     setDragB(null);
-    setTimeout(() => { dragIdx.current = null; }, 0);   // Klick-Zentrieren nicht auslösen
+    setTimeout(() => { dragIdx.current = null; }, 0);
   };
 
-  // Mittelfeld-Grenzen: symmetrisch um 0.5 gekoppelt → Größe frei, Mitte bleibt zentriert.
   const onMidDown = (i: number) => (e: React.PointerEvent) => {
     e.stopPropagation(); e.preventDefault();
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
@@ -183,56 +148,51 @@ export default function ThresholdsView() {
   const onMidUp = (e: React.PointerEvent) => {
     if (dragIdx.current == null) return;
     try { (e.target as HTMLElement).releasePointerCapture(e.pointerId); } catch { /* */ }
-    if (dragB) update({ borders: dragB });
+    if (dragB) onChange({ borders: dragB });
     setDragB(null);
     setTimeout(() => { dragIdx.current = null; }, 0);
   };
 
-  // Farben
-  const setStop = (i: number, color: string) => { const stops = s.stops.slice(); stops[i] = color; update({ stops }); };
+  const setStop = (i: number, color: string) => { const stops = s.stops.slice(); stops[i] = color; onChange({ stops }); };
   const addStop = () => {
     if (n >= 6) return;
     const stops = [...s.stops, s.stops[n - 1]];
-    update({ stops, borders: evenBorders(stops.length), middleField: null });
+    onChange({ stops, borders: evenBorders(stops.length), middleField: null });
     setTweenB(null); setDragB(null);
   };
   const removeStop = (i: number) => {
     if (n <= 2) return;
     const stops = s.stops.filter((_, j) => j !== i);
-    update({ stops, borders: evenBorders(stops.length), middleField: null });
+    onChange({ stops, borders: evenBorders(stops.length), middleField: null });
     setTweenB(null); setDragB(null);
   };
-  const resetEven = () => { update({ borders: evenBorders(n), middleField: null }); setTweenB(null); setDragB(null); };
-
-  // Drag&Drop-Reorder (Felder umsortieren; Grenzen/Größen bleiben slot-basiert)
+  const resetEven = () => { onChange({ borders: evenBorders(n), middleField: null }); setTweenB(null); setDragB(null); };
   const reorder = (from: number, to: number) => {
     if (from === to || from < 0 || to < 0) return;
     const stops = s.stops.slice();
     const [m] = stops.splice(from, 1); stops.splice(to, 0, m);
-    update({ stops });
+    onChange({ stops });
   };
 
-  const vj = s.verjuengung;
-  const setVj = (p: Partial<typeof vj>) => update({ verjuengung: { ...vj, ...p } });
-
-  // Liste in Verlauf-Richtung: oben = Last 1 = letzter Stop
   const order = Array.from({ length: n }, (_, k) => n - 1 - k);
 
   return (
-    <div style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 600 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
-        <AnthemCycleBadge />
+    <div style={{ flexShrink: 0 }}>
+      {/* Säulen-Kopf: Titel + Kopplungs-Schalter */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, minHeight: 20 }}>
+        <span style={{ fontSize: 12.5, fontWeight: 700, color: '#1a365d' }}>{title}</span>
+        {coupling && (
+          coupling.coupled
+            ? <span style={{ fontSize: 9.5, color: '#2f855a', fontFamily: 'monospace' }}>🔗 an Global</span>
+            : <button onClick={coupling.onCouple} title="wieder an Global koppeln (spiegelt Global)"
+                style={{ fontSize: 9, padding: '1px 6px', borderRadius: 3, border: '1px solid #e2e8f0', background: '#f7fafc', color: '#718096', cursor: 'pointer' }}>🔗 an Global koppeln</button>
+        )}
       </div>
 
-      <div style={{ fontSize: 12.5, fontWeight: 700, color: '#1a365d', marginBottom: 10 }}>
-        Representation
-      </div>
-
-      <div style={{ display: 'flex', gap: 18, alignItems: 'flex-start' }}>
-        {/* Verlauf-Fenster: 1 Strich links (Mitte), N−1 Striche rechts (Grenzen) */}
+      <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+        {/* Verlauf-Fenster */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', height: PV_H }}>
-            {/* LINKS · Schritt 1 — ein Strich = Mitte (ziehen wählt das Mittelfeld) */}
             <div style={{ position: 'relative', width: 22, height: PV_H }}>
               <div
                 onPointerDown={onLeftDown} onPointerMove={onLeftMove} onPointerUp={onLeftUp}
@@ -243,14 +203,11 @@ export default function ThresholdsView() {
               </div>
             </div>
 
-            {/* MITTE · Verlauf (sauber) */}
             <div ref={barRef} style={{ position: 'relative', width: 46, height: PV_H, borderRadius: 4, border: '1px solid #cbd5e0', background: gradientCss(s.stops, borders) }} />
 
-            {/* RECHTS · Schritt 2 — Striche an den Grenzen */}
             <div style={{ position: 'relative', width: 22, height: PV_H }}>
               {borders.map((b, i) => {
                 const mid = s.middleField;
-                // Mittelfeld-Paar nur wenn beide Grenzen existieren (Mittelfeld liegt innen)
                 const isMidPair = mid != null && mid - 1 >= 0 && mid <= n - 2 && (i === mid - 1 || i === mid);
                 const down = isMidPair ? onMidDown(i) : onBorderDown(i);
                 const move = isMidPair ? onMidMove : onBorderMove(i);
@@ -268,33 +225,32 @@ export default function ThresholdsView() {
               })}
             </div>
           </div>
-
           <span style={{ fontSize: 8.5, color: '#a0aec0' }}>Mitte · Grenzen</span>
           <button onClick={resetEven} style={{ fontSize: 9, padding: '1px 6px', borderRadius: 3, border: '1px solid #e2e8f0', background: '#f7fafc', color: '#718096', cursor: 'pointer' }}>↺ zurücksetzen</button>
         </div>
 
-        {/* Farb-Felder: Verlauf-Richtung, Drag&Drop, je Feld zur Mitte */}
-        <div style={{ width: 140 }}>
+        {/* Farb-Felder */}
+        <div style={{ width: 118 }}>
           <div style={{ fontSize: 8.5, color: '#a0aec0', marginBottom: 2 }}>↑ oben = Last 1</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
             {order.map((i) => {
               const isMid = s.middleField === i;
               return (
-              <div
-                key={i}
-                draggable
-                onDragStart={() => { dndIdx.current = i; }}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={() => { if (dndIdx.current != null) reorder(dndIdx.current, i); dndIdx.current = null; }}
-                style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '2px 4px', borderRadius: 4, cursor: 'grab', background: isMid ? '#ebf8ff' : '#fff', border: '1px solid ' + (isMid ? '#bee3f8' : '#edf2f7') }}
-              >
-                <span style={{ color: '#cbd5e0', fontSize: 12, cursor: 'grab' }}>⠿</span>
-                <input type="color" value={toHex(s.stops[i])} onChange={(e) => setStop(i, e.target.value)} style={{ width: 30, height: 24, border: 'none', background: 'none', cursor: 'pointer' }} />
-                {isMid && <span style={{ fontSize: 9, color: '#2b6cb0' }}>Mitte</span>}
-                {n > 2 && (
-                  <button onClick={() => removeStop(i)} style={{ marginLeft: 'auto', fontSize: 12, border: 'none', background: 'none', color: '#a0aec0', cursor: 'pointer' }}>×</button>
-                )}
-              </div>
+                <div
+                  key={i}
+                  draggable
+                  onDragStart={() => { dndIdx.current = i; }}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={() => { if (dndIdx.current != null) reorder(dndIdx.current, i); dndIdx.current = null; }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '2px 4px', borderRadius: 4, cursor: 'grab', background: isMid ? '#ebf8ff' : '#fff', border: '1px solid ' + (isMid ? '#bee3f8' : '#edf2f7') }}
+                >
+                  <span style={{ color: '#cbd5e0', fontSize: 12, cursor: 'grab' }}>⠿</span>
+                  <input type="color" value={toHex(s.stops[i])} onChange={(e) => setStop(i, e.target.value)} style={{ width: 28, height: 22, border: 'none', background: 'none', cursor: 'pointer' }} />
+                  {isMid && <span style={{ fontSize: 9, color: '#2b6cb0' }}>Mitte</span>}
+                  {n > 2 && (
+                    <button onClick={() => removeStop(i)} style={{ marginLeft: 'auto', fontSize: 12, border: 'none', background: 'none', color: '#a0aec0', cursor: 'pointer' }}>×</button>
+                  )}
+                </div>
               );
             })}
             {n < 6 && (
@@ -303,6 +259,103 @@ export default function ThresholdsView() {
           </div>
           <div style={{ fontSize: 8.5, color: '#a0aec0', marginTop: 2 }}>↓ unten = Last 0</div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Kopplungs-Flag (gekoppelt = spiegelt Global + folgt dessen Änderungen) ────
+const coupleKey = (k: string) => `scim3_couple_${k || 'default'}`;
+const loadCoupled = (k: string) => { try { return localStorage.getItem(coupleKey(k)) === '1'; } catch { return false; } };
+const saveCoupled = (k: string, v: boolean) => { try { localStorage.setItem(coupleKey(k), v ? '1' : '0'); } catch { /* */ } };
+
+const GLOBAL_KEY = '__global__';
+
+// ── zarter vertikaler Wrap-Slider (Comfort-only) ──────────────────────────────
+function VSlider({ label, value, onChange, accent = '#805ad5' }: {
+  label: string; value: number; onChange: (v: number) => void; accent?: string;
+}) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, width: 48 }}>
+      <div style={{ width: 28, height: 96, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <input type="range" min={0} max={1} step={0.01} value={value}
+          onChange={(e) => onChange(parseFloat(e.target.value))}
+          style={{ width: 96, transform: 'rotate(-90deg)', accentColor: accent }} />
+      </div>
+      <span style={{ fontSize: 9, color: '#4a5568', fontFamily: 'ui-monospace, Menlo, monospace' }}>{value.toFixed(2)}</span>
+      <span style={{ fontSize: 9.5, color: '#1a365d' }}>{label}</span>
+    </div>
+  );
+}
+
+export default function ThresholdsView() {
+  const regionSlug = useColourRegionSlug();
+  const repKey = `__rep__${regionSlug || 'default'}`;
+
+  const [globalS, setGlobalS] = useState<ColourSettings>(() => loadColourSettings(GLOBAL_KEY));
+  const [regionS, setRegionS] = useState<ColourSettings>(() => loadColourSettings(regionSlug));
+  const [repS, setRepS] = useState<ColourSettings>(() => loadColourSettings(repKey));
+  const [regionCoupled, setRegionCoupled] = useState<boolean>(() => loadCoupled(regionSlug));
+  const [repCoupled, setRepCoupled] = useState<boolean>(() => loadCoupled(repKey));
+
+  // Region-/Rep-Wechsel: neu laden.
+  useEffect(() => {
+    setRegionS(loadColourSettings(regionSlug));
+    setRepS(loadColourSettings(repKey));
+    setRegionCoupled(loadCoupled(regionSlug));
+    setRepCoupled(loadCoupled(repKey));
+  }, [regionSlug, repKey]);
+
+  // Live-Pipeline-Sync: andere Schreiber der Region-Settings spiegeln.
+  useEffect(() => {
+    const onEvt = (e: Event) => {
+      const d = (e as CustomEvent).detail as { regionSlug?: string; settings?: ColourSettings } | undefined;
+      if (!d || d.regionSlug !== (regionSlug || 'default') || !d.settings) return;
+      setRegionS(d.settings);
+    };
+    window.addEventListener(COLOUR_SETTINGS_EVENT, onEvt);
+    return () => window.removeEventListener(COLOUR_SETTINGS_EVENT, onEvt);
+  }, [regionSlug]);
+
+  // Global ändern: in gekoppelte Kinder durchschreiben (Write-through → Pipeline bleibt korrekt).
+  const updateGlobal = useCallback((patch: Partial<ColourSettings>) => {
+    const next = { ...loadColourSettings(GLOBAL_KEY), ...patch };
+    saveColourSettings(GLOBAL_KEY, next); setGlobalS(next);
+    if (loadCoupled(regionSlug)) { saveColourSettings(regionSlug, next); setRegionS(next); }
+    if (loadCoupled(repKey))     { saveColourSettings(repKey, next);     setRepS(next); }
+  }, [regionSlug, repKey]);
+
+  // Region/Rep editieren → entkoppelt automatisch.
+  const updateRegion = useCallback((patch: Partial<ColourSettings>) => {
+    const next = { ...loadColourSettings(regionSlug), ...patch };
+    saveColourSettings(regionSlug, next); setRegionS(next);
+    if (loadCoupled(regionSlug)) { saveCoupled(regionSlug, false); setRegionCoupled(false); }
+  }, [regionSlug]);
+  const updateRep = useCallback((patch: Partial<ColourSettings>) => {
+    const next = { ...loadColourSettings(repKey), ...patch };
+    saveColourSettings(repKey, next); setRepS(next);
+    if (loadCoupled(repKey)) { saveCoupled(repKey, false); setRepCoupled(false); }
+  }, [repKey]);
+
+  // „an Global koppeln": Global → Säule spiegeln + Flag setzen.
+  const coupleRegion = () => { const g = loadColourSettings(GLOBAL_KEY); saveColourSettings(regionSlug, g); setRegionS(g); saveCoupled(regionSlug, true); setRegionCoupled(true); };
+  const coupleRep = () => { const g = loadColourSettings(GLOBAL_KEY); saveColourSettings(repKey, g); setRepS(g); saveCoupled(repKey, true); setRepCoupled(true); };
+
+  // Wrap + Abdimm bleiben (vorerst) auf der Region (Live-Scope).
+  const vj = regionS.verjuengung;
+  const setVj = (p: Partial<typeof vj>) => updateRegion({ verjuengung: { ...vj, ...p } });
+
+  return (
+    <div style={{ fontFamily: 'system-ui, sans-serif' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+        <AnthemCycleBadge />
+      </div>
+
+      {/* Default-Kaskade: Representation · Region · Global (Ergebnis links, global rechts) */}
+      <div style={{ display: 'flex', gap: 26, alignItems: 'flex-start', overflowX: 'auto', paddingBottom: 6 }}>
+        <ThresholdColumn title="Representation" settings={repS}    onChange={updateRep}    coupling={{ coupled: repCoupled,    onCouple: coupleRep }} />
+        <ThresholdColumn title="Region"         settings={regionS} onChange={updateRegion} coupling={{ coupled: regionCoupled, onCouple: coupleRegion }} />
+        <ThresholdColumn title="Global"         settings={globalS} onChange={updateGlobal} />
       </div>
 
       {/* Wrap — NUR Comfort-Button */}
@@ -319,22 +372,15 @@ export default function ThresholdsView() {
         </div>
       </div>
 
-      {/* degradier */}
+      {/* Abdimm-Schwelle */}
       <div style={{ marginTop: 18, borderTop: '1px solid #edf2f7', paddingTop: 12 }}>
         <div style={{ fontSize: 12.5, fontWeight: 700, color: '#1a365d', marginBottom: 4 }}>Abdimm-Schwelle <span style={{ fontWeight: 400, fontSize: 10.5, color: '#a0aec0' }}>· Mesh · überlastete Strecken entdrängen</span></div>
         <label style={{ fontSize: 11, color: '#4a5568', display: 'flex', gap: 6, alignItems: 'center', marginBottom: 6 }}>
-          <input type="checkbox" checked={s.degradier != null} onChange={(e) => update({ degradier: e.target.checked ? 0.6 : null })} /> aktiv
+          <input type="checkbox" checked={regionS.degradier != null} onChange={(e) => updateRegion({ degradier: e.target.checked ? 0.6 : null })} /> aktiv
         </label>
-        {s.degradier != null && (
-          <input type="range" min={0} max={1} step={0.01} value={s.degradier} onChange={(e) => update({ degradier: parseFloat(e.target.value) })} style={{ width: 200, accentColor: '#2b6cb0' }} />
+        {regionS.degradier != null && (
+          <input type="range" min={0} max={1} step={0.01} value={regionS.degradier} onChange={(e) => updateRegion({ degradier: parseFloat(e.target.value) })} style={{ width: 200, accentColor: '#2b6cb0' }} />
         )}
-      </div>
-
-      {/* Bauplan-Notiz */}
-      <div style={{ marginTop: 16, padding: '8px 10px', fontSize: 10.5, lineHeight: 1.5, color: '#744210', background: '#fffaf0', border: '1px solid #feebc8', borderRadius: 6 }}>
-        <strong>Bauplan:</strong> Mesh liest künftig <strong>borders</strong> (statt spreizung) — Wiring folgt.
-        Pflege später im Regio-Dashboard, Werte in die Representation zurückgeschrieben (Kapsel).
-        Siehe docs/thresholds_umbauplan.md.
       </div>
     </div>
   );
