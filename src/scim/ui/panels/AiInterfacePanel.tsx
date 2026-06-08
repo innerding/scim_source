@@ -29,6 +29,25 @@ const CATEGORY_META: Record<AnnotationCategory, { label: string; color: string; 
 // Initial seed annotations — operator extends these in the UI
 const SEED_ANNOTATIONS: Annotation[] = [
 
+  // ── Welt um Thresholds + Welt der Rollen (2026-06-08) ───────────────────────
+
+  {
+    id: 'ann_107',
+    category: 'invariant',
+    label: 'THRESHOLDS — die Welt um die Farb-/Default-Kaskade',
+    content: 'THRESHOLDS — die Welt um die Farb-/Default-Kaskade. KASKADE (5 Säulen, links→rechts): Rep-Editor-Rep · Reg-Editor-Reg · Representation · Region · Global. Zwei STRÄNGE mit Wurzel Global: REP-STRANG (wird AUSGELIEFERT) = rep-editor-rep ← representation ← global; REG-STRANG (nur RICHTSCHNUR/Anzeige, NICHT ausgeliefert) = reg-editor-reg ← region ← global. Jede Ebene ERBT die darüber, solange sie nicht selbst gesetzt ist (customized); „Global" ist nur Saatwert (einmalig von Region geseedet). „↺ auf Default" kopiert den Eltern-Wert. KEINE Kopplung mehr — der Resolver macht die Vererbung zur Lesezeit. RESOLVER effectiveRepColour(slug) = rep-editor-rep → representation → global → Region(Fallback), der erste GESETZTE gewinnt. — WO DIE FARBE HINREIST: in ORIGIN (origin_bundle_v1.colour), STATISCH, via Publish; NICHT im Anthem (der trägt nur loads[] = normalisierte Last je Segment; das Gerät rechnet die Farbe LOKAL/edge mit colorize aus Origin-Settings + Anthem-Last). Live-Farb-Justage-am-Gerät-via-Anthem = bewusst NICHT gebaut. — VERSIONIERUNG: die Farbe steckt im Bundle und ist an die REP-/Bundle-Version gebunden. Sie löst NICHTS selbst aus — sie WARTET auf den nächsten Publish und reist dann unter der dann gültigen Rep-Version mit. — ZWEI WERKSTÄTTEN (nicht verwechseln): Thresholds = Zutat „Farbe" editieren (Entwurf, lokal gespeichert); PATHWORKS HUB = die Representation komponieren + VERSIONIEREN + AUSSPIELEN (fängt die Farbe beim Publish ein). STOLPERFALLE: Re-Publish OHNE Versions-Bump überschreibt still dieselbe Versionsnummer mit neuer Farbe → darum gehört Versionieren an EINE Stelle (Pathworks Hub). — KONSUMENTEN des Resolvers: buildOriginBundle (Ausspielen) · ScimMap (Editor-Vorschau, refresht bei jeder Farb-Änderung) · ShellNewMonitor. — OFFEN/zurückgestellt: Farb-Ansicht + Versions-Diff (neu vs. vorherige Version) im Publishing-Monitor (V03); Säulen/Rollen-Muster auf Katalog/Drawer übertragen; per-Rep-Keying (heute regionSlug, MVP = 1 Rep/Region). Siehe docs/thresholds_umbauplan.md.',
+    related_panel: 'P01',
+    date: '2026-06-08',
+  },
+  {
+    id: 'ann_108',
+    category: 'invariant',
+    label: 'ROLLEN — die Welt der Rollen (Diode · Sicht/Wirkung · Editoren)',
+    content: 'ROLLEN — die Welt der Rollen (Stand 2026-06-08). FÜNF ROLLEN: SCIM-Operator (grün) · Data-Analyst (blau) · Reg-Editor (lila) · Rep-Editor (orange) · regio_editor = KOMBINIERTER Editor-Modus (NUR Operator-Vorschau, Split-Diode halb lila/halb orange, sieht beide Editor-Säulen). — ZWEI ACHSEN, ENTKOPPELT: (A) SICHT = activeMode/Tab = was du SIEHST (Sicht-Maske je Panel). (B) WIRKUNG = das ECHTE Login (mode.real): live NUR, wenn das echte Login den Tab besitzt UND es nicht Review ist; sonst SANDBOX. → tabLive = (real === activeMode) && activeMode !== analyst. — DREI Element-Zustände: live (interaktiv + speichert) · sandbox (bedienbar, aber FOLGENLOS) · dimmed (abgedimmt + tot = „technischer Ursprung"). — DIODE (Footer) = deine Rolle/dein Zugriff. Ein TAB-Klick schaltet nur die ANSICHT (activeMode), NICHT die Diode — die Diode bewegt sich NUR per Footer-Cycle (eine Stufe abwärts, am Ende zurück). KASKADE der Vorschau: ROLE_ORDER = [operator, analyst, regio_editor], nur ABWÄRTS. Operator sieht 3 Modus-Tabs (Operations/Review/SCIM-Kartography), Analyst 2 (Review + Kartography), echte Editoren KEINE Tabs (terminal). — „ECHTES LOGIN ≠ FOOTER-UMSCHALTEN": Footer-Vorschau auf Editor = nur SICHT (Sandbox, nicht bedienbar); ein echtes Reg-/Rep-Editor-LOGIN = dieselbe Sicht, aber LIVE. Das fällt aus Achse B (real==Tab) heraus — kein Sondermechanismus. — NAVIGATOR: für ALLE Editor-Rollen reduziert auf NUR die Kartography-Drehscheibe (dunkel, an Tetra-Höhe). Tönung: Operator dunkel, Analyst amber, Editoren dunkel. REVIEW = volle Operator-Ansicht, aber IMMER Sandbox (hat keinen eigenen Operator-Tab). isEditorRole() = regio_editor|reg_editor|rep_editor. — ANWENDUNG (Thresholds als Vorlage): EINE Komponente, pro Tab über (Sicht-Maske + Effekt-Gate + dimmed) konfiguriert. Reg-Editor sieht nur die Region-Säule live (+ Operator-Default als Ref), Rep-Editor nur Representation, regio_editor beide Editor-Säulen, operator/analyst alle 5 (Editor-Säulen dimmed). Master = Operator-Ansicht; Editor-Säulen dort abgedimmte Ursprungs-Geister; statisch im Code, KEINE Operator-Sichtbarkeits-Toggles. — LOGINS: Namen dietmar(operator)/michael moser(analyst)/reg editor/rep editor; Code VITE_CODE_* oder Recovery „full visibility" (immer gültig). — Der dynamische Ausbau (Rollen anlegbar, server-Code, Logs) = ACCESS ann_105, kommt später.',
+    related_panel: 'workspace',
+    date: '2026-06-08',
+  },
+
   // ── Plan & Stand (2026-06-04) ───────────────────────────────────────────────
 
   {
