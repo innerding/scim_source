@@ -22,7 +22,8 @@ import { formatBytes } from '../../regio-content/pathEngine';
 const bytesOf = (obj: unknown): number => new TextEncoder().encode(JSON.stringify(obj)).length;
 import { commitToRepo } from '../../../runtime/commitBridge';
 import { useRepresentationContext } from '../../../runtime/repContext';
-import { useRole } from '../RoleContext';
+import { useRole, useModeSwitch, isEditorRole } from '../RoleContext';
+import EditorRepsHome from './EditorRepsHome';
 import { PathworksHubFloating, PathworksInfoClipboard } from '../PathworksHubInfo';
 // (RegioDashboardControl entfernt — kein Control auf dem Panel selbst.)
 import type { BoundaryGeometryFile, WegnetzFile, RepresentationFile } from '../../workspace/workspace.types';
@@ -207,6 +208,10 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
   const [showClip, setShowClip] = useState(false);   // schwebendes Arbeitsblatt (Notizen)
   const [showInfo, setShowInfo] = useState(false);   // schwebendes Infoblatt-Klemmbrett (3 Versionen)
   const role = useRole();
+  const mode = useModeSwitch();
+  // Editor-Sicht (Footer-Diode): der Editor bekommt das schmale „meine Reps"-Home,
+  // nicht die operator-zentrierte Draft-Pipeline. Operator/Analyst: wie gehabt.
+  const editorView = isEditorRole(mode?.activeMode ?? role);
   // 👁 Inspector-Sicht: welches Workspace-Objekt der rechte Inspector zeigt
   // (Katalog → nur POIs, Boundary → nur Umriss, Representation → alles).
   const { inspectorAsset, setInspectorAsset } = useRepresentationContext();
@@ -314,6 +319,9 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
 
   // Operations-Modus (Operator): voller Pathworks-Inhalt. Review/Kartography werden
   // zentral in PanelWorkspace gerendert (für alle 4 Regio-Panels gleich).
+  // Editor: schmales „meine Reps"-Home (andere Nahtseite des Pathworks-Stores).
+  if (editorView) return <EditorRepsHome onJumpTo={onJumpTo} />;
+
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 760 }}>
       {/* Intro mit Tetraeder */}
