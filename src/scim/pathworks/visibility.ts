@@ -22,11 +22,14 @@ export function canSee(actor: Actor, a: Artifact): boolean {
       // noch nicht eingereichte Drafts bleiben unsichtbar.
       return a.state === 'committed' || a.state === 'submitted' || a.ownerId === actor.id;
     case 'regio_editor':
-      return a.regionId != null && actor.regionIds.includes(a.regionId);
+      // Eigene Artefakte IMMER + zusätzlich ALLE seiner Region (Aufsicht).
+      return a.ownerId === actor.id || (a.regionId != null && actor.regionIds.includes(a.regionId));
     case 'rep_editor':
       return a.ownerId === actor.id;
     case 'editor':
-      return a.ownerId === actor.id && a.binding === 'unbound';
+      // Ohne regionale Bindung: seine eigene Arbeit (die ist per Definition unbound;
+      // Sicht hängt am Besitz, nicht am binding-Flag).
+      return a.ownerId === actor.id;
   }
 }
 
