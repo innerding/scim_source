@@ -8,7 +8,8 @@ import { useRole, useModeSwitch, useUserName } from '../RoleContext';
 import { actorFrom, repsForActor, withdrawRep, setRepPlacement, knownPlacements } from '../../pathworks/localStore';
 import { commitDraftToRepo, isDraftCommittable, type CommitDraftResult } from '../../pathworks/commitDraft';
 import { getDraft } from '../../workspace/draftStore';
-import { useDeliveredVersions, type Delivered } from '../../../runtime/useDelivered';
+import { useOriginVersionsMap } from '../../../runtime/useDelivered';
+import { type OriginVersions } from '../../../runtime/anthemApi';
 import { REPRESENTATIONS } from '../../workspace/workspace.registry';
 import { useRepresentationContext } from '../../../runtime/repContext';
 import { releaseRep } from '../../sensus/release';
@@ -67,7 +68,7 @@ export default function OperatorRepsHome({ onJumpTo }: { onJumpTo: (panelId: str
   const committed = reps.filter((r) => r.state === 'committed');
   // Phase 1: „ausgeliefert vM" je committeter Rep (Origin-Bundle in R2). Graceful.
   const [deliveredNonce, setDeliveredNonce] = useState(0);
-  const delivered = useDeliveredVersions(committed.map((r) => r.id), deliveredNonce);
+  const lib = useOriginVersionsMap(committed.map((r) => r.id), deliveredNonce);
 
   // Phase 2 — RELEASE (Commit ≠ Release): „ausliefern" wählt die Rep als Auftraggeber,
   // löst Phase-0-Resolve auf und publiziert das Bundle nach R2. Danach springt die
@@ -197,11 +198,7 @@ export default function OperatorRepsHome({ onJumpTo }: { onJumpTo: (panelId: str
           <SectionTitle label="Committete Representations" count={committed.length} hint="Nation → Region → Rep. Eingefroren & versioniert. »ausliefern« = Release (Commit ≠ Release) — manuelles Gate (Drossel)." />
         </div>
         {(() => {
-          const pend = committed.filter((r) => {
-            const d = delivered[r.id];
-            const dv = typeof d?.version === 'number' ? d.version : (typeof d?.version === 'string' ? parseInt(d.version.replace(/^v/i, ''), 10) : NaN);
-            return !d?.published || (Number.isFinite(dv) && r.currentVersion > dv);
-          }).length;
+          const pend = committed.filter((r) => verState(r, lib[r.id]).needsUpload).length;
           return pend > 0 ? (
             <button onClick={() => onJumpTo('V03')} title="Aggregat-Sicht: Release-Drossel (V03)"
               style={{
@@ -214,7 +211,7 @@ export default function OperatorRepsHome({ onJumpTo }: { onJumpTo: (panelId: str
       {committed.length === 0 ? (
         <Empty text="Noch keine committete Representation." />
       ) : (
-        <RepTree reps={committed} delivered={delivered} release={release} />
+        <RepTree reps={committed} lib={lib} release={release} />
       )}
     </div>
   );
@@ -261,34 +258,40 @@ const committedBadge: React.CSSProperties = {
   border: '1px solid #9ae6b4', background: '#f0fff4', color: '#22543d', fontWeight: 700,
 };
 
-function VersionLine({ rep, delivered }: { rep: RepView; delivered?: Delivered }) {
-  // Quell-Version (committet) vs. Auslieferungs-Version (in R2). Diff = liegt daneben.
-  const src = rep.currentVersion;
-  const dvRaw = delivered?.version ?? null;
-  const dvNum = typeof dvRaw === 'number' ? dvRaw : (typeof dvRaw === 'string' ? parseInt(dvRaw.replace(/^v/i, ''), 10) : NaN);
-  const out = delivered?.published && dvRaw != null ? `v${dvRaw}` : '—';
-  const behind = delivered?.published && Number.isFinite(dvNum) && src > dvNum;
-  const ahead = !delivered?.published; // committet, aber nichts ausgeliefert
+// Quelle (committet) · aktiv (live in R2) · latest (hochgeladen). Drei Zustände:
+// ungeliefert (Quelle>latest) · gestaged (latest>aktiv, wartet aufs Fenster) · aktuell.
+function verState(rep: RepView, v?: OriginVersions) {
+  const source = rep.currentVersion;
+  const active = v?.active ?? null;
+  const latest = (v?.versions ?? []).reduce<number | null>((a, x) => Math.max(a ?? 0, x.version), (v?.versions?.length ? 0 : null));
+  const needsUpload = source > (latest ?? 0);
+  const staged = latest != null && active != null && latest > active;
+  return { source, active, latest, needsUpload, staged };
+}
+
+function VersionLine({ rep, v }: { rep: RepView; v?: OriginVersions }) {
+  const { source, active, needsUpload, staged, latest } = verState(rep, v);
+  const out = active != null ? `v${active}` : '—';
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 10.5, fontFamily: 'monospace' }}>
-      <span style={{ color: '#4a5568' }}>Quelle <strong>v{src}</strong></span>
+      <span style={{ color: '#4a5568' }}>Quelle <strong>v{source}</strong></span>
       <span style={{ color: '#cbd5e0' }}>·</span>
       <span style={{ color: out === '—' ? '#a0aec0' : '#276749' }}>ausgeliefert <strong>{out}</strong></span>
-      {(behind || ahead) && (
-        <span style={{
-          padding: '0 6px', borderRadius: 999, border: '1px solid #fbd38d',
-          background: '#fffaf0', color: '#c05621', fontWeight: 700,
-        }}>{ahead ? 'nicht ausgeliefert' : `${src - dvNum} ungeliefert`}</span>
-      )}
+      {needsUpload ? (
+        <span style={{ padding: '0 6px', borderRadius: 999, border: '1px solid #fbd38d', background: '#fffaf0', color: '#c05621', fontWeight: 700 }}>
+          {active != null ? `${source - active} ungeliefert` : 'nicht ausgeliefert'}
+        </span>
+      ) : staged ? (
+        <span style={{ padding: '0 6px', borderRadius: 999, border: '1px solid #bee3f8', background: '#ebf8ff', color: '#2b6cb0', fontWeight: 700 }}>
+          ● v{latest} gestaged
+        </span>
+      ) : null}
     </div>
   );
 }
 
-function CommittedRow({ rep, delivered, release }: { rep: RepView; delivered?: Delivered; release: ReleaseState }) {
-  const src = rep.currentVersion;
-  const dvRaw = delivered?.version ?? null;
-  const dvNum = typeof dvRaw === 'number' ? dvRaw : (typeof dvRaw === 'string' ? parseInt(dvRaw.replace(/^v/i, ''), 10) : NaN);
-  const pending = !delivered?.published || (Number.isFinite(dvNum) && src > dvNum);   // gibt es was auszuliefern?
+function CommittedRow({ rep, v, release }: { rep: RepView; v?: OriginVersions; release: ReleaseState }) {
+  const { source, needsUpload, staged } = verState(rep, v);
   const busy = release.busyId === rep.id;
   const msg = release.msg?.id === rep.id ? release.msg : null;
   return (
@@ -299,20 +302,20 @@ function CommittedRow({ rep, delivered, release }: { rep: RepView; delivered?: D
       {repHead(rep, <span style={committedBadge}>committet v{rep.currentVersion}</span>)}
       {partRow(rep)}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-        <VersionLine rep={rep} delivered={delivered} />
+        <VersionLine rep={rep} v={v} />
         <span style={{ flex: 1 }} />
         {release.canRelease && (
           <button
             onClick={() => release.onRelease(rep)}
-            disabled={busy || !pending}
-            title={pending ? 'Release: dieses Bundle nach R2 ausliefern (Auftraggeber = diese Rep)' : 'Aktuelle Version ist bereits ausgeliefert'}
+            disabled={busy || !needsUpload}
+            title={needsUpload ? 'Release: dieses Bundle nach R2 ausliefern (bzw. stagen, je Drossel)' : staged ? 'Hochgeladen — wartet aufs Drossel-Fenster' : 'Aktuelle Version ist bereits ausgeliefert'}
             style={{
               fontSize: 11.5, fontWeight: 700, padding: '5px 12px', borderRadius: 5,
-              border: `1px solid ${pending ? '#2b6cb0' : '#cbd5e0'}`,
-              background: busy ? '#bee3f8' : pending ? '#2b6cb0' : '#edf2f7',
-              color: pending ? '#fff' : '#a0aec0', cursor: busy || !pending ? 'default' : 'pointer',
+              border: `1px solid ${needsUpload ? '#2b6cb0' : '#cbd5e0'}`,
+              background: busy ? '#bee3f8' : needsUpload ? '#2b6cb0' : '#edf2f7',
+              color: needsUpload ? '#fff' : '#a0aec0', cursor: busy || !needsUpload ? 'default' : 'pointer',
             }}
-          >{busy ? '⊕ liefere …' : pending ? `⊕ ausliefern v${src}` : '✓ ausgeliefert'}</button>
+          >{busy ? '⊕ liefere …' : needsUpload ? `⊕ ausliefern v${source}` : staged ? '✓ gestaged' : '✓ ausgeliefert'}</button>
         )}
       </div>
       {msg && (
@@ -340,18 +343,18 @@ function Caret({ label, count, open, onClick, level }: {
   );
 }
 
-function BindingGroup({ label, reps, delivered, release }: { label: string; reps: RepView[]; delivered: Record<string, Delivered>; release: ReleaseState }) {
+function BindingGroup({ label, reps, lib, release }: { label: string; reps: RepView[]; lib: Record<string, OriginVersions>; release: ReleaseState }) {
   return (
     <div>
       <div style={{ fontSize: 9.5, fontFamily: 'monospace', color: '#a0aec0', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 5 }}>{label}</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {reps.map((rep) => <CommittedRow key={rep.id} rep={rep} delivered={delivered[rep.id]} release={release} />)}
+        {reps.map((rep) => <CommittedRow key={rep.id} rep={rep} v={lib[rep.id]} release={release} />)}
       </div>
     </div>
   );
 }
 
-function RepTree({ reps, delivered, release }: { reps: RepView[]; delivered: Record<string, Delivered>; release: ReleaseState }) {
+function RepTree({ reps, lib, release }: { reps: RepView[]; lib: Record<string, OriginVersions>; release: ReleaseState }) {
   const tree = useMemo(() => buildTree(reps), [reps]);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const open = (k: string) => !collapsed.has(k);
@@ -379,8 +382,8 @@ function RepTree({ reps, delivered, release }: { reps: RepView[]; delivered: Rec
                       <Caret label={reg.region} count={reg.reps.length} open={open(rk)} onClick={() => toggle(rk)} level={1} />
                       {open(rk) && (
                         <div style={{ marginLeft: 14, marginTop: 5, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                          {regional.length > 0 && <BindingGroup label="regional gebunden" reps={regional} delivered={delivered} release={release} />}
-                          {unbound.length > 0 && <BindingGroup label="ohne regionale Bindung" reps={unbound} delivered={delivered} release={release} />}
+                          {regional.length > 0 && <BindingGroup label="regional gebunden" reps={regional} lib={lib} release={release} />}
+                          {unbound.length > 0 && <BindingGroup label="ohne regionale Bindung" reps={unbound} lib={lib} release={release} />}
                         </div>
                       )}
                     </div>
