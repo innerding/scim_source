@@ -36,8 +36,7 @@ import type { TelcoLoadState } from '../telco-load/telcoLoad.types';
 import SystemPanel from './panels/SystemPanel';
 import AiInterfacePanel from './panels/AiInterfacePanel';
 import CatalogTab from './panels/CatalogTab';
-import { useRole, useModeSwitch, ROLE_ORDER, isEditorRole } from './RoleContext';
-import type { Role } from './RoleContext';
+import { useRole, useModeSwitch, isEditorRole } from './RoleContext';
 import V01PackagesPanel from './panels/V01PackagesPanel';
 import V02RegionDetailPanel from './panels/V02RegionDetailPanel';
 import V03ActiveMonitorPanel from './panels/V03ActiveMonitorPanel';
@@ -1367,60 +1366,8 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
   return tabContent;
 }
 
-// ── Modus-Tabs (Rollen-Kaskade) auf den Regio-Panels ─────────────────────────
-// Reihenfolge von links: Kartography (alle) · Review (Analyst+Operator) · Operations (nur Operator).
-// Ein Rolle sieht die Tabs ab ihrer Stufe abwärts; der aktive Tab = effektive Rolle (= Footer-Diode).
-// Klick schaltet den Modus (nur abwärts). Rep-Editor: nur Kartography (kein Schalten).
-const MODE_META: Record<Role, { label: string; color: string }> = {
-  regio_editor: { label: 'SCIM-Kartography', color: '#805ad5' },
-  analyst:      { label: 'Review',           color: '#4299e1' },
-  operator:     { label: 'Operations',       color: '#48bb78' },
-  reg_editor:   { label: 'SCIM-Kartography', color: '#805ad5' },   // echtes Login: keine Tabs
-  rep_editor:   { label: 'SCIM-Kartography', color: '#dd6b20' },
-};
-
-// Sichtbare Modus-Tabs je Diode-Rolle: Operator = Operations + Kartography (KEIN Review,
-// denn Review = Operator-Panel als Sandbox); Analyst = nur Review (KEIN Kartography);
-// kombinierter Editor = nur Kartography. Echte Editor-Logins (reg/rep) = terminal.
-const VISIBLE_MODE_TABS: Partial<Record<Role, Role[]>> = {
-  operator:     ['operator', 'regio_editor'],
-  analyst:      ['analyst'],
-  regio_editor: ['regio_editor'],
-};
-
-function ModeTabs() {
-  const mode = useModeSwitch();
-  if (!mode) return null;
-  // Anzeige Kartography (links) → … → Operations (rechts): Index absteigend.
-  const visible = (VISIBLE_MODE_TABS[mode.effective] ?? [])
-    .map((r) => ({ r, i: ROLE_ORDER.indexOf(r) }))
-    .sort((a, b) => b.i - a.i);
-  if (visible.length <= 1) return null;   // 1 Tab → kein Tab-Balken (nur das Panel)
-  return (
-    <div style={{ display: 'flex', flexShrink: 0, background: '#fff', borderBottom: '1px solid #e2e8f0' }}>
-      {visible.map(({ r }) => {
-        const meta = MODE_META[r];
-        const active = r === mode.activeMode;   // aktiver Tab = Ansicht (NICHT die Diode)
-        const clickable = !active;
-        return (
-          <button
-            key={r}
-            onClick={clickable ? () => mode.setActiveMode(r) : undefined}
-            style={{
-              padding: '8px 16px', fontSize: 12, fontFamily: 'monospace',
-              border: 'none', background: 'transparent', cursor: clickable ? 'pointer' : 'default',
-              color: active ? meta.color : '#718096', fontWeight: active ? 700 : 400,
-              borderBottom: active ? `2px solid ${meta.color}` : '2px solid transparent',
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-            }}
-          >
-            <span style={{ color: meta.color }}>●</span>{meta.label}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
+// Keine Modus-Tabs mehr: die Footer-Diode ist der einzige Rollen-/Ansicht-Schalter.
+// Jede Rolle zeigt genau IHRE Ansicht (Operator=voll · Review=Sandbox · Editor=eingeschränkt).
 
 // ── Geteilte Modus-Ansichten der Regio-Panels (zentral, identisch auf allen 4) ──
 // Kartography (Rep-Editor): die geteilte Drehscheibe. Review (Analyst): vorerst leer.
@@ -1503,8 +1450,7 @@ export default function PanelWorkspace({ activeId, activeTab, onTabChange, resul
       minWidth: 0,
     }}>
       <PanelHeader id={entry.id} title={entry.label} subtitle={subtitle} icon={(entry as { icon?: string }).icon} />
-      {/* Regio-Panel: Modus-Tabs (Rollen-Kaskade Kartography/Review/Operations) auf allen 4. */}
-      {REGION_DASHBOARD_IDS.has(activeId) && <ModeTabs />}
+      {/* Keine Modus-Tabs — die Footer-Diode schaltet die Rolle/Ansicht. */}
       {/* Funktions-TabBar nur im Operator-Inhalt (nicht in Review/Kartography). */}
       {!['P01', 'P02', 'workspace'].includes(activeId) && !regionAlt && tabs.length > 1 && <TabBar tabs={tabs} active={safeTab} onSelect={onTabChange} />}
       {/* Geometry-Editor braucht volle Hoehe ohne Padding */}
