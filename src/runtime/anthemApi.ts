@@ -20,9 +20,11 @@ export async function publishOriginMesh(repId: string, net: { stretches: Array<{
   return res.json() as Promise<{ ok: boolean; repId: string; stretches: number }>;
 }
 
-/** Volles Origin-Bundle (boundary+net+poi-set+asset-set) nach R2 veröffentlichen — P11-CTA „ausspielen". */
-export async function publishOriginBundle(repId: string, bundle: unknown) {
-  const res = await fetch(`${WORKER_URL}/api/origin/${repId}/bundle`, {
+/** Volles Origin-Bundle (boundary+net+poi-set+asset-set) nach R2 veröffentlichen — P11-CTA „ausspielen".
+ *  `by` = Publisher-Name (Provenienz, UX-Gate). */
+export async function publishOriginBundle(repId: string, bundle: unknown, by?: string) {
+  const qs = by ? `?by=${encodeURIComponent(by)}` : '';
+  const res = await fetch(`${WORKER_URL}/api/origin/${repId}/bundle${qs}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', 'X-Scim-Key': UPLOAD_API_KEY ?? '' },
     body: JSON.stringify(bundle),
@@ -32,7 +34,7 @@ export async function publishOriginBundle(repId: string, bundle: unknown) {
 }
 
 // ── Versions-Bibliothek (V01) — Historie + aktiv + Rollback ──────────────────
-export interface OriginVersionEntry { version: number; uploadedAt: string; bytes: number; }
+export interface OriginVersionEntry { version: number; uploadedAt: string; bytes: number; publishedBy?: string; }
 export interface OriginVersions { repId: string; active: number | null; versions: OriginVersionEntry[]; }
 
 /** Versions-Historie einer Rep (alle veröffentlichten Versionen + welche aktiv). Read-only. */
@@ -62,9 +64,10 @@ export async function setReleasePolicy(policy: ReleasePolicy): Promise<void> {
   if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
 }
 
-/** Eine (ältere) Version wieder aktiv schalten = Rollback. Auth-gegated. */
-export async function activateOriginVersion(repId: string, version: number): Promise<void> {
-  const res = await fetch(`${WORKER_URL}/api/origin/${repId}/activate`, {
+/** Eine (ältere) Version wieder aktiv schalten = Rollback. Auth-gegated. `by` = Operator-Name. */
+export async function activateOriginVersion(repId: string, version: number, by?: string): Promise<void> {
+  const qs = by ? `?by=${encodeURIComponent(by)}` : '';
+  const res = await fetch(`${WORKER_URL}/api/origin/${repId}/activate${qs}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-Scim-Key': UPLOAD_API_KEY ?? '' },
     body: JSON.stringify({ version }),
@@ -102,6 +105,7 @@ export interface OriginMeta {
   version?: number | string | null;
   bundlePublished?: boolean;
   bundleUploadedAt?: string | null;
+  publishedBy?: string | null;   // Provenienz: wer hat (zuletzt) ausgespielt
   anthemEndpoint: string;
 }
 

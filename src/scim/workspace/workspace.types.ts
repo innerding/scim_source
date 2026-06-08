@@ -81,6 +81,8 @@ export interface RepresentationFile {
   version?: number;           // Representation-Version; das Origin-Paket erbt sie. Bump je Re-Commit.
   created_at: string;
   note?: string;
+  created_by?: string;        // Provenienz: Ersteller (Editor), UX-Gate-Name
+  committed_by?: string;      // Provenienz: Committer (Operator), UX-Gate-Name
 }
 
 // Zur Laufzeit ist file ein 1:1-Abbild — kein eigener Runtime-Typ noetig.

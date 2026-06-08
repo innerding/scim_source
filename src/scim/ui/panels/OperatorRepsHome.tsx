@@ -57,7 +57,8 @@ export default function OperatorRepsHome({ onJumpTo }: { onJumpTo: (panelId: str
   const mode = useModeSwitch();
   const userName = useUserName();
   const activeMode = mode?.activeMode ?? role;
-  const live = (mode?.real ?? role) === activeMode && activeMode !== 'analyst';   // committen nur live (Operator)
+  // Committen/Release = nur echter Operator in Operator-Sicht (nicht Vorschau/Analyst).
+  const live = (mode?.real ?? role) === 'operator' && activeMode === 'operator';
 
   const reps = useMemo(() => repsForActor(actorFrom(userName, activeMode)), [userName, activeMode]);
   const committed = reps.filter((r) => r.state === 'committed');
@@ -76,7 +77,7 @@ export default function OperatorRepsHome({ onJumpTo }: { onJumpTo: (panelId: str
     if (!repObj) return;
     setInspectorAsset({ kind: 'representation', id: rep.id });   // Auftraggeber = genau diese Rep
     setReleaseBusy(rep.id); setReleaseMsg(null);
-    const res = await releaseRep(repObj);
+    const res = await releaseRep(repObj, userName || 'operator');
     setReleaseMsg({
       id: rep.id, ok: res.ok,
       text: res.ok ? `ausgeliefert v${res.version} · ${((res.bytes ?? 0) / 1024).toFixed(1)} kB` : (res.error ?? 'Fehler'),
@@ -204,6 +205,12 @@ function CommittedRow({ rep, v, release }: { rep: RepView; v?: OriginVersions; r
     }}>
       {repHead(rep, <span style={committedBadge}>committet v{rep.currentVersion}</span>)}
       {partRow(rep)}
+      {(rep.createdBy || rep.committedBy) && (
+        <div style={{ fontSize: 10, color: '#718096', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          {rep.createdBy && <span>erstellt von <strong style={{ color: '#4a5568' }}>{rep.createdBy}</strong></span>}
+          {rep.committedBy && <span>committet von <strong style={{ color: '#4a5568' }}>{rep.committedBy}</strong></span>}
+        </div>
+      )}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
         <VersionLine rep={rep} v={v} />
         <span style={{ flex: 1 }} />

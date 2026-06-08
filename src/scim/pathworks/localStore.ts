@@ -108,6 +108,7 @@ export function repsForActor(actor: Actor): RepView[] {
     views.push({
       id: r.id, name: r.name, regionId, regionLabel: geo?.region ?? '—', nationLabel: geo?.nation ?? undefined,
       binding, state: 'committed', currentVersion: r.version ?? 1, origin: 'committed',
+      createdBy: r.created_by, committedBy: r.committed_by,
       catalogId: r.catalog_id ?? null, geometryId: r.geometry_id ?? null,
       parts: { geometry: !!r.geometry_id, wegnetz: !!r.wegnetz_id, catalog: !!r.catalog_id, thresholds: true },
       updatedAt: undefined,

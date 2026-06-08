@@ -10,7 +10,7 @@ import {
   fetchReleasePolicy, setReleasePolicy, type ReleasePolicy,
 } from '../../../runtime/anthemApi';
 import { releaseRep } from '../../sensus/release';
-import { useRole, useModeSwitch } from '../RoleContext';
+import { useRole, useModeSwitch, useUserName } from '../RoleContext';
 
 interface Row {
   id: string; name: string; region: string;
@@ -21,8 +21,10 @@ interface Row {
 export default function ReleaseDrosselPanel() {
   const role = useRole();
   const mode = useModeSwitch();
-  const activeMode = mode?.activeMode ?? role;
-  const live = (mode?.real ?? role) === activeMode && activeMode !== 'analyst';
+  const userName = useUserName();
+  // Policy setzen + Release/Stagen = nur Operator (echtes Login). Editor/Analyst
+  // sehen den Monitor read-only (Info).
+  const live = (mode?.real ?? role) === 'operator';
   const configured = anthemPublishConfigured();
 
   const repIds = useMemo(() => REPRESENTATIONS.map((r) => r.id), []);
@@ -65,7 +67,7 @@ export default function ReleaseDrosselPanel() {
     for (const row of toRelease) {
       const repObj = REPRESENTATIONS.find((r) => r.id === row.id);
       if (!repObj) continue;
-      const res = await releaseRep(repObj);
+      const res = await releaseRep(repObj, userName || 'operator');
       const verb = policy.mode === 'scheduled' ? 'gestaged' : 'ausgeliefert';
       setLog((l) => [...l, res.ok ? `✓ ${row.name} → ${verb} v${res.version}` : `✗ ${row.name}: ${res.error}`]);
     }

@@ -5,7 +5,7 @@
 // Release/Drossel, nicht mehr der alte ScimBundle-Pfad.
 import { useEffect, useMemo, useState } from 'react';
 import { AppManifestBadge } from '../AppManifestInfo';
-import { useRole, useModeSwitch } from '../RoleContext';
+import { useRole, useModeSwitch, useUserName } from '../RoleContext';
 import { REPRESENTATIONS, geometryById } from '../../workspace/workspace.registry';
 import {
   fetchOriginVersions, activateOriginVersion, anthemReadConfigured, anthemPublishConfigured,
@@ -47,10 +47,12 @@ const fmtKB = (n: number) => `${(n / 1024).toFixed(1)} kB`;
 export default function V01PackagesPanel() {
   const role = useRole();
   const mode = useModeSwitch();
-  const activeMode = mode?.activeMode ?? role;
-  const live = (mode?.real ?? role) === activeMode && activeMode !== 'analyst';
+  const userName = useUserName();
+  // Aktivieren/Rollback = nur Operator (echtes Login). Editor/Analyst sehen die
+  // Bibliothek read-only (Info), können aber nichts ausspielen.
+  const isOperator = (mode?.real ?? role) === 'operator';
   const readConfigured = anthemReadConfigured();
-  const canActivate = live && anthemPublishConfigured();
+  const canActivate = isOperator && anthemPublishConfigured();
 
   const repList = useMemo(() => REPRESENTATIONS.map((r) => ({
     id: r.id, name: r.name, region: r.geometry_id ? geometryById(r.geometry_id)?.region : undefined,
@@ -76,7 +78,7 @@ export default function V01PackagesPanel() {
 
   const onActivate = async (repId: string, version: number) => {
     setBusy(`${repId}#${version}`); setError(null);
-    try { await activateOriginVersion(repId, version); await load(); }
+    try { await activateOriginVersion(repId, version, userName || 'operator'); await load(); }
     catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setBusy(null); }
   };
@@ -142,6 +144,7 @@ export default function V01PackagesPanel() {
                       <span style={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 700, color: '#2d3748', minWidth: 34 }}>v{ver.version}</span>
                       <span style={{ fontSize: 10.5, color: '#718096' }}>{new Date(ver.uploadedAt).toLocaleString('de')}</span>
                       <span style={{ fontSize: 10.5, fontFamily: 'monospace', color: '#a0aec0' }}>{fmtKB(ver.bytes)}</span>
+                      {ver.publishedBy && <span style={{ fontSize: 10, color: '#718096' }}>von <strong style={{ color: '#4a5568' }}>{ver.publishedBy}</strong></span>}
                       <span style={{ flex: 1 }} />
                       {isActive ? (
                         <span style={{ fontSize: 10, fontFamily: 'monospace', fontWeight: 700, color: '#276749', background: '#fff', border: '1px solid #9ae6b4', borderRadius: 999, padding: '1px 9px' }}>● aktiv ausgeliefert</span>

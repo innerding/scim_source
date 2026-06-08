@@ -9,6 +9,7 @@ import {
 } from '../../../runtime/pathworksApi';
 import { commitDraftToRepo, isDraftCommittable } from '../../pathworks/commitDraft';
 import { knownPlacements } from '../../pathworks/localStore';
+import { useUserName } from '../RoleContext';
 
 function PartBadge({ on, label }: { on: boolean; label: string }) {
   return (
@@ -20,6 +21,7 @@ function PartBadge({ on, label }: { on: boolean; label: string }) {
 }
 
 export default function SubmissionsQueue({ live, onCommitted }: { live: boolean; onCommitted: () => void }) {
+  const userName = useUserName();
   const [subs, setSubs] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,7 +46,11 @@ export default function SubmissionsQueue({ live, onCommitted }: { live: boolean;
     setBusyId(s.id); setMsg(null);
     const today = new Date().toISOString().slice(0, 10);
     const p = placeOf(s);
-    const res = await commitDraftToRepo(s.draft, today, { nation: p.nation || undefined, region: p.region || undefined });
+    const res = await commitDraftToRepo(
+      s.draft, today,
+      { nation: p.nation || undefined, region: p.region || undefined },
+      { createdBy: s.owner, committedBy: userName || 'operator' },
+    );
     if (res.ok) {
       try { await withdrawSubmission(s.id); } catch { /* queue-Eintrag bleibt evtl. */ }
       setMsg({ id: s.id, ok: true, text: res.text });

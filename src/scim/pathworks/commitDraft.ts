@@ -42,7 +42,9 @@ export interface CommitDraftResult { ok: boolean; text: string; url?: string; }
 // änderbar; wird in die Geometrie-Properties geschrieben → der Baum sortiert die
 // committete Rep automatisch richtig ein.
 export async function commitDraftToRepo(
-  d: Draft, today: string, placement?: { nation?: string; region?: string },
+  d: Draft, today: string,
+  placement?: { nation?: string; region?: string },
+  provenance?: { createdBy?: string; committedBy?: string },
 ): Promise<CommitDraftResult> {
   if (!isDraftCommittable(d) || !d.boundary || !d.net_masked) {
     return { ok: false, text: 'Nicht committbar (braucht Boundary + maskiertes Netz).' };
@@ -70,6 +72,9 @@ export async function commitDraftToRepo(
     schema: 'scim3_representation_v1', id: repId, name: d.name || slug,
     geometry_id: slug, catalog_id: d.catalog_id || undefined, wegnetz_id: slug,
     version: nextVersion, created_at: today, note: 'via Pathworks-Commit',
+    // Provenienz: Ersteller (Editor) + Committer (Operator) — UX-Gate-Namen.
+    ...(provenance?.createdBy ? { created_by: provenance.createdBy } : {}),
+    ...(provenance?.committedBy ? { committed_by: provenance.committedBy } : {}),
   };
   // Reihenfolge: Boundary → Wegnetz → Representation (Keystone zuletzt).
   const steps: [string, string, string][] = [

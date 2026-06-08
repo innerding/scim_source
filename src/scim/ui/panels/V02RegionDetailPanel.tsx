@@ -3,7 +3,7 @@
 // aktiv + Rollback. Gleiche Quelle wie V01 (Origin-Pfad), nur regional gefiltert.
 import { useEffect, useMemo, useState } from 'react';
 import { REGION_MAP, canonicalRepId } from './V01PackagesPanel';
-import { useRole, useModeSwitch } from '../RoleContext';
+import { useRole, useModeSwitch, useUserName } from '../RoleContext';
 import {
   fetchOriginVersions, activateOriginVersion, anthemReadConfigured, anthemPublishConfigured,
   type OriginVersions,
@@ -16,6 +16,7 @@ const fmtKB = (n: number) => `${(n / 1024).toFixed(1)} kB`;
 function RepVersionsSection({ repId, repLabel, repIcon, canActivate }: {
   repId: string | null; repLabel: string; repIcon: string; canActivate: boolean;
 }) {
+  const userName = useUserName();
   const [data, setData] = useState<OriginVersions | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,7 +34,7 @@ function RepVersionsSection({ repId, repLabel, repIcon, canActivate }: {
   const onActivate = async (version: number) => {
     if (!repId) return;
     setBusy(version); setError(null);
-    try { await activateOriginVersion(repId, version); await load(); }
+    try { await activateOriginVersion(repId, version, userName || 'operator'); await load(); }
     catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setBusy(null); }
   };
@@ -71,6 +72,7 @@ function RepVersionsSection({ repId, repLabel, repIcon, canActivate }: {
               <span style={{ fontFamily: 'monospace', fontSize: 13, fontWeight: 700, color: '#2d3748', minWidth: 34 }}>v{ver.version}</span>
               <span style={{ fontSize: 10.5, color: '#718096' }}>{new Date(ver.uploadedAt).toLocaleString('de')}</span>
               <span style={{ fontSize: 10.5, fontFamily: 'monospace', color: '#a0aec0' }}>{fmtKB(ver.bytes)}</span>
+              {ver.publishedBy && <span style={{ fontSize: 10, color: '#718096' }}>von <strong style={{ color: '#4a5568' }}>{ver.publishedBy}</strong></span>}
               <span style={{ flex: 1 }} />
               {isActive ? (
                 <span style={{ fontSize: 10, fontFamily: 'monospace', fontWeight: 700, color: '#276749', background: '#fff', border: '1px solid #9ae6b4', borderRadius: 999, padding: '2px 10px' }}>● aktiv ausgeliefert</span>
@@ -93,9 +95,8 @@ function RepVersionsSection({ repId, repLabel, repIcon, canActivate }: {
 export default function V02RegionDetailPanel() {
   const role = useRole();
   const mode = useModeSwitch();
-  const activeMode = mode?.activeMode ?? role;
-  const live = (mode?.real ?? role) === activeMode && activeMode !== 'analyst';
-  const canActivate = live && anthemPublishConfigured();
+  const isOperator = (mode?.real ?? role) === 'operator';   // Aktivieren = nur Operator
+  const canActivate = isOperator && anthemPublishConfigured();
 
   const [selectedRegionId, setSelectedRegionId] = useState(REGION_MAP[0].id);
   const region = useMemo(() => REGION_MAP.find((r) => r.id === selectedRegionId) ?? REGION_MAP[0], [selectedRegionId]);

@@ -8,10 +8,10 @@ import type { Representation } from '../workspace/workspace.types';
 
 export interface ReleaseResult { ok: boolean; version: number; bytes?: number; error?: string; }
 
-export async function releaseRep(rep: Representation): Promise<ReleaseResult> {
+export async function releaseRep(rep: Representation, publishedBy?: string): Promise<ReleaseResult> {
   const version = rep.version ?? 1;
   try {
-    const res = await publishOriginBundle(rep.id, resolveOriginReference(rep).bundle);
+    const res = await publishOriginBundle(rep.id, resolveOriginReference(rep).bundle, publishedBy);
     return { ok: true, version, bytes: res.bytes };
   } catch (e) {
     return { ok: false, version, error: (e as Error).message };

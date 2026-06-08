@@ -123,6 +123,8 @@ export interface RepView {
   currentVersion: number;     // 0 = nie committet
   origin: 'draft' | 'committed';
   owner?: string;             // Ersteller (Editor) — bei Drafts gesetzt
+  createdBy?: string;         // Provenienz (committet): Ersteller laut Rep-Datei
+  committedBy?: string;       // Provenienz (committet): wer hat committet
   // Ziel-Ids für die Rep-Bindung (welche Rep die Werkzeuge bedienen):
   //   draft     → der Drawer öffnet die Rep über ihre eigene id ('draft-…')
   //   committed → über geometryId

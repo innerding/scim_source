@@ -9,6 +9,7 @@ import { useAuftraggeberRep } from '../../../runtime/useAuftraggeberRep';
 import { resolveOriginReference } from '../../sensus/originReference';
 import { publishOriginBundle, anthemPublishConfigured } from '../../../runtime/anthemApi';
 import { mvpUrl } from '../../../runtime/appUrl';
+import { useRole, useModeSwitch } from '../RoleContext';
 import QrCell from '../QrCell';
 
 const STEPS: { n: number; head: string; body: string }[] = [
@@ -21,9 +22,12 @@ const STEPS: { n: number; head: string; body: string }[] = [
 export default function TransferView() {
   const { goStation } = useWorkspaceNav();
   const rep = useAuftraggeberRep();
+  const role = useRole();
+  const mode = useModeSwitch();
+  const isOperator = (mode?.real ?? role) === 'operator';   // Ausspielen = nur Operator
   const [phase, setPhase] = useState<'idle' | 'publishing' | 'done' | 'error'>('idle');
   const [msg, setMsg] = useState('');
-  const configured = anthemPublishConfigured();
+  const configured = anthemPublishConfigured() && isOperator;
 
   const publish = async () => {
     setPhase('publishing'); setMsg('');
@@ -79,7 +83,8 @@ export default function TransferView() {
         >
           {phase === 'publishing' ? '⏳ lädt…' : '⊕ Origin-Bundle veröffentlichen'}
         </button>
-        {!configured && <span style={{ fontSize: 10.5, color: '#a0aec0', marginLeft: 10 }}>Worker nicht konfiguriert</span>}
+        {!isOperator && <span style={{ fontSize: 10.5, color: '#c05621', marginLeft: 10, fontStyle: 'italic' }}>nur Operator — du siehst das nur zur Info</span>}
+        {isOperator && !anthemPublishConfigured() && <span style={{ fontSize: 10.5, color: '#a0aec0', marginLeft: 10 }}>Worker nicht konfiguriert</span>}
         {msg && <div style={{ fontSize: 11, color: phase === 'error' ? '#c53030' : '#276749', marginTop: 8, fontFamily: 'monospace', wordBreak: 'break-all' }}>{msg}</div>}
         <div style={{ fontSize: 10.5, color: '#a0aec0', marginTop: 6, lineHeight: 1.5 }}>Schnürt boundary + net + poi-set (Container) + asset-set zu EINEM JSON → R2. Die Runtime holt es über <code>?rep={rep.id}</code>.</div>
 

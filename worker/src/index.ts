@@ -236,14 +236,15 @@ async function readPolicy(env: Env): Promise<ReleasePolicy> {
 async function activateLatestStaged(env: Env, repId: string, nowIso: string): Promise<boolean> {
   const idxObj = await env.PACKAGES.get(`origin/${repId}/versions-index.json`);
   if (!idxObj) return false;
-  const idx = await idxObj.json() as { active: number | null; versions: Array<{ version: number; uploadedAt: string; bytes: number }> };
+  const idx = await idxObj.json() as { active: number | null; versions: Array<{ version: number; uploadedAt: string; bytes: number; publishedBy?: string }> };
   const latest = (idx.versions ?? []).reduce((a, v) => Math.max(a, v.version), 0);
   if (!(latest > (idx.active ?? 0))) return false;
   const verObj = await env.PACKAGES.get(`origin/${repId}/versions/v${latest}.json`);
   if (!verObj) return false;
   const verJson = await verObj.text();
+  const pubBy = idx.versions.find((v) => v.version === latest)?.publishedBy;
   await env.PACKAGES.put(`origin/${repId}/bundle.json`, verJson, { httpMetadata: { contentType: 'application/json', cacheControl: 'public, max-age=300' } });
-  await env.PACKAGES.put(`origin/${repId}/bundle-meta.json`, JSON.stringify({ bytes: verJson.length, uploadedAt: nowIso, version: latest }), { httpMetadata: { contentType: 'application/json', cacheControl: 'no-store' } });
+  await env.PACKAGES.put(`origin/${repId}/bundle-meta.json`, JSON.stringify({ bytes: verJson.length, uploadedAt: nowIso, version: latest, publishedBy: pubBy }), { httpMetadata: { contentType: 'application/json', cacheControl: 'no-store' } });
   idx.active = latest;
   await env.PACKAGES.put(`origin/${repId}/versions-index.json`, JSON.stringify(idx), { httpMetadata: { contentType: 'application/json', cacheControl: 'no-store' } });
   return true;
@@ -523,6 +524,7 @@ export default {
       const verNum = typeof bv === 'number' ? bv : (typeof bv === 'string' ? parseInt(String(bv).replace(/^v/i, ''), 10) : NaN);
       const ver = Number.isFinite(verNum) ? verNum : 1;
       const uploadedAt = new Date().toISOString();
+      const by = url.searchParams.get('by') ?? undefined;   // Provenienz: Publisher (Operator-Name)
 
       // (1) versionierte Kopie behalten = die Versions-Bibliothek (Historie/Rollback).
       await env.PACKAGES.put(`origin/${repId}/versions/v${ver}.json`, bundleJson, {
@@ -530,9 +532,9 @@ export default {
       });
       // (2) Versions-Index laden/aktualisieren.
       const idxObj0 = await env.PACKAGES.get(`origin/${repId}/versions-index.json`);
-      const idx = idxObj0 ? await idxObj0.json() as { active: number | null; versions: Array<{ version: number; uploadedAt: string; bytes: number }> } : { active: null, versions: [] };
+      const idx = idxObj0 ? await idxObj0.json() as { active: number | null; versions: Array<{ version: number; uploadedAt: string; bytes: number; publishedBy?: string }> } : { active: null, versions: [] };
       idx.versions = (idx.versions ?? []).filter((v) => v.version !== ver);
-      idx.versions.push({ version: ver, uploadedAt, bytes: bundleJson.length });
+      idx.versions.push({ version: ver, uploadedAt, bytes: bundleJson.length, publishedBy: by });
       idx.versions.sort((a, b) => b.version - a.version);
 
       // (3) DROSSEL: bei „manual" sofort aktiv; bei „scheduled" nur STAGEN (aktiv
@@ -545,7 +547,7 @@ export default {
         await env.PACKAGES.put(`origin/${repId}/bundle.json`, bundleJson, {
           httpMetadata: { contentType: 'application/json', cacheControl: 'public, max-age=300' },
         });
-        await env.PACKAGES.put(`origin/${repId}/bundle-meta.json`, JSON.stringify({ bytes: bundleJson.length, uploadedAt, version: ver }), {
+        await env.PACKAGES.put(`origin/${repId}/bundle-meta.json`, JSON.stringify({ bytes: bundleJson.length, uploadedAt, version: ver, publishedBy: by }), {
           httpMetadata: { contentType: 'application/json', cacheControl: 'no-store' },
         });
       }
@@ -605,11 +607,13 @@ export default {
         httpMetadata: { contentType: 'application/json', cacheControl: 'public, max-age=300' },
       });
       const at = new Date().toISOString();
-      await env.PACKAGES.put(`origin/${repId}/bundle-meta.json`, JSON.stringify({ bytes: verJson.length, uploadedAt: at, version: av }), {
+      const idxObj2 = await env.PACKAGES.get(`origin/${repId}/versions-index.json`);
+      const idx2 = idxObj2 ? await idxObj2.json() as { active: number; versions: Array<{ version: number; uploadedAt: string; bytes: number; publishedBy?: string }> } : { active: av, versions: [] };
+      // Publisher der aktivierten Version übernehmen (Rollback ändert den Publisher nicht).
+      const pubBy = idx2.versions.find((v) => v.version === av)?.publishedBy;
+      await env.PACKAGES.put(`origin/${repId}/bundle-meta.json`, JSON.stringify({ bytes: verJson.length, uploadedAt: at, version: av, publishedBy: pubBy }), {
         httpMetadata: { contentType: 'application/json', cacheControl: 'no-store' },
       });
-      const idxObj2 = await env.PACKAGES.get(`origin/${repId}/versions-index.json`);
-      const idx2 = idxObj2 ? await idxObj2.json() as { active: number; versions: Array<{ version: number; uploadedAt: string; bytes: number }> } : { active: av, versions: [] };
       idx2.active = av;
       await env.PACKAGES.put(`origin/${repId}/versions-index.json`, JSON.stringify(idx2), {
         httpMetadata: { contentType: 'application/json', cacheControl: 'no-store' },
@@ -680,19 +684,20 @@ export default {
       // Auslieferungs-Version + Bundle-Status aus der Bundle-Meta (das, was die
       // Ziel-App via ?rep= lädt). „ausgeliefert vM" in SCIM (Phase 1).
       const bundleMetaObj = await env.PACKAGES.get(`origin/${repId}/bundle-meta.json`);
-      const bm = bundleMetaObj ? await bundleMetaObj.json() as { version?: unknown; uploadedAt?: string } : null;
+      const bm = bundleMetaObj ? await bundleMetaObj.json() as { version?: unknown; uploadedAt?: string; publishedBy?: string } : null;
       const version = bm && (typeof bm.version === 'number' || typeof bm.version === 'string') ? bm.version : null;
       const bundlePublished = !!bm;
       const bundleUploadedAt = bm?.uploadedAt ?? null;
+      const publishedBy = bm?.publishedBy ?? null;
       const metaObj = await env.PACKAGES.get(`origin/${repId}/meta.json`);
       if (metaObj) {
         const m = await metaObj.json() as { stretches: number; bytes: number; uploadedAt: string };
-        return json({ repId, published: true, ...m, version, bundlePublished, bundleUploadedAt, anthemEndpoint });
+        return json({ repId, published: true, ...m, version, bundlePublished, bundleUploadedAt, publishedBy, anthemEndpoint });
       }
       // Fallback: Netz da, aber (älter) ohne meta → Größe via head.
       const head = await env.PACKAGES.head(`origin/${repId}/mesh.json`);
-      if (head) return json({ repId, published: true, stretches: null, bytes: head.size, uploadedAt: null, version, bundlePublished, bundleUploadedAt, anthemEndpoint });
-      return json({ repId, published: bundlePublished, stretches: null, bytes: null, uploadedAt: null, version, bundlePublished, bundleUploadedAt, anthemEndpoint });
+      if (head) return json({ repId, published: true, stretches: null, bytes: head.size, uploadedAt: null, version, bundlePublished, bundleUploadedAt, publishedBy, anthemEndpoint });
+      return json({ repId, published: bundlePublished, stretches: null, bytes: null, uploadedAt: null, version, bundlePublished, bundleUploadedAt, publishedBy, anthemEndpoint });
     }
 
     // ── POST /api/anthem/:repId/presence ─────────────────────────────────────
