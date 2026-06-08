@@ -47,6 +47,14 @@ const SEED_ANNOTATIONS: Annotation[] = [
     related_panel: 'workspace',
     date: '2026-06-08',
   },
+  {
+    id: 'ann_109',
+    category: 'next_intent',
+    label: 'COMMIT-WORKFLOW — Speichern · Senden zur Review · Committ (+ Auto-Committ)',
+    content: 'COMMIT-WORKFLOW (Stand 2026-06-08, Schale gebaut). DREI STUFEN statt zwei: (1) SPEICHERN = Entwurf, Auto-Save des Overlays (localStorage), Editor WIE Operator, folgenlos fürs System. (2) SENDEN ZUR REVIEW = NUR der Editor: seine gespeicherte Arbeit geht an den Operator (Pathworks Hub) — zur PRÜFUNG, CLUSTERBILDUNG und Weiterausarbeitung. Der Editor committet NIE selbst und bildet KEINE Cluster. (3) COMMITT = NUR der Operator friert in die Rep-VERSION ein (heute = „⬇ Committ"/Plan exportieren → commitToRepo auf main). — REIFE-SCHALTER »Auto-Committ« (je Rep, im Katalog-Kopf, Operator-only): neue Representation → anfangs läuft ALLES über den Operator (manueller Review); ist die Rep eingespielt, legt der Operator Auto-Committ um → Editor-Sends übernehmen automatisch, weitere Pflege OHNE System-Committ je Edit. Clusterbildung soll später AUTOMATISIERT ablaufen → Review-Last schrumpft. — LEBENSZYKLUS: neue Rep = manuell/Operator → Auto-Committ an → Editoren pflegen autonom. — KLASSISCHER REDAKTIONS-FLOW (Entwurf → einreichen → prüfen/freigeben → veröffentlichen) mit Vertrauens-Schnellspur. Passt exakt auf die Rollen-Maske (ann_108): Editor darf nicht committen + nicht clusterbilden; beides macht der Operator beim Review. — HEUTE SCHALE (CatalogTab): „Senden" setzt lokal das Flag scim_catalog_review_pending_<rep> → Operator sieht Badge „● Review ausstehend"; Auto-Committ = Flag scim_catalog_autocommit_<rep>. Cluster-Subkategorie (Ghost-Heimat) ist für Editoren ganz ausgeblendet (Cluster nur lesbar via Cluster-Sort). — OFFEN/später (Pathworks Hub + ACCESS ann_105): echter CROSS-USER-TRANSPORT — Editor↔Operator über verschiedene Geräte braucht eine server-seitige Review-QUEUE je Rep (Worker/R2, wie poi_inbox aber cross-user); die Rep-VERSIONIERUNG + der Commit + die Cluster-Automatisierung wohnen im Pathworks Hub. Dokumentiert auch im pathworks-hub-clipboard (Note WORKFLOW). Farbe reist statisch in Origin mit der Version (ann_107), Anthem nur Last.',
+    related_panel: 'catalog',
+    date: '2026-06-08',
+  },
 
   // ── Plan & Stand (2026-06-04) ───────────────────────────────────────────────
 

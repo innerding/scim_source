@@ -1252,6 +1252,73 @@ function ExportModal({ originalMd, newMd, fileName, onClose, onCommitted }: {
   );
 }
 
+// Senden-zur-Review-Dialog (Editor). Erklärt den 3-stufigen Commit-Workflow und
+// meldet die gespeicherten Änderungen an den Operator (Pathworks Hub).
+function SendReviewModal({ changeCount, autoCommit, onSend, onClose }: {
+  changeCount: number; autoCommit: boolean; onSend: () => void; onClose: () => void;
+}) {
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+    }} onClick={onClose}>
+      <div onClick={(e) => e.stopPropagation()} style={{
+        background: 'white', borderRadius: 10, padding: 24, width: 460, maxWidth: '90vw',
+        boxShadow: '0 20px 60px rgba(0,0,0,0.3)', fontSize: 13, color: '#2d3748',
+      }}>
+        <h3 style={{ margin: '0 0 12px', fontSize: 16, color: '#c05621' }}>⤴ Senden zur Review</h3>
+        <p style={{ margin: '0 0 10px', lineHeight: 1.5 }}>
+          Deine <strong>{changeCount}</strong> gespeicherte{changeCount === 1 ? '' : 'n'} Änderung{changeCount === 1 ? '' : 'en'} gehen
+          an den <strong>Operator</strong> (Pathworks Hub) — zur <strong>Prüfung</strong>,
+          <strong> Clusterbildung</strong> und Freigabe. Der Editor committet nicht selbst.
+        </p>
+        <div style={{
+          background: '#f7fafc', border: '1px solid #e2e8f0', borderRadius: 6,
+          padding: '8px 12px', margin: '0 0 12px', fontSize: 12, lineHeight: 1.6,
+        }}>
+          <div><strong>Speichern</strong> — Entwurf (passiert automatisch)</div>
+          <div style={{ color: '#c05621', fontWeight: 600 }}>▸ Senden zur Review — du bist hier</div>
+          <div><strong>Committ</strong> — Operator friert in die Rep-Version ein</div>
+        </div>
+        {autoCommit ? (
+          <p style={{ margin: '0 0 12px', color: '#22543d', background: '#c6f6d5', padding: '6px 10px', borderRadius: 6, fontSize: 12 }}>
+            ⟳ <strong>Auto-Committ ist an</strong> für diese Rep — dein Send wird automatisch übernommen (reife Representation).
+          </p>
+        ) : (
+          <p style={{ margin: '0 0 12px', color: '#744210', background: '#fefcbf', padding: '6px 10px', borderRadius: 6, fontSize: 12 }}>
+            Auto-Committ ist aus — der Operator prüft manuell, bevor committet wird.
+          </p>
+        )}
+        <p style={{ margin: '0 0 16px', fontSize: 11, color: '#718096', fontStyle: 'italic' }}>
+          Schale: heute setzt „Senden" das Review-Flag (Operator sieht ● Review ausstehend).
+          Der echte Cross-User-Transport (Queue/Server) folgt mit dem Pathworks Hub.
+        </p>
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          <button onClick={onClose} style={{
+            padding: '6px 14px', borderRadius: 6, border: '1px solid #cbd5e0', background: 'white', cursor: 'pointer', fontSize: 13,
+          }}>Abbrechen</button>
+          <button onClick={onSend} style={{
+            padding: '6px 14px', borderRadius: 6, border: '1px solid #dd6b20', background: '#dd6b20', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 600,
+          }}>⤴ Jetzt senden</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Commit-Workflow-Flags (lokale Schale; echter Cross-User-Transport folgt mit
+// Pathworks Hub + Server, siehe ann_106). Drei Stufen: Speichern (Auto-Save) ·
+// Senden zur Review (Editor → Operator-Warteschlange) · Committ (Operator → main).
+// Auto-Committ = Operator-Schalter je Rep: Editor-Sends committen automatisch. ────
+const AUTOCOMMIT_KEY = (repId: string) => `scim_catalog_autocommit_${repId}`;
+const REVIEWPENDING_KEY = (repId: string) => `scim_catalog_review_pending_${repId}`;
+function loadFlag(key: string): boolean {
+  try { return localStorage.getItem(key) === '1'; } catch { return false; }
+}
+function saveFlag(key: string, on: boolean): void {
+  try { if (on) localStorage.setItem(key, '1'); else localStorage.removeItem(key); } catch { /* ignore */ }
+}
+
 // ─── Haupt-Komponente ─────────────────────────────────────────────────────────
 
 export default function CatalogTab({ openCatalogId, onCatalogConsumed }: { onJumpTo?: (panelId: string) => void; openCatalogId?: string | null; onCatalogConsumed?: () => void } = {}) {
@@ -1307,6 +1374,11 @@ export default function CatalogTab({ openCatalogId, onCatalogConsumed }: { onJum
   const [showFlowInfo, setShowFlowInfo] = useState(false);
   const [showChanges, setShowChanges] = useState(false);
   const [clusterSort, setClusterSort] = useState(false);
+  // Commit-Workflow: Senden-Dialog (Editor), Auto-Committ-Schalter (Operator),
+  // Review-Ausstehend-Flag (Editor sendet → Operator sieht Badge). Lokale Schale.
+  const [showSendReview, setShowSendReview] = useState(false);
+  const [autoCommit, setAutoCommit] = useState<boolean>(() => loadFlag(AUTOCOMMIT_KEY(region.id)));
+  const [reviewPending, setReviewPending] = useState<boolean>(() => loadFlag(REVIEWPENDING_KEY(region.id)));
 
   // Token-Präfix-Overrides (Operator-Eingabe im Header). null = der aus der .md
   // geparste Wert gilt. Sobald getippt wird, sticht der Draft, bis Commit/
@@ -1330,6 +1402,8 @@ export default function CatalogTab({ openCatalogId, onCatalogConsumed }: { onJum
     setVerbundDraft(null);
     setSlugDraft(null);
     setIncomingIds(new Set());
+    setAutoCommit(loadFlag(AUTOCOMMIT_KEY(region.id)));
+    setReviewPending(loadFlag(REVIEWPENDING_KEY(region.id)));
   }, [region.id]);
 
   // Sprung mit Ziel-Katalog (z. B. Klick auf den roten Brief im Workspace):
@@ -1369,10 +1443,11 @@ export default function CatalogTab({ openCatalogId, onCatalogConsumed }: { onJum
     }
     return CONTAINER_SYSTEM
       .map((c) => ({ subcategory: c.subcategory, pois: map.get(c.subcategory) ?? [] }))
-      // Cluster-Subkategorie (Ghost-Heimat, ann_048) ist permanent sichtbar,
-      // damit Operator dort Ghosts anlegen kann — auch wenn (noch) leer.
-      .filter((s) => s.subcategory === 'Cluster' || s.pois.length > 0 || editMode);
-  }, [merged, editMode]);
+      // Cluster-Subkategorie (Ghost-Heimat, ann_048) ist die Cluster-Bildung →
+      // permanent sichtbar NUR wenn clusterEdit (Operator/Review). Der Editor
+      // sieht die Ghost-Heimat gar nicht (Cluster nur lesbar via Cluster-Sort).
+      .filter((s) => (s.subcategory === 'Cluster' ? clusterEdit : (s.pois.length > 0 || editMode)));
+  }, [merged, editMode, clusterEdit]);
 
   // Cluster-Sort-Modus: POIs gruppiert nach Cluster, jeder Cluster eine eigene
   // Sektion. Pro Cluster sortiert: Ghost zuerst, dann Identity-Member, dann Rest.
@@ -1416,8 +1491,8 @@ export default function CatalogTab({ openCatalogId, onCatalogConsumed }: { onJum
     if (!clusterSort) return sections;
     return sections
       .map((s) => ({ ...s, pois: s.pois.filter((p) => !p.cluster) }))
-      .filter((s) => s.subcategory === 'Cluster' || s.pois.length > 0 || editMode);
-  }, [sections, clusterSort, editMode]);
+      .filter((s) => (s.subcategory === 'Cluster' ? clusterEdit : (s.pois.length > 0 || editMode)));
+  }, [sections, clusterSort, editMode, clusterEdit]);
 
   const bucketCounts = useMemo(() => {
     const counts = new Map<Bucket, number>();
@@ -1655,11 +1730,49 @@ export default function CatalogTab({ openCatalogId, onCatalogConsumed }: { onJum
           </span>
         )}
         {(merged.dirty_count + merged.new_count + merged.deleted_count > 0 || prefixDirty || placeholderCount > 0) && (
+          isEditorRole(activeMode) ? (
+            // Editor committet NICHT — er sendet zur Review (Operator/Pathworks Hub):
+            // Prüfung + Clusterbildung + Weiterausarbeitung, dann committet der Operator.
+            <button
+              onClick={() => setShowSendReview(true)}
+              title="Senden zur Review: deine gespeicherten Änderungen gehen an den Operator (Pathworks Hub) — zur Prüfung, Clusterbildung und Freigabe. Der Editor committet nicht selbst."
+              style={{ ...btnStyle, background: reviewPending ? '#fffaf0' : '#dd6b20', color: reviewPending ? '#dd6b20' : 'white', borderColor: '#dd6b20', fontWeight: 600 }}
+            >
+              {reviewPending ? '⤴ Review gemeldet' : '⤴ Senden zur Review'}
+            </button>
+          ) : (
+            <button
+              onClick={() => setShowExport(true)}
+              style={{ ...btnStyle, background: '#2f855a', color: 'white', borderColor: '#2f855a', fontWeight: 600 }}
+              title="Committ: Plan exportieren / auf main committen (friert in die Rep-Version ein)."
+            >
+              ⬇ Committ
+            </button>
+          )
+        )}
+        {/* Operator: Review-Ausstehend-Badge + Auto-Committ-Schalter (je Rep). */}
+        {!isEditorRole(activeMode) && reviewPending && (
           <button
-            onClick={() => setShowExport(true)}
-            style={{ ...btnStyle, background: '#2f855a', color: 'white', borderColor: '#2f855a', fontWeight: 600 }}
+            onClick={() => { setReviewPending(false); saveFlag(REVIEWPENDING_KEY(region.id), false); }}
+            title="Ein Editor hat Änderungen zur Review gemeldet. Klick: als gesehen markieren (Transport-Schale; echte Queue folgt mit Pathworks Hub)."
+            style={{ ...btnStyle, background: '#fffaf0', color: '#c05621', borderColor: '#dd6b20', fontWeight: 700 }}
           >
-            ⬇ Plan exportieren
+            ● Review ausstehend
+          </button>
+        )}
+        {!isEditorRole(activeMode) && (
+          <button
+            onClick={() => { const next = !autoCommit; setAutoCommit(next); saveFlag(AUTOCOMMIT_KEY(region.id), next); }}
+            title="Auto-Committ (je Rep): reife Representation → Editor-Sends committen automatisch, ohne manuelle Operator-Prüfung. Aus = jeder Send braucht den Operator. Clusterbildung wird später automatisiert."
+            style={{
+              ...btnStyle,
+              background: autoCommit ? '#2f855a' : 'white',
+              color: autoCommit ? 'white' : '#2d3748',
+              borderColor: autoCommit ? '#2f855a' : '#cbd5e0',
+              fontWeight: 600,
+            }}
+          >
+            {autoCommit ? '⟳ Auto-Committ an' : '⟳ Auto-Committ'}
           </button>
         )}
 
@@ -1790,6 +1903,21 @@ export default function CatalogTab({ openCatalogId, onCatalogConsumed }: { onJum
             setVerbundDraft(null);
             setSlugDraft(null);
           }}
+        />
+      )}
+
+      {showSendReview && (
+        <SendReviewModal
+          changeCount={merged.dirty_count + merged.new_count + merged.deleted_count}
+          autoCommit={loadFlag(AUTOCOMMIT_KEY(region.id))}
+          onSend={() => {
+            // Editor sendet → Review-Ausstehend-Flag setzen (Operator sieht Badge).
+            // Lokale Schale: echter Cross-User-Transport (Queue/R2) folgt mit Pathworks Hub.
+            setReviewPending(true);
+            saveFlag(REVIEWPENDING_KEY(region.id), true);
+            setShowSendReview(false);
+          }}
+          onClose={() => setShowSendReview(false)}
         />
       )}
 

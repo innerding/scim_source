@@ -81,6 +81,25 @@ export function PathworksHubClipboard() {
           (Thresholds/Workspace/Drawer/Katalog) wandern perspektivisch in ein Regio-Dashboard
           unter diesenpark.at. Reihenfolge: erst Umbau + Pathworks, dann Rollen/Logs/Governance.
         </Note>
+        <Note tag="WORKFLOW" title="Commit-Workflow: Speichern · Senden · Committ">
+          Drei Stufen statt zwei. <strong>Speichern</strong> = Entwurf (Auto-Save des Overlays,
+          Editor wie Operator). <strong>Senden zur Review</strong> = nur der Editor: seine
+          gespeicherte Arbeit geht an den Operator (diesen Hub) — zur <em>Prüfung</em>,{' '}
+          <em>Clusterbildung</em> und Weiterausarbeitung. <strong>Committ</strong> = nur der
+          Operator friert in die Rep-<strong>Version</strong> ein. Der Editor committet nie selbst,
+          er bildet auch keine Cluster.
+          <br /><br />
+          Reife-Schalter <strong>»Auto-Committ«</strong> (je Rep, im Katalog-Kopf): Anfangs läuft
+          alles über den Operator (manueller Review); ist die Rep eingespielt, legt der Operator
+          Auto-Committ um → Editor-Sends übernehmen automatisch, weitere Pflege ohne System-Committ.
+          Clusterbildung soll später automatisiert ablaufen.
+          <br /><br />
+          <em>Heute Schale:</em> „Senden" setzt lokal das Review-Flag (Operator sieht
+          „● Review ausstehend"). Der echte <strong>Cross-User-Transport</strong> (Queue/Server,
+          Editor↔Operator über verschiedene Geräte) gehört in den Pathworks Hub + die Governance-/
+          Server-Schicht (ann_105) und wird dort gebaut. Origin trägt die Farbe statisch mit der
+          Version; Anthem nur die Last.
+        </Note>
       </div>
     </div>
   );
