@@ -16,9 +16,11 @@ export function useRole(): Role {
 // Klick schaltet den Modus eine Stufe abwärts; am Ende zurück zur echten Rolle.
 export interface ModeSwitch {
   real: Role;
-  effective: Role;
-  cycle: () => void;
-  set: (r: Role) => void;   // gezielt einen Modus setzen (nur abwärts in der Kaskade)
+  effective: Role;          // = Diode: Rolle/Zugriff (steuert Tab-Verfügbarkeit + Nav)
+  cycle: () => void;        // Footer: Diode eine Stufe abwärts (Ansicht setzt sich zurück)
+  set: (r: Role) => void;   // gezielt die Diode setzen (nur abwärts in der Kaskade)
+  activeMode: Role;         // = aktiver Tab/Ansicht (entkoppelt von der Diode)
+  setActiveMode: (r: Role) => void;   // Tab wählen — ändert NICHT die Diode
 }
 export const ModeSwitchContext = createContext<ModeSwitch | null>(null);
 export function useModeSwitch(): ModeSwitch | null {

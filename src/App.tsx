@@ -15,7 +15,8 @@ import Scim3Footer from './scim/ui/Scim3Footer';
 export default function App() {
   const [role, setRole] = useState<Role | null>(null);
   const [userName, setUserName] = useState<string>('');
-  const [preview, setPreview] = useState<Role | null>(null);   // Modul C: „Als Analyst ansehen"
+  const [preview, setPreview] = useState<Role | null>(null);   // Diode-Vorschau (effektive Rolle)
+  const [activeMode, setActiveModeState] = useState<Role | null>(null);   // aktiver Tab (entkoppelt)
   const result = useScimPipeline();
   // Default-Panel: zuletzt geöffnetes (gemerkt), sonst Pathworks (Hub) — nicht mehr P01.
   const [activeId, setActiveId] = useState<string>(() => {
@@ -65,22 +66,34 @@ export default function App() {
   // Effektive Rolle: man darf nur ABWÄRTS in der Kaskade vorschauen (Operator→Analyst→Rep-Editor).
   const effectiveRole: Role =
     preview && ROLE_ORDER.indexOf(preview) >= ROLE_ORDER.indexOf(role) ? preview : role;
-  // Modus durchklicken: eine Stufe abwärts, am Ende zurück zur echten Rolle.
+  // Diode durchklicken: eine Stufe abwärts, am Ende zurück zur echten Rolle.
+  // Diode-Wechsel setzt die Ansicht (activeMode) auf die neue Diode-Rolle zurück.
   const cycleMode = () => {
     const allowed = ROLE_ORDER.slice(ROLE_ORDER.indexOf(role));   // Rollen ab der eigenen abwärts
     if (allowed.length <= 1) return;                              // Rep-Editor kann nicht wechseln
     const next = allowed[(allowed.indexOf(effectiveRole) + 1) % allowed.length];
     setPreview(next === role ? null : next);
+    setActiveModeState(null);
   };
-  // Gezielt einen Modus setzen (nur abwärts in der Kaskade erlaubt).
+  // Gezielt die Diode setzen (nur abwärts in der Kaskade erlaubt).
   const setMode = (target: Role) => {
     if (ROLE_ORDER.indexOf(target) < ROLE_ORDER.indexOf(role)) return;
     setPreview(target === role ? null : target);
+    setActiveModeState(null);
+  };
+  // Aktiver Tab/Ansicht — entkoppelt von der Diode; nur innerhalb des Verfügbaren
+  // (Index ≥ Diode). Fällt auf die Diode-Rolle zurück, wenn nicht (mehr) verfügbar.
+  const effIdx = ROLE_ORDER.indexOf(effectiveRole);
+  const resolvedActiveMode: Role =
+    activeMode && ROLE_ORDER.indexOf(activeMode) >= effIdx ? activeMode : effectiveRole;
+  const setActiveMode = (target: Role) => {
+    if (ROLE_ORDER.indexOf(target) < effIdx) return;             // nicht verfügbar
+    setActiveModeState(target === effectiveRole ? null : target);
   };
 
   return (
     <RoleContext.Provider value={effectiveRole}>
-     <ModeSwitchContext.Provider value={{ real: role, effective: effectiveRole, cycle: cycleMode, set: setMode }}>
+     <ModeSwitchContext.Provider value={{ real: role, effective: effectiveRole, cycle: cycleMode, set: setMode, activeMode: resolvedActiveMode, setActiveMode }}>
      <UserNameContext.Provider value={userName}>
      <RepresentationProvider>
       <WorkspaceNavProvider value={{ goStation: goTo, activeId, activeTab }}>

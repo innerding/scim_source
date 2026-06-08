@@ -1392,12 +1392,12 @@ function ModeTabs() {
     <div style={{ display: 'flex', flexShrink: 0, background: '#fff', borderBottom: '1px solid #e2e8f0' }}>
       {visible.map(({ r }) => {
         const meta = MODE_META[r];
-        const active = r === mode.effective;
-        const clickable = r !== mode.effective;
+        const active = r === mode.activeMode;   // aktiver Tab = Ansicht (NICHT die Diode)
+        const clickable = !active;
         return (
           <button
             key={r}
-            onClick={clickable ? () => mode.set(r) : undefined}
+            onClick={clickable ? () => mode.setActiveMode(r) : undefined}
             style={{
               padding: '8px 16px', fontSize: 12, fontFamily: 'monospace',
               border: 'none', background: 'transparent', cursor: clickable ? 'pointer' : 'default',
@@ -1444,6 +1444,7 @@ function ReviewPlaceholder() {
 
 export default function PanelWorkspace({ activeId, activeTab, onTabChange, result, onJumpTo, openGeometryId, onGeometryConsumed, openCatalogId, onCatalogConsumed }: Props) {
   const role = useRole();
+  const mode = useModeSwitch();
 
   // Resolve tabs for the current entry
   const entry =
@@ -1477,9 +1478,10 @@ export default function PanelWorkspace({ activeId, activeTab, onTabChange, resul
   const subtitle =
     'shortDescription' in entry ? (entry as { shortDescription: string }).shortDescription : '';
 
-  // Regio-Panel + non-operator: zentral Kartography (Rep-Editor) bzw. Review (Analyst);
-  // Operator behält den vollen Panel-Inhalt (nicht-destruktiv).
-  const regionAlt = REGION_DASHBOARD_IDS.has(activeId) && role !== 'operator';
+  // Inhalt folgt dem AKTIVEN TAB (activeMode), nicht der Diode: Operations=voller Inhalt,
+  // Review=leer, Kartography=Platzhalter (Drehscheibe lebt in der Nav).
+  const viewMode = mode?.activeMode ?? role;
+  const regionAlt = REGION_DASHBOARD_IDS.has(activeId) && viewMode !== 'operator';
 
   return (
     <div style={{
@@ -1498,7 +1500,7 @@ export default function PanelWorkspace({ activeId, activeTab, onTabChange, resul
       {/* Geometry-Editor braucht volle Hoehe ohne Padding */}
       {regionAlt ? (
         <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 20 }}>
-          {role === 'regio_editor' ? <SharedKartographyView /> : <ReviewPlaceholder />}
+          {viewMode === 'regio_editor' ? <SharedKartographyView /> : <ReviewPlaceholder />}
         </div>
       ) : activeId === DRAWER_DESCRIPTOR.id ? (
         <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
