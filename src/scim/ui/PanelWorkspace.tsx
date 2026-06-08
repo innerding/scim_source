@@ -66,7 +66,6 @@ import { publishOriginMesh, anthemPublishConfigured, knockPresence, anthemReadCo
 import { resampleNet } from '../wegnetz/netResample';
 import PanelIcon from './PanelIcon';
 import RegionHeaderMesh from './RegionHeaderMesh';
-import RegioDashboardControl from './RegioDashboardControl';
 
 interface Props {
   activeId: string;
@@ -1243,7 +1242,7 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
   }
 
   // P01 (Thresholds · T1): die drei Schwellen gestaffelt (System/Region/Load), ohne Tabs.
-  if (panel.id === 'P01') return <ThresholdsView onJumpTo={onJumpTo} />;
+  if (panel.id === 'P01') return <ThresholdsView />;
 
   // T2: P04 = Telco, P02 = Coder. Die Schwellen-Regler leben jetzt im Thresholds-
   // Panel (P01); der echte Inhalt zieht in T3 (Telco) bzw. T4 (Coder) ein.
@@ -1415,18 +1414,15 @@ function ModeTabs() {
 
 // ── Geteilte Modus-Ansichten der Regio-Panels (zentral, identisch auf allen 4) ──
 // Kartography (Rep-Editor): die geteilte Drehscheibe. Review (Analyst): vorerst leer.
-function SharedKartographyView({ activeId, onJumpTo }: { activeId: string; onJumpTo: (id: string) => void }) {
+function SharedKartographyView() {
+  // Kein Control auf dem Panel — die Kartography-Drehscheibe sitzt in der Nav-Spalte.
   return (
-    <div style={{
-      fontFamily: 'system-ui, sans-serif', minHeight: 360,
-      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, textAlign: 'center',
-    }}>
-      <RegioDashboardControl activeId={activeId} onJumpTo={onJumpTo} size={260} arcsDeco />
-      <div>
-        <div style={{ fontSize: 15, fontWeight: 800, color: '#1a365d', letterSpacing: '-0.01em' }}>SCIM-Kartography</div>
-        <div style={{ fontSize: 11.5, color: '#718096', marginTop: 3, maxWidth: 360 }}>
-          Representation-Produktion. Faces wechseln den Arbeitsschritt, Sicheln sind Zusatzfunktionen
-          (Vorschau · Publish · Versionen). Bögen sind hier nur Dekoration.
+    <div style={{ fontFamily: 'system-ui, sans-serif', minHeight: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ textAlign: 'center', maxWidth: 360 }}>
+        <div style={{ fontSize: 13, fontWeight: 800, color: '#1a365d', fontFamily: 'monospace' }}>SCIM-Kartography</div>
+        <div style={{ marginTop: 5, fontSize: 11.5, color: '#718096', lineHeight: 1.5 }}>
+          Representation-Produktion. Navigiere über die Drehscheibe links; der Produktions-Inhalt
+          je Schritt wird hier in Ruhe festgelegt.
         </div>
       </div>
     </div>
@@ -1500,9 +1496,7 @@ export default function PanelWorkspace({ activeId, activeTab, onTabChange, resul
       {/* Geometry-Editor braucht volle Hoehe ohne Padding */}
       {regionAlt ? (
         <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 20 }}>
-          {role === 'regio_editor'
-            ? <SharedKartographyView activeId={activeId} onJumpTo={onJumpTo ?? (() => {})} />
-            : <ReviewPlaceholder />}
+          {role === 'regio_editor' ? <SharedKartographyView /> : <ReviewPlaceholder />}
         </div>
       ) : activeId === DRAWER_DESCRIPTOR.id ? (
         <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>

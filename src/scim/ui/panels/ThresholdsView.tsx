@@ -13,7 +13,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { loadColourSettings, saveColourSettings, COLOUR_SETTINGS_EVENT, evenBorders, type ColourSettings } from '../../sensus/colourSettings';
 import { useColourRegionSlug } from '../../../runtime/useAuftraggeberRep';
 import { AnthemCycleBadge } from '../AnthemCycleInfo';
-import RegioDashboardControl from '../RegioDashboardControl';
 
 const PV_H = 220;
 const GAP = 0.02;                                       // Mindestabstand zwischen Grenzen
@@ -66,7 +65,7 @@ function VSlider({ label, value, onChange, accent = '#805ad5' }: {
   );
 }
 
-export default function ThresholdsView({ onJumpTo }: { onJumpTo?: (panelId: string, geometryId?: string) => void }) {
+export default function ThresholdsView() {
   const regionSlug = useColourRegionSlug();   // = Publish-Region (buildOriginBundle), kein Mismatch
   const [s, setS] = useState<ColourSettings>(() => loadColourSettings(regionSlug));
 
@@ -226,11 +225,6 @@ export default function ThresholdsView({ onJumpTo }: { onJumpTo?: (panelId: stri
           P01 · Thresholds · Felder-Modell · Region „{regionSlug}"
         </span>
         <AnthemCycleBadge />
-        {onJumpTo && (
-          <div style={{ marginLeft: 'auto', flexShrink: 0 }} title="Regio-Dashboard-Drehscheibe">
-            <RegioDashboardControl activeId="P01" onJumpTo={onJumpTo} size={88} variant="light" />
-          </div>
-        )}
       </div>
 
       <div style={{ fontSize: 12.5, fontWeight: 700, color: '#1a365d', marginBottom: 2 }}>

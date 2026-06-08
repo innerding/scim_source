@@ -13,7 +13,6 @@
 
 import React, { useMemo, useState } from 'react';
 import RepresentationWizard from './RepresentationWizard';
-import RegioDashboardControl from '../RegioDashboardControl';
 import { parsePoiCatalog } from '../../poi-catalog/poiCatalog.parser';
 import { GEOMETRIES, REPRESENTATIONS } from '../../workspace/workspace.registry';
 import type { CatalogRef } from '../../workspace/workspace.types';
@@ -25,6 +24,7 @@ import { commitToRepo } from '../../../runtime/commitBridge';
 import { useRepresentationContext } from '../../../runtime/repContext';
 import { useRole } from '../RoleContext';
 import { PathworksHubFloating, PathworksInfoClipboard } from '../PathworksHubInfo';
+// (RegioDashboardControl entfernt — kein Control auf dem Panel selbst.)
 import type { BoundaryGeometryFile, WegnetzFile, RepresentationFile } from '../../workspace/workspace.types';
 import type { Position } from 'geojson';
 import {
@@ -322,9 +322,6 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
         borderRadius: 6, padding: '14px 18px', marginBottom: 22, color: '#fff',
         display: 'flex', gap: 18, alignItems: 'center',
       }}>
-        <div style={{ flexShrink: 0, background: '#fff', padding: 8, borderRadius: 4 }}>
-          <RegioDashboardControl activeId="workspace" onJumpTo={onJumpTo} size={104} />
-        </div>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 9, opacity: 0.65, fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
             Arbeitstitel · Representations-Drehscheibe

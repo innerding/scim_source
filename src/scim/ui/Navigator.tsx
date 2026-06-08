@@ -429,7 +429,26 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
     descById(id) && !(id === 'ai_interface' && role !== 'operator')).length, 0);
 
   const navTheme = NAV_THEMES[role] ?? NAV_THEMES.operator;
-  const repMode = role === 'regio_editor';   // Komposit-Tetraeder wird zur Kartography-Drehscheibe
+
+  // Rep-Editor: reduzierte Spalte — NUR die Kartography-Drehscheibe, sonst nichts.
+  // Gleiche dunkle Farbwelt; der Spacer setzt das Control auf ~dieselbe Höhe wie
+  // das Komposit-Tetraeder bei Operator/Analyst.
+  if (role === 'regio_editor') {
+    return (
+      <NavThemeContext.Provider value={navTheme}>
+        <nav style={{
+          width: 210, flexShrink: 0, background: navTheme.bg,
+          borderRight: `1px solid ${navTheme.border}`,
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          overflowY: 'auto', padding: '12px 6px', position: 'relative',
+          transition: 'background 0.2s, border-color 0.2s',
+        }}>
+          <div style={{ height: 280, flexShrink: 0 }} />
+          <RegioDashboardControl activeId={activeId} onJumpTo={go} variant="dark" size={171} arcsDeco />
+        </nav>
+      </NavThemeContext.Provider>
+    );
+  }
 
   return (
     <NavThemeContext.Provider value={navTheme}>
@@ -683,11 +702,6 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
         alignItems: 'center', gap: 6, flexShrink: 0,
         position: 'relative', zIndex: 2,
       }}>
-        {repMode ? (
-          // Rep-Editor: dieselbe Stelle, aber die Kartography-Drehscheibe (Faces=Controls,
-          // Sicheln=Zusatzfunktionen, Bögen als Deko). Dunkle Variante wie der Rest.
-          <RegioDashboardControl activeId={activeId} onJumpTo={go} variant="dark" size={171} arcsDeco />
-        ) : (
         <RepresentBuildTetrahedron
           activeFace={faceFromActive(activeId)}
           activeArc={arcFromActive(activeId)}
@@ -715,7 +729,6 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
             else if (s === 'wegnetz_sampling') go('P09');
           }}
         />
-        )}
       </div>
 
       {/* Tiefen-Tetraeder — Substrat-Tetraeder der Bipyramide (ann_060).
