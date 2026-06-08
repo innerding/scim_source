@@ -240,8 +240,8 @@ export default function RepresentBuildManualModal({ onClose }: Props) {
           fontFamily: 'ui-monospace, "SF Mono", Consolas, monospace',
           fontSize: 13, lineHeight: 1.55, color: '#1a202c',
         }}>
-          <div style={{ fontWeight: 700, marginBottom: 14 }}>USAGE MANUAL &amp; SCIM-STATE</div>
-          <div style={{ marginBottom: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 18, marginBottom: 16 }}>
+            <div style={{ fontWeight: 700 }}>USAGE MANUAL &amp; SCIM-STATE</div>
             <TrygonLoopEmblem size={104} withLegend={false} animated />
           </div>
           <pre style={{ margin: 0, fontFamily: 'inherit', fontSize: 'inherit', whiteSpace: 'pre-wrap' }}>
