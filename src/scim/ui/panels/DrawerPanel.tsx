@@ -260,49 +260,6 @@ function SynchronizerNotiz() {
   );
 }
 
-// Senden-zu-Committ-Dialog (Editor). Der Editor committet nicht selbst — sein
-// gespeicherter Draft geht an den Operator (Workspace) zur Prüfung + zum Committen.
-function SendCommitModal({ onSend, onClose }: { onSend: () => void; onClose: () => void }) {
-  return (
-    <div style={{
-      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 2200,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-    }} onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()} style={{
-        background: 'white', borderRadius: 10, padding: 24, width: 440, maxWidth: '90vw',
-        boxShadow: '0 20px 60px rgba(0,0,0,0.3)', fontSize: 13, color: '#2d3748',
-      }}>
-        <h3 style={{ margin: '0 0 12px', fontSize: 16, color: '#c05621' }}>⤴ Senden zu Committ</h3>
-        <p style={{ margin: '0 0 10px', lineHeight: 1.5 }}>
-          Dein <strong>gespeicherter Draft</strong> (Umriss + Wegnetz) geht an den
-          <strong> Operator</strong> (Pathworks Hub / Workspace) — zur <strong>Prüfung</strong> und
-          zum <strong>Committen</strong>. Der Editor committet nicht selbst.
-        </p>
-        <div style={{
-          background: '#f7fafc', border: '1px solid #e2e8f0', borderRadius: 6,
-          padding: '8px 12px', margin: '0 0 12px', fontSize: 12, lineHeight: 1.6,
-        }}>
-          <div><strong>Speichern</strong> — Draft in den Workspace</div>
-          <div style={{ color: '#c05621', fontWeight: 600 }}>▸ Senden zu Committ — du bist hier</div>
-          <div><strong>Committ</strong> — Operator friert die Geometrie in die Rep-Version ein (im Workspace)</div>
-        </div>
-        <p style={{ margin: '0 0 16px', fontSize: 11, color: '#718096', fontStyle: 'italic' }}>
-          Schale: heute meldet „Senden" den Draft. Der echte Cross-User-Transport (Queue/Server)
-          folgt mit dem Pathworks Hub (ann_105/ann_109).
-        </p>
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-          <button onClick={onClose} style={{
-            padding: '6px 14px', borderRadius: 6, border: '1px solid #cbd5e0', background: 'white', cursor: 'pointer', fontSize: 13,
-          }}>Abbrechen</button>
-          <button onClick={onSend} style={{
-            padding: '6px 14px', borderRadius: 6, border: '1px solid #dd6b20', background: '#dd6b20', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 600,
-          }}>⤴ Jetzt senden</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function DrawerPanel({ openGeometryId, onGeometryConsumed, iconView }: Props) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -334,8 +291,6 @@ export default function DrawerPanel({ openGeometryId, onGeometryConsumed, iconVi
   const realRole: Role = mode?.real ?? 'operator';
   const live = realRole === activeMode && activeMode !== 'analyst';
   const showSynchronizer = !isEditorRole(activeMode);   // Technik-Tab nur Operator/Review
-  const [showSendCommit, setShowSendCommit] = useState(false);
-  const [sentForCommit, setSentForCommit] = useState(false);
   // Editor stünde nie auf dem Synchronizer-Tab (existiert für ihn nicht) → zurückholen.
   useEffect(() => {
     if (tab === 'synchronizer' && !showSynchronizer) setTab('umriss');
@@ -1673,12 +1628,6 @@ export default function DrawerPanel({ openGeometryId, onGeometryConsumed, iconVi
       {iconView && <IconBuildNotiz />}
       {/* Technik-Tab „Synchronizer": Voll-Overlay über der Karte (Karte bleibt gemountet). */}
       {tab === 'synchronizer' && <SynchronizerNotiz />}
-      {showSendCommit && (
-        <SendCommitModal
-          onSend={() => { setSentForCommit(true); setShowSendCommit(false); }}
-          onClose={() => setShowSendCommit(false)}
-        />
-      )}
       {/* Tab-Strip Umriss / Wegnetz / Synchronizer (Technik, Operator/Review) */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px 0',
@@ -1743,21 +1692,13 @@ export default function DrawerPanel({ openGeometryId, onGeometryConsumed, iconVi
             {saved ? '✓ Gespeichert' : '💾 Speichern'}
           </button>
         )}
-        {/* Editor committet nicht selbst — er gibt den gespeicherten Draft mit
-            „Senden zu Committ" an den Operator (Pathworks Hub / Workspace) weiter. */}
+        {/* Senden zur Review lebt NICHT mehr hier — eine ganze Representation wird
+            im Pathworks-Editor gesendet, nicht ein einzelnes Werkzeug. Hier nur
+            speichern; rausgehen über die Controls. */}
         {live && isEditorRole(activeMode) && geometryId === 'new' && (
-          <button
-            onClick={() => setShowSendCommit(true)}
-            title="Senden zu Committ: dein gespeicherter Draft geht an den Operator (Workspace) — zur Prüfung und zum Committen. Der Editor committet nicht selbst."
-            style={{
-              fontSize: 12, padding: '6px 14px', marginBottom: 4, marginLeft: 4, fontWeight: 700,
-              border: '1px solid #dd6b20', borderRadius: 5,
-              background: sentForCommit ? '#fffaf0' : '#dd6b20',
-              color: sentForCommit ? '#dd6b20' : '#fff', cursor: 'pointer',
-            }}
-          >
-            {sentForCommit ? '⤴ Gemeldet' : '⤴ Senden zu Committ'}
-          </button>
+          <span style={{ fontSize: 10, color: '#a0aec0', fontStyle: 'italic', marginBottom: 4, marginLeft: 4, whiteSpace: 'nowrap' }}>
+            Senden zur Review: im Pathworks-Editor
+          </span>
         )}
       </div>
 
