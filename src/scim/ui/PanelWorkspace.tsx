@@ -41,6 +41,7 @@ import V01PackagesPanel from './panels/V01PackagesPanel';
 import V02RegionDetailPanel from './panels/V02RegionDetailPanel';
 import V03ActiveMonitorPanel from './panels/V03ActiveMonitorPanel';
 import V03PresenceOriginPanel from './panels/V03PresenceOriginPanel';
+import ReleaseDrosselPanel from './panels/ReleaseDrosselPanel';
 import WorkspacePanel from './panels/WorkspacePanel';
 import DrawerPanel from './panels/DrawerPanel';
 import { poiCompositeSvg } from '../poi-catalog/poiCatalog.composite';
@@ -1215,6 +1216,7 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
   // V03 Publishing-Monitor: t1 Presence-Origin (Call-Log) · t2 Active-Monitor (CDN/QR) ·
   // t3 Runtime Shell (R01 hier aufgegangen — die Runtime ist der Mond).
   if (activeId === 'V03') {
+    if (activeTab === 't4') return <ReleaseDrosselPanel />;
     if (activeTab === 't3') return <RuntimeShellView />;
     return activeTab === 't2' ? <V03ActiveMonitorPanel /> : <V03PresenceOriginPanel />;
   }

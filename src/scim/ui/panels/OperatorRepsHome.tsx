@@ -11,8 +11,8 @@ import { getDraft } from '../../workspace/draftStore';
 import { useDeliveredVersions, type Delivered } from '../../../runtime/useDelivered';
 import { REPRESENTATIONS } from '../../workspace/workspace.registry';
 import { useRepresentationContext } from '../../../runtime/repContext';
-import { resolveOriginReference } from '../../sensus/originReference';
-import { publishOriginBundle, anthemPublishConfigured } from '../../../runtime/anthemApi';
+import { releaseRep } from '../../sensus/release';
+import { anthemPublishConfigured } from '../../../runtime/anthemApi';
 import type { RepView } from '../../pathworks/pathworks.types';
 
 export interface ReleaseState { busyId: string | null; msg: { id: string; ok: boolean; text: string } | null; canRelease: boolean; onRelease: (rep: RepView) => void; }
@@ -80,15 +80,13 @@ export default function OperatorRepsHome({ onJumpTo }: { onJumpTo: (panelId: str
     if (!repObj) return;
     setInspectorAsset({ kind: 'representation', id: rep.id });   // Auftraggeber = genau diese Rep
     setReleaseBusy(rep.id); setReleaseMsg(null);
-    try {
-      const res = await publishOriginBundle(rep.id, resolveOriginReference(repObj).bundle);
-      setReleaseMsg({ id: rep.id, ok: true, text: `ausgeliefert v${repObj.version ?? 1} · ${(res.bytes / 1024).toFixed(1)} kB` });
-      setDeliveredNonce((n) => n + 1);   // „ausgeliefert" neu holen
-    } catch (e) {
-      setReleaseMsg({ id: rep.id, ok: false, text: (e as Error).message });
-    } finally {
-      setReleaseBusy(null);
-    }
+    const res = await releaseRep(repObj);
+    setReleaseMsg({
+      id: rep.id, ok: res.ok,
+      text: res.ok ? `ausgeliefert v${res.version} · ${((res.bytes ?? 0) / 1024).toFixed(1)} kB` : (res.error ?? 'Fehler'),
+    });
+    if (res.ok) setDeliveredNonce((n) => n + 1);   // „ausgeliefert" neu holen
+    setReleaseBusy(null);
   };
   const release: ReleaseState = { busyId: releaseBusy, msg: releaseMsg, canRelease: live && anthemPublishConfigured(), onRelease };
 
@@ -194,7 +192,25 @@ export default function OperatorRepsHome({ onJumpTo }: { onJumpTo: (panelId: str
       )}
 
       {/* Committete Representations — Nation → Region → Rep (Akkordeon) */}
-      <SectionTitle label="Committete Representations" count={committed.length} hint="Nation → Region → Rep. Eingefroren & versioniert. »ausliefern« = Release (Commit ≠ Release) — manuelles Gate (Drossel)." />
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+        <div style={{ flex: 1 }}>
+          <SectionTitle label="Committete Representations" count={committed.length} hint="Nation → Region → Rep. Eingefroren & versioniert. »ausliefern« = Release (Commit ≠ Release) — manuelles Gate (Drossel)." />
+        </div>
+        {(() => {
+          const pend = committed.filter((r) => {
+            const d = delivered[r.id];
+            const dv = typeof d?.version === 'number' ? d.version : (typeof d?.version === 'string' ? parseInt(d.version.replace(/^v/i, ''), 10) : NaN);
+            return !d?.published || (Number.isFinite(dv) && r.currentVersion > dv);
+          }).length;
+          return pend > 0 ? (
+            <button onClick={() => onJumpTo('V03')} title="Aggregat-Sicht: Release-Drossel (V03)"
+              style={{
+                fontSize: 10.5, fontWeight: 700, fontFamily: 'monospace', padding: '4px 10px', borderRadius: 999,
+                border: '1px solid #fbd38d', background: '#fffaf0', color: '#c05621', cursor: 'pointer', whiteSpace: 'nowrap',
+              }}>● {pend} ungeliefert → Drossel</button>
+          ) : null;
+        })()}
+      </div>
       {committed.length === 0 ? (
         <Empty text="Noch keine committete Representation." />
       ) : (
