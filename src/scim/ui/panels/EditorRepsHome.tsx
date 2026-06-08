@@ -10,8 +10,9 @@
 // der nächste Schritt — heute öffnen die Werkzeug-Knöpfe die Panels.
 import { useMemo, useState } from 'react';
 import { useRole, useModeSwitch, useUserName } from '../RoleContext';
-import { actorFrom, repsForActor, submitRep, withdrawRep } from '../../pathworks/localStore';
-import type { RepView } from '../../pathworks/pathworks.types';
+import { actorFrom, repsForActor, submitRep, withdrawRep, setRepBinding } from '../../pathworks/localStore';
+import { createDraft } from '../../workspace/draftStore';
+import type { Binding, RepView } from '../../pathworks/pathworks.types';
 
 interface Props { onJumpTo: (panelId: string) => void; }
 
@@ -106,6 +107,23 @@ export default function EditorRepsHome({ onJumpTo }: Props) {
   const drafts = reps.filter((r) => r.state !== 'committed');
   const committed = reps.filter((r) => r.state === 'committed');
 
+  // „+ neue Representation" — eine Rep entsteht hier (nicht mehr im Drawer): ein
+  // benannter Rep-Draft + Bindung (regional|unbound). Boundary/Wegnetz/Katalog
+  // füllt der Editor danach über die Werkzeuge. Nur live (echtes Editor-Login).
+  const [showCreate, setShowCreate] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [newBinding, setNewBinding] = useState<Binding>('regional');
+  const createRep = () => {
+    const name = newName.trim();
+    if (!name) return;
+    const d = createDraft(name);
+    setRepBinding(d.id, newBinding);
+    setNewName('');
+    setNewBinding('regional');
+    setShowCreate(false);
+    setTick((t) => t + 1);
+  };
+
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 720 }}>
       <div style={{
@@ -122,10 +140,57 @@ export default function EditorRepsHome({ onJumpTo }: Props) {
         </div>
       </div>
 
+      {/* Neue Representation anlegen — hier, nicht im Drawer. */}
+      {live && (
+        <div style={{ marginBottom: 12 }}>
+          {!showCreate ? (
+            <button onClick={() => setShowCreate(true)} style={{
+              fontSize: 12, fontWeight: 700, padding: '7px 14px', borderRadius: 6,
+              border: '1px solid #2b6cb0', background: '#2b6cb0', color: '#fff', cursor: 'pointer',
+            }}>+ neue Representation</button>
+          ) : (
+            <div style={{
+              border: '1px solid #bee3f8', background: '#f7fbff', borderRadius: 8, padding: '12px 14px',
+              display: 'flex', flexDirection: 'column', gap: 10,
+            }}>
+              <input
+                autoFocus
+                placeholder="Name der Representation"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') createRep(); if (e.key === 'Escape') setShowCreate(false); }}
+                style={{ fontSize: 13, padding: '7px 10px', borderRadius: 5, border: '1px solid #cbd5e0' }}
+              />
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                <span style={{ fontSize: 11, color: '#718096' }}>Bindung:</span>
+                {(['regional', 'unbound'] as Binding[]).map((b) => (
+                  <button key={b} onClick={() => setNewBinding(b)} style={{
+                    fontSize: 11, padding: '4px 10px', borderRadius: 999, cursor: 'pointer', fontWeight: 600,
+                    border: `1px solid ${newBinding === b ? '#2b6cb0' : '#cbd5e0'}`,
+                    background: newBinding === b ? '#ebf8ff' : '#fff',
+                    color: newBinding === b ? '#2b6cb0' : '#4a5568',
+                  }}>{b === 'regional' ? '◎ regional' : '◍ ohne Bindung'}</button>
+                ))}
+              </div>
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                <button onClick={() => { setShowCreate(false); setNewName(''); }} style={{
+                  fontSize: 12, padding: '6px 12px', borderRadius: 5, border: '1px solid #cbd5e0', background: '#fff', color: '#4a5568', cursor: 'pointer',
+                }}>Abbrechen</button>
+                <button onClick={createRep} disabled={!newName.trim()} style={{
+                  fontSize: 12, fontWeight: 700, padding: '6px 14px', borderRadius: 5,
+                  border: '1px solid #2b6cb0', cursor: newName.trim() ? 'pointer' : 'default',
+                  background: newName.trim() ? '#2b6cb0' : '#bcd3ea', color: '#fff',
+                }}>Anlegen</button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {drafts.length === 0 && committed.length === 0 && (
           <div style={{ fontSize: 12, color: '#718096', fontStyle: 'italic', padding: '8px 2px' }}>
-            Noch keine Representation. Lege im Drawer eine Boundary an — daraus entsteht dein erster Rep-Draft.
+            Noch keine Representation — leg mit »+ neue Representation« deine erste an.
           </div>
         )}
         {drafts.map((r) => (

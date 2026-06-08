@@ -240,7 +240,7 @@ const DASH_SICKLE: Record<string, { glyph: string; title: string }> = {
   wegnetz_sampling: { glyph: 'dash_versions', title: 'Versionen / Verlauf' },
 };
 
-function TetraGlyph({ id, x, y, color }: { id: string; x: number; y: number; color: string }) {
+function TetraGlyph({ id, x, y, color, centered }: { id: string; x: number; y: number; color: string; centered?: boolean }) {
   const s = { fill: 'none', stroke: color, strokeWidth: 0.8, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
   const f = { fill: color, stroke: 'none' };
   let body: JSX.Element | null = null;
@@ -298,7 +298,9 @@ function TetraGlyph({ id, x, y, color }: { id: string; x: number; y: number; col
     load_thresholds: [0, 2.2],            // blitz+load-Block 1px tiefer
     represent_organisation: [0, 0.8],     // Büroklammer 1px tiefer
   };
-  const [dx, dy] = off[id] ?? [0, 0];
+  // `centered` = im Face zentriert (nicht auf der Arc-Bahn) → Versatz weglassen,
+  // damit der Adjust-Glyph in der Mitte seiner Triangle sitzt.
+  const [dx, dy] = centered ? [0, 0] : (off[id] ?? [0, 0]);
   // Basis-Scale 1.08; einzelne Glyphs zusätzlich vergrößert.
   const mul: Record<string, number> = { wegnetz_sampling: 1.1, geometry_draw: 1.2, engine_prep: 1.2, represent_organisation: 1.3 };
   const sc = (1.08 * (mul[id] ?? 1)).toFixed(3);
@@ -467,7 +469,7 @@ export default function RepresentBuildTetrahedron({
               <title>{title}</title>
             </polygon>
             {showLabels && (
-              <TetraGlyph id={glyphId} x={f.labelX} y={f.labelY} color={isActive ? triangleLabelActive : triangleLabelInactive} />
+              <TetraGlyph id={glyphId} x={f.labelX} y={f.labelY} color={isActive ? triangleLabelActive : triangleLabelInactive} centered={isApexThresholds} />
             )}
           </g>
         );
