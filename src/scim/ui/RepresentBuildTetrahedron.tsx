@@ -57,6 +57,10 @@ interface Props {
   // Bögen als reine Deko (REP-Manufactur): trotz Dashboard-Modus sichtbar, aber
   // blass und NICHT klickbar, ohne Beschriftung.
   arcsDeco?: boolean;
+  // Faces, die gedimmt (inaktiv-wirkend) dargestellt werden — z.B. die Werkzeug-
+  // Faces, solange keine Rep gebunden ist. Sie bleiben klickbar (der Aufrufer
+  // leitet sie dann z.B. nach Pathworks), wirken aber inaktiv.
+  dimFaces?: RepresentBuildFace[];
 }
 
 // ─── Geometrie ──────────────────────────────────────────────────────────────
@@ -322,6 +326,7 @@ export default function RepresentBuildTetrahedron({
   transmissionMode = 'default',
   dashboard = false,
   arcsDeco = false,
+  dimFaces,
 }: Props) {
   const isDark = variant === 'dark';
 
@@ -442,6 +447,7 @@ export default function RepresentBuildTetrahedron({
       {/* Triangles */}
       {FACES.map((f) => {
         const isActive = f.id === activeFace;
+        const dimmed = dimFaces?.includes(f.id) ?? false;
         const fill = isActive ? triangleActiveFill : 'transparent';
         const stroke = isActive ? triangleActiveStroke : triangleInactiveStroke;
         const strokeWidth = isActive ? 1.0 : 1;
@@ -455,6 +461,7 @@ export default function RepresentBuildTetrahedron({
           <g
             key={f.id}
             style={{ cursor: clickable ? 'pointer' : 'default' }}
+            opacity={dimmed ? 0.28 : undefined}
             onClick={clickable && onFaceClick ? () => onFaceClick(f.id) : undefined}
           >
             <polygon

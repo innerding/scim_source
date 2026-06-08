@@ -29,14 +29,20 @@ const SICKLE_TO_PANEL: Record<RepresentBuildSickle, string> = {
   wegnetz_sampling: 'V01',  // Versionen / Verlauf (All-Publications)
 };
 
+// Werkzeug-Faces (an eine Rep gebunden) — vs. die immer offene Pathworks-Face.
+const TOOL_FACES: RepresentBuildFace[] = ['geometry_draw', 'catalog_magazination', 'sensus_core_build'];
+
 export default function RegioDashboardControl({
-  activeId, onJumpTo, size = 116, variant = 'light', arcsDeco = false,
+  activeId, onJumpTo, size = 116, variant = 'light', arcsDeco = false, toolsEnabled = true,
 }: {
   activeId: string;
   onJumpTo: (panelId: string) => void;
   size?: number;
   variant?: 'dark' | 'light';
   arcsDeco?: boolean;   // REP-Manufactur: Bögen als blasse Deko zeigen
+  // Werkzeug-Faces nur aktiv, wenn eine Rep gebunden ist. Sonst gedimmt; Klick
+  // führt sanft nach Pathworks (Rep wählen). Pathworks-Face bleibt immer aktiv.
+  toolsEnabled?: boolean;
 }) {
   const activeFace = PANEL_TO_FACE[activeId];
   return (
@@ -47,7 +53,10 @@ export default function RegioDashboardControl({
       size={size}
       variant={variant}
       activeFace={activeFace}
+      dimFaces={toolsEnabled ? undefined : TOOL_FACES}
       onFaceClick={(f) => {
+        // Ohne gebundene Rep: Werkzeug-Faces führen nach Pathworks statt ins leere Werkzeug.
+        if (!toolsEnabled && TOOL_FACES.includes(f)) { onJumpTo('workspace'); return; }
         const panel = FACE_TO_PANEL[f];
         if (panel) onJumpTo(panel);
       }}

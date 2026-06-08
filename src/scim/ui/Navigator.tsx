@@ -10,6 +10,7 @@ import logoBaseNaked from '../../assets/logo-base-naked.svg';
 import logoHexNaked from '../../assets/logo-hex-naked.svg';
 import { useRole, isEditorRole } from './RoleContext';
 import type { Role } from './RoleContext';
+import { useRepresentationContext } from '../../runtime/repContext';
 import RepresentBuildTetrahedron from './RepresentBuildTetrahedron';
 import RegioDashboardControl from './RegioDashboardControl';
 
@@ -292,6 +293,7 @@ function sickleFromActive(activeId: string): RepresentBuildSickle | undefined {
 export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggle, inspectorActive = false, onManualOpen, panelStatus = {} }: Props) {
   const go = onGoTo ?? ((id: string) => onSelect(id));
   const role = useRole();
+  const { boundRep } = useRepresentationContext();   // gebundene Rep (Pathworks-Editor)
   const locked = role !== 'operator';   // non-operator: alles unter dem Komposit gesperrt
 
   // Transmitter-Pulse: kurzfristiger Input-Modus des Tetraeder-Schwingungs-
@@ -446,7 +448,25 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
           transition: 'background 0.2s, border-color 0.2s',
         }}>
           <div style={{ height: 280, flexShrink: 0 }} />
-          <RegioDashboardControl activeId={activeId} onJumpTo={go} variant="dark" size={171} arcsDeco />
+          <RegioDashboardControl activeId={activeId} onJumpTo={go} variant="dark" size={171} arcsDeco toolsEnabled={!!boundRep} />
+          {/* Brotkrumen: woran die Werkzeuge gerade hängen. Ohne Bindung ein Hinweis. */}
+          <div style={{ marginTop: 10, textAlign: 'center', maxWidth: 188, fontFamily: 'system-ui, sans-serif' }}>
+            {boundRep ? (
+              <>
+                <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>gebunden an</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.92)', lineHeight: 1.3, marginTop: 1 }}>{boundRep.name}</div>
+                <button onClick={() => go('workspace')} style={{
+                  marginTop: 5, cursor: 'pointer', fontSize: 10, fontFamily: 'system-ui, sans-serif',
+                  border: '1px solid rgba(255,255,255,0.2)', background: 'transparent',
+                  color: 'rgba(255,255,255,0.7)', borderRadius: 999, padding: '2px 10px',
+                }}>↩ wechseln</button>
+              </>
+            ) : (
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', fontStyle: 'italic', lineHeight: 1.4 }}>
+                Werkzeuge: erst eine Representation im Pathworks-Editor öffnen
+              </div>
+            )}
+          </div>
         </nav>
       </NavThemeContext.Provider>
     );

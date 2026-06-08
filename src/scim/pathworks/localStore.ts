@@ -14,7 +14,7 @@
 // localStorage-Wurzel des Editor-Slices. Synchron (localStorage ist synchron) —
 // die Server-Variante wird async hinter derselben Naht stehen.
 
-import { listDrafts, type Draft } from '../workspace/draftStore';
+import { listDrafts, removeDraft, type Draft } from '../workspace/draftStore';
 import { REPRESENTATIONS, geometryById } from '../workspace/workspace.registry';
 import { slugify } from '../../runtime/router';
 import type { Role } from '../ui/RoleContext';
@@ -134,4 +134,12 @@ export function withdrawRep(repId: string, actor: Actor): boolean {
 // Bindung setzen (regional|unbound) — Eigenschaft der Rep, kein Zustandsübergang.
 export function setRepBinding(repId: string, binding: Binding): void {
   patchMeta(repId, { binding });
+}
+
+// Draft löschen (committete Reps sind eingefroren → nicht löschbar). Entfernt den
+// Draft aus dem draftStore und seine Pathworks-Meta. Eingereichte erst zurückziehen.
+export function deleteRep(repId: string): void {
+  removeDraft(repId);
+  const m = loadMeta();
+  if (m[repId]) { delete m[repId]; saveMeta(m); }
 }

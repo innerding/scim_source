@@ -74,6 +74,14 @@ export interface RepresentationContextValue {
   /** Setze das anzuzeigende Asset, oder null zum Loesen. */
   setInspectorAsset: (asset: InspectorAsset | null) => void;
 
+  // ─── Gebundene Rep (Pathworks-Editor) ────────────────────────────────
+  // Die Rep, an die die Werkzeug-Faces (Drawer/Katalog/Thresholds) gebunden
+  // sind. null = keine gebunden → Werkzeug-Faces inaktiv, man betritt ein
+  // Werkzeug nur über eine Rep-Card. Persistiert über Panel-Wechsel.
+  boundRep: { id: string; name: string } | null;
+  bindRep: (id: string, name: string) => void;
+  unbindRep: () => void;
+
   /** Vollstaendige Registry, hilfreich fuer Listen-Panels und Dropdowns. */
   registry: {
     representations: Representation[];
@@ -159,6 +167,11 @@ export function RepresentationProvider({ children }: RepresentationProviderProps
 
   const effectiveInspector = inspectorView ?? active;
 
+  // Gebundene Rep (Pathworks-Editor). Startet null → Werkzeug-Faces inaktiv.
+  const [boundRep, setBoundRep] = useState<{ id: string; name: string } | null>(null);
+  const bindRep = useCallback((id: string, name: string) => setBoundRep({ id, name }), []);
+  const unbindRep = useCallback(() => setBoundRep(null), []);
+
   const value = useMemo<RepresentationContextValue>(() => ({
     active,
     setActiveRepresentation,
@@ -168,11 +181,15 @@ export function RepresentationProvider({ children }: RepresentationProviderProps
     effectiveInspector,
     inspectorAsset,
     setInspectorAsset,
+    boundRep,
+    bindRep,
+    unbindRep,
     registry: { representations: REPRESENTATIONS, geometries: GEOMETRIES },
   }), [
     active, setActiveRepresentation, clearActiveRepresentation,
     inspectorView, setInspectorView, effectiveInspector,
     inspectorAsset, setInspectorAsset,
+    boundRep, bindRep, unbindRep,
   ]);
 
   return createElement(RepresentationContext.Provider, { value }, children);

@@ -10,7 +10,7 @@
 // der nächste Schritt — heute öffnen die Werkzeug-Knöpfe die Panels.
 import { useMemo, useState } from 'react';
 import { useRole, useModeSwitch, useUserName } from '../RoleContext';
-import { actorFrom, repsForActor, submitRep, withdrawRep, setRepBinding } from '../../pathworks/localStore';
+import { actorFrom, repsForActor, submitRep, withdrawRep, setRepBinding, deleteRep } from '../../pathworks/localStore';
 import { createDraft } from '../../workspace/draftStore';
 import { useRepresentationContext } from '../../../runtime/repContext';
 import type { Binding, RepView } from '../../pathworks/pathworks.types';
@@ -33,10 +33,10 @@ function PartBadge({ on, label }: { on: boolean; label: string }) {
   );
 }
 
-function RepCard({ rep, onOpen, onChanged, live, bound }: {
+function RepCard({ rep, onOpen, onChanged, live, bound, onDelete }: {
   rep: RepView;
   onOpen: (rep: RepView, panel: string, target?: string) => void;
-  onChanged: () => void; live: boolean; bound: boolean;
+  onChanged: () => void; live: boolean; bound: boolean; onDelete?: () => void;
 }) {
   const role = useRole();
   const userName = useUserName();
@@ -86,6 +86,12 @@ function RepCard({ rep, onOpen, onChanged, live, bound }: {
         <button onClick={() => onOpen(rep, 'catalog', rep.catalogId ?? undefined)} style={toolBtn}>☰ Katalog</button>
         <button onClick={() => onOpen(rep, 'P01')} style={toolBtn}>⚙ Thresholds</button>
         <span style={{ flex: 1 }} />
+        {/* Draft löschen — nur lokale Drafts (eingereicht: erst zurückziehen; committet: nie). */}
+        {!committed && live && rep.state === 'local' && onDelete && (
+          <button onClick={onDelete} title="Draft löschen" style={{
+            ...actBtn, borderColor: '#fed7d7', background: '#fff', color: '#c53030', fontWeight: 700, padding: '5px 10px',
+          }}>🗑</button>
+        )}
         {committed ? (
           <span style={{ fontSize: 10.5, color: '#718096', fontStyle: 'italic' }}>nur lesbar — Ändern = neuer Draft</span>
         ) : !live ? (
@@ -120,18 +126,23 @@ export default function EditorRepsHome({ onJumpTo }: Props) {
   const drafts = reps.filter((r) => r.state !== 'committed');
   const committed = reps.filter((r) => r.state === 'committed');
 
-  // REP-BINDUNG: ein Werkzeug öffnet sich gebunden an genau diese Rep. Wir setzen
-  // den globalen inspectorAsset (treibt Thresholds-Region + Inspector) und springen
-  // mit Ziel-Id (Drawer: Draft/Geometrie · Katalog: Region). `bound` markiert die Karte.
-  const { setInspectorAsset } = useRepresentationContext();
-  const [boundId, setBoundId] = useState<string | null>(null);
+  // REP-BINDUNG: ein Werkzeug öffnet sich gebunden an genau diese Rep. Wir binden
+  // die Rep (persistent, treibt die Control-Faces) + setzen inspectorAsset
+  // (Thresholds-Region + Inspector) und springen mit Ziel-Id.
+  const { setInspectorAsset, boundRep, bindRep, unbindRep } = useRepresentationContext();
   const openTool = (rep: RepView, panel: string, target?: string) => {
     const asset = rep.origin === 'committed'
       ? { kind: 'representation' as const, id: rep.id }
       : (rep.catalogId ? { kind: 'catalog' as const, id: rep.catalogId } : null);
     if (asset) setInspectorAsset(asset);
-    setBoundId(rep.id);
+    bindRep(rep.id, rep.name);
     onJumpTo(panel, target);
+  };
+  const deleteRepHandler = (rep: RepView) => {
+    if (!confirm(`Draft „${rep.name}" wirklich löschen? Das kann nicht rückgängig gemacht werden.`)) return;
+    deleteRep(rep.id);
+    if (boundRep?.id === rep.id) unbindRep();
+    setTick((t) => t + 1);
   };
 
   // „+ neue Representation" — eine Rep entsteht hier (nicht mehr im Drawer): ein
@@ -227,7 +238,7 @@ export default function EditorRepsHome({ onJumpTo }: Props) {
           </div>
         )}
         {drafts.map((r) => (
-          <RepCard key={r.id} rep={r} onOpen={openTool} onChanged={() => setTick((t) => t + 1)} live={live} bound={boundId === r.id} />
+          <RepCard key={r.id} rep={r} onOpen={openTool} onChanged={() => setTick((t) => t + 1)} live={live} bound={boundRep?.id === r.id} onDelete={() => deleteRepHandler(r)} />
         ))}
         {committed.length > 0 && (
           <div style={{ fontSize: 10, fontFamily: 'monospace', color: '#a0aec0', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 6 }}>
@@ -235,7 +246,7 @@ export default function EditorRepsHome({ onJumpTo }: Props) {
           </div>
         )}
         {committed.map((r) => (
-          <RepCard key={r.id} rep={r} onOpen={openTool} onChanged={() => setTick((t) => t + 1)} live={live} bound={boundId === r.id} />
+          <RepCard key={r.id} rep={r} onOpen={openTool} onChanged={() => setTick((t) => t + 1)} live={live} bound={boundRep?.id === r.id} />
         ))}
       </div>
     </div>
