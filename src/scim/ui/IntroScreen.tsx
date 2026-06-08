@@ -11,11 +11,23 @@ interface Props {
   onAuth: (role: Role, name: string) => void;
 }
 
-const USERS: Record<string, { code: string; role: Role }> = {
-  'dietmar': { code: import.meta.env.VITE_CODE_OPERATOR ?? '', role: 'operator' },
-  'michael moser': { code: import.meta.env.VITE_CODE_ANALYST  ?? '', role: 'analyst'  },
-  'reg editor': { code: import.meta.env.VITE_CODE_REGIO ?? '', role: 'reg_editor' },
-  'rep editor': { code: import.meta.env.VITE_CODE_REGIO ?? '', role: 'rep_editor' },
+// Identität → erlaubtes ROLLEN-SET (entkoppelt von der Rolle). Hat eine Person
+// mehr als eine Rolle, wählt sie beim Login (oder nach Touch ID) eine aus.
+// Heute hartkodiert = Platzhalter; die echte „eine Person, mehrere Rollen"-
+// Verwaltung gehört server-seitig in die ACCESS-Schicht (ann_105).
+const USERS: Record<string, { code: string; roles: Role[] }> = {
+  'dietmar': { code: import.meta.env.VITE_CODE_OPERATOR ?? '', roles: ['operator'] },
+  'michael moser': { code: import.meta.env.VITE_CODE_ANALYST ?? '', roles: ['analyst', 'rep_editor'] },
+  'reg editor': { code: import.meta.env.VITE_CODE_REGIO ?? '', roles: ['reg_editor'] },
+  'rep editor': { code: import.meta.env.VITE_CODE_REGIO ?? '', roles: ['rep_editor'] },
+};
+
+const ROLE_LABEL: Record<Role, string> = {
+  operator: 'SCIM-Operator',
+  analyst: 'Data-Analyst',
+  regio_editor: 'Editor',
+  reg_editor: 'Reg-Editor',
+  rep_editor: 'Rep-Editor',
 };
 
 // Merkbarer Wiederherstellungs-Code — IMMER gültig (UX-Gate, keine Krypto-Sperre;
@@ -251,6 +263,8 @@ export default function IntroScreen({ onAuth }: Props) {
   const [hexRot, setHexRot] = useState(0);
   const [panelVisible, setPanelVisible] = useState(false);
   const [offerRegister, setOfferRegister] = useState<{ role: Role; userName: string } | null>(null);
+  // Rollen-Wahl: gesetzt, wenn eine authentifizierte Person mehr als eine Rolle hat.
+  const [chooseRole, setChooseRole] = useState<{ roles: Role[]; userName: string } | null>(null);
   const [passkeyBusy, setPasskeyBusy] = useState(false);
   const passkeyAttempted = useRef(false);
   const hasStoredPasskey = isPasskeySupported() && getStoredPasskey() !== null;
@@ -384,6 +398,25 @@ export default function IntroScreen({ onAuth }: Props) {
     setTimeout(() => onAuth(role, userName), spinEnd + 520);
   };
 
+  // Nach erfolgreicher Authentifizierung mit FESTER Rolle: Passkey anbieten (falls
+  // noch keiner) oder direkt eintreten.
+  const proceedAfterAuth = (role: Role, userName: string) => {
+    if (isPasskeySupported() && getStoredPasskey() === null) {
+      setError(null);
+      setOfferRegister({ role, userName });
+      return;
+    }
+    runSuccessAnimation(role, userName);
+  };
+
+  // Nach Passkey/Touch-ID: hat die Person mehrere Rollen → Rollen-Wahl zeigen
+  // (Touch ID identifiziert nur die Person, die Rolle wählt sie pro Sitzung).
+  const afterPasskey = (res: { role: Role; userName: string }) => {
+    const u = USERS[res.userName];
+    if (u && u.roles.length > 1) { setChooseRole({ roles: u.roles, userName: res.userName }); return; }
+    runSuccessAnimation(res.role, res.userName);
+  };
+
   const handleSubmit = () => {
     if (!canSubmit) return;
     const userKey = name.trim().toLowerCase();
@@ -392,12 +425,20 @@ export default function IntroScreen({ onAuth }: Props) {
       setError('Unbekannter Nutzer oder falscher Code');
       return;
     }
-    if (isPasskeySupported() && getStoredPasskey() === null) {
+    // Mehrere Rollen → erst wählen lassen; eine Rolle → direkt durch.
+    if (user.roles.length > 1) {
       setError(null);
-      setOfferRegister({ role: user.role, userName: userKey });
+      setChooseRole({ roles: user.roles, userName: userKey });
       return;
     }
-    runSuccessAnimation(user.role, userKey);
+    proceedAfterAuth(user.roles[0], userKey);
+  };
+
+  const handlePickRole = (role: Role) => {
+    if (!chooseRole) return;
+    const userName = chooseRole.userName;
+    setChooseRole(null);
+    proceedAfterAuth(role, userName);
   };
 
   // Auto-Passkey-Versuch sobald das Panel geöffnet wird (nur wenn registriert)
@@ -408,7 +449,7 @@ export default function IntroScreen({ onAuth }: Props) {
     setPasskeyBusy(true);
     tryPasskeyLogin().then((res) => {
       setPasskeyBusy(false);
-      if (res) runSuccessAnimation(res.role, res.userName);
+      if (res) afterPasskey(res);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [panelVisible]);
@@ -440,7 +481,7 @@ export default function IntroScreen({ onAuth }: Props) {
     setPasskeyBusy(true);
     tryPasskeyLogin().then((res) => {
       setPasskeyBusy(false);
-      if (res) runSuccessAnimation(res.role, res.userName);
+      if (res) afterPasskey(res);
     });
   };
 
@@ -548,7 +589,41 @@ export default function IntroScreen({ onAuth }: Props) {
           Zugang — SCIM3 V0.2
         </div>
 
-        {offerRegister ? (
+        {chooseRole ? (
+          <>
+            <div style={{
+              fontSize: 12, color: '#e8e6ff', marginBottom: 18, lineHeight: 1.5,
+              fontFamily: 'system-ui, sans-serif',
+            }}>
+              Mit welcher Rolle eintreten?
+            </div>
+            {chooseRole.roles.map((r) => (
+              <button
+                key={r}
+                onClick={() => handlePickRole(r)}
+                style={{
+                  width: '100%', padding: '10px 0', fontSize: 13, fontWeight: 500,
+                  background: 'rgba(65,50,195,0.88)', color: '#e8e6ff',
+                  border: '1px solid rgba(65,50,195,0.70)', borderRadius: 5, cursor: 'pointer',
+                  fontFamily: 'system-ui, sans-serif', letterSpacing: '0.06em', marginBottom: 8,
+                }}
+              >
+                {ROLE_LABEL[r]}
+              </button>
+            ))}
+            <button
+              onClick={() => { setChooseRole(null); setError(null); }}
+              style={{
+                width: '100%', padding: '8px 0', fontSize: 12,
+                background: 'transparent', color: 'rgba(150,140,255,0.65)',
+                border: '1px solid rgba(65,50,195,0.20)', borderRadius: 5, cursor: 'pointer',
+                fontFamily: 'system-ui, sans-serif',
+              }}
+            >
+              Abbrechen
+            </button>
+          </>
+        ) : offerRegister ? (
           <>
             <div style={{
               fontSize: 12, color: '#e8e6ff', marginBottom: 18, lineHeight: 1.5,
