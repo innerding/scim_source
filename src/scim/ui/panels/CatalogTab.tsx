@@ -361,10 +361,15 @@ interface RowProps {
   onPatch: (changes: Partial<Omit<CatalogPoi, 'id'>>) => void;
   onDelete: () => void;
   onUndelete: () => void;
+  identityByCluster?: Map<string, string>;   // cluster → poi.id der aktuellen Identity
 }
 
-function PoiRow({ poi, editMode, incoming, onPatch, onDelete, onUndelete }: RowProps) {
+function PoiRow({ poi, editMode, incoming, onPatch, onDelete, onUndelete, identityByCluster }: RowProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
+  // Cluster-Identity-Regel: hält ein ANDERER POI im selben Cluster bereits die Identity,
+  // ist dieses Häkchen gesperrt (grau) — erst das aktuelle abwählen (deselect-before-switch).
+  const identityHolder = poi.cluster ? identityByCluster?.get(poi.cluster) : undefined;
+  const idLocked = !!identityHolder && identityHolder !== poi.id;
   // Draw-ID des aktuell zugewiesenen Icons ermitteln (inkl. Plus-Suffix-Resolution).
   const resolvedIcon = resolveIcon(poi.icon);
   const iconEntry = iconById(resolvedIcon.iconId);
@@ -481,10 +486,14 @@ function PoiRow({ poi, editMode, incoming, onPatch, onDelete, onUndelete }: RowP
           {/* Ghost-POI: ID-Checkbox versteckt — Ghost IST der Cluster-Repraesentant,
               kann nicht zusaetzlich Member-Identity sein. */}
           {poi.subcategory !== 'Cluster' && (
-            <label title="Cluster-Icon" style={{ display: 'flex', alignItems: 'center', fontSize: 10, color: '#c8389b' }}>
+            <label
+              title={idLocked ? 'Cluster hat schon ein Identity-Icon — erst das aktuelle abwählen' : 'Cluster-Icon'}
+              style={{ display: 'flex', alignItems: 'center', fontSize: 10, color: idLocked ? '#cbd5e0' : '#c8389b', cursor: idLocked ? 'not-allowed' : 'pointer' }}
+            >
               <input
                 type="checkbox"
                 checked={!!poi.is_cluster_identity}
+                disabled={idLocked}
                 onChange={(e) => onPatch({ is_cluster_identity: e.target.checked })}
                 style={{ marginRight: 2 }}
               />
@@ -533,7 +542,7 @@ const btnStyle: React.CSSProperties = {
 };
 
 function SubcategorySection({
-  subcategory, pois, editMode, incomingIds, onPatchPoi, onDeletePoi, onUndeletePoi, onAddPoi,
+  subcategory, pois, editMode, incomingIds, onPatchPoi, onDeletePoi, onUndeletePoi, onAddPoi, identityByCluster,
 }: {
   subcategory: Subcategory;
   pois: MergedPoi[];
@@ -543,6 +552,7 @@ function SubcategorySection({
   onDeletePoi: (id: string) => void;
   onUndeletePoi: (id: string) => void;
   onAddPoi: (sub: Subcategory) => void;
+  identityByCluster?: Map<string, string>;
 }) {
   const spec = containerOf(subcategory);
   if (!spec) return null;
@@ -583,6 +593,7 @@ function SubcategorySection({
               onPatch={(c) => onPatchPoi(p.id, c)}
               onDelete={() => onDeletePoi(p.id)}
               onUndelete={() => onUndeletePoi(p.id)}
+              identityByCluster={identityByCluster}
             />
           ))}
         </tbody>
@@ -599,7 +610,7 @@ function SubcategorySection({
 // ─── Cluster-Sort-Sektion (eine Sektion je Cluster, Mitglieder gemischt) ─────
 
 function ClusterGroupSection({
-  name, pois, editMode, incomingIds, onPatchPoi, onDeletePoi, onUndeletePoi,
+  name, pois, editMode, incomingIds, onPatchPoi, onDeletePoi, onUndeletePoi, identityByCluster,
 }: {
   name: string;
   pois: MergedPoi[];
@@ -608,6 +619,7 @@ function ClusterGroupSection({
   onPatchPoi: (id: string, changes: Partial<Omit<CatalogPoi, 'id'>>) => void;
   onDeletePoi: (id: string) => void;
   onUndeletePoi: (id: string) => void;
+  identityByCluster?: Map<string, string>;
 }) {
   const liveCount = pois.filter((p) => !p._isDeleted).length;
   return (
@@ -652,6 +664,7 @@ function ClusterGroupSection({
               onPatch={(c) => onPatchPoi(p.id, c)}
               onDelete={() => onDeletePoi(p.id)}
               onUndelete={() => onUndeletePoi(p.id)}
+              identityByCluster={identityByCluster}
             />
           ))}
         </tbody>
@@ -1363,6 +1376,17 @@ export default function CatalogTab({ openCatalogId, onCatalogConsumed }: { onJum
       .sort((a, b) => b.pois.length - a.pois.length);
   }, [merged, clusterSort]);
 
+  // Cluster-Identity-Regel: je Cluster der POI, der die Identity hält (erster gewinnt) →
+  // die Häkchen aller anderen im selben Cluster sind gesperrt (eine Identity je Cluster).
+  const identityByCluster = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const p of merged.pois) {
+      if (p._isDeleted || !p.is_cluster_identity || !p.cluster) continue;
+      if (!m.has(p.cluster)) m.set(p.cluster, p.id);
+    }
+    return m;
+  }, [merged]);
+
   // In Cluster-Sort-Modus: Subkategorie-Sektionen zeigen nur POIs ohne Cluster.
   const sectionsForRender = useMemo(() => {
     if (!clusterSort) return sections;
@@ -1665,6 +1689,7 @@ export default function CatalogTab({ openCatalogId, onCatalogConsumed }: { onJum
           onPatchPoi={handlePatch}
           onDeletePoi={handleDelete}
           onUndeletePoi={handleUndelete}
+          identityByCluster={identityByCluster}
         />
       ))}
 
@@ -1680,6 +1705,7 @@ export default function CatalogTab({ openCatalogId, onCatalogConsumed }: { onJum
           onDeletePoi={handleDelete}
           onUndeletePoi={handleUndelete}
           onAddPoi={handleAdd}
+          identityByCluster={identityByCluster}
         />
       ))}
 
