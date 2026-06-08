@@ -3,7 +3,6 @@ import QrCell from '../QrCell';
 import { REGION_MAP } from './V01PackagesPanel';
 import packageOpenIcon from '../../../assets/Package-open.svg';
 import packageIcon     from '../../../assets/Package.svg';
-import type { PackageEntry } from './usePackagesApi';
 import { fetchOriginMeta, fetchPresence, type OriginMeta, type PresenceStatus } from '../../../runtime/anthemApi';
 import { mvpUrl } from '../../../runtime/appUrl';
 import { AnthemCycleBadge } from '../AnthemCycleInfo';
@@ -20,30 +19,10 @@ const fmtUploaded = (iso: string | null) => {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 };
 
-// Die ANTHEM-/ORIGIN-SCHICHT je Rep: was live ausgespielt wird (≠ Bundle-Paket).
-// Origin-Netz veröffentlicht? · presence (live). Read-only Worker-Poll.
-function AnthemLayerLine({ repId }: { repId: string }) {
-  const [origin, setOrigin] = useState<OriginMeta | null>(null);
-  const [presence, setPresence] = useState<PresenceStatus | null>(null);
-  const [errored, setErrored] = useState(false);
-
-  useEffect(() => {
-    let alive = true;
-    const tick = () => {
-      Promise.allSettled([fetchOriginMeta(repId), fetchPresence(repId)]).then(([o, p]) => {
-        if (!alive) return;
-        if (o.status === 'fulfilled') { setOrigin(o.value); setErrored(false); } else setErrored(true);
-        if (p.status === 'fulfilled') setPresence(p.value);
-      });
-    };
-    tick();
-    const id = setInterval(tick, 15000);
-    return () => { alive = false; clearInterval(id); };
-  }, [repId]);
-
+// Die ANTHEM-/ORIGIN-SCHICHT (presentational) — aus der schon geholten OriginMeta + presence.
+function AnthemLayerLine({ origin, presence, errored }: { origin: OriginMeta | null; presence: PresenceStatus | null; errored: boolean }) {
   const published = origin?.published ?? false;
   const present = presence?.present ?? false;
-
   return (
     <div style={{
       fontSize: 10.5, fontFamily: 'ui-monospace, Menlo, monospace', color: '#4a5568',
@@ -56,8 +35,8 @@ function AnthemLayerLine({ repId }: { repId: string }) {
         <>
           <span style={{ color: published ? '#2f855a' : '#a0aec0', fontWeight: 700 }}>{published ? '●' : '○'}</span>{' '}
           {published
-            ? <>Origin veröffentlicht{origin?.stretches != null ? ` · ${origin.stretches} Strecken` : ''}{origin?.bytes != null ? ` · ${fmtKB(origin.bytes)}` : ''}{origin?.uploadedAt ? ` · ${fmtUploaded(origin.uploadedAt)}` : ''}</>
-            : <span style={{ color: '#a0aec0' }}>Origin nicht veröffentlicht</span>}
+            ? <>Origin-Mesh veröffentlicht{origin?.stretches != null ? ` · ${origin.stretches} Strecken` : ''}{origin?.bytes != null ? ` · ${fmtKB(origin.bytes)}` : ''}{origin?.uploadedAt ? ` · ${fmtUploaded(origin.uploadedAt)}` : ''}</>
+            : <span style={{ color: '#a0aec0' }}>Origin-Mesh nicht veröffentlicht</span>}
           {' · '}
           <span style={{ color: present ? '#2f855a' : '#a0aec0' }}>{present ? '● presence' : '○ kalt'}</span>
           {origin?.anthemEndpoint && <span style={{ color: '#a0aec0' }}> · {origin.anthemEndpoint}</span>}
@@ -67,42 +46,40 @@ function AnthemLayerLine({ repId }: { repId: string }) {
   );
 }
 
-function useActiveForRepresentation(representationId: string) {
-  const [pkg, setPkg]         = useState<PackageEntry | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (!WORKER_URL) return;
-    setLoading(true);
-    setPkg(null);
-    fetch(`${WORKER_URL}/api/packages?representation_id=${encodeURIComponent(representationId)}&status=active`)
-      .then((r) => r.ok ? r.json() as Promise<PackageEntry[]> : Promise.resolve([]))
-      .then((rows) => setPkg(rows[0] ?? null))
-      .catch(() => setPkg(null))
-      .finally(() => setLoading(false));
-  }, [representationId]);
-
-  return { pkg, loading };
-}
-
 function RepresentationRow({
   region, rep,
 }: {
   region: typeof REGION_MAP[number];
   rep: typeof REGION_MAP[number]['representations'][number];
 }) {
-  const { pkg, loading } = useActiveForRepresentation(rep.id);
+  // EINE Origin-Meta-Quelle (Phase 1): bundlePublished/version = das aktive Bundle
+  // in R2 (was die Ziel-App via ?rep= lädt) + Mesh-/presence-Status. Kein /api/packages mehr.
+  const [origin, setOrigin] = useState<OriginMeta | null>(null);
+  const [presence, setPresence] = useState<PresenceStatus | null>(null);
+  const [errored, setErrored] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    const tick = () => {
+      Promise.allSettled([fetchOriginMeta(rep.id), fetchPresence(rep.id)]).then(([o, p]) => {
+        if (!alive) return;
+        if (o.status === 'fulfilled') { setOrigin(o.value); setErrored(false); } else setErrored(true);
+        if (p.status === 'fulfilled') setPresence(p.value);
+      });
+    };
+    tick();
+    const id = setInterval(tick, 15000);
+    return () => { alive = false; clearInterval(id); };
+  }, [rep.id]);
+
+  const live = origin?.bundlePublished ?? false;
+  const version = origin?.version ?? null;
 
   return (
     <div style={{
-      border: `1px solid ${pkg ? '#9ae6b4' : '#e2e8f0'}`,
-      borderRadius: 8,
-      background: pkg ? '#f0fff4' : '#f7fafc',
-      padding: '14px 18px',
-      display: 'grid',
-      gridTemplateColumns: '200px 1fr',
-      gap: 16,
-      alignItems: 'center',
+      border: `1px solid ${live ? '#9ae6b4' : '#e2e8f0'}`,
+      borderRadius: 8, background: live ? '#f0fff4' : '#f7fafc',
+      padding: '14px 18px', display: 'grid', gridTemplateColumns: '200px 1fr', gap: 16, alignItems: 'center',
     }}>
       <div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
@@ -113,38 +90,24 @@ function RepresentationRow({
           <img src={rep.icon} alt="" width={22} height={22} />
           <div>
             <div style={{ fontSize: 13, fontWeight: 600, color: '#1a365d' }}>{rep.label}</div>
-            {pkg && (
-              <div style={{ fontSize: 10, fontFamily: 'monospace', color: '#276749' }}>
-                {pkg.version}
-              </div>
+            {live && version != null && (
+              <div style={{ fontSize: 10, fontFamily: 'monospace', color: '#276749' }}>aktiv v{version}</div>
             )}
           </div>
-          <img
-            src={pkg ? packageOpenIcon : packageIcon}
-            alt="" width={18} height={18}
-            style={{ marginLeft: 'auto', opacity: pkg ? 1 : 0.25 }}
-          />
+          <img src={live ? packageOpenIcon : packageIcon} alt="" width={18} height={18} style={{ marginLeft: 'auto', opacity: live ? 1 : 0.25 }} />
         </div>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, minWidth: 0 }}>
-        {/* Ziel-App · QR — die ECHTE publizierte Origin-App (?rep=, QR → direkt zur Rep).
-            Trägt das Zugangs-Gate mit, sodass ein fremdes User-Device ohne Passphrase lädt.
-            Lädt, sobald „Origin veröffentlicht" (siehe Anthem-Schicht unten). */}
+        {/* Ziel-App · QR — die ECHTE publizierte Origin-App (?rep=, QR → direkt zur Rep). */}
         <div>
-          <div style={QR_LABEL}>Ziel-App · QR <span style={{ color: '#a0aec0', fontWeight: 400 }}>(MVP · scannen → lädt die Rep aufs Gerät)</span></div>
+          <div style={QR_LABEL}>Ziel-App · QR <span style={{ color: '#a0aec0', fontWeight: 400 }}>(scannen → lädt die Rep aufs Gerät)</span></div>
           <QrCell url={mvpUrl(rep.id)} />
         </div>
-        {/* Legacy: aktives Bundle-Paket (CDN, Weg-1). */}
-        {loading && <div style={{ fontSize: 12, color: '#a0aec0' }}>…</div>}
-        {!loading && !pkg && <div style={{ fontSize: 12, color: '#a0aec0' }}>Kein aktives Bundle-Paket</div>}
-        {!loading && pkg && (
-          <div>
-            <div style={QR_LABEL}>Bundle-Paket · CDN <span style={{ color: '#a0aec0', fontWeight: 400 }}>(Legacy)</span></div>
-            <QrCell url={pkg.cdn_url} />
-          </div>
-        )}
-        <AnthemLayerLine repId={rep.id} />
+        <div style={{ fontSize: 11, color: live ? '#276749' : '#a0aec0', fontFamily: 'ui-monospace, Menlo, monospace' }}>
+          {live ? `● aktives Origin-Bundle v${version ?? '?'}${origin?.bundleUploadedAt ? ` · ${fmtUploaded(origin.bundleUploadedAt)}` : ''}` : '○ kein aktives Origin-Bundle'}
+        </div>
+        <AnthemLayerLine origin={origin} presence={presence} errored={errored} />
       </div>
     </div>
   );
@@ -169,15 +132,15 @@ export default function V03ActiveMonitorPanel() {
             <AnthemCycleBadge />
           </div>
           <div style={{ fontSize: 11, color: '#718096' }}>
-            Je Representation: aktives Bundle-Paket (CDN/QR) <strong>+ Anthem-Schicht</strong> (live ausgespielt: Origin + presence)
+            Je Representation: aktives <strong>Origin-Bundle</strong> (R2/QR) <strong>+ Anthem-Schicht</strong> (Mesh + presence)
           </div>
         </div>
       </div>
       <p style={{ fontSize: 11.5, color: '#718096', lineHeight: 1.55, margin: '0 0 18px', maxWidth: 620 }}>
-        <strong>Publishing-Monitor · Beobachter</strong> der ausgelieferten Maschine. Zeigt zweierlei: <strong>was
-        installiert ist</strong> (versioniertes Bundle-Paket, D1/CDN) und <strong>was live ausgespielt wird</strong>
-        (Origin-Schicht in R2 + presence). Das Anthem-<em>Snapshot</em> selbst ist ein flüchtiger 5-Min-Stream —
-        nicht als Paket gelistet; seine Lebendigkeit zeigt die presence-Anzeige (auch im Footer · Tab t1).
+        <strong>Publishing-Monitor · Beobachter</strong> der ausgelieferten Maschine. Zeigt, <strong>was live ausgespielt
+        wird</strong>: das aktive Origin-Bundle in R2 (was die Ziel-App via <code>?rep=</code> lädt) + die Anthem-Schicht
+        (Origin-Mesh + presence). Das Anthem-<em>Snapshot</em> selbst ist ein flüchtiger 5-Min-Stream — seine
+        Lebendigkeit zeigt presence (auch im Footer · Tab t1). <em>Liest den Origin-Pfad — kein /api/packages mehr.</em>
       </p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
