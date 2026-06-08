@@ -83,7 +83,7 @@ export function repsForActor(actor: Actor): RepView[] {
     if (!canSee(actor, { ownerId, regionId: region.id, binding, state })) continue;
     views.push({
       id: d.id, name: d.name, regionId: region.id, regionLabel: region.label,
-      binding, state, currentVersion: 0, origin: 'draft',
+      binding, state, currentVersion: 0, origin: 'draft', owner: ownerId,
       catalogId: d.catalog_id ?? null, geometryId: null,
       parts: {
         geometry: !!(d.boundary?.length || d.reference?.length),

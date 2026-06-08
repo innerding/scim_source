@@ -16,6 +16,9 @@ interface Props {
 // Heute hartkodiert = Platzhalter; die echte „eine Person, mehrere Rollen"-
 // Verwaltung gehört server-seitig in die ACCESS-Schicht (ann_105).
 const USERS: Record<string, { code: string; roles: Role[] }> = {
+  // Voller Name wie bei „michael moser" (deshalb kam „dietmar broda" vorher nicht
+  // rein — Schlüssel war nur „dietmar"). Kurzform als Alias bleibt gültig.
+  'dietmar broda': { code: import.meta.env.VITE_CODE_OPERATOR ?? '', roles: ['operator'] },
   'dietmar': { code: import.meta.env.VITE_CODE_OPERATOR ?? '', roles: ['operator'] },
   'michael moser': { code: import.meta.env.VITE_CODE_ANALYST ?? '', roles: ['analyst', 'rep_editor'] },
   'reg editor': { code: import.meta.env.VITE_CODE_REGIO ?? '', roles: ['reg_editor'] },

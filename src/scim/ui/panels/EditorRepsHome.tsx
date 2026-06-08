@@ -69,6 +69,9 @@ function RepCard({ rep, onOpen, onChanged, live, bound, onDelete }: {
           fontSize: 9.5, fontFamily: 'monospace', padding: '1px 7px', borderRadius: 999,
           border: `1px solid ${sm.bd}`, background: sm.bg, color: sm.fg, fontWeight: 700,
         }}>{sm.label}{committed ? ` v${rep.currentVersion}` : ''}</span>
+        {rep.owner && (
+          <span style={{ fontSize: 10, color: '#718096' }}>von <strong style={{ color: '#4a5568' }}>{rep.owner}</strong></span>
+        )}
       </div>
 
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>

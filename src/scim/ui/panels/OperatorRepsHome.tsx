@@ -37,6 +37,9 @@ function repHead(rep: RepView, extra?: React.ReactNode) {
         fontSize: 9.5, fontFamily: 'monospace', padding: '1px 7px', borderRadius: 999,
         border: '1px solid #cbd5e0', background: '#f7fafc', color: '#4a5568',
       }}>{rep.binding === 'regional' ? `◎ ${rep.regionLabel}` : '◍ ohne Bindung'}</span>
+      {rep.owner && (
+        <span style={{ fontSize: 10, color: '#718096' }}>von <strong style={{ color: '#4a5568' }}>{rep.owner}</strong></span>
+      )}
       {extra}
     </div>
   );

@@ -121,6 +121,7 @@ export interface RepView {
   state: LifecycleState;      // local | submitted | committed
   currentVersion: number;     // 0 = nie committet
   origin: 'draft' | 'committed';
+  owner?: string;             // Ersteller (Editor) — bei Drafts gesetzt
   // Ziel-Ids für die Rep-Bindung (welche Rep die Werkzeuge bedienen):
   //   draft     → der Drawer öffnet die Rep über ihre eigene id ('draft-…')
   //   committed → über geometryId
