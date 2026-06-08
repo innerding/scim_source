@@ -1482,7 +1482,8 @@ export default function PanelWorkspace({ activeId, activeTab, onTabChange, resul
   // Inhalt folgt dem AKTIVEN TAB (activeMode), nicht der Diode: Operations=voller Inhalt,
   // Review=leer, Kartography=Platzhalter (Drehscheibe lebt in der Nav).
   const viewMode = mode?.activeMode ?? role;
-  const regionAlt = REGION_DASHBOARD_IDS.has(activeId) && viewMode !== 'operator';
+  // P01/Thresholds bringt seine Moduslogik selbst mit (eigene Säulen-Maske je Rolle) → nicht ans Gerüst geben.
+  const regionAlt = REGION_DASHBOARD_IDS.has(activeId) && viewMode !== 'operator' && activeId !== 'P01';
 
   return (
     <div style={{

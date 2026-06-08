@@ -1,21 +1,25 @@
-// P01 · Thresholds — Default-Kaskade (Schritt A): drei Säulen Representation · Region ·
-// Global, jede eine eigenständige Editor-Komponente (ThresholdColumn). Kopplung von
-// Region und Representation direkt an Global (flach): gekoppelt = spiegelt Global und
-// folgt dessen Änderungen; Editieren entkoppelt; „an Global koppeln" schnappt zurück.
+// P01 · Thresholds — Default-Kaskade mit Rollen-Maske (Schritt B).
 //
-// NICHT-BRECHEND: die Region-Säule schreibt weiter in den bestehenden Region-Storage-
-// Key (regionSlug), den die Live-Pipeline (Mesh/Runtime) liest. Global + Representation
-// sind neue Keys, noch nicht von der Pipeline gelesen (Wiring folgt in späteren Schritten).
+// Säulen (links→rechts): Rep-Editor-Rep · Reg-Editor-Reg · Representation · Region · Global.
+// Die letzten drei sind die OPERATOR-Säulen (sein Master), die ersten zwei die EDITOR-Säulen.
 //
-// Rollen-Maske + Effekt-Gate (Sandbox) kommen in Schritt B; hier ist alles operator-live.
+// Zwei Achsen:
+//  · Sicht (activeMode/Tab) → welche Säulen, welche abgedimmt.
+//  · Wirkung (echtes Login == Tab-Eigentümer && nicht Review) → live vs. Sandbox.
+// Drei Säulen-Zustände: live (interaktiv + speichert) · sandbox (interaktiv, folgenlos) ·
+// dimmed (abgedimmt + tot, „technischer Ursprung").
+//
+// NICHT-BRECHEND: Region schreibt weiter in den regionSlug-Key (Live-Pipeline). Alle anderen
+// Säulen sind eigene Keys, noch nicht von der Pipeline gelesen.
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { loadColourSettings, saveColourSettings, isColourCustomized, COLOUR_SETTINGS_EVENT, evenBorders, type ColourSettings } from '../../sensus/colourSettings';
 import { useColourRegionSlug } from '../../../runtime/useAuftraggeberRep';
+import { useModeSwitch, type Role } from '../RoleContext';
 import { AnthemCycleBadge } from '../AnthemCycleInfo';
 
 const PV_H = 220;
-const GAP = 0.02;                                       // Mindestabstand zwischen Grenzen
+const GAP = 0.02;
 const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
 
 const fieldHi = (b: number[], i: number, n: number) => (i === n - 1 ? 1 : b[i]);
@@ -44,16 +48,18 @@ function centerFieldBorders(n: number, c: number): number[] {
   return out.map((x) => Math.min(0.999, Math.max(0.001, x)));
 }
 
-// ── Eine Säule: Verlauf-Editor (Mitte/Grenzen) + Farb-Liste ───────────────────
-function ThresholdColumn({ title, settings, onChange, coupling, headerExtra }: {
+// ── Eine Säule: Verlauf-Editor + Farb-Liste ───────────────────────────────────
+function ThresholdColumn({ title, settings, onChange, coupling, dimmed = false, editable = 'full' }: {
   title: string;
   settings: ColourSettings;
   onChange: (patch: Partial<ColourSettings>) => void;
   coupling?: { coupled: boolean; onCouple: () => void };
-  headerExtra?: React.ReactNode;
+  dimmed?: boolean;                    // abgedimmt + tot (technischer Ursprung)
+  editable?: 'full' | 'borders';       // 'borders' = kein +Farbe / kein × / kein Mittelschieber
 }) {
   const s = settings;
   const n = s.stops.length;
+  const full = editable === 'full';
 
   const [tweenB, setTweenB] = useState<number[] | null>(null);
   const [dragB, setDragB] = useState<number[] | null>(null);
@@ -64,7 +70,6 @@ function ThresholdColumn({ title, settings, onChange, coupling, headerExtra }: {
   const leftDragging = useRef(false);
   const dndIdx = useRef<number | null>(null);
 
-  // Bei Settings-Wechsel von außen (Kopplung/Region-Wechsel) Live-Drag verwerfen.
   useEffect(() => { setTweenB(null); setDragB(null); }, [settings]);
   useEffect(() => () => cancelAnimationFrame(rafRef.current), []);
 
@@ -178,31 +183,31 @@ function ThresholdColumn({ title, settings, onChange, coupling, headerExtra }: {
   const order = Array.from({ length: n }, (_, k) => n - 1 - k);
 
   return (
-    <div style={{ flexShrink: 0 }}>
-      {/* Säulen-Kopf: Titel + Kopplungs-Schalter */}
+    <div style={{ flexShrink: 0, opacity: dimmed ? 0.32 : 1, pointerEvents: dimmed ? 'none' : 'auto', filter: dimmed ? 'grayscale(0.5)' : undefined, transition: 'opacity 0.2s' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, minHeight: 20 }}>
-        <span style={{ fontSize: 12.5, fontWeight: 700, color: '#1a365d' }}>{title}</span>
+        <span style={{ fontSize: 12, fontWeight: 700, color: '#1a365d', whiteSpace: 'nowrap' }}>{title}</span>
         {coupling && (
           coupling.coupled
             ? <span style={{ fontSize: 9.5, color: '#2f855a', fontFamily: 'monospace' }}>🔗 an Global</span>
             : <button onClick={coupling.onCouple} title="wieder an Global koppeln (spiegelt Global)"
-                style={{ fontSize: 9, padding: '1px 6px', borderRadius: 3, border: '1px solid #e2e8f0', background: '#f7fafc', color: '#718096', cursor: 'pointer' }}>🔗 an Global koppeln</button>
+                style={{ fontSize: 9, padding: '1px 6px', borderRadius: 3, border: '1px solid #e2e8f0', background: '#f7fafc', color: '#718096', cursor: 'pointer' }}>🔗 koppeln</button>
         )}
-        {headerExtra}
       </div>
 
-      <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-        {/* Verlauf-Fenster */}
+      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', height: PV_H }}>
-            <div style={{ position: 'relative', width: 22, height: PV_H }}>
-              <div
-                onPointerDown={onLeftDown} onPointerMove={onLeftMove} onPointerUp={onLeftUp}
-                title="ziehen: Feld zur Mitte wählen"
-                style={{ position: 'absolute', left: 0, right: 1, top: `calc(${(1 - (leftDrag ?? 0.5)) * 100}% - 7px)`, height: 14, display: 'flex', alignItems: 'center', cursor: 'ns-resize', touchAction: 'none' }}
-              >
-                <div style={{ flex: 1, height: leftDragging.current ? 3 : 2, background: '#1a365d', borderRadius: 1 }} />
-              </div>
+            {/* LINKS · Schritt 1 (Mittelschieber) — nur bei voller Editierbarkeit */}
+            <div style={{ position: 'relative', width: full ? 22 : 6, height: PV_H }}>
+              {full && (
+                <div
+                  onPointerDown={onLeftDown} onPointerMove={onLeftMove} onPointerUp={onLeftUp}
+                  title="ziehen: Feld zur Mitte wählen"
+                  style={{ position: 'absolute', left: 0, right: 1, top: `calc(${(1 - (leftDrag ?? 0.5)) * 100}% - 7px)`, height: 14, display: 'flex', alignItems: 'center', cursor: 'ns-resize', touchAction: 'none' }}
+                >
+                  <div style={{ flex: 1, height: leftDragging.current ? 3 : 2, background: '#1a365d', borderRadius: 1 }} />
+                </div>
+              )}
             </div>
 
             <div ref={barRef} style={{ position: 'relative', width: 46, height: PV_H, borderRadius: 4, border: '1px solid #cbd5e0', background: gradientCss(s.stops, borders) }} />
@@ -227,11 +232,10 @@ function ThresholdColumn({ title, settings, onChange, coupling, headerExtra }: {
               })}
             </div>
           </div>
-          <span style={{ fontSize: 8.5, color: '#a0aec0' }}>Mitte · Grenzen</span>
+          <span style={{ fontSize: 8.5, color: '#a0aec0' }}>{full ? 'Mitte · Grenzen' : 'Grenzen'}</span>
           <button onClick={resetEven} style={{ fontSize: 9, padding: '1px 6px', borderRadius: 3, border: '1px solid #e2e8f0', background: '#f7fafc', color: '#718096', cursor: 'pointer' }}>↺ zurücksetzen</button>
         </div>
 
-        {/* Farb-Felder */}
         <div style={{ width: 118 }}>
           <div style={{ fontSize: 8.5, color: '#a0aec0', marginBottom: 2 }}>↑ oben = Last 1</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
@@ -240,22 +244,22 @@ function ThresholdColumn({ title, settings, onChange, coupling, headerExtra }: {
               return (
                 <div
                   key={i}
-                  draggable
-                  onDragStart={() => { dndIdx.current = i; }}
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={() => { if (dndIdx.current != null) reorder(dndIdx.current, i); dndIdx.current = null; }}
-                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '2px 4px', borderRadius: 4, cursor: 'grab', background: isMid ? '#ebf8ff' : '#fff', border: '1px solid ' + (isMid ? '#bee3f8' : '#edf2f7') }}
+                  draggable={full}
+                  onDragStart={() => { if (full) dndIdx.current = i; }}
+                  onDragOver={(e) => { if (full) e.preventDefault(); }}
+                  onDrop={() => { if (full && dndIdx.current != null) reorder(dndIdx.current, i); dndIdx.current = null; }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '2px 4px', borderRadius: 4, cursor: full ? 'grab' : 'default', background: isMid ? '#ebf8ff' : '#fff', border: '1px solid ' + (isMid ? '#bee3f8' : '#edf2f7') }}
                 >
-                  <span style={{ color: '#cbd5e0', fontSize: 12, cursor: 'grab' }}>⠿</span>
-                  <input type="color" value={toHex(s.stops[i])} onChange={(e) => setStop(i, e.target.value)} style={{ width: 28, height: 22, border: 'none', background: 'none', cursor: 'pointer' }} />
+                  {full && <span style={{ color: '#cbd5e0', fontSize: 12, cursor: 'grab' }}>⠿</span>}
+                  <input type="color" value={toHex(s.stops[i])} disabled={!full} onChange={(e) => setStop(i, e.target.value)} style={{ width: 28, height: 22, border: 'none', background: 'none', cursor: full ? 'pointer' : 'default' }} />
                   {isMid && <span style={{ fontSize: 9, color: '#2b6cb0' }}>Mitte</span>}
-                  {n > 2 && (
+                  {full && n > 2 && (
                     <button onClick={() => removeStop(i)} style={{ marginLeft: 'auto', fontSize: 12, border: 'none', background: 'none', color: '#a0aec0', cursor: 'pointer' }}>×</button>
                   )}
                 </div>
               );
             })}
-            {n < 6 && (
+            {full && n < 6 && (
               <button onClick={addStop} style={{ marginTop: 2, alignSelf: 'flex-start', width: 28, height: 26, borderRadius: 4, border: '1px dashed #cbd5e0', background: '#f7fafc', color: '#4a5568', cursor: 'pointer', fontSize: 16 }}>+</button>
             )}
           </div>
@@ -266,14 +270,36 @@ function ThresholdColumn({ title, settings, onChange, coupling, headerExtra }: {
   );
 }
 
-// ── Kopplungs-Flag (gekoppelt = spiegelt Global + folgt dessen Änderungen) ────
+// ── Kaskade: Säulen, Keys, Rollen-Maske ───────────────────────────────────────
+type Col = 'rep_editor' | 'reg_editor' | 'representation' | 'region' | 'global';
+
+const TITLE: Record<Col, string> = {
+  rep_editor: 'Rep-Editor-Rep', reg_editor: 'Reg-Editor-Reg',
+  representation: 'Representation', region: 'Region', global: 'Global',
+};
+const COL_EDITABLE: Record<Col, 'full' | 'borders'> = {
+  rep_editor: 'borders', reg_editor: 'borders', representation: 'full', region: 'full', global: 'full',
+};
+
 const coupleKey = (k: string) => `scim3_couple_${k || 'default'}`;
 const loadCoupled = (k: string) => { try { return localStorage.getItem(coupleKey(k)) === '1'; } catch { return false; } };
 const saveCoupled = (k: string, v: boolean) => { try { localStorage.setItem(coupleKey(k), v ? '1' : '0'); } catch { /* */ } };
 
 const GLOBAL_KEY = '__global__';
 
-// ── zarter vertikaler Wrap-Slider (Comfort-only) ──────────────────────────────
+// Sicht je activeMode: welche Säulen, welche abgedimmt.
+function viewColumns(activeMode: Role): { col: Col; dimmed: boolean }[] {
+  if (activeMode === 'regio_editor') return [
+    { col: 'rep_editor', dimmed: false }, { col: 'reg_editor', dimmed: false },
+    { col: 'representation', dimmed: true }, { col: 'region', dimmed: true },
+  ];
+  // operator + analyst: voller Master-Blick (Editor-Säulen als abgedimmte Ursprungs-Geister)
+  return [
+    { col: 'rep_editor', dimmed: true }, { col: 'reg_editor', dimmed: true },
+    { col: 'representation', dimmed: false }, { col: 'region', dimmed: false }, { col: 'global', dimmed: false },
+  ];
+}
+
 function VSlider({ label, value, onChange, accent = '#805ad5' }: {
   label: string; value: number; onChange: (v: number) => void; accent?: string;
 }) {
@@ -292,105 +318,141 @@ function VSlider({ label, value, onChange, accent = '#805ad5' }: {
 
 export default function ThresholdsView() {
   const regionSlug = useColourRegionSlug();
-  const repKey = `__rep__${regionSlug || 'default'}`;
+  const mode = useModeSwitch();
+  const activeMode: Role = mode?.activeMode ?? 'operator';   // Sicht (Tab)
+  const realRole: Role = mode?.real ?? 'operator';           // Login (Effekt-Gate)
+  // Tab live nur, wenn das echte Login den Tab besitzt — und Review ist immer Sandbox.
+  const tabLive = realRole === activeMode && activeMode !== 'analyst';
 
-  // Global startet von der aktuellen Region (einmalig, solange Global nie gesetzt wurde) —
-  // damit nichts manuell nachgebaut werden muss.
-  const [globalS, setGlobalS] = useState<ColourSettings>(() =>
-    isColourCustomized(GLOBAL_KEY) ? loadColourSettings(GLOBAL_KEY) : loadColourSettings(regionSlug));
+  const KEY: Record<Col, string> = {
+    rep_editor: `__rep_editor__${regionSlug || 'default'}`,
+    reg_editor: `__reg_editor__${regionSlug || 'default'}`,
+    representation: `__rep__${regionSlug || 'default'}`,
+    region: regionSlug || 'default',
+    global: GLOBAL_KEY,
+  };
+
+  // Eine uncustomisierte Säule startet von der aktuellen Region (kohärenter Start).
+  const seed = useCallback((k: string) => isColourCustomized(k) ? loadColourSettings(k) : loadColourSettings(regionSlug), [regionSlug]);
+  const loadAll = useCallback((): Record<Col, ColourSettings> => ({
+    rep_editor: seed(KEY.rep_editor), reg_editor: seed(KEY.reg_editor),
+    representation: seed(KEY.representation), region: loadColourSettings(regionSlug), global: seed(GLOBAL_KEY),
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [regionSlug, seed]);
+
+  const [vals, setVals] = useState<Record<Col, ColourSettings>>(loadAll);
+  const [regionCoupled, setRegionCoupled] = useState<boolean>(() => loadCoupled(KEY.region));
+  const [repCoupled, setRepCoupled] = useState<boolean>(() => loadCoupled(KEY.representation));
+
   useEffect(() => {
+    setVals(loadAll());
+    setRegionCoupled(loadCoupled(KEY.region));
+    setRepCoupled(loadCoupled(KEY.representation));
     if (!isColourCustomized(GLOBAL_KEY)) saveColourSettings(GLOBAL_KEY, loadColourSettings(regionSlug));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  const [regionS, setRegionS] = useState<ColourSettings>(() => loadColourSettings(regionSlug));
-  const [repS, setRepS] = useState<ColourSettings>(() => loadColourSettings(repKey));
-  const [regionCoupled, setRegionCoupled] = useState<boolean>(() => loadCoupled(regionSlug));
-  const [repCoupled, setRepCoupled] = useState<boolean>(() => loadCoupled(repKey));
-
-  // Region-/Rep-Wechsel: neu laden.
-  useEffect(() => {
-    setRegionS(loadColourSettings(regionSlug));
-    setRepS(loadColourSettings(repKey));
-    setRegionCoupled(loadCoupled(regionSlug));
-    setRepCoupled(loadCoupled(repKey));
-  }, [regionSlug, repKey]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [regionSlug]);
 
   // Live-Pipeline-Sync: andere Schreiber der Region-Settings spiegeln.
   useEffect(() => {
     const onEvt = (e: Event) => {
       const d = (e as CustomEvent).detail as { regionSlug?: string; settings?: ColourSettings } | undefined;
       if (!d || d.regionSlug !== (regionSlug || 'default') || !d.settings) return;
-      setRegionS(d.settings);
+      setVals((p) => ({ ...p, region: d.settings! }));
     };
     window.addEventListener(COLOUR_SETTINGS_EVENT, onEvt);
     return () => window.removeEventListener(COLOUR_SETTINGS_EVENT, onEvt);
   }, [regionSlug]);
 
-  // Global ändern: in gekoppelte Kinder durchschreiben (Write-through → Pipeline bleibt korrekt).
-  const updateGlobal = useCallback((patch: Partial<ColourSettings>) => {
-    const next = { ...loadColourSettings(GLOBAL_KEY), ...patch };
-    saveColourSettings(GLOBAL_KEY, next); setGlobalS(next);
-    if (loadCoupled(regionSlug)) { saveColourSettings(regionSlug, next); setRegionS(next); }
-    if (loadCoupled(repKey))     { saveColourSettings(repKey, next);     setRepS(next); }
-  }, [regionSlug, repKey]);
-
-  // Region/Rep editieren → entkoppelt automatisch.
-  const updateRegion = useCallback((patch: Partial<ColourSettings>) => {
-    const next = { ...loadColourSettings(regionSlug), ...patch };
-    saveColourSettings(regionSlug, next); setRegionS(next);
-    if (loadCoupled(regionSlug)) { saveCoupled(regionSlug, false); setRegionCoupled(false); }
+  // Änderung an Säule `col`. persist = live (sonst Sandbox = nur lokaler State).
+  const change = useCallback((col: Col, patch: Partial<ColourSettings>, persist: boolean) => {
+    setVals((p) => ({ ...p, [col]: { ...p[col], ...patch } }));
+    if (!persist) return;
+    const next = { ...loadColourSettings(KEY[col]), ...patch };
+    saveColourSettings(KEY[col], next);
+    // Editieren von Region/Representation → entkoppelt.
+    if (col === 'region' && loadCoupled(KEY.region)) { saveCoupled(KEY.region, false); setRegionCoupled(false); }
+    if (col === 'representation' && loadCoupled(KEY.representation)) { saveCoupled(KEY.representation, false); setRepCoupled(false); }
+    // Global ändern → in gekoppelte Kinder durchschreiben (Write-through).
+    if (col === 'global') {
+      if (loadCoupled(KEY.region)) { saveColourSettings(KEY.region, next); setVals((p) => ({ ...p, region: next })); }
+      if (loadCoupled(KEY.representation)) { saveColourSettings(KEY.representation, next); setVals((p) => ({ ...p, representation: next })); }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [regionSlug]);
-  const updateRep = useCallback((patch: Partial<ColourSettings>) => {
-    const next = { ...loadColourSettings(repKey), ...patch };
-    saveColourSettings(repKey, next); setRepS(next);
-    if (loadCoupled(repKey)) { saveCoupled(repKey, false); setRepCoupled(false); }
-  }, [repKey]);
 
-  // „an Global koppeln": Global → Säule spiegeln + Flag setzen.
-  const coupleRegion = () => { const g = loadColourSettings(GLOBAL_KEY); saveColourSettings(regionSlug, g); setRegionS(g); saveCoupled(regionSlug, true); setRegionCoupled(true); };
-  const coupleRep = () => { const g = loadColourSettings(GLOBAL_KEY); saveColourSettings(repKey, g); setRepS(g); saveCoupled(repKey, true); setRepCoupled(true); };
+  const coupleTo = (col: 'region' | 'representation') => {
+    const g = loadColourSettings(GLOBAL_KEY);
+    saveColourSettings(KEY[col], g); setVals((p) => ({ ...p, [col]: g }));
+    saveCoupled(KEY[col], true);
+    if (col === 'region') setRegionCoupled(true); else setRepCoupled(true);
+  };
 
-  // Wrap + Abdimm bleiben (vorerst) auf der Region (Live-Scope).
-  const vj = regionS.verjuengung;
-  const setVj = (p: Partial<typeof vj>) => updateRegion({ verjuengung: { ...vj, ...p } });
+  const cols = viewColumns(activeMode);
+
+  // Wrap + Abdimm = Operator-only; in regio_editor-Sicht ausgeblendet.
+  const showWrapAbdimm = activeMode !== 'regio_editor';
+  const wrapLive = tabLive && activeMode === 'operator';
+  const region = vals.region;
+  const vj = region.verjuengung;
+  const setVj = (p: Partial<typeof vj>) => change('region', { verjuengung: { ...vj, ...p } }, wrapLive);
 
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
         <AnthemCycleBadge />
-      </div>
-
-      {/* Default-Kaskade: Representation · Region · Global (Ergebnis links, global rechts) */}
-      <div style={{ display: 'flex', gap: 26, alignItems: 'flex-start', overflowX: 'auto', paddingBottom: 6 }}>
-        <ThresholdColumn title="Representation" settings={repS}    onChange={updateRep}    coupling={{ coupled: repCoupled,    onCouple: coupleRep }} />
-        <ThresholdColumn title="Region"         settings={regionS} onChange={updateRegion} coupling={{ coupled: regionCoupled, onCouple: coupleRegion }} />
-        <ThresholdColumn title="Global"         settings={globalS} onChange={updateGlobal} />
-      </div>
-
-      {/* Wrap — NUR Comfort-Button */}
-      <div style={{ marginTop: 18, borderTop: '1px solid #edf2f7', paddingTop: 12 }}>
-        <div style={{ fontSize: 12.5, fontWeight: 700, color: '#1a365d', marginBottom: 2 }}>
-          Wrap <span style={{ fontWeight: 400, fontSize: 10.5, color: '#a0aec0' }}>· nur Comfort-Button</span>
-        </div>
-        <div style={{ fontSize: 10, color: '#718096', marginBottom: 8, maxWidth: 380 }}>
-          Staucht die Enden der <strong>Comfort-Anzeige</strong> (subjektiv). Das <strong>Mesh bleibt objektiv</strong>.
-        </div>
-        <div style={{ display: 'flex', gap: 12 }}>
-          <VSlider label="unten" value={vj.unten} onChange={(v) => setVj({ unten: v })} />
-          <VSlider label="oben" value={vj.oben} onChange={(v) => setVj({ oben: v })} />
-        </div>
-      </div>
-
-      {/* Abdimm-Schwelle */}
-      <div style={{ marginTop: 18, borderTop: '1px solid #edf2f7', paddingTop: 12 }}>
-        <div style={{ fontSize: 12.5, fontWeight: 700, color: '#1a365d', marginBottom: 4 }}>Abdimm-Schwelle <span style={{ fontWeight: 400, fontSize: 10.5, color: '#a0aec0' }}>· Mesh · überlastete Strecken entdrängen</span></div>
-        <label style={{ fontSize: 11, color: '#4a5568', display: 'flex', gap: 6, alignItems: 'center', marginBottom: 6 }}>
-          <input type="checkbox" checked={regionS.degradier != null} onChange={(e) => updateRegion({ degradier: e.target.checked ? 0.6 : null })} /> aktiv
-        </label>
-        {regionS.degradier != null && (
-          <input type="range" min={0} max={1} step={0.01} value={regionS.degradier} onChange={(e) => updateRegion({ degradier: parseFloat(e.target.value) })} style={{ width: 200, accentColor: '#2b6cb0' }} />
+        {!tabLive && activeMode !== 'operator' && (
+          <span style={{ fontSize: 9.5, fontFamily: 'monospace', color: '#a0aec0', border: '1px solid #e2e8f0', borderRadius: 4, padding: '1px 6px' }}>
+            {activeMode === 'analyst' ? 'Review · Sandbox (folgenlos)' : 'Vorschau · Sandbox (folgenlos)'}
+          </span>
         )}
       </div>
+
+      <div style={{ display: 'flex', gap: 22, alignItems: 'flex-start', overflowX: 'auto', paddingBottom: 6 }}>
+        {cols.map(({ col, dimmed }) => {
+          const live = tabLive && !dimmed;
+          const coupling = (!dimmed && live && (col === 'region' || col === 'representation'))
+            ? { coupled: col === 'region' ? regionCoupled : repCoupled, onCouple: () => coupleTo(col) }
+            : undefined;
+          return (
+            <ThresholdColumn
+              key={col}
+              title={TITLE[col]}
+              settings={vals[col]}
+              dimmed={dimmed}
+              editable={COL_EDITABLE[col]}
+              coupling={coupling}
+              onChange={(patch) => change(col, patch, live)}
+            />
+          );
+        })}
+      </div>
+
+      {showWrapAbdimm && (
+        <>
+          <div style={{ marginTop: 18, borderTop: '1px solid #edf2f7', paddingTop: 12, opacity: wrapLive ? 1 : 0.7 }}>
+            <div style={{ fontSize: 12.5, fontWeight: 700, color: '#1a365d', marginBottom: 2 }}>
+              Wrap <span style={{ fontWeight: 400, fontSize: 10.5, color: '#a0aec0' }}>· nur Comfort-Button</span>
+            </div>
+            <div style={{ fontSize: 10, color: '#718096', marginBottom: 8, maxWidth: 380 }}>
+              Staucht die Enden der <strong>Comfort-Anzeige</strong> (subjektiv). Das <strong>Mesh bleibt objektiv</strong>.
+            </div>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <VSlider label="unten" value={vj.unten} onChange={(v) => setVj({ unten: v })} />
+              <VSlider label="oben" value={vj.oben} onChange={(v) => setVj({ oben: v })} />
+            </div>
+          </div>
+
+          <div style={{ marginTop: 18, borderTop: '1px solid #edf2f7', paddingTop: 12, opacity: wrapLive ? 1 : 0.7 }}>
+            <div style={{ fontSize: 12.5, fontWeight: 700, color: '#1a365d', marginBottom: 4 }}>Abdimm-Schwelle <span style={{ fontWeight: 400, fontSize: 10.5, color: '#a0aec0' }}>· Mesh · überlastete Strecken entdrängen</span></div>
+            <label style={{ fontSize: 11, color: '#4a5568', display: 'flex', gap: 6, alignItems: 'center', marginBottom: 6 }}>
+              <input type="checkbox" checked={region.degradier != null} onChange={(e) => change('region', { degradier: e.target.checked ? 0.6 : null }, wrapLive)} /> aktiv
+            </label>
+            {region.degradier != null && (
+              <input type="range" min={0} max={1} step={0.01} value={region.degradier} onChange={(e) => change('region', { degradier: parseFloat(e.target.value) }, wrapLive)} style={{ width: 200, accentColor: '#2b6cb0' }} />
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }
