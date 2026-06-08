@@ -63,21 +63,22 @@ export default function App() {
     return <IntroScreen onAuth={(r, n) => { setUserName(n); setRole(r); }} />;
   }
 
-  // Effektive Rolle: man darf nur ABWÄRTS in der Kaskade vorschauen (Operator→Analyst→Rep-Editor).
+  // Vorschau nur für Kaskaden-Rollen (Operator/Analyst); echte Editor-Logins (reg/rep) sind terminal.
+  const inCascade = ROLE_ORDER.indexOf(role) >= 0;
   const effectiveRole: Role =
-    preview && ROLE_ORDER.indexOf(preview) >= ROLE_ORDER.indexOf(role) ? preview : role;
+    inCascade && preview && ROLE_ORDER.indexOf(preview) >= ROLE_ORDER.indexOf(role) ? preview : role;
   // Diode durchklicken: eine Stufe abwärts, am Ende zurück zur echten Rolle.
-  // Diode-Wechsel setzt die Ansicht (activeMode) auf die neue Diode-Rolle zurück.
   const cycleMode = () => {
+    if (!inCascade) return;
     const allowed = ROLE_ORDER.slice(ROLE_ORDER.indexOf(role));   // Rollen ab der eigenen abwärts
-    if (allowed.length <= 1) return;                              // Rep-Editor kann nicht wechseln
+    if (allowed.length <= 1) return;
     const next = allowed[(allowed.indexOf(effectiveRole) + 1) % allowed.length];
     setPreview(next === role ? null : next);
     setActiveModeState(null);
   };
   // Gezielt die Diode setzen (nur abwärts in der Kaskade erlaubt).
   const setMode = (target: Role) => {
-    if (ROLE_ORDER.indexOf(target) < ROLE_ORDER.indexOf(role)) return;
+    if (!inCascade || ROLE_ORDER.indexOf(target) < ROLE_ORDER.indexOf(role)) return;
     setPreview(target === role ? null : target);
     setActiveModeState(null);
   };

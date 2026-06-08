@@ -15,7 +15,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { loadColourSettings, saveColourSettings, isColourCustomized, COLOUR_SETTINGS_EVENT, evenBorders, type ColourSettings } from '../../sensus/colourSettings';
 import { useColourRegionSlug } from '../../../runtime/useAuftraggeberRep';
-import { useModeSwitch, type Role } from '../RoleContext';
+import { useModeSwitch, isEditorRole, type Role } from '../RoleContext';
 import { AnthemCycleBadge } from '../AnthemCycleInfo';
 
 const PV_H = 220;
@@ -297,6 +297,14 @@ const GLOBAL_KEY = '__global__';
 
 // Sicht je activeMode: welche Säulen, welche abgedimmt.
 function viewColumns(activeMode: Role): { col: Col; dimmed: boolean }[] {
+  // Echte Editor-Logins: nur die eigene Säule + ihr Operator-Default als abgedimmte Referenz.
+  if (activeMode === 'reg_editor') return [
+    { col: 'reg_editor', dimmed: false }, { col: 'region', dimmed: true },
+  ];
+  if (activeMode === 'rep_editor') return [
+    { col: 'rep_editor', dimmed: false }, { col: 'representation', dimmed: true },
+  ];
+  // Kombinierter Editor (Operator-Vorschau, regio_editor): beide Editor-Säulen + Refs.
   if (activeMode === 'regio_editor') return [
     { col: 'rep_editor', dimmed: false }, { col: 'reg_editor', dimmed: false },
     { col: 'representation', dimmed: true }, { col: 'region', dimmed: true },
@@ -405,8 +413,8 @@ export default function ThresholdsView() {
 
   const cols = viewColumns(activeMode);
 
-  // Wrap + Abdimm = Operator-only; in regio_editor-Sicht ausgeblendet.
-  const showWrapAbdimm = activeMode !== 'regio_editor';
+  // Wrap + Abdimm = Operator-only; in allen Editor-Sichten ausgeblendet.
+  const showWrapAbdimm = !isEditorRole(activeMode);
   const wrapLive = tabLive && activeMode === 'operator';
   const region = vals.region;
   const vj = region.verjuengung;

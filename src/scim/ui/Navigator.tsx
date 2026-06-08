@@ -8,7 +8,7 @@ import {
 } from './panelRegistry';
 import logoBaseNaked from '../../assets/logo-base-naked.svg';
 import logoHexNaked from '../../assets/logo-hex-naked.svg';
-import { useRole } from './RoleContext';
+import { useRole, isEditorRole } from './RoleContext';
 import type { Role } from './RoleContext';
 import RepresentBuildTetrahedron from './RepresentBuildTetrahedron';
 import RegioDashboardControl from './RegioDashboardControl';
@@ -22,8 +22,10 @@ interface NavTheme {
 const NAV_THEMES: Record<Role, NavTheme> = {
   operator:     { bg: '#0d1520', border: '#1a2535', fg: '#a0aec0', fgActive: '#e0eeff', activeBg: '#1e3a5f', hover: '#1a2535', sub: '#3d556f', divider: '#1a2d3e' },
   analyst:      { bg: '#16110a', border: '#2c2310', fg: '#cbb083', fgActive: '#ffe6b0', activeBg: '#4a3410', hover: '#241a0b', sub: '#6b5630', divider: '#2c2310' },
-  // Rep-Editor: gleiche (dunkle) Farbwelt wie der Operator (keine Extrawurst).
+  // Editor-Rollen: gleiche (dunkle) Farbwelt wie der Operator (keine Extrawurst).
   regio_editor: { bg: '#0d1520', border: '#1a2535', fg: '#a0aec0', fgActive: '#e0eeff', activeBg: '#1e3a5f', hover: '#1a2535', sub: '#3d556f', divider: '#1a2d3e' },
+  reg_editor:   { bg: '#0d1520', border: '#1a2535', fg: '#a0aec0', fgActive: '#e0eeff', activeBg: '#1e3a5f', hover: '#1a2535', sub: '#3d556f', divider: '#1a2d3e' },
+  rep_editor:   { bg: '#0d1520', border: '#1a2535', fg: '#a0aec0', fgActive: '#e0eeff', activeBg: '#1e3a5f', hover: '#1a2535', sub: '#3d556f', divider: '#1a2d3e' },
 };
 const NavThemeContext = createContext<NavTheme>(NAV_THEMES.operator);
 const useNavTheme = () => useContext(NavThemeContext);
@@ -430,10 +432,10 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
 
   const navTheme = NAV_THEMES[role] ?? NAV_THEMES.operator;
 
-  // Rep-Editor: reduzierte Spalte — NUR die Kartography-Drehscheibe, sonst nichts.
+  // Editor-Rollen: reduzierte Spalte — NUR die Kartography-Drehscheibe, sonst nichts.
   // Gleiche dunkle Farbwelt; der Spacer setzt das Control auf ~dieselbe Höhe wie
   // das Komposit-Tetraeder bei Operator/Analyst.
-  if (role === 'regio_editor') {
+  if (isEditorRole(role)) {
     return (
       <NavThemeContext.Provider value={navTheme}>
         <nav style={{

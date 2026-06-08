@@ -1,10 +1,18 @@
 import { createContext, useContext } from 'react';
 
-export type Role = 'operator' | 'analyst' | 'regio_editor';
+// regio_editor = der KOMBINIERTE Editor-Modus (Operator-Vorschau, Split-Diode lila/orange,
+// sieht beide Editor-Säulen). reg_editor (lila) / rep_editor (orange) = echte Editor-Logins
+// mit getrennten Rechten (Reg nur Region, Rep nur Representation).
+export type Role = 'operator' | 'analyst' | 'regio_editor' | 'reg_editor' | 'rep_editor';
 
-// Rollen-Kaskade (von „voll" nach „eingeschränkt"). Eine Rolle darf in jede Rolle
-// AB ihrer Position abwärts wechseln (Vorschau): Operator→Analyst→Rep-Editor.
+// Operator-Vorschau-Kaskade (Footer-Diode): Operator→Analyst→kombinierter Editor.
+// reg_editor/rep_editor sind echte Logins und NICHT Teil dieser Kaskade (terminal).
 export const ROLE_ORDER: Role[] = ['operator', 'analyst', 'regio_editor'];
+
+// Editor-Rollen (eigene Werkbank, reduzierter Navigator, Editor-Säulen).
+export function isEditorRole(r: Role): boolean {
+  return r === 'regio_editor' || r === 'reg_editor' || r === 'rep_editor';
+}
 
 export const RoleContext = createContext<Role>('operator');
 

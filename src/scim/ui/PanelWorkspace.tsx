@@ -36,7 +36,7 @@ import type { TelcoLoadState } from '../telco-load/telcoLoad.types';
 import SystemPanel from './panels/SystemPanel';
 import AiInterfacePanel from './panels/AiInterfacePanel';
 import CatalogTab from './panels/CatalogTab';
-import { useRole, useModeSwitch, ROLE_ORDER } from './RoleContext';
+import { useRole, useModeSwitch, ROLE_ORDER, isEditorRole } from './RoleContext';
 import type { Role } from './RoleContext';
 import V01PackagesPanel from './panels/V01PackagesPanel';
 import V02RegionDetailPanel from './panels/V02RegionDetailPanel';
@@ -1375,13 +1375,17 @@ const MODE_META: Record<Role, { label: string; color: string }> = {
   regio_editor: { label: 'SCIM-Kartography', color: '#805ad5' },
   analyst:      { label: 'Review',           color: '#4299e1' },
   operator:     { label: 'Operations',       color: '#48bb78' },
+  reg_editor:   { label: 'SCIM-Kartography', color: '#805ad5' },   // echtes Login: keine Tabs
+  rep_editor:   { label: 'SCIM-Kartography', color: '#dd6b20' },
 };
 
 function ModeTabs() {
   const mode = useModeSwitch();
   if (!mode) return null;
+  // Echte Editor-Logins (reg/rep) sind terminal → keine Modus-Tabs.
+  if (!ROLE_ORDER.includes(mode.effective)) return null;
   // Sichtbarkeit richtet sich nach der DIODE (effektive Rolle), nicht nach der Login-Rolle:
-  // Rep-Editor→nur Kartography · Analyst→Kartography+Review · Operator→alle.
+  // kombinierter Editor→nur Kartography · Analyst→Kartography+Review · Operator→alle.
   const effIdx = ROLE_ORDER.indexOf(mode.effective);
   // Anzeige Kartography→…→Operations (Index absteigend).
   const visible = ROLE_ORDER
@@ -1502,7 +1506,7 @@ export default function PanelWorkspace({ activeId, activeTab, onTabChange, resul
       {/* Geometry-Editor braucht volle Hoehe ohne Padding */}
       {regionAlt ? (
         <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 20 }}>
-          {viewMode === 'regio_editor' ? <SharedKartographyView /> : <ReviewPlaceholder />}
+          {isEditorRole(viewMode) ? <SharedKartographyView /> : <ReviewPlaceholder />}
         </div>
       ) : activeId === DRAWER_DESCRIPTOR.id ? (
         <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>

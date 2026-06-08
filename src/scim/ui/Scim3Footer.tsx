@@ -4,7 +4,7 @@
 //    Ziel-App präsent? Eigentümer/Detail = V03 · Publishing-Monitor (t1).
 // Macht die sonst unsichtbare Presence global greifbar (Anthem-Pulse).
 import { useContext, useEffect, useState } from 'react';
-import { UserNameContext, useModeSwitch, type Role } from './RoleContext';
+import { UserNameContext, useModeSwitch, isEditorRole, type Role } from './RoleContext';
 import { clearPasskey } from './passkey';
 import { useWorkspaceNav } from './workspaceNav';
 import { useAuftraggeberRep } from '../../runtime/useAuftraggeberRep';
@@ -13,13 +13,24 @@ import { fetchPresence, anthemReadConfigured, postEditorPresence, fetchEditorPre
 const POLL_MS = 15000;
 const HEARTBEAT_MS = 30000;
 
-// Editor-Rollen — Anzeige + Farbe (SCIM-Operator grün · Data-Analyst blau · Rep-Editor violett).
+// Editor-Rollen — Anzeige + Farbe. Operator grün · Analyst blau · Reg-Editor lila ·
+// Rep-Editor orange · regio_editor = kombinierter Editor (Split-Diode lila/orange).
 const ROLE_META: Record<string, { label: string; color: string }> = {
   operator:     { label: 'SCIM-Operator', color: '#48bb78' },
   analyst:      { label: 'Data-Analyst',  color: '#4299e1' },
-  regio_editor: { label: 'Rep-Editor',    color: '#805ad5' },
+  regio_editor: { label: 'Editor',        color: '#a06cc9' },
+  reg_editor:   { label: 'Reg-Editor',    color: '#805ad5' },
+  rep_editor:   { label: 'Rep-Editor',    color: '#dd6b20' },
 };
-const EDITOR_ROLE_ORDER: Role[] = ['operator', 'analyst', 'regio_editor'];
+const EDITOR_ROLE_ORDER: Role[] = ['operator', 'analyst', 'regio_editor', 'reg_editor', 'rep_editor'];
+
+// Diode: regio_editor (kombinierter Editor) = halb lila / halb orange.
+function Diode({ role }: { role: string }) {
+  if (role === 'regio_editor') {
+    return <span style={{ display: 'inline-block', width: 9, height: 9, borderRadius: '50%', background: 'linear-gradient(90deg, #805ad5 0 50%, #dd6b20 50% 100%)', verticalAlign: 'middle' }} />;
+  }
+  return <span style={{ color: ROLE_META[role]?.color ?? '#48bb78' }}>●</span>;
+}
 
 export default function Scim3Footer({ realRole }: { realRole: Role }) {
   // Presence/Lichter hängen an der ECHTEN Rolle (nicht an der Vorschau-Rolle).
@@ -105,7 +116,7 @@ export default function Scim3Footer({ realRole }: { realRole: Role }) {
             // Eigene Rolle, klickbar: Klick schaltet den Modus eine Stufe abwärts
             // (Operator→Analyst→Rep-Editor→…), die Diode wechselt die Farbe. Kein Drop-up.
             // Presence bleibt echt; nur die Ansicht (effektive Rolle) ändert sich.
-            if (r === role && mode && realRole !== 'regio_editor') {
+            if (r === role && mode && !isEditorRole(realRole)) {
               const eff = mode.effective;
               const em = ROLE_META[eff] ?? m;
               const previewing = eff !== realRole;
@@ -119,7 +130,7 @@ export default function Scim3Footer({ realRole }: { realRole: Role }) {
                     background: 'transparent', border: 'none', font: 'inherit', color: '#a0aec0', padding: 0,
                   }}
                 >
-                  <span style={{ color: em.color }}>●</span>
+                  <Diode role={eff} />
                   {em.label}
                   {previewing
                     ? <span style={{ color: '#718096' }}> · {userName} · Ansicht</span>
@@ -130,7 +141,7 @@ export default function Scim3Footer({ realRole }: { realRole: Role }) {
             }
             return (
               <span key={r} style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                <span style={{ color: m.color }}>●</span>
+                <Diode role={r} />
                 {m.label}{detail}
               </span>
             );
