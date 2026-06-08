@@ -217,7 +217,56 @@ function checkAuth(request: Request, env: Env): boolean {
   return !!(env.UPLOAD_API_KEY && key === env.UPLOAD_API_KEY);
 }
 
+// ── Drossel (zeitliche Release-Schleuse) ────────────────────────────────────
+interface ReleasePolicy { mode: 'manual' | 'scheduled'; windowHour: number; }
+
+async function readPolicy(env: Env): Promise<ReleasePolicy> {
+  const o = await env.PACKAGES.get('release-policy.json');
+  if (!o) return { mode: 'manual', windowHour: 6 };
+  try {
+    const p = await o.json() as Partial<ReleasePolicy>;
+    return {
+      mode: p.mode === 'scheduled' ? 'scheduled' : 'manual',
+      windowHour: Number.isFinite(Number(p.windowHour)) ? Number(p.windowHour) : 6,
+    };
+  } catch { return { mode: 'manual', windowHour: 6 }; }
+}
+
+// Schaltet die neueste gestagte Version einer Rep aktiv (Cron @ Fenster). True, wenn etwas geschaltet wurde.
+async function activateLatestStaged(env: Env, repId: string, nowIso: string): Promise<boolean> {
+  const idxObj = await env.PACKAGES.get(`origin/${repId}/versions-index.json`);
+  if (!idxObj) return false;
+  const idx = await idxObj.json() as { active: number | null; versions: Array<{ version: number; uploadedAt: string; bytes: number }> };
+  const latest = (idx.versions ?? []).reduce((a, v) => Math.max(a, v.version), 0);
+  if (!(latest > (idx.active ?? 0))) return false;
+  const verObj = await env.PACKAGES.get(`origin/${repId}/versions/v${latest}.json`);
+  if (!verObj) return false;
+  const verJson = await verObj.text();
+  await env.PACKAGES.put(`origin/${repId}/bundle.json`, verJson, { httpMetadata: { contentType: 'application/json', cacheControl: 'public, max-age=300' } });
+  await env.PACKAGES.put(`origin/${repId}/bundle-meta.json`, JSON.stringify({ bytes: verJson.length, uploadedAt: nowIso, version: latest }), { httpMetadata: { contentType: 'application/json', cacheControl: 'no-store' } });
+  idx.active = latest;
+  await env.PACKAGES.put(`origin/${repId}/versions-index.json`, JSON.stringify(idx), { httpMetadata: { contentType: 'application/json', cacheControl: 'no-store' } });
+  return true;
+}
+
 export default {
+  // Cron (stündlich) — die zeitliche Drossel: bei mode='scheduled' schaltet das
+  // Fenster (windowHour UTC) die gestagten Versionen aller Reps live.
+  async scheduled(controller: ScheduledController, env: Env): Promise<void> {
+    const policy = await readPolicy(env);
+    if (policy.mode !== 'scheduled') return;
+    const when = new Date(controller.scheduledTime);
+    if (when.getUTCHours() !== policy.windowHour) return;
+    const nowIso = when.toISOString();
+    const list = await env.PACKAGES.list({ prefix: 'origin/' });
+    const repIds = new Set<string>();
+    for (const o of list.objects) {
+      const m = o.key.match(/^origin\/([^/]+)\/versions-index\.json$/);
+      if (m) repIds.add(m[1]);
+    }
+    for (const repId of repIds) await activateLatestStaged(env, repId, nowIso);
+  },
+
   async fetch(request: Request, env: Env): Promise<Response> {
     if (request.method === 'OPTIONS') {
       return new Response(null, { status: 204, headers: CORS_HEADERS });
@@ -479,26 +528,51 @@ export default {
       await env.PACKAGES.put(`origin/${repId}/versions/v${ver}.json`, bundleJson, {
         httpMetadata: { contentType: 'application/json', cacheControl: 'public, max-age=300' },
       });
-      // (2) aktives Bundle (was die Ziel-App via ?rep= lädt) = diese Version.
-      await env.PACKAGES.put(`origin/${repId}/bundle.json`, bundleJson, {
-        httpMetadata: { contentType: 'application/json', cacheControl: 'public, max-age=300' },
-      });
-      // (3) Versions-Index aktualisieren: Eintrag + aktiv setzen.
+      // (2) Versions-Index laden/aktualisieren.
       const idxObj0 = await env.PACKAGES.get(`origin/${repId}/versions-index.json`);
-      const idx = idxObj0 ? await idxObj0.json() as { active: number; versions: Array<{ version: number; uploadedAt: string; bytes: number }> } : { active: ver, versions: [] };
+      const idx = idxObj0 ? await idxObj0.json() as { active: number | null; versions: Array<{ version: number; uploadedAt: string; bytes: number }> } : { active: null, versions: [] };
       idx.versions = (idx.versions ?? []).filter((v) => v.version !== ver);
       idx.versions.push({ version: ver, uploadedAt, bytes: bundleJson.length });
       idx.versions.sort((a, b) => b.version - a.version);
-      idx.active = ver;
+
+      // (3) DROSSEL: bei „manual" sofort aktiv; bei „scheduled" nur STAGEN (aktiv
+      // bleibt, der Cron schaltet zur Fensterzeit live). Erst-Publish (kein aktiv)
+      // geht immer sofort live, sonst lädt die App nichts.
+      const policy = await readPolicy(env);
+      const activateNow = policy.mode === 'manual' || idx.active == null;
+      if (activateNow) {
+        idx.active = ver;
+        await env.PACKAGES.put(`origin/${repId}/bundle.json`, bundleJson, {
+          httpMetadata: { contentType: 'application/json', cacheControl: 'public, max-age=300' },
+        });
+        await env.PACKAGES.put(`origin/${repId}/bundle-meta.json`, JSON.stringify({ bytes: bundleJson.length, uploadedAt, version: ver }), {
+          httpMetadata: { contentType: 'application/json', cacheControl: 'no-store' },
+        });
+      }
       await env.PACKAGES.put(`origin/${repId}/versions-index.json`, JSON.stringify(idx), {
         httpMetadata: { contentType: 'application/json', cacheControl: 'no-store' },
       });
-      // (4) Aktiv-Meta (Phase 1: „ausgeliefert vM").
-      const meta = { bytes: bundleJson.length, uploadedAt, version: ver };
-      await env.PACKAGES.put(`origin/${repId}/bundle-meta.json`, JSON.stringify(meta), {
+      return json({ ok: true, repId, version: ver, active: idx.active, staged: !activateNow, mode: policy.mode });
+    }
+
+    // ── GET /api/release-policy ───────────────────────────────────────────────
+    // Drossel-Policy: manual (sofort live) | scheduled (Cron schaltet @ windowHour UTC).
+    if (request.method === 'GET' && pathname === '/api/release-policy') {
+      return json(await readPolicy(env));
+    }
+    // ── PUT /api/release-policy ───────────────────────────────────────────────
+    if (request.method === 'PUT' && pathname === '/api/release-policy') {
+      if (!checkAuth(request, env)) return err('Unauthorized', 401);
+      let pb: { mode?: unknown; windowHour?: unknown };
+      try { pb = await request.json(); } catch { return err('Invalid JSON body', 400); }
+      const next = {
+        mode: pb.mode === 'scheduled' ? 'scheduled' : 'manual',
+        windowHour: Number.isFinite(Number(pb.windowHour)) ? Math.max(0, Math.min(23, Math.floor(Number(pb.windowHour)))) : 6,
+      };
+      await env.PACKAGES.put('release-policy.json', JSON.stringify(next), {
         httpMetadata: { contentType: 'application/json', cacheControl: 'no-store' },
       });
-      return json({ ok: true, repId, ...meta, active: ver });
+      return json({ ok: true, ...next });
     }
 
     // ── GET /api/origin/:repId/versions ───────────────────────────────────────

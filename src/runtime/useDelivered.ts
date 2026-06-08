@@ -4,7 +4,7 @@
 // oder nicht konfiguriert → leere Map (kein Alarm, Anzeige fällt auf „—").
 
 import { useEffect, useState } from 'react';
-import { fetchOriginMeta, anthemReadConfigured } from './anthemApi';
+import { fetchOriginMeta, fetchOriginVersions, anthemReadConfigured, type OriginVersions } from './anthemApi';
 
 export interface Delivered {
   version: number | string | null;
@@ -30,6 +30,26 @@ export function useDeliveredVersions(repIds: string[], nonce = 0): Record<string
         } catch {
           return [id, { version: null, published: false, uploadedAt: null }] as const;
         }
+      }));
+      if (alive) setMap(Object.fromEntries(entries));
+    })();
+    return () => { alive = false; };
+  }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
+  return map;
+}
+
+// Volle Versions-Historie je Rep (active + versions[]) — für die Drossel (gestaged
+// erkennen: latest > active). Graceful wie oben.
+export function useOriginVersionsMap(repIds: string[], nonce = 0): Record<string, OriginVersions> {
+  const [map, setMap] = useState<Record<string, OriginVersions>>({});
+  const key = repIds.slice().sort().join(',') + '#' + nonce;
+  useEffect(() => {
+    if (!anthemReadConfigured() || repIds.length === 0) return;
+    let alive = true;
+    void (async () => {
+      const entries = await Promise.all(repIds.map(async (id) => {
+        try { return [id, await fetchOriginVersions(id)] as const; }
+        catch { return [id, { repId: id, active: null, versions: [] }] as const; }
       }));
       if (alive) setMap(Object.fromEntries(entries));
     })();

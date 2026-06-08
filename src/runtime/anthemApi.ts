@@ -42,6 +42,26 @@ export async function fetchOriginVersions(repId: string): Promise<OriginVersions
   return res.json() as Promise<OriginVersions>;
 }
 
+// ── Zeitliche Drossel — Release-Policy ───────────────────────────────────────
+export interface ReleasePolicy { mode: 'manual' | 'scheduled'; windowHour: number; }
+
+/** Drossel-Policy lesen (read-only). */
+export async function fetchReleasePolicy(): Promise<ReleasePolicy> {
+  const res = await fetch(`${WORKER_URL}/api/release-policy`);
+  if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
+  return res.json() as Promise<ReleasePolicy>;
+}
+
+/** Drossel-Policy setzen (manual | scheduled @ windowHour UTC). Auth-gegated. */
+export async function setReleasePolicy(policy: ReleasePolicy): Promise<void> {
+  const res = await fetch(`${WORKER_URL}/api/release-policy`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', 'X-Scim-Key': UPLOAD_API_KEY ?? '' },
+    body: JSON.stringify(policy),
+  });
+  if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
+}
+
 /** Eine (ältere) Version wieder aktiv schalten = Rollback. Auth-gegated. */
 export async function activateOriginVersion(repId: string, version: number): Promise<void> {
   const res = await fetch(`${WORKER_URL}/api/origin/${repId}/activate`, {

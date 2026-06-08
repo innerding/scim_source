@@ -18,3 +18,8 @@ database_id  = "54767142-9b36-4922-a52f-af66b52f73d4"
 
 # Geheimnis UPLOAD_API_KEY per `wrangler secret put UPLOAD_API_KEY` setzen.
 # Wird niemals in diese Datei eingetragen.
+
+# Zeitliche Drossel: stündlicher Cron. Der scheduled()-Handler schaltet nur zur
+# eingestellten windowHour (release-policy.json) und nur bei mode='scheduled' live.
+[triggers]
+crons = ["0 * * * *"]
