@@ -1,116 +1,53 @@
-import { useEffect, useState } from 'react';
-import { usePackagesApi, type PackageEntry } from './usePackagesApi';
+// V02 · Regions & Representations (Mond-Auswuchs) — die REGIONALE Sicht der
+// Versions-Bibliothek: Region wählen → je Rep ihre Origin-Versions-Historie +
+// aktiv + Rollback. Gleiche Quelle wie V01 (Origin-Pfad), nur regional gefiltert.
+import { useEffect, useMemo, useState } from 'react';
 import { REGION_MAP } from './V01PackagesPanel';
+import { REPRESENTATIONS } from '../../workspace/workspace.registry';
+import { useRole, useModeSwitch } from '../RoleContext';
+import {
+  fetchOriginVersions, activateOriginVersion, anthemReadConfigured, anthemPublishConfigured,
+  type OriginVersions,
+} from '../../../runtime/anthemApi';
 import packageIcon     from '../../../assets/Package.svg';
 import packageOpenIcon from '../../../assets/Package-open.svg';
 
-const STATUS_STYLE: Record<PackageEntry['status'], { bg: string; color: string; label: string }> = {
-  draft:    { bg: '#ebf8ff', color: '#2b6cb0', label: 'draft' },
-  active:   { bg: '#f0fff4', color: '#276749', label: 'aktiv' },
-  archived: { bg: '#f7fafc', color: '#718096', label: 'archiviert' },
-};
+const fmtKB = (n: number) => `${(n / 1024).toFixed(1)} kB`;
 
-function VersionCard({
-  pkg, onActivate, onArchive, busy,
-}: {
-  pkg: PackageEntry;
-  onActivate: () => void;
-  onArchive: () => void;
-  busy: boolean;
-}) {
-  const s = STATUS_STYLE[pkg.status];
-  const isActive = pkg.status === 'active';
-  return (
-    <div style={{
-      border: `1px solid ${isActive ? '#9ae6b4' : '#e2e8f0'}`,
-      borderRadius: 8,
-      background: isActive ? '#f0fff4' : '#fff',
-      padding: '14px 16px',
-      display: 'flex', alignItems: 'center', gap: 14,
-    }}>
-      <img
-        src={isActive ? packageOpenIcon : packageIcon}
-        alt="" width={24} height={24}
-        style={{ flexShrink: 0, opacity: pkg.status === 'archived' ? 0.4 : 1 }}
-      />
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-          <span style={{ fontFamily: 'monospace', fontSize: 13, fontWeight: 600, color: '#2d3748' }}>
-            {pkg.version}
-          </span>
-          <span style={{
-            padding: '1px 7px', borderRadius: 10, fontSize: 10, fontWeight: 600,
-            background: s.bg, color: s.color,
-          }}>
-            {s.label}
-          </span>
-        </div>
-        <div style={{ fontFamily: 'monospace', fontSize: 10, color: '#718096',
-          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {pkg.cdn_url}
-        </div>
-        <div style={{ fontSize: 10, color: '#a0aec0', marginTop: 3 }}>
-          {new Date(pkg.created_at).toLocaleDateString('de-AT')}
-          {pkg.activated_at && ` · aktiviert ${new Date(pkg.activated_at).toLocaleDateString('de-AT')}`}
-        </div>
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 5, flexShrink: 0 }}>
-        {!isActive && (
-          <button onClick={onActivate} disabled={busy} style={{
-            padding: '5px 12px', fontSize: 11, fontWeight: 600,
-            background: '#f0fff4', color: '#276749',
-            border: '1px solid #9ae6b4', borderRadius: 5, cursor: 'pointer',
-          }}>
-            {busy ? '…' : '▶ Aktivieren'}
-          </button>
-        )}
-        {pkg.status === 'draft' && (
-          <button onClick={onArchive} disabled={busy} style={{
-            padding: '5px 12px', fontSize: 11,
-            background: '#f7fafc', color: '#718096',
-            border: '1px solid #e2e8f0', borderRadius: 5, cursor: 'pointer',
-          }}>
-            Archivieren
-          </button>
-        )}
-        <a href={pkg.cdn_url} target="_blank" rel="noreferrer" style={{
-          padding: '5px 12px', fontSize: 11, textAlign: 'center',
-          background: '#ebf8ff', color: '#2b6cb0',
-          border: '1px solid #bee3f8', borderRadius: 5, textDecoration: 'none',
-        }}>↗ CDN</a>
-      </div>
-    </div>
-  );
+// REGION_MAP-Rep (z.B. 'lichtenberg') → echte Representation (z.B. 'rep-lichtenberg').
+function resolveRepId(shortId: string): string | null {
+  const m = REPRESENTATIONS.find((r) =>
+    r.id.toLowerCase().includes(shortId.toLowerCase()) || r.name.toLowerCase().includes(shortId.toLowerCase()));
+  return m?.id ?? null;
 }
 
-function RepresentationSection({
-  repId, repLabel, repIcon, regionId, activate, archive,
-}: {
-  repId: string; repLabel: string; repIcon: string; regionId: string;
-  activate: (id: string) => Promise<void>;
-  archive: (id: string) => Promise<void>;
+function RepVersionsSection({ repId, repLabel, repIcon, canActivate }: {
+  repId: string | null; repLabel: string; repIcon: string; canActivate: boolean;
 }) {
-  const { packages, loading, error } = usePackagesApi(regionId);
-  const [actionError, setActionError] = useState<string | null>(null);
-  const [busy, setBusy] = useState<string | null>(null);
+  const [data, setData] = useState<OriginVersions | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState<number | null>(null);
 
-  const repPackages = packages.filter((p) =>
-    p.representation_id.toLowerCase().includes(repId.toLowerCase())
-  );
+  const load = async () => {
+    if (!repId || !anthemReadConfigured()) return;
+    setLoading(true); setError(null);
+    try { setData(await fetchOriginVersions(repId)); }
+    catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+    finally { setLoading(false); }
+  };
+  useEffect(() => { void load(); }, [repId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleActivate = async (id: string) => {
-    setBusy(id); setActionError(null);
-    try { await activate(id); } catch (e) {
-      setActionError(e instanceof Error ? e.message : String(e));
-    } finally { setBusy(null); }
+  const onActivate = async (version: number) => {
+    if (!repId) return;
+    setBusy(version); setError(null);
+    try { await activateOriginVersion(repId, version); await load(); }
+    catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+    finally { setBusy(null); }
   };
 
-  const handleArchive = async (id: string) => {
-    setBusy(id); setActionError(null);
-    try { await archive(id); } catch (e) {
-      setActionError(e instanceof Error ? e.message : String(e));
-    } finally { setBusy(null); }
-  };
+  const versions = data?.versions ?? [];
+  const active = data?.active ?? null;
 
   return (
     <div style={{ marginBottom: 24 }}>
@@ -118,80 +55,90 @@ function RepresentationSection({
         <img src={repIcon} alt="" width={20} height={20} />
         <span style={{ fontSize: 13, fontWeight: 600, color: '#2d3748' }}>{repLabel}</span>
         <span style={{ fontSize: 10, fontFamily: 'monospace', color: '#a0aec0' }}>
-          {repPackages.length} {repPackages.length === 1 ? 'Version' : 'Versionen'}
+          {versions.length} {versions.length === 1 ? 'Version' : 'Versionen'}
         </span>
         {loading && <span style={{ fontSize: 10, color: '#a0aec0' }}>…</span>}
       </div>
-      {(error ?? actionError) && (
-        <div style={{ padding: '6px 10px', background: '#fff5f5', border: '1px solid #feb2b2',
-          borderRadius: 5, color: '#c53030', fontSize: 11, marginBottom: 8 }}>
-          {error ?? actionError}
-        </div>
+      {error && (
+        <div style={{ padding: '6px 10px', background: '#fffaf0', border: '1px solid #fbd38d', borderRadius: 5, color: '#975a16', fontSize: 11, marginBottom: 8 }}>{error}</div>
       )}
-      {repPackages.length === 0 && !loading && (
-        <div style={{ color: '#a0aec0', fontSize: 12, paddingLeft: 28 }}>Keine Pakete.</div>
+      {versions.length === 0 && !loading && (
+        <div style={{ color: '#a0aec0', fontSize: 12, paddingLeft: 28 }}>Keine Version veröffentlicht.</div>
       )}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {repPackages.map((pkg) => (
-          <VersionCard
-            key={pkg.id}
-            pkg={pkg}
-            busy={busy === pkg.id}
-            onActivate={() => void handleActivate(pkg.id)}
-            onArchive={() => void handleArchive(pkg.id)}
-          />
-        ))}
+        {versions.map((ver) => {
+          const isActive = ver.version === active;
+          const isBusy = busy === ver.version;
+          return (
+            <div key={ver.version} style={{
+              border: `1px solid ${isActive ? '#9ae6b4' : '#e2e8f0'}`, borderRadius: 8,
+              background: isActive ? '#f0fff4' : '#fff', padding: '12px 14px',
+              display: 'flex', alignItems: 'center', gap: 12,
+            }}>
+              <img src={isActive ? packageOpenIcon : packageIcon} alt="" width={22} height={22} style={{ flexShrink: 0 }} />
+              <span style={{ fontFamily: 'monospace', fontSize: 13, fontWeight: 700, color: '#2d3748', minWidth: 34 }}>v{ver.version}</span>
+              <span style={{ fontSize: 10.5, color: '#718096' }}>{new Date(ver.uploadedAt).toLocaleString('de')}</span>
+              <span style={{ fontSize: 10.5, fontFamily: 'monospace', color: '#a0aec0' }}>{fmtKB(ver.bytes)}</span>
+              <span style={{ flex: 1 }} />
+              {isActive ? (
+                <span style={{ fontSize: 10, fontFamily: 'monospace', fontWeight: 700, color: '#276749', background: '#fff', border: '1px solid #9ae6b4', borderRadius: 999, padding: '2px 10px' }}>● aktiv ausgeliefert</span>
+              ) : canActivate ? (
+                <button onClick={() => void onActivate(ver.version)} disabled={isBusy} title={`v${ver.version} aktiv schalten (Rollback)`} style={{
+                  fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 5,
+                  background: '#fff', color: '#2b6cb0', border: '1px solid #bee3f8', cursor: isBusy ? 'default' : 'pointer',
+                }}>{isBusy ? '…' : '↺ aktivieren'}</button>
+              ) : (
+                <span style={{ fontSize: 10, color: '#cbd5e0', fontFamily: 'monospace' }}>inaktiv</span>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
 }
 
 export default function V02RegionDetailPanel() {
-  const [selectedRegionId, setSelectedRegionId] = useState(REGION_MAP[0].id);
-  const { activate, archive, isConfigured } = usePackagesApi(selectedRegionId);
-  const region = REGION_MAP.find((r) => r.id === selectedRegionId) ?? REGION_MAP[0];
+  const role = useRole();
+  const mode = useModeSwitch();
+  const activeMode = mode?.activeMode ?? role;
+  const live = (mode?.real ?? role) === activeMode && activeMode !== 'analyst';
+  const canActivate = live && anthemPublishConfigured();
 
-  // Region-Sync mit den Mond-Auswuechsen (siehe ann_051):
-  // - Jeder Tab-Wechsel dispatcht 'scim:v02:region-changed', damit der
-  //   passende Auswuchs im Navigator "schreiend" wird.
-  // - Auf 'scim:v02:select-region' hoeren wir, damit der Auswuchs-Klick
-  //   im Navigator den Tab umschaltet.
+  const [selectedRegionId, setSelectedRegionId] = useState(REGION_MAP[0].id);
+  const region = useMemo(() => REGION_MAP.find((r) => r.id === selectedRegionId) ?? REGION_MAP[0], [selectedRegionId]);
+
+  // Region-Sync mit den Mond-Auswüchsen (ann_051) — unverändert.
   useEffect(() => {
     window.dispatchEvent(new CustomEvent('scim:v02:region-changed', { detail: selectedRegionId }));
   }, [selectedRegionId]);
   useEffect(() => {
     const onSet = (e: Event) => {
       const detail = (e as CustomEvent).detail;
-      if (typeof detail === 'string' && REGION_MAP.some((r) => r.id === detail)) {
-        setSelectedRegionId(detail);
-      }
+      if (typeof detail === 'string' && REGION_MAP.some((r) => r.id === detail)) setSelectedRegionId(detail);
     };
     window.addEventListener('scim:v02:select-region', onSet);
     return () => window.removeEventListener('scim:v02:select-region', onSet);
   }, []);
 
-  if (!isConfigured) {
+  if (!anthemReadConfigured()) {
     return (
       <div style={{ padding: 24, color: '#718096', fontSize: 13, fontFamily: 'system-ui' }}>
-        Worker nicht konfiguriert — VITE_WORKER_URL + VITE_UPLOAD_API_KEY setzen.
+        Worker nicht konfiguriert (VITE_WORKER_URL) — Versions-Historie kann nicht geladen werden.
       </div>
     );
   }
 
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif' }}>
-      {/* Region-Auswahl */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
         {REGION_MAP.map((r) => {
           const isSelected = r.id === selectedRegionId;
           return (
             <button key={r.id} onClick={() => setSelectedRegionId(r.id)} style={{
-              display: 'flex', alignItems: 'center', gap: 7,
-              padding: '6px 14px', fontSize: 12,
-              background: isSelected ? '#1e3a5f' : '#fff',
-              color: isSelected ? '#e0eeff' : '#4a5568',
-              border: `1px solid ${isSelected ? '#1e3a5f' : '#e2e8f0'}`,
-              borderRadius: 20, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 7, padding: '6px 14px', fontSize: 12,
+              background: isSelected ? '#1e3a5f' : '#fff', color: isSelected ? '#e0eeff' : '#4a5568',
+              border: `1px solid ${isSelected ? '#1e3a5f' : '#e2e8f0'}`, borderRadius: 20, cursor: 'pointer',
             }}>
               <img src={r.icon} alt="" width={16} height={16} />
               {r.label}
@@ -200,16 +147,13 @@ export default function V02RegionDetailPanel() {
         })}
       </div>
 
-      {/* Representations der gewählten Region */}
       {region.representations.map((rep) => (
-        <RepresentationSection
+        <RepVersionsSection
           key={rep.id}
-          repId={rep.id}
+          repId={resolveRepId(rep.id)}
           repLabel={rep.label}
           repIcon={rep.icon}
-          regionId={region.id}
-          activate={activate}
-          archive={archive}
+          canActivate={canActivate}
         />
       ))}
     </div>
