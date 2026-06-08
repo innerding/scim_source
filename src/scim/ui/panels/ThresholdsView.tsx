@@ -10,7 +10,7 @@
 // Rollen-Maske + Effekt-Gate (Sandbox) kommen in Schritt B; hier ist alles operator-live.
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { loadColourSettings, saveColourSettings, COLOUR_SETTINGS_EVENT, evenBorders, type ColourSettings } from '../../sensus/colourSettings';
+import { loadColourSettings, saveColourSettings, isColourCustomized, COLOUR_SETTINGS_EVENT, evenBorders, type ColourSettings } from '../../sensus/colourSettings';
 import { useColourRegionSlug } from '../../../runtime/useAuftraggeberRep';
 import { AnthemCycleBadge } from '../AnthemCycleInfo';
 
@@ -45,11 +45,12 @@ function centerFieldBorders(n: number, c: number): number[] {
 }
 
 // ── Eine Säule: Verlauf-Editor (Mitte/Grenzen) + Farb-Liste ───────────────────
-function ThresholdColumn({ title, settings, onChange, coupling }: {
+function ThresholdColumn({ title, settings, onChange, coupling, headerExtra }: {
   title: string;
   settings: ColourSettings;
   onChange: (patch: Partial<ColourSettings>) => void;
   coupling?: { coupled: boolean; onCouple: () => void };
+  headerExtra?: React.ReactNode;
 }) {
   const s = settings;
   const n = s.stops.length;
@@ -187,6 +188,7 @@ function ThresholdColumn({ title, settings, onChange, coupling }: {
             : <button onClick={coupling.onCouple} title="wieder an Global koppeln (spiegelt Global)"
                 style={{ fontSize: 9, padding: '1px 6px', borderRadius: 3, border: '1px solid #e2e8f0', background: '#f7fafc', color: '#718096', cursor: 'pointer' }}>🔗 an Global koppeln</button>
         )}
+        {headerExtra}
       </div>
 
       <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
@@ -292,7 +294,14 @@ export default function ThresholdsView() {
   const regionSlug = useColourRegionSlug();
   const repKey = `__rep__${regionSlug || 'default'}`;
 
-  const [globalS, setGlobalS] = useState<ColourSettings>(() => loadColourSettings(GLOBAL_KEY));
+  // Global startet von der aktuellen Region (einmalig, solange Global nie gesetzt wurde) —
+  // damit nichts manuell nachgebaut werden muss.
+  const [globalS, setGlobalS] = useState<ColourSettings>(() =>
+    isColourCustomized(GLOBAL_KEY) ? loadColourSettings(GLOBAL_KEY) : loadColourSettings(regionSlug));
+  useEffect(() => {
+    if (!isColourCustomized(GLOBAL_KEY)) saveColourSettings(GLOBAL_KEY, loadColourSettings(regionSlug));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [regionS, setRegionS] = useState<ColourSettings>(() => loadColourSettings(regionSlug));
   const [repS, setRepS] = useState<ColourSettings>(() => loadColourSettings(repKey));
   const [regionCoupled, setRegionCoupled] = useState<boolean>(() => loadCoupled(regionSlug));
