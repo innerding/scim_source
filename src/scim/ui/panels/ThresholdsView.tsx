@@ -49,10 +49,12 @@ function centerFieldBorders(n: number, c: number): number[] {
 }
 
 // ── Eine Säule: Verlauf-Editor + Farb-Liste ───────────────────────────────────
-function ThresholdColumn({ title, settings, onChange, coupling, dimmed = false, editable = 'full' }: {
+function ThresholdColumn({ title, settings, onChange, onReset, resetLabel, coupling, dimmed = false, editable = 'full' }: {
   title: string;
   settings: ColourSettings;
   onChange: (patch: Partial<ColourSettings>) => void;
+  onReset?: () => void;                 // eltern-bezogenes Zurücksetzen (Default der nächsthöheren Instanz)
+  resetLabel?: string;
   coupling?: { coupled: boolean; onCouple: () => void };
   dimmed?: boolean;                    // abgedimmt + tot (technischer Ursprung)
   editable?: 'full' | 'borders';       // 'borders' = kein +Farbe / kein × / kein Mittelschieber
@@ -172,7 +174,7 @@ function ThresholdColumn({ title, settings, onChange, coupling, dimmed = false, 
     onChange({ stops, borders: evenBorders(stops.length), middleField: null });
     setTweenB(null); setDragB(null);
   };
-  const resetEven = () => { onChange({ borders: evenBorders(n), middleField: null }); setTweenB(null); setDragB(null); };
+  const resetEven = () => { (onReset ?? (() => onChange({ borders: evenBorders(n), middleField: null })))(); setTweenB(null); setDragB(null); };
   const reorder = (from: number, to: number) => {
     if (from === to || from < 0 || to < 0) return;
     const stops = s.stops.slice();
@@ -233,7 +235,7 @@ function ThresholdColumn({ title, settings, onChange, coupling, dimmed = false, 
             </div>
           </div>
           <span style={{ fontSize: 8.5, color: '#a0aec0' }}>{full ? 'Mitte · Grenzen' : 'Grenzen'}</span>
-          <button onClick={resetEven} style={{ fontSize: 9, padding: '1px 6px', borderRadius: 3, border: '1px solid #e2e8f0', background: '#f7fafc', color: '#718096', cursor: 'pointer' }}>↺ zurücksetzen</button>
+          <button onClick={resetEven} title={onReset ? 'auf den Default der nächsthöheren Instanz zurücksetzen' : 'gleichverteilen'} style={{ fontSize: 9, padding: '1px 6px', borderRadius: 3, border: '1px solid #e2e8f0', background: '#f7fafc', color: '#718096', cursor: 'pointer' }}>↺ {resetLabel ?? 'zurücksetzen'}</button>
         </div>
 
         <div style={{ width: 118 }}>
@@ -279,6 +281,12 @@ const TITLE: Record<Col, string> = {
 };
 const COL_EDITABLE: Record<Col, 'full' | 'borders'> = {
   rep_editor: 'borders', reg_editor: 'borders', representation: 'full', region: 'full', global: 'full',
+};
+// „Zurücksetzen" adoptiert den Default der nächsthöheren Instanz (nicht gleichverteilen).
+// Editor-Säulen ← Operator-Default; Operator Region/Representation ← Global; Global = Root.
+const COL_PARENT: Record<Col, Col | null> = {
+  rep_editor: 'representation', reg_editor: 'region',
+  representation: 'global', region: 'global', global: null,
 };
 
 const coupleKey = (k: string) => `scim3_couple_${k || 'default'}`;
@@ -380,6 +388,14 @@ export default function ThresholdsView() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [regionSlug]);
 
+  // Zurücksetzen: Default der nächsthöheren Instanz übernehmen (Global = gleichverteilen).
+  const resetCol = (col: Col, live: boolean) => {
+    const p = COL_PARENT[col];
+    if (!p) { change(col, { borders: evenBorders(vals[col].stops.length), middleField: null }, live); return; }
+    const par = vals[p];
+    change(col, { stops: par.stops.slice(), borders: par.borders.slice(), middleField: par.middleField }, live);
+  };
+
   const coupleTo = (col: 'region' | 'representation') => {
     const g = loadColourSettings(GLOBAL_KEY);
     saveColourSettings(KEY[col], g); setVals((p) => ({ ...p, [col]: g }));
@@ -422,6 +438,8 @@ export default function ThresholdsView() {
               editable={COL_EDITABLE[col]}
               coupling={coupling}
               onChange={(patch) => change(col, patch, live)}
+              onReset={() => resetCol(col, live)}
+              resetLabel={COL_PARENT[col] ? 'auf Default' : 'gleichverteilen'}
             />
           );
         })}
