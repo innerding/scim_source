@@ -84,6 +84,7 @@ export function repsForActor(actor: Actor): RepView[] {
     views.push({
       id: d.id, name: d.name, regionId: region.id, regionLabel: region.label,
       binding, state, currentVersion: 0, origin: 'draft',
+      catalogId: d.catalog_id ?? null, geometryId: null,
       parts: {
         geometry: !!(d.boundary?.length || d.reference?.length),
         wegnetz: !!(d.net_masked || d.net_unmasked),
@@ -105,6 +106,7 @@ export function repsForActor(actor: Actor): RepView[] {
     views.push({
       id: r.id, name: r.name, regionId, regionLabel: geo?.region ?? '—',
       binding, state: 'committed', currentVersion: r.version ?? 1, origin: 'committed',
+      catalogId: r.catalog_id ?? null, geometryId: r.geometry_id ?? null,
       parts: { geometry: !!r.geometry_id, wegnetz: !!r.wegnetz_id, catalog: !!r.catalog_id, thresholds: true },
       updatedAt: undefined,
     });

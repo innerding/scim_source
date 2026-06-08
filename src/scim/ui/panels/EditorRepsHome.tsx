@@ -12,9 +12,10 @@ import { useMemo, useState } from 'react';
 import { useRole, useModeSwitch, useUserName } from '../RoleContext';
 import { actorFrom, repsForActor, submitRep, withdrawRep, setRepBinding } from '../../pathworks/localStore';
 import { createDraft } from '../../workspace/draftStore';
+import { useRepresentationContext } from '../../../runtime/repContext';
 import type { Binding, RepView } from '../../pathworks/pathworks.types';
 
-interface Props { onJumpTo: (panelId: string) => void; }
+interface Props { onJumpTo: (panelId: string, targetId?: string) => void; }
 
 const STATE_META: Record<RepView['state'], { label: string; bg: string; fg: string; bd: string }> = {
   local:     { label: 'lokal',      bg: '#edf2f7', fg: '#4a5568', bd: '#cbd5e0' },
@@ -32,8 +33,10 @@ function PartBadge({ on, label }: { on: boolean; label: string }) {
   );
 }
 
-function RepCard({ rep, onJumpTo, onChanged, live }: {
-  rep: RepView; onJumpTo: (id: string) => void; onChanged: () => void; live: boolean;
+function RepCard({ rep, onOpen, onChanged, live, bound }: {
+  rep: RepView;
+  onOpen: (rep: RepView, panel: string, target?: string) => void;
+  onChanged: () => void; live: boolean; bound: boolean;
 }) {
   const role = useRole();
   const userName = useUserName();
@@ -45,11 +48,19 @@ function RepCard({ rep, onJumpTo, onChanged, live }: {
 
   return (
     <div style={{
-      border: '1px solid #e2e8f0', borderRadius: 8, padding: '12px 14px', background: '#fff',
+      border: `1px solid ${bound ? '#2b6cb0' : '#e2e8f0'}`,
+      boxShadow: bound ? '0 0 0 1px #2b6cb0 inset' : 'none',
+      borderRadius: 8, padding: '12px 14px', background: '#fff',
       display: 'flex', flexDirection: 'column', gap: 8,
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
         <span style={{ fontSize: 13.5, fontWeight: 700, color: '#1a202c' }}>{rep.name}</span>
+        {bound && (
+          <span style={{
+            fontSize: 9, fontFamily: 'monospace', padding: '1px 6px', borderRadius: 999,
+            background: '#2b6cb0', color: '#fff', fontWeight: 700,
+          }}>gebunden</span>
+        )}
         <span style={{
           fontSize: 9.5, fontFamily: 'monospace', padding: '1px 7px', borderRadius: 999,
           border: '1px solid #cbd5e0', background: '#f7fafc', color: '#4a5568',
@@ -68,10 +79,12 @@ function RepCard({ rep, onJumpTo, onChanged, live }: {
       </div>
 
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
-        {/* Werkzeuge der Rep (die drei anderen Tetraeder-Faces). Rep-Bindung folgt. */}
-        <button onClick={() => onJumpTo('geometry_editor')} style={toolBtn}>◇ Drawer</button>
-        <button onClick={() => onJumpTo('catalog')} style={toolBtn}>☰ Katalog</button>
-        <button onClick={() => onJumpTo('P01')} style={toolBtn}>⚙ Thresholds</button>
+        {/* Werkzeuge DIESER Rep (die drei anderen Tetraeder-Faces) — sie öffnen
+            die Werkzeuge gebunden an genau diese Rep (Drawer: ihren Draft/Geometrie;
+            Katalog: ihre Region; Thresholds: ihre Region via inspectorAsset). */}
+        <button onClick={() => onOpen(rep, 'geometry_editor', rep.origin === 'draft' ? rep.id : (rep.geometryId ?? undefined))} style={toolBtn}>◇ Drawer</button>
+        <button onClick={() => onOpen(rep, 'catalog', rep.catalogId ?? undefined)} style={toolBtn}>☰ Katalog</button>
+        <button onClick={() => onOpen(rep, 'P01')} style={toolBtn}>⚙ Thresholds</button>
         <span style={{ flex: 1 }} />
         {committed ? (
           <span style={{ fontSize: 10.5, color: '#718096', fontStyle: 'italic' }}>nur lesbar — Ändern = neuer Draft</span>
@@ -106,6 +119,20 @@ export default function EditorRepsHome({ onJumpTo }: Props) {
 
   const drafts = reps.filter((r) => r.state !== 'committed');
   const committed = reps.filter((r) => r.state === 'committed');
+
+  // REP-BINDUNG: ein Werkzeug öffnet sich gebunden an genau diese Rep. Wir setzen
+  // den globalen inspectorAsset (treibt Thresholds-Region + Inspector) und springen
+  // mit Ziel-Id (Drawer: Draft/Geometrie · Katalog: Region). `bound` markiert die Karte.
+  const { setInspectorAsset } = useRepresentationContext();
+  const [boundId, setBoundId] = useState<string | null>(null);
+  const openTool = (rep: RepView, panel: string, target?: string) => {
+    const asset = rep.origin === 'committed'
+      ? { kind: 'representation' as const, id: rep.id }
+      : (rep.catalogId ? { kind: 'catalog' as const, id: rep.catalogId } : null);
+    if (asset) setInspectorAsset(asset);
+    setBoundId(rep.id);
+    onJumpTo(panel, target);
+  };
 
   // „+ neue Representation" — eine Rep entsteht hier (nicht mehr im Drawer): ein
   // benannter Rep-Draft + Bindung (regional|unbound). Boundary/Wegnetz/Katalog
@@ -200,7 +227,7 @@ export default function EditorRepsHome({ onJumpTo }: Props) {
           </div>
         )}
         {drafts.map((r) => (
-          <RepCard key={r.id} rep={r} onJumpTo={onJumpTo} onChanged={() => setTick((t) => t + 1)} live={live} />
+          <RepCard key={r.id} rep={r} onOpen={openTool} onChanged={() => setTick((t) => t + 1)} live={live} bound={boundId === r.id} />
         ))}
         {committed.length > 0 && (
           <div style={{ fontSize: 10, fontFamily: 'monospace', color: '#a0aec0', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 6 }}>
@@ -208,7 +235,7 @@ export default function EditorRepsHome({ onJumpTo }: Props) {
           </div>
         )}
         {committed.map((r) => (
-          <RepCard key={r.id} rep={r} onJumpTo={onJumpTo} onChanged={() => setTick((t) => t + 1)} live={live} />
+          <RepCard key={r.id} rep={r} onOpen={openTool} onChanged={() => setTick((t) => t + 1)} live={live} bound={boundId === r.id} />
         ))}
       </div>
     </div>

@@ -121,6 +121,11 @@ export interface RepView {
   state: LifecycleState;      // local | submitted | committed
   currentVersion: number;     // 0 = nie committet
   origin: 'draft' | 'committed';
+  // Ziel-Ids für die Rep-Bindung (welche Rep die Werkzeuge bedienen):
+  //   draft     → der Drawer öffnet die Rep über ihre eigene id ('draft-…')
+  //   committed → über geometryId
+  catalogId: string | null;   // Katalog/Region-Ziel (openCatalogId)
+  geometryId: string | null;  // committete Geometrie-Id (openGeometryId)
   parts: {                    // welche Facetten existieren (für Badges)
     geometry: boolean;
     wegnetz: boolean;

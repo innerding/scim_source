@@ -17,6 +17,13 @@ export function useAuftraggeberRep(): Representation {
     const r = REPRESENTATIONS.find((x) => x.geometry_id === asset.id);
     if (r) return r;
   }
+  // Katalog-Asset (z.B. von einem Editor-Draft gebunden): die Rep mit diesem
+  // Katalog finden → ihre Region treibt Thresholds. So folgt die Farb-Säule auch
+  // einem katalog-gebundenen Draft (gleiche Region wie die committete Rep).
+  if (asset?.kind === 'catalog') {
+    const r = REPRESENTATIONS.find((x) => x.catalog_id === asset.id);
+    if (r) return r;
+  }
   return demoRep;
 }
 
