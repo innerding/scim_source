@@ -108,3 +108,24 @@ export interface Artifact {
   binding: Binding;
   state: LifecycleState;
 }
+
+// View-Model für das Editor-Home („meine Reps"): EINE Rep mit allem, was die
+// Rep-Card zeigt — Identität, Region, Bindung, Zustand, Version + grobe Präsenz
+// ihrer vier Facetten. Aus den echten Daten gemappt (siehe localStore.ts).
+export interface RepView {
+  id: RepId;
+  name: string;
+  regionId: RegionId | null;
+  regionLabel: string;        // menschlich (Geometry-Region oder „—")
+  binding: Binding;
+  state: LifecycleState;      // local | submitted | committed
+  currentVersion: number;     // 0 = nie committet
+  origin: 'draft' | 'committed';
+  parts: {                    // welche Facetten existieren (für Badges)
+    geometry: boolean;
+    wegnetz: boolean;
+    catalog: boolean;
+    thresholds: boolean;
+  };
+  updatedAt?: number;
+}
