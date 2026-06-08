@@ -468,20 +468,79 @@ export default {
       if (!body || typeof body !== 'object') return err('Expected origin bundle object', 422);
 
       const bundleJson = JSON.stringify(body);
+      // Auslieferungs-Version = die Version, mit der das Bundle gebaut wurde
+      // (origin_bundle_v1.version). Normalisiert auf eine Zahl.
+      const bv = (body as { version?: unknown }).version;
+      const verNum = typeof bv === 'number' ? bv : (typeof bv === 'string' ? parseInt(String(bv).replace(/^v/i, ''), 10) : NaN);
+      const ver = Number.isFinite(verNum) ? verNum : 1;
+      const uploadedAt = new Date().toISOString();
+
+      // (1) versionierte Kopie behalten = die Versions-Bibliothek (Historie/Rollback).
+      await env.PACKAGES.put(`origin/${repId}/versions/v${ver}.json`, bundleJson, {
+        httpMetadata: { contentType: 'application/json', cacheControl: 'public, max-age=300' },
+      });
+      // (2) aktives Bundle (was die Ziel-App via ?rep= lädt) = diese Version.
       await env.PACKAGES.put(`origin/${repId}/bundle.json`, bundleJson, {
         httpMetadata: { contentType: 'application/json', cacheControl: 'public, max-age=300' },
       });
-      // Auslieferungs-Version = die Version, mit der das Bundle gebaut wurde
-      // (origin_bundle_v1.version). Für die „ausgeliefert vM"-Anzeige in SCIM.
-      const bv = (body as { version?: unknown }).version;
-      const meta = {
-        bytes: bundleJson.length, uploadedAt: new Date().toISOString(),
-        version: (typeof bv === 'number' || typeof bv === 'string') ? bv : null,
-      };
+      // (3) Versions-Index aktualisieren: Eintrag + aktiv setzen.
+      const idxObj0 = await env.PACKAGES.get(`origin/${repId}/versions-index.json`);
+      const idx = idxObj0 ? await idxObj0.json() as { active: number; versions: Array<{ version: number; uploadedAt: string; bytes: number }> } : { active: ver, versions: [] };
+      idx.versions = (idx.versions ?? []).filter((v) => v.version !== ver);
+      idx.versions.push({ version: ver, uploadedAt, bytes: bundleJson.length });
+      idx.versions.sort((a, b) => b.version - a.version);
+      idx.active = ver;
+      await env.PACKAGES.put(`origin/${repId}/versions-index.json`, JSON.stringify(idx), {
+        httpMetadata: { contentType: 'application/json', cacheControl: 'no-store' },
+      });
+      // (4) Aktiv-Meta (Phase 1: „ausgeliefert vM").
+      const meta = { bytes: bundleJson.length, uploadedAt, version: ver };
       await env.PACKAGES.put(`origin/${repId}/bundle-meta.json`, JSON.stringify(meta), {
         httpMetadata: { contentType: 'application/json', cacheControl: 'no-store' },
       });
-      return json({ ok: true, repId, ...meta });
+      return json({ ok: true, repId, ...meta, active: ver });
+    }
+
+    // ── GET /api/origin/:repId/versions ───────────────────────────────────────
+    // Versions-Bibliothek (V01): Historie aller veröffentlichten Versionen + welche
+    // aktiv ausgeliefert ist. Read-only, kein Key.
+    if (request.method === 'GET' && pathname.match(/^\/api\/origin\/[^/]+\/versions$/)) {
+      const repId = pathname.split('/')[3];
+      if (!KEY_PATTERN.test(repId)) return err('Invalid repId', 422);
+      const idxObj = await env.PACKAGES.get(`origin/${repId}/versions-index.json`);
+      if (!idxObj) return json({ repId, active: null, versions: [] });
+      const idx = await idxObj.json() as { active: number | null; versions: unknown[] };
+      return json({ repId, active: idx.active ?? null, versions: idx.versions ?? [] });
+    }
+
+    // ── POST /api/origin/:repId/activate ──────────────────────────────────────
+    // Eine (ältere) Version wieder aktiv schalten = Rollback. Kopiert die
+    // versionierte Kopie auf das aktive bundle.json. Auth-gegated.
+    if (request.method === 'POST' && pathname.match(/^\/api\/origin\/[^/]+\/activate$/)) {
+      if (!checkAuth(request, env)) return err('Unauthorized', 401);
+      const repId = pathname.split('/')[3];
+      if (!KEY_PATTERN.test(repId)) return err('Invalid repId', 422);
+      let abody: { version?: unknown };
+      try { abody = await request.json(); } catch { return err('Invalid JSON body', 400); }
+      const av = typeof abody.version === 'number' ? abody.version : parseInt(String(abody.version).replace(/^v/i, ''), 10);
+      if (!Number.isFinite(av)) return err('Expected { version }', 422);
+      const verObj = await env.PACKAGES.get(`origin/${repId}/versions/v${av}.json`);
+      if (!verObj) return err(`No version v${av} for "${repId}".`, 404);
+      const verJson = await verObj.text();
+      await env.PACKAGES.put(`origin/${repId}/bundle.json`, verJson, {
+        httpMetadata: { contentType: 'application/json', cacheControl: 'public, max-age=300' },
+      });
+      const at = new Date().toISOString();
+      await env.PACKAGES.put(`origin/${repId}/bundle-meta.json`, JSON.stringify({ bytes: verJson.length, uploadedAt: at, version: av }), {
+        httpMetadata: { contentType: 'application/json', cacheControl: 'no-store' },
+      });
+      const idxObj2 = await env.PACKAGES.get(`origin/${repId}/versions-index.json`);
+      const idx2 = idxObj2 ? await idxObj2.json() as { active: number; versions: Array<{ version: number; uploadedAt: string; bytes: number }> } : { active: av, versions: [] };
+      idx2.active = av;
+      await env.PACKAGES.put(`origin/${repId}/versions-index.json`, JSON.stringify(idx2), {
+        httpMetadata: { contentType: 'application/json', cacheControl: 'no-store' },
+      });
+      return json({ ok: true, repId, active: av });
     }
 
     // ── GET /api/origin/:repId/bundle ─────────────────────────────────────────

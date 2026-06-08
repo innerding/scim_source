@@ -441,8 +441,8 @@ export interface VersionenDescriptor {
 export const VERSIONEN_REGISTRY: VersionenDescriptor[] = [
   {
     kind: 'versionen', id: 'V01', icon: '⬡',
-    label: 'All-Publications',
-    shortDescription: 'Versions-Bibliothek der ausgelieferten Maschine — alle veröffentlichten Pakete',
+    label: 'Versions-Bibliothek',
+    shortDescription: 'Archiv der ausgespielten Origin-Versionen je Rep — aktiv ausgeliefert + Rollback',
     tabs: [{ id: 'input', label: 'Übersicht', icon: 'ℹ' }],
   },
   {

@@ -31,6 +31,27 @@ export async function publishOriginBundle(repId: string, bundle: unknown) {
   return res.json() as Promise<{ ok: boolean; repId: string; bytes: number; uploadedAt: string }>;
 }
 
+// ── Versions-Bibliothek (V01) — Historie + aktiv + Rollback ──────────────────
+export interface OriginVersionEntry { version: number; uploadedAt: string; bytes: number; }
+export interface OriginVersions { repId: string; active: number | null; versions: OriginVersionEntry[]; }
+
+/** Versions-Historie einer Rep (alle veröffentlichten Versionen + welche aktiv). Read-only. */
+export async function fetchOriginVersions(repId: string): Promise<OriginVersions> {
+  const res = await fetch(`${WORKER_URL}/api/origin/${repId}/versions`);
+  if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
+  return res.json() as Promise<OriginVersions>;
+}
+
+/** Eine (ältere) Version wieder aktiv schalten = Rollback. Auth-gegated. */
+export async function activateOriginVersion(repId: string, version: number): Promise<void> {
+  const res = await fetch(`${WORKER_URL}/api/origin/${repId}/activate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Scim-Key': UPLOAD_API_KEY ?? '' },
+    body: JSON.stringify({ version }),
+  });
+  if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
+}
+
 /** regio-asset (Region-/Rep-Icon) in die Cloud (R2) publizieren — für Launcher/Collector. */
 export async function publishRegioAsset(id: string, svg: string) {
   const res = await fetch(`${WORKER_URL}/api/regio-assets/${encodeURIComponent(id)}`, {
