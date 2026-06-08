@@ -1379,19 +1379,23 @@ const MODE_META: Record<Role, { label: string; color: string }> = {
   rep_editor:   { label: 'SCIM-Kartography', color: '#dd6b20' },
 };
 
+// Sichtbare Modus-Tabs je Diode-Rolle: Operator = Operations + Kartography (KEIN Review,
+// denn Review = Operator-Panel als Sandbox); Analyst = nur Review (KEIN Kartography);
+// kombinierter Editor = nur Kartography. Echte Editor-Logins (reg/rep) = terminal.
+const VISIBLE_MODE_TABS: Partial<Record<Role, Role[]>> = {
+  operator:     ['operator', 'regio_editor'],
+  analyst:      ['analyst'],
+  regio_editor: ['regio_editor'],
+};
+
 function ModeTabs() {
   const mode = useModeSwitch();
   if (!mode) return null;
-  // Echte Editor-Logins (reg/rep) sind terminal → keine Modus-Tabs.
-  if (!ROLE_ORDER.includes(mode.effective)) return null;
-  // Sichtbarkeit richtet sich nach der DIODE (effektive Rolle), nicht nach der Login-Rolle:
-  // kombinierter Editor→nur Kartography · Analyst→Kartography+Review · Operator→alle.
-  const effIdx = ROLE_ORDER.indexOf(mode.effective);
-  // Anzeige Kartography→…→Operations (Index absteigend).
-  const visible = ROLE_ORDER
-    .map((r, i) => ({ r, i }))
-    .filter((x) => x.i >= effIdx)
+  // Anzeige Kartography (links) → … → Operations (rechts): Index absteigend.
+  const visible = (VISIBLE_MODE_TABS[mode.effective] ?? [])
+    .map((r) => ({ r, i: ROLE_ORDER.indexOf(r) }))
     .sort((a, b) => b.i - a.i);
+  if (visible.length <= 1) return null;   // 1 Tab → kein Tab-Balken (nur das Panel)
   return (
     <div style={{ display: 'flex', flexShrink: 0, background: '#fff', borderBottom: '1px solid #e2e8f0' }}>
       {visible.map(({ r }) => {
