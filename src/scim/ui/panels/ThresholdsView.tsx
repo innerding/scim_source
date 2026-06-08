@@ -49,13 +49,12 @@ function centerFieldBorders(n: number, c: number): number[] {
 }
 
 // ── Eine Säule: Verlauf-Editor + Farb-Liste ───────────────────────────────────
-function ThresholdColumn({ title, settings, onChange, onReset, resetLabel, coupling, dimmed = false, editable = 'full' }: {
+function ThresholdColumn({ title, settings, onChange, onReset, resetLabel, dimmed = false, editable = 'full' }: {
   title: string;
   settings: ColourSettings;
   onChange: (patch: Partial<ColourSettings>) => void;
   onReset?: () => void;                 // eltern-bezogenes Zurücksetzen (Default der nächsthöheren Instanz)
   resetLabel?: string;
-  coupling?: { coupled: boolean; onCouple: () => void };
   dimmed?: boolean;                    // abgedimmt + tot (technischer Ursprung)
   editable?: 'full' | 'borders';       // 'borders' = kein +Farbe / kein × / kein Mittelschieber
 }) {
@@ -188,12 +187,6 @@ function ThresholdColumn({ title, settings, onChange, onReset, resetLabel, coupl
     <div style={{ flexShrink: 0, opacity: dimmed ? 0.32 : 1, pointerEvents: dimmed ? 'none' : 'auto', filter: dimmed ? 'grayscale(0.5)' : undefined, transition: 'opacity 0.2s' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, minHeight: 20 }}>
         <span style={{ fontSize: 12, fontWeight: 700, color: '#1a365d', whiteSpace: 'nowrap' }}>{title}</span>
-        {coupling && (
-          coupling.coupled
-            ? <span style={{ fontSize: 9.5, color: '#2f855a', fontFamily: 'monospace' }}>🔗 an Global</span>
-            : <button onClick={coupling.onCouple} title="wieder an Global koppeln (spiegelt Global)"
-                style={{ fontSize: 9, padding: '1px 6px', borderRadius: 3, border: '1px solid #e2e8f0', background: '#f7fafc', color: '#718096', cursor: 'pointer' }}>🔗 koppeln</button>
-        )}
       </div>
 
       <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
@@ -298,10 +291,6 @@ const COL_PARENT: Record<Col, Col | null> = {
   representation: 'global', region: 'global', global: null,
 };
 
-const coupleKey = (k: string) => `scim3_couple_${k || 'default'}`;
-const loadCoupled = (k: string) => { try { return localStorage.getItem(coupleKey(k)) === '1'; } catch { return false; } };
-const saveCoupled = (k: string, v: boolean) => { try { localStorage.setItem(coupleKey(k), v ? '1' : '0'); } catch { /* */ } };
-
 const GLOBAL_KEY = '__global__';
 
 // Sicht je activeMode: welche Säulen, welche abgedimmt.
@@ -366,13 +355,9 @@ export default function ThresholdsView() {
   }), [regionSlug, seed]);
 
   const [vals, setVals] = useState<Record<Col, ColourSettings>>(loadAll);
-  const [regionCoupled, setRegionCoupled] = useState<boolean>(() => loadCoupled(KEY.region));
-  const [repCoupled, setRepCoupled] = useState<boolean>(() => loadCoupled(KEY.representation));
 
   useEffect(() => {
     setVals(loadAll());
-    setRegionCoupled(loadCoupled(KEY.region));
-    setRepCoupled(loadCoupled(KEY.representation));
     if (!isColourCustomized(GLOBAL_KEY)) saveColourSettings(GLOBAL_KEY, loadColourSettings(regionSlug));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [regionSlug]);
@@ -389,19 +374,13 @@ export default function ThresholdsView() {
   }, [regionSlug]);
 
   // Änderung an Säule `col`. persist = live (sonst Sandbox = nur lokaler State).
+  // Keine Kopplung mehr — jede Säule hält ihren eigenen Wert; der Resolver
+  // (effectiveRepColour) macht die Vererbung zur Lesezeit.
   const change = useCallback((col: Col, patch: Partial<ColourSettings>, persist: boolean) => {
     setVals((p) => ({ ...p, [col]: { ...p[col], ...patch } }));
     if (!persist) return;
     const next = { ...loadColourSettings(KEY[col]), ...patch };
     saveColourSettings(KEY[col], next);
-    // Editieren von Region/Representation → entkoppelt.
-    if (col === 'region' && loadCoupled(KEY.region)) { saveCoupled(KEY.region, false); setRegionCoupled(false); }
-    if (col === 'representation' && loadCoupled(KEY.representation)) { saveCoupled(KEY.representation, false); setRepCoupled(false); }
-    // Global ändern → in gekoppelte Kinder durchschreiben (Write-through).
-    if (col === 'global') {
-      if (loadCoupled(KEY.region)) { saveColourSettings(KEY.region, next); setVals((p) => ({ ...p, region: next })); }
-      if (loadCoupled(KEY.representation)) { saveColourSettings(KEY.representation, next); setVals((p) => ({ ...p, representation: next })); }
-    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [regionSlug]);
 
@@ -411,13 +390,6 @@ export default function ThresholdsView() {
     if (!p) { change(col, { borders: evenBorders(vals[col].stops.length), middleField: null }, live); return; }
     const par = vals[p];
     change(col, { stops: par.stops.slice(), borders: par.borders.slice(), middleField: par.middleField }, live);
-  };
-
-  const coupleTo = (col: 'region' | 'representation') => {
-    const g = loadColourSettings(GLOBAL_KEY);
-    saveColourSettings(KEY[col], g); setVals((p) => ({ ...p, [col]: g }));
-    saveCoupled(KEY[col], true);
-    if (col === 'region') setRegionCoupled(true); else setRepCoupled(true);
   };
 
   const cols = viewColumns(activeMode);
@@ -443,9 +415,6 @@ export default function ThresholdsView() {
       <div style={{ display: 'flex', gap: 22, alignItems: 'flex-start', overflowX: 'auto', paddingBottom: 6 }}>
         {cols.map(({ col, dimmed }) => {
           const live = tabLive && !dimmed;
-          const coupling = (!dimmed && live && (col === 'region' || col === 'representation'))
-            ? { coupled: col === 'region' ? regionCoupled : repCoupled, onCouple: () => coupleTo(col) }
-            : undefined;
           return (
             <ThresholdColumn
               key={col}
@@ -453,7 +422,6 @@ export default function ThresholdsView() {
               settings={vals[col]}
               dimmed={dimmed}
               editable={COL_EDITABLE[col]}
-              coupling={coupling}
               onChange={(patch) => change(col, patch, live)}
               onReset={() => resetCol(col, live)}
               resetLabel={COL_PARENT[col] ? 'auf Default' : 'gleichverteilen'}

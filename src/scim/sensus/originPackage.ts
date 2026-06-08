@@ -16,7 +16,7 @@ import { iconById } from '../poi-catalog/iconRegistry';
 import { resolveIcon } from '../poi-catalog/poiCatalog.composite';
 import { containerOf } from '../poi-catalog/poiCatalog.containerSystem';
 import { resampleNet, type ResampledNet } from '../wegnetz/netResample';
-import { loadColourSettings, type ColourSettings } from './colourSettings';
+import { effectiveRepColour, type ColourSettings } from './colourSettings';
 import { slugify } from '../../runtime/router';
 import { extractDecoration, iconMeta, type DecorationMatch } from '../poi-catalog/decorations';
 import { GLYPHS } from '../poi-catalog/digitGlyphs';
@@ -188,10 +188,10 @@ export function buildOriginBundle(rep: Representation): OriginBundle {
     }
   }
 
-  // Farb-/Schwellen-Kette der Region (P01 spread/floor, P02 bias/safety/degradier,
-  // P04 palette/spectrum) reist mit — so reproduziert die Runtime das Mesh exakt.
+  // Farb-/Schwellen-Kette reist mit — so reproduziert die Runtime das Mesh exakt.
+  // Aufgelöste Default-Kaskade: rep-editor-rep → representation → global → Region (Fallback).
   const regionSlug = slugify(geo?.region ?? '') || 'default';
-  const colour = loadColourSettings(regionSlug);
+  const colour = effectiveRepColour(regionSlug);
 
   return {
     kind: 'origin_bundle_v1',

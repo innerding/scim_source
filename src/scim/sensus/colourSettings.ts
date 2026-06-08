@@ -113,3 +113,20 @@ export function isColourCustomized(regionSlug: string): boolean {
 export function resetColourSettings(regionSlug: string): void {
   try { localStorage.removeItem(storageKey(regionSlug)); } catch { /* ignore */ }
 }
+
+// ── Default-Kaskade-Resolver (P01 Thresholds) ────────────────────────────────
+// Was AUSGELIEFERT wird (Origin) bzw. in der Vorschau (ScimMap) gezeigt: der erste
+// AUSDRÜCKLICH GESETZTE Wert im Rep-Strang, von spezifisch → allgemein:
+//   rep-editor-rep → representation → global → (Region als nicht-brechender Fallback).
+// Der Reg-Strang (region/reg-editor-reg) ist Richtschnur/Anzeige und fließt NICHT ein.
+const GLOBAL_SCOPE_KEY = '__global__';
+const repEditorKeyFor = (slug: string) => `__rep_editor__${slug || 'default'}`;
+const representationKeyFor = (slug: string) => `__rep__${slug || 'default'}`;
+
+export function effectiveRepColour(regionSlug: string): ColourSettings {
+  const slug = regionSlug || 'default';
+  if (isColourCustomized(repEditorKeyFor(slug)))     return loadColourSettings(repEditorKeyFor(slug));
+  if (isColourCustomized(representationKeyFor(slug))) return loadColourSettings(representationKeyFor(slug));
+  if (isColourCustomized(GLOBAL_SCOPE_KEY))           return loadColourSettings(GLOBAL_SCOPE_KEY);
+  return loadColourSettings(slug);   // Fallback: bestehende Region (nicht-brechend)
+}

@@ -32,7 +32,7 @@ import { getTestSeed, getTestRoute, setTestRoute, setTestBefund, subscribeTestRo
 import { subscribeReveal } from '../sensus/revealPrep';
 import { playBoundaryReveal } from './boundaryReveal';
 import { colorAt, type ScaleSpec } from 'shell-kit';
-import { loadColourSettings, COLOUR_SETTINGS_EVENT } from '../sensus/colourSettings';
+import { effectiveRepColour, COLOUR_SETTINGS_EVENT } from '../sensus/colourSettings';
 import { loadUserExclusion, USER_EXCLUSION_EVENT } from '../sensus/userExclusion';
 import { getSimHour, subscribeSimClock } from '../sensus/simClock';
 import { MVP_RESAMPLE_TARGET_METERS } from '../sensus/originPackage';
@@ -209,14 +209,13 @@ export default function ScimMap({ result, onNavigate, onCollapseToggle }: Props)
   // Farb-Settings (P01/P02/P04): an die PUBLISH-Region gekoppelt (wie P01 + Bundle),
   // damit die Vorschau zeigt, was publiziert wird. Edge-Types bleiben an der aktiven Rep.
   const colourRegionSlug = useColourRegionSlug();
-  const [colourCfg, setColourCfg] = useState(() => loadColourSettings(colourRegionSlug));
-  useEffect(() => { setColourCfg(loadColourSettings(colourRegionSlug)); }, [colourRegionSlug]);
+  // Vorschau zeigt die AUFGELÖSTE Kaskade (= was publiziert wird), nicht nur die Region.
+  const [colourCfg, setColourCfg] = useState(() => effectiveRepColour(colourRegionSlug));
+  useEffect(() => { setColourCfg(effectiveRepColour(colourRegionSlug)); }, [colourRegionSlug]);
   useEffect(() => {
-    const onChange = (e: Event) => {
-      const d = (e as CustomEvent).detail as { regionSlug?: string } | undefined;
-      if (d && d.regionSlug && d.regionSlug !== colourRegionSlug) return;
-      setColourCfg(loadColourSettings(colourRegionSlug));
-    };
+    // Die Kaskade liest mehrere Keys (rep_editor/representation/global/region) → bei
+    // JEDER Farb-Änderung neu auflösen (kein Region-Filter mehr).
+    const onChange = () => setColourCfg(effectiveRepColour(colourRegionSlug));
     window.addEventListener(COLOUR_SETTINGS_EVENT, onChange);
     return () => window.removeEventListener(COLOUR_SETTINGS_EVENT, onChange);
   }, [colourRegionSlug]);
