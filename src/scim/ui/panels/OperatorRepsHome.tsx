@@ -9,7 +9,13 @@ import { actorFrom, repsForActor, withdrawRep, setRepPlacement, knownPlacements 
 import { commitDraftToRepo, isDraftCommittable, type CommitDraftResult } from '../../pathworks/commitDraft';
 import { getDraft } from '../../workspace/draftStore';
 import { useDeliveredVersions, type Delivered } from '../../../runtime/useDelivered';
+import { REPRESENTATIONS } from '../../workspace/workspace.registry';
+import { useRepresentationContext } from '../../../runtime/repContext';
+import { resolveOriginReference } from '../../sensus/originReference';
+import { publishOriginBundle, anthemPublishConfigured } from '../../../runtime/anthemApi';
 import type { RepView } from '../../pathworks/pathworks.types';
+
+export interface ReleaseState { busyId: string | null; msg: { id: string; ok: boolean; text: string } | null; canRelease: boolean; onRelease: (rep: RepView) => void; }
 
 function PartBadge({ on, label }: { on: boolean; label: string }) {
   return (
@@ -60,7 +66,31 @@ export default function OperatorRepsHome({ onJumpTo }: { onJumpTo: (panelId: str
   const submissions = reps.filter((r) => r.state === 'submitted');
   const committed = reps.filter((r) => r.state === 'committed');
   // Phase 1: „ausgeliefert vM" je committeter Rep (Origin-Bundle in R2). Graceful.
-  const delivered = useDeliveredVersions(committed.map((r) => r.id));
+  const [deliveredNonce, setDeliveredNonce] = useState(0);
+  const delivered = useDeliveredVersions(committed.map((r) => r.id), deliveredNonce);
+
+  // Phase 2 — RELEASE (Commit ≠ Release): „ausliefern" wählt die Rep als Auftraggeber,
+  // löst Phase-0-Resolve auf und publiziert das Bundle nach R2. Danach springt die
+  // „ausgeliefert"-Version nach. Manuelles Gate = die Drossel (zeitgetaktet folgt).
+  const { setInspectorAsset } = useRepresentationContext();
+  const [releaseBusy, setReleaseBusy] = useState<string | null>(null);
+  const [releaseMsg, setReleaseMsg] = useState<{ id: string; ok: boolean; text: string } | null>(null);
+  const onRelease = async (rep: RepView) => {
+    const repObj = REPRESENTATIONS.find((r) => r.id === rep.id);
+    if (!repObj) return;
+    setInspectorAsset({ kind: 'representation', id: rep.id });   // Auftraggeber = genau diese Rep
+    setReleaseBusy(rep.id); setReleaseMsg(null);
+    try {
+      const res = await publishOriginBundle(rep.id, resolveOriginReference(repObj).bundle);
+      setReleaseMsg({ id: rep.id, ok: true, text: `ausgeliefert v${repObj.version ?? 1} · ${(res.bytes / 1024).toFixed(1)} kB` });
+      setDeliveredNonce((n) => n + 1);   // „ausgeliefert" neu holen
+    } catch (e) {
+      setReleaseMsg({ id: rep.id, ok: false, text: (e as Error).message });
+    } finally {
+      setReleaseBusy(null);
+    }
+  };
+  const release: ReleaseState = { busyId: releaseBusy, msg: releaseMsg, canRelease: live && anthemPublishConfigured(), onRelease };
 
   const placements = useMemo(() => knownPlacements(), []);
   const onCommit = async (rep: RepView) => {
@@ -164,11 +194,11 @@ export default function OperatorRepsHome({ onJumpTo }: { onJumpTo: (panelId: str
       )}
 
       {/* Committete Representations — Nation → Region → Rep (Akkordeon) */}
-      <SectionTitle label="Committete Representations" count={committed.length} hint="Nation → Region → Rep. Eingefroren & versioniert." />
+      <SectionTitle label="Committete Representations" count={committed.length} hint="Nation → Region → Rep. Eingefroren & versioniert. »ausliefern« = Release (Commit ≠ Release) — manuelles Gate (Drossel)." />
       {committed.length === 0 ? (
         <Empty text="Noch keine committete Representation." />
       ) : (
-        <RepTree reps={committed} delivered={delivered} />
+        <RepTree reps={committed} delivered={delivered} release={release} />
       )}
     </div>
   );
@@ -238,7 +268,13 @@ function VersionLine({ rep, delivered }: { rep: RepView; delivered?: Delivered }
   );
 }
 
-function CommittedRow({ rep, delivered }: { rep: RepView; delivered?: Delivered }) {
+function CommittedRow({ rep, delivered, release }: { rep: RepView; delivered?: Delivered; release: ReleaseState }) {
+  const src = rep.currentVersion;
+  const dvRaw = delivered?.version ?? null;
+  const dvNum = typeof dvRaw === 'number' ? dvRaw : (typeof dvRaw === 'string' ? parseInt(dvRaw.replace(/^v/i, ''), 10) : NaN);
+  const pending = !delivered?.published || (Number.isFinite(dvNum) && src > dvNum);   // gibt es was auszuliefern?
+  const busy = release.busyId === rep.id;
+  const msg = release.msg?.id === rep.id ? release.msg : null;
   return (
     <div style={{
       border: '1px solid #9ae6b4', background: '#f0fff4', borderRadius: 8, padding: '10px 12px',
@@ -246,7 +282,28 @@ function CommittedRow({ rep, delivered }: { rep: RepView; delivered?: Delivered 
     }}>
       {repHead(rep, <span style={committedBadge}>committet v{rep.currentVersion}</span>)}
       {partRow(rep)}
-      <VersionLine rep={rep} delivered={delivered} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+        <VersionLine rep={rep} delivered={delivered} />
+        <span style={{ flex: 1 }} />
+        {release.canRelease && (
+          <button
+            onClick={() => release.onRelease(rep)}
+            disabled={busy || !pending}
+            title={pending ? 'Release: dieses Bundle nach R2 ausliefern (Auftraggeber = diese Rep)' : 'Aktuelle Version ist bereits ausgeliefert'}
+            style={{
+              fontSize: 11.5, fontWeight: 700, padding: '5px 12px', borderRadius: 5,
+              border: `1px solid ${pending ? '#2b6cb0' : '#cbd5e0'}`,
+              background: busy ? '#bee3f8' : pending ? '#2b6cb0' : '#edf2f7',
+              color: pending ? '#fff' : '#a0aec0', cursor: busy || !pending ? 'default' : 'pointer',
+            }}
+          >{busy ? '⊕ liefere …' : pending ? `⊕ ausliefern v${src}` : '✓ ausgeliefert'}</button>
+        )}
+      </div>
+      {msg && (
+        <div style={{ fontSize: 10.5, fontFamily: 'monospace', color: msg.ok ? '#276749' : '#c05621' }}>
+          {msg.ok ? '✓ ' : '✗ '}{msg.text}
+        </div>
+      )}
     </div>
   );
 }
@@ -267,18 +324,18 @@ function Caret({ label, count, open, onClick, level }: {
   );
 }
 
-function BindingGroup({ label, reps, delivered }: { label: string; reps: RepView[]; delivered: Record<string, Delivered> }) {
+function BindingGroup({ label, reps, delivered, release }: { label: string; reps: RepView[]; delivered: Record<string, Delivered>; release: ReleaseState }) {
   return (
     <div>
       <div style={{ fontSize: 9.5, fontFamily: 'monospace', color: '#a0aec0', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 5 }}>{label}</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {reps.map((rep) => <CommittedRow key={rep.id} rep={rep} delivered={delivered[rep.id]} />)}
+        {reps.map((rep) => <CommittedRow key={rep.id} rep={rep} delivered={delivered[rep.id]} release={release} />)}
       </div>
     </div>
   );
 }
 
-function RepTree({ reps, delivered }: { reps: RepView[]; delivered: Record<string, Delivered> }) {
+function RepTree({ reps, delivered, release }: { reps: RepView[]; delivered: Record<string, Delivered>; release: ReleaseState }) {
   const tree = useMemo(() => buildTree(reps), [reps]);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const open = (k: string) => !collapsed.has(k);
@@ -306,8 +363,8 @@ function RepTree({ reps, delivered }: { reps: RepView[]; delivered: Record<strin
                       <Caret label={reg.region} count={reg.reps.length} open={open(rk)} onClick={() => toggle(rk)} level={1} />
                       {open(rk) && (
                         <div style={{ marginLeft: 14, marginTop: 5, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                          {regional.length > 0 && <BindingGroup label="regional gebunden" reps={regional} delivered={delivered} />}
-                          {unbound.length > 0 && <BindingGroup label="ohne regionale Bindung" reps={unbound} delivered={delivered} />}
+                          {regional.length > 0 && <BindingGroup label="regional gebunden" reps={regional} delivered={delivered} release={release} />}
+                          {unbound.length > 0 && <BindingGroup label="ohne regionale Bindung" reps={unbound} delivered={delivered} release={release} />}
                         </div>
                       )}
                     </div>

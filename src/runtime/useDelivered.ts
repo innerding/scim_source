@@ -12,9 +12,9 @@ export interface Delivered {
   uploadedAt: string | null;
 }
 
-export function useDeliveredVersions(repIds: string[]): Record<string, Delivered> {
+export function useDeliveredVersions(repIds: string[], nonce = 0): Record<string, Delivered> {
   const [map, setMap] = useState<Record<string, Delivered>>({});
-  const key = repIds.slice().sort().join(',');
+  const key = repIds.slice().sort().join(',') + '#' + nonce;
   useEffect(() => {
     if (!anthemReadConfigured() || repIds.length === 0) return;
     let alive = true;
