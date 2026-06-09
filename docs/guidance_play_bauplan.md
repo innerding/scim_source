@@ -167,9 +167,41 @@ unverändert: stille Eskalation, „kein Routen-Shop", Wahl muss eindeutig treff
   auffällig („⚠ Deutlich längerer Weg · +85 % · +19 Min": größer, fett, Warn-Icon,
   stärkerer Schatten). Live verifiziert.
 
-**→ Damit ist A komplett. Nächster: B (Stufe 3).**
+**→ Damit ist A komplett.**
 
-### B — Stufe 3 (POI-Tausch)
+### Karten-Lebenszyklus (geklärt 2026-06-10)
+
+- **Häufigkeit der Stufe-2-Frage = pro Engpass EINMAL.** ✓ Entschieden — entspricht
+  dem gebauten Stand (`keptPoiIds`: „Trotzdem hin" = Ruhe für diesen POI; ein neuer
+  Engpass fragt neu). **Kein Code-Änderung nötig.**
+- **Swipe-to-dismiss = ⏸ GEPARKT (offen).** Tendenz „Snooze" (kurz wegblenden),
+  evtl. über eine **Nachfrage-Kaskade** statt sofort. Als global heikle Geste
+  markiert (kann an anderer Stelle ungünstig werden) → im Detail zu überlegen, **nicht
+  jetzt bauen**.
+- **Sammel-Karte bei Karten-Überlast = ✓ ENTSCHIEDEN → gehört zu B.** Ab mehreren
+  gleichzeitigen Engpässen kollabieren die Einzelkarten zu **EINER** Karte mit zwei
+  gegensätzlichen Polen: **„Belebte Ziele weglassen"** (Comfort: alle Engpass-POIs raus)
+  vs **„Alle behalten"** (Ziele: nichts opfern, **BAK wird still** = das Mute). Diese
+  eine Entscheidung räumt alle Karten ab. **Gestaltung (Operator):** die **Route in der
+  Karte** darstellen + die **fraglichen POIs (verwelkend**, vgl. B2) + **Reihenfolge**
+  → der Wanderer sieht, *wo* es klemmt = Orientierung. Spätere 3. Option „ruhigere
+  Ähnliche vorschlagen" = Bulk-Variante von Stufe 3. (Schwelle, z. B. ab 3, justierbar.)
+
+### B — Stufe 3 (POI-Tausch) + Sammel-Karte
+
+- **B1 · Ähnlichkeits-Vorschlag.** Beim Tausch bevorzugt das System einen POI
+  **ähnlicher Kategorie**. Äquivalenz-Regeln (Buckets: Points, Squares, Regenerate,
+  Transport, Service): *2 Subkategorien einer Hauptkategorie = ähnlich · Points ≡
+  Squares · Squares ≡ Regenerate · Transport ≡ Service.* Regelwerk erweiterbar
+  (Pflege in `ann_116`).
+- **B2 · POI-Confrontation-Animation.** Die Gegenüberstellung ist **nicht** nur eine
+  Zeitdifferenz, sondern ein **Energieaustausch wie kommunizierende Gefäße**: der
+  Abzuwählende **verwelkt/schrumpft/dimmt** (Normal → suboptimal), der Anzuwählende
+  **erblüht/wächst/glüht** (Normal → optimal), simultan, je vom eigenen
+  Normal-Niveau. Zeitdifferenz (%, ±Min) begleitet die Animation.
+- **B3 · Sammel-Karte (aus „Karten-Lebenszyklus").** Eine Karte bei Überlast mit
+  Route-Darstellung + verwelkenden Engpass-POIs (teilt die Verwelk-Optik mit B2) +
+  Reihenfolge; zwei Pole „Belebte Ziele weglassen" / „Alle behalten" (= Mute).
 
 - **B1 · Ähnlichkeits-Vorschlag.** Beim Tausch bevorzugt das System einen POI
   **ähnlicher Kategorie**. Äquivalenz-Regeln (Buckets: Points, Squares, Regenerate,
