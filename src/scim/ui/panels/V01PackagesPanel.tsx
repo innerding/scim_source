@@ -11,7 +11,6 @@ import {
   fetchOriginVersions, activateOriginVersion, anthemReadConfigured, anthemPublishConfigured,
   type OriginVersions,
 } from '../../../runtime/anthemApi';
-import packagesIcon    from '../../../assets/Packages.svg';
 import skgIcon         from '../../../assets/SKG.svg';
 import gruenbergIcon   from '../../../assets/Grünberg.svg';
 import boehmerwaldIcon from '../../../assets/Böhmerwald.svg';
@@ -87,14 +86,12 @@ export default function V01PackagesPanel() {
 
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-        <img src={packagesIcon} alt="" width={32} height={32} />
-        <div>
-          <div style={{ fontSize: 14, fontWeight: 600, color: '#1a365d' }}>Versions-Bibliothek</div>
-          <div style={{ fontSize: 11, color: '#718096' }}>Historie der ausgespielten Origin-Versionen · aktiv · Rollback</div>
+      {/* Titel/Subline stehen schon im Panel-Header — hier nur der Manifest-Badge. */}
+      {role === 'operator' && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 14 }}>
+          <AppManifestBadge />
         </div>
-        {role === 'operator' && <span style={{ marginLeft: 'auto' }}><AppManifestBadge /></span>}
-      </div>
+      )}
 
       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 18 }}>
         <button onClick={() => void load()} disabled={loading || !readConfigured} style={{

@@ -126,29 +126,10 @@ function TabBar({
   );
 }
 
-// Amber↔Violett-Verlauf-Animation (wie SCIM3-Intro): als Schrift-Fill (background-clip:text)
-// und Logo-Fill (CSS-Maske, siehe PanelIcon gradientClass). Bewegt die Gradient-Position.
-const REGION_HEADER_CSS = `
-@keyframes region-av-wave { from { background-position: 0% 50%; } to { background-position: 200% 50%; } }
-.region-av-text {
-  background-image: linear-gradient(90deg, #f59e0b, #a855f7, #7c3aed, #f59e0b);
-  background-size: 200% 100%;
-  -webkit-background-clip: text; background-clip: text;
-  -webkit-text-fill-color: transparent; color: transparent;
-  animation: region-av-wave 6s linear infinite;
-}
-.region-av-fill {
-  background-image: linear-gradient(90deg, #f59e0b, #a855f7, #7c3aed, #f59e0b);
-  background-size: 200% 100%;
-  animation: region-av-wave 6s linear infinite;
-}
-`;
-
 // Kurz-Code im Gradientenblock: nummerierte Panels = ihre ID; die Drehscheibe
 // Pathworks bekommt „HUB". Sonst kein Code (nur Icon).
 function headerCode(id: string): string {
   if (/^(P\d{2}|R\d{2}|V\d{2})$/.test(id)) return id;
-  if (id === 'workspace') return 'HUB';
   return '';
 }
 
@@ -162,16 +143,17 @@ function headerCode(id: string): string {
 // Die 4 Regio-Dashboard-Panels = die 4 Tetraeder-Faces (Thresholds löst Publishing ab):
 // Thresholds(P01) · Pathworks(workspace) · Drawer(geometry_editor) · Katalog(catalog).
 const REGION_DASHBOARD_IDS = new Set(['P01', 'workspace', 'geometry_editor', 'catalog']);
-// Intro-„Empty Sea" großflächig hinter den Inhalt (Triangle-Panels P01 + Pathworks).
-// Header tragen kein Mesh mehr (auch Katalog/Drawer nicht).
-const SEA_BG_IDS = new Set(['P01', 'workspace']);
+// Intro-„Empty Sea" großflächig hinter den Inhalt: die Triangle-Panels (P01,
+// Pathworks) UND die Sichel-Panels (V03, P11, V01). Header tragen kein Mesh mehr.
+const SEA_BG_IDS = new Set(['P01', 'workspace', 'V03', 'P11', 'V01']);
 const BROCKEN_IDS = new Set(['P05']);
 const MUELL_IDS = new Set(['P03', 'P10', 'P12', 'P13', 'P14', 'R03', 'R04', 'R05', 'R06', 'R07', 'R08']);
 const OPERATOR_ONLY_IDS = new Set(['ai_interface', 'ipills', 'system']);   // Substrat
 
-type HeaderVariant = 'region' | 'green' | 'yellow' | 'white' | 'black';
+type HeaderVariant = 'green' | 'yellow' | 'white' | 'black';
 function headerVariant(id: string): HeaderVariant {
-  if (REGION_DASHBOARD_IDS.has(id)) return 'region';
+  // Triangle-Panels tragen denselben schwarz-weißen, linksbündigen Header wie die
+  // Sichel-Panels (kein Sonder-„region"-Header mehr) → fallen auf 'black'.
   if (BROCKEN_IDS.has(id)) return 'green';
   if (MUELL_IDS.has(id)) return 'yellow';
   if (OPERATOR_ONLY_IDS.has(id)) return 'white';
@@ -189,36 +171,10 @@ const SOLID_HEADER: Record<Exclude<HeaderVariant, 'region'>, {
 };
 
 function PanelHeader({ id, title, subtitle, icon }: { id: string; title: string; subtitle: string; icon?: string }) {
-  // Header-Farbe nach Panel-Kategorie (headerVariant). Region-Dashboard = Lila→Weiß
-  // (Icon+Kürzel mittig, Titel schwarz rechts); solide Varianten je Kategorie.
+  // Header-Farbe nach Panel-Kategorie. Triangle- + Sichel-Panels = solide 'black'
+  // (schwarz-weiß, linksbündig); gelb=Müll, grün=Brocken, weiß=Substrat.
   const variant = headerVariant(id);
   const code = headerCode(id);
-
-  // ── Region-Dashboard: animierter Colour-Mesh (Intro-„Empty Sea"), Amber↔Violett-
-  //    Gradient als Schrift- und Logo-Fill. Icon+Kürzel mittig, Titel rechts. ──
-  if (variant === 'region') {
-    return (
-      <div style={{
-        position: 'relative', borderBottom: '1px solid #1a2535', background: '#03050f',
-        flexShrink: 0, overflow: 'hidden', opacity: 1,   // kein Dimmen: Schwarz bleibt schwarz
-      }}>
-        <style>{REGION_HEADER_CSS}</style>
-        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', padding: '13px 20px', fontFamily: 'system-ui, sans-serif' }}>
-          <div style={{ flex: 1 }} />
-          {/* Mitte: Icon (Logo-Fill) + Kürzel (Schrift-Fill) */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, flexShrink: 0 }}>
-            {icon && <PanelIcon id={id} icon={icon} size={28} color="#fbbf24" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }} />}
-            {code && <span className="region-av-text" style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: 12, letterSpacing: '0.04em' }}>{code}</span>}
-          </div>
-          {/* Rechts: Titel (Schrift-Fill) */}
-          <div style={{ flex: 1, minWidth: 0, textAlign: 'right' }}>
-            <div className="region-av-text" style={{ fontSize: 16, fontWeight: 800, letterSpacing: '-0.01em' }}>{title}</div>
-            {subtitle && <div style={{ fontSize: 12, color: 'rgba(220,225,240,0.72)', marginTop: 2 }}>{subtitle}</div>}
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   // ── Solide Varianten: schwarz (analyst) · weiß (operator-only) · gelb (Müll) · grün (Brocken) ──
   // Kein Dimmen mehr (Transparenz-Relikt entfernt) → Schwarz bleibt schwarz.
