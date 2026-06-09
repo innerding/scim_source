@@ -29,6 +29,17 @@ const CATEGORY_META: Record<AnnotationCategory, { label: string; color: string; 
 // Initial seed annotations — operator extends these in the UI
 const SEED_ANNOTATIONS: Annotation[] = [
 
+  // ── Leistungsblatt versionieren + Shell-kB aktualisieren (Todo, 2026-06-10) ──
+
+  {
+    id: 'ann_118',
+    category: 'next_intent',
+    label: 'TODO — Leistungsblatt als Version ablegen + Shell-kB aktualisieren',
+    content: 'TODO (2026-06-10, Operator-Notiz). (1) LEISTUNGSBLATT VERSIONIEREN: das Leistungsblatt soll nach der NÄCHSTEN Aktualisierung NICHT mehr fortlaufend weiter-aktualisiert, sondern als VERSION abgelegt/eingefroren werden (Snapshot je Stand statt mitlaufender Wert). (2) SHELL-kB GESTIEGEN: die ausgelieferte Shell-/Paket-Größe ist durch die jüngsten shell-kit-Ausbauten gewachsen — walker (S1), BAK-Kaskade (solveRouteAvoiding/worstBreachingLeg), route digitRaw, cluster onMemberClick, similarity+swap (B1) → aktuell shell-kit v0.46.0. Das gehört in SCIM aktualisiert: im LEISTUNGSBLATT (Shell-Größe) UND in R3 — AKTIVMONITOR (ausgelieferte Shell-/Paket-Größe). Kennzahlen-Quelle = sensus/leistungen.ts (eine Quelle, von Leistungsblatt + Manual gelesen). Beide Punkte noch offen.',
+    related_panel: 'R3',
+    date: '2026-06-10',
+  },
+
   // ── NetzStrukturTests — BAK-Kaskade auf dem Lichtenberg-Netz (2026-06-10) ──
 
   {
