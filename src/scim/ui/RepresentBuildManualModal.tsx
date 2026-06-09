@@ -11,10 +11,11 @@ interface Props {
   onClose: () => void;
 }
 
-const TRYGON_SPEC = `TRYGON-LOOP (TL) — KERNFUNKTION (Systemmerkmal)
+const TRYGON_SPEC = `TRYGON-LOOP (TL) — KERNFUNKTION (Systemmerkmal · HOT PATH)
 
   Der fortlaufende Loop aus drei Funktionen — das, was uns von
-  gaengigen Systemen unterscheidet.
+  gaengigen Systemen unterscheidet. Die Hochfrequenz-Maschine
+  (5-Min-Takt) — Gegenpol zum cold path (Substrat / Versionierung).
 
     AP  Anthem-Pulse      misst die Last (5-Min-Puls) - Voraussetzung
     CK  Comfort Kernel    beobachtet den Comfort
@@ -156,6 +157,13 @@ SUBSTRAT-TETRAEDER (Apex down - matter)
   Pipeline und Runtime-Builder bleiben duenn. Die heute weitgehend
   ungenutzten Panels (P03, P10, P12-P14, R02-R08) sind im
   Navigator im Muellwagen gesammelt — Klick klappt sie aus.
+
+  COLD PATH: Substrat-Tetraeder, Brocken und Muellwagen stehen
+  ausserhalb der Hochfrequenz-Maschine (Anthem-Puls / Trygon-Loop,
+  5-Min-Takt = HOT PATH). Brocken und Muellwagen sind fragmentiert
+  von Natur aus; der Substrat-Tetraeder ist kein Fragment, sondern
+  der bewusste, versionierte Takt (Versionierung, Lifecycle) - sein
+  Versionen-Ast ist tragend.
 
 READER (am Fuss der Kosmologie)
   Klick : oeffnet dieses Dokument.
