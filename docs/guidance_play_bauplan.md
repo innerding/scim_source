@@ -5,7 +5,26 @@
 
 ---
 
-## Audit — was HEUTE schon steht (nicht neu bauen!)
+## ⚠ KORREKTUR (2026-06-09) — Ziel ist OriginPreview, nicht die Demo
+
+Es gibt **zwei Karten-Pfade** in der Runtime:
+- **`?rep=<id>` → `OriginPreview`** (`src/target-app/origin/OriginPreview.tsx`) = der **ECHTE** Pfad
+  (QR / live vor Ort). Hat schon **Colour-Mesh + POI-Auswahl + Route (bak) + Comfort** — aber
+  **noch KEIN „Play"/Gehen**. ← **HIER gehört Guidance/Play hin.**
+- **`?demo=1` → `App.tsx` + `MapView`** = **Demo** (privat); `MapView` ist **`@LEGACY`** (wird mit der
+  Demo-Ablösung gelöscht). Die im „Audit" unten beschriebene reiche Guidance-State-Machine
+  (`useAppMachine`) lebt **hier** — auf zu löschendem Code, **NICHT** der Zielort.
+
+**Stand Bau:** **S1 (shell-kit `walker.ts`) fertig** (v0.43.0, 7/7 Tests) + **`DurationClock` fertig**
+(Runtime, wiederverwendbar). **S2 wurde versehentlich in die Demo verdrahtet** (bleibt, schadet
+nicht). Der echte **S2/S3/S4 kommt in `OriginPreview`** — dort liegt die bak-Route als Polylinie bereit.
+
+> Das „Audit" unten beschreibt die **Demo** (Pfad B). Für den echten Bau die Schritte sinngemäß
+> auf OriginPreview übertragen: bak-Route = die zu gehende Polylinie, Comfort/Marker dort einhängen.
+
+---
+
+## Audit (Pfad B = Demo, @LEGACY) — was an Guidance-Gerüst existiert
 
 **Runtime `sensus-core-runtime/src/target-app/`:**
 - Volle **State-Machine** (`app/useAppMachine.ts`): browsing → `proposal_running/paused` (BCK) → `route_committed` → `guidance_active / guidance_paused / guidance_completed`. Aktionen: `START_GUIDANCE`, `NEXT_SEGMENT`, `PAUSE/RESUME/COMPLETE_GUIDANCE`, `BACK_TO_PLANNING`.
