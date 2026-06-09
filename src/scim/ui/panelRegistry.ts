@@ -460,6 +460,7 @@ export const VERSIONEN_REGISTRY: VersionenDescriptor[] = [
       { id: 't2', label: 'Active-Monitor', icon: '◈' },
       { id: 't3', label: 'Runtime Shell', icon: '◻' },   // R01 hier aufgegangen
       { id: 't4', label: 'Release-Drossel', icon: '⊕' },
+      { id: 't5', label: 'Puls', icon: '◌' },            // hot path: Wahrheitskreislauf live
     ],
   },
 ];
