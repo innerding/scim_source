@@ -51,7 +51,8 @@ export const PANEL_GLYPHS: Record<string, string> = Object.fromEntries(
 // P11 (Sensus Core Publishing) = das importierte Package-Icon der Runtime
 // (src/assets/Package.svg), auf currentColor umgefärbt → invertiert automatisch:
 // hell auf dunklem Header, dunkel auf aktivem Amber-Button. Eigene 28er-viewBox.
-PANEL_GLYPHS.P11 = '<svg width="1em" height="1em" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.2">'
+// viewBox auf 17.5 (=28/1.6), zentriert aufs Paket → rendert überall 1.6× größer.
+PANEL_GLYPHS.P11 = '<svg width="1em" height="1em" viewBox="5.25 7.55 17.5 17.5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.2">'
   + '<path d="M22.458,12.099l-8.448,3.168M14.01,15.267l-8.448-3.168v8.448l8.448,3.168v-8.448M14.01,8.931l-8.448,3.168v8.448l8.448,3.168,8.448-3.168v-8.448l-8.448-3.168Z"/>'
   + '<path fill="currentColor" stroke="none" d="M18.574,12.723l-3.513-1.097,3.328-1.215c.235-.085.356-.345.27-.58-.084-.235-.342-.355-.58-.27l-4.442,1.62-4.462-1.393c-.24-.078-.494.058-.567.297-.074.239.058.493.297.567l3.331,1.04-2.84,1.037c-.062.023-.115.059-.16.102l-3.463-1.299c-.312-.116-.661.04-.777.353-.117.312.041.66.353.777l.212.08v7.804l3.593,1.347c-.033.063-.056.131-.056.207v.558c0,.25.203.453.453.453s.453-.203.453-.453v-.446l3.403,1.276v.226c0,.334.27.603.603.603s.603-.27.603-.603v-8.448s-.002-.008-.002-.012c0-.047-.016-.091-.027-.135-.008-.032-.01-.066-.023-.095-.015-.034-.04-.06-.061-.09-.023-.034-.041-.07-.07-.098-.022-.022-.052-.034-.078-.052-.039-.027-.075-.057-.12-.075-.004-.002-.006-.005-.011-.007l-3.743-1.404,3.181-1.16,4.326,1.35v9.171c0,.25.203.453.453.453s.453-.203.453-.453v-9.504c0-.198-.128-.373-.318-.432Z"/>'
   + '</svg>';
