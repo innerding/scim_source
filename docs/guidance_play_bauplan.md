@@ -152,17 +152,16 @@ unverändert: stille Eskalation, „kein Routen-Shop", Wahl muss eindeutig treff
 
 ### A — Konkrete Verfeinerungen (baubar, klein → groß)
 
-- **A2 · BAK-Modal-Breite.** Auf **≤ halbe Screen-Breite** beschränken (heute
-  `width: min(90vw, 360px)` → halbieren). Reine CSS-Änderung in OriginPreview.
-- **A3 · Zeit-Box-Hintergrund = Comfort-Farbe.** Die Steuerleiste (heute navy
-  `#1b2a6b`) bekommt **immer** die Comfort-Farbe `colorAt(scale, comfort)`. ⚠
-  Kontrast: weiße Uhr/Badges brauchen adaptive Textfarbe (helle Comfort-Farbe →
-  dunkler Text), sonst unlesbar.
-- **A4 · BAK-Box-Hintergrund = „Ohne-BAK"-Farbe.** Das Kaskaden-Modal bekommt
-  **immer** die Last-Farbe der Lage, in die der Wanderer *ohne* BAK geriete (die
-  ungemilderte Basis-Route). Je belebter, desto „heißer" das Modal → Dringlichkeit
-  sofort lesbar. (Heute fix orange; soll aus der Breach-Schwere kommen.)
-- **A1 · Stufe-1-Hinweis quantifiziert + Schwelle.** Der Umleitungs-Hinweis zeigt
+- **A2 ✓ GEBAUT (73bfd44) · BAK-Modal-Breite.** Auf **≤ halbe Screen-Breite**
+  (`width: min(50vw, 320px)`); Buttons brechen um (`flexWrap`, `flex 1 1 110px`) →
+  stapeln sauber auf schmalem Screen. Live: 188 px ≤ 187,5.
+- **A3 ✓ GEBAUT (73bfd44) · Zeit-Box-Hintergrund = Comfort-Farbe.** Steuerleiste
+  bekommt **immer** `colorAt(comfort, scale)`; Textfarbe luminanz-adaptiv
+  (`contrastText`), Play/Pause-Badge mit drop-shadow für Trennung auf hellen Farben.
+- **A4 ✓ GEBAUT (73bfd44) · BAK-Box-Hintergrund = „Ohne-BAK"-Farbe.** Modal bekommt
+  **immer** die Spitzen-Last-Farbe der ungemilderten Basis-Route (`peakColorOf`);
+  Text/Buttons adaptiv (fg/bg getauscht). Je belebter, desto „heißer" → Dringlichkeit.
+- **A1 · Stufe-1-Hinweis quantifiziert + Schwelle.** ⏭ NÄCHSTER. Der Umleitungs-Hinweis zeigt
   **immer Prozent UND Mehrzeit**: `% = (altLen−baseLen)/baseLen`,
   `Mehrzeit = (altLen−baseLen)/WALK_SPEED_MPS`. **Bis +20 %** ruhiger Hinweis;
   **ab +20 %** auffälligere (eskalierte) Mitteilung (Farbe/Gewicht hoch), weil der
