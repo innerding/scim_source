@@ -20,7 +20,6 @@ const INNER: Record<string, string> = {
   P08: '<path d="M13 3L6 13h5l-1 8 8-11h-5z"/>',                                                            // Deep-Shell — Blitz
   P09: '<rect x="3" y="9" width="18" height="6" rx="3"/><line x1="12" y1="9" x2="12" y2="15"/>',            // Origin-Capsuler — Pille
   P10: '<circle cx="6" cy="18" r="2" fill="currentColor" stroke="none"/><circle cx="18" cy="6" r="2" fill="currentColor" stroke="none"/><path d="M6 16c0-6 12-4 12-8"/>', // Route+Layer — Route
-  P11: '<rect x="3" y="9.5" width="12" height="10.5" rx="1.5"/><line x1="3" y1="13" x2="15" y2="13"/><line x1="9" y1="13" x2="9" y2="20"/><path d="M15 9 L20.5 3.5"/><polyline points="16.5 3.5 20.5 3.5 20.5 7.5"/>', // Sensus Core — Paket + Transfer-Pfeil
   P12: '<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9l6 6"/><path d="M15 9l-6 6"/>',       // boxed-x
   P13: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/>',                                    // Doppelring
   P14: '<path d="M12 16V5"/><path d="M7 10l5-5 5 5"/><path d="M5 19h14"/>',                                  // Upload
@@ -48,3 +47,11 @@ const INNER: Record<string, string> = {
 export const PANEL_GLYPHS: Record<string, string> = Object.fromEntries(
   Object.entries(INNER).map(([k, v]) => [k, wrap(v)]),
 );
+
+// P11 (Sensus Core Publishing) = das importierte Package-Icon der Runtime
+// (src/assets/Package.svg), auf currentColor umgefärbt → invertiert automatisch:
+// hell auf dunklem Header, dunkel auf aktivem Amber-Button. Eigene 28er-viewBox.
+PANEL_GLYPHS.P11 = '<svg width="1em" height="1em" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.2">'
+  + '<path d="M22.458,12.099l-8.448,3.168M14.01,15.267l-8.448-3.168v8.448l8.448,3.168v-8.448M14.01,8.931l-8.448,3.168v8.448l8.448,3.168,8.448-3.168v-8.448l-8.448-3.168Z"/>'
+  + '<path fill="currentColor" stroke="none" d="M18.574,12.723l-3.513-1.097,3.328-1.215c.235-.085.356-.345.27-.58-.084-.235-.342-.355-.58-.27l-4.442,1.62-4.462-1.393c-.24-.078-.494.058-.567.297-.074.239.058.493.297.567l3.331,1.04-2.84,1.037c-.062.023-.115.059-.16.102l-3.463-1.299c-.312-.116-.661.04-.777.353-.117.312.041.66.353.777l.212.08v7.804l3.593,1.347c-.033.063-.056.131-.056.207v.558c0,.25.203.453.453.453s.453-.203.453-.453v-.446l3.403,1.276v.226c0,.334.27.603.603.603s.603-.27.603-.603v-8.448s-.002-.008-.002-.012c0-.047-.016-.091-.027-.135-.008-.032-.01-.066-.023-.095-.015-.034-.04-.06-.061-.09-.023-.034-.041-.07-.07-.098-.022-.022-.052-.034-.078-.052-.039-.027-.075-.057-.12-.075-.004-.002-.006-.005-.011-.007l-3.743-1.404,3.181-1.16,4.326,1.35v9.171c0,.25.203.453.453.453s.453-.203.453-.453v-9.504c0-.198-.128-.373-.318-.432Z"/>'
+  + '</svg>';
