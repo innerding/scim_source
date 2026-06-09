@@ -3,11 +3,17 @@ import QrCell from '../QrCell';
 import { REGION_MAP, canonicalRepId } from './V01PackagesPanel';
 import packageOpenIcon from '../../../assets/Package-open.svg';
 import packageIcon     from '../../../assets/Package.svg';
-import { fetchOriginMeta, fetchPresence, type OriginMeta, type PresenceStatus } from '../../../runtime/anthemApi';
+import { fetchOriginMeta, fetchPresence, fetchAnthem, type OriginMeta, type PresenceStatus } from '../../../runtime/anthemApi';
 import { mvpUrl } from '../../../runtime/appUrl';
 import { AnthemCycleBadge } from '../AnthemCycleInfo';
 
 const WORKER_URL = import.meta.env.VITE_WORKER_URL as string | undefined;
+
+// Shell = die generische Runtime-App (shell-kit einkompiliert), für alle Reps gleich.
+// Auslieferungsgröße = der gzippte App-Build (JS+CSS). Gemessen am dist 2026-06-07;
+// bei größeren Runtime-Änderungen nachmessen.
+const SHELL_KB = 138;
+const SHELL_BYTES = SHELL_KB * 1024;
 
 const QR_LABEL: CSSProperties = { fontSize: 10, fontWeight: 700, color: '#4a5568', marginBottom: 4 };
 
@@ -46,6 +52,42 @@ function AnthemLayerLine({ origin, presence, errored }: { origin: OriginMeta | n
   );
 }
 
+// Eine Größen-Zeile im Paket-Breakdown.
+function SizeRow({ label, bytes, note, bold, est }: { label: string; bytes: number | null; note?: string; bold?: boolean; est?: boolean }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+      <span style={{ width: 86, color: bold ? '#2d3748' : '#718096', fontWeight: bold ? 700 : 400 }}>{label}</span>
+      <span style={{ width: 62, textAlign: 'right', color: bytes == null ? '#cbd5e0' : (bold ? '#1a202c' : '#2d3748'), fontWeight: bold ? 700 : 400 }}>
+        {bytes == null ? '— kalt' : `${est ? '~' : ''}${fmtKB(bytes)}`}
+      </span>
+      {note && <span style={{ color: '#a0aec0' }}>{note}</span>}
+    </div>
+  );
+}
+
+// Paket-Größen je Rep: Shell (geteilt) + Origin (Bundle) + Anthem (Snapshot).
+function SizeBreakdown({ origin, anthemBytes }: { origin: OriginMeta | null; anthemBytes: number | null }) {
+  const originBytes = origin?.bytes ?? null;
+  const firstDelivery = (originBytes != null)
+    ? SHELL_BYTES + originBytes + (anthemBytes ?? 0)
+    : null;
+  return (
+    <div style={{
+      borderTop: '1px dashed #e2e8f0', paddingTop: 6, marginTop: 2,
+      fontSize: 10.5, fontFamily: 'ui-monospace, Menlo, monospace', lineHeight: 1.7,
+    }}>
+      <div style={{ color: '#a0aec0', marginBottom: 2 }}>Paket-Größen</div>
+      <SizeRow label="Shell" bytes={SHELL_BYTES} note="einkompiliert · einmalig (gzip)" est />
+      <SizeRow label="Origin" bytes={originBytes} note="Bundle · je Version" />
+      <SizeRow label="Anthem" bytes={anthemBytes} note="Snapshot · alle 5 Min" est />
+      <div style={{ borderTop: '1px solid #edf2f7', margin: '3px 0', width: 156 }} />
+      <SizeRow label="Erstlieferung" bytes={firstDelivery} bold est />
+      <SizeRow label="laufend" bytes={anthemBytes} note="Bestandsnutzer · 5 Min" est />
+      <div style={{ color: '#cbd5e0', marginTop: 2, fontSize: 9.5 }}>Roh-Größen; Transfer wird gzip-komprimiert.</div>
+    </div>
+  );
+}
+
 function RepresentationRow({
   region, rep,
 }: {
@@ -58,15 +100,18 @@ function RepresentationRow({
   const repId = canonicalRepId(rep.id);
   const [origin, setOrigin] = useState<OriginMeta | null>(null);
   const [presence, setPresence] = useState<PresenceStatus | null>(null);
+  const [anthemBytes, setAnthemBytes] = useState<number | null>(null);
   const [errored, setErrored] = useState(false);
 
   useEffect(() => {
     let alive = true;
     const tick = () => {
-      Promise.allSettled([fetchOriginMeta(repId), fetchPresence(repId)]).then(([o, p]) => {
+      Promise.allSettled([fetchOriginMeta(repId), fetchPresence(repId), fetchAnthem(repId)]).then(([o, p, a]) => {
         if (!alive) return;
         if (o.status === 'fulfilled') { setOrigin(o.value); setErrored(false); } else setErrored(true);
         if (p.status === 'fulfilled') setPresence(p.value);
+        // Anthem-Snapshot-Größe (presence-gegated; kalt = 425 → null).
+        setAnthemBytes(a.status === 'fulfilled' ? JSON.stringify(a.value).length : null);
       });
     };
     tick();
@@ -110,6 +155,7 @@ function RepresentationRow({
           {live ? `● aktives Origin-Bundle v${version ?? '?'}${origin?.bundleUploadedAt ? ` · ${fmtUploaded(origin.bundleUploadedAt)}` : ''}` : '○ kein aktives Origin-Bundle'}
         </div>
         <AnthemLayerLine origin={origin} presence={presence} errored={errored} />
+        <SizeBreakdown origin={origin} anthemBytes={anthemBytes} />
       </div>
     </div>
   );
