@@ -43,7 +43,7 @@ export default function WorkspacePanel({ onJumpTo }: Props) {
             Representations-Drehscheibe
           </div>
           <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: '-0.01em', marginTop: 2 }}>
-            Pathworks (Hub)
+            Pathworks Hub
           </div>
           <div style={{ fontSize: 11, opacity: 0.85, marginTop: 4, lineHeight: 1.5 }}>
             Hier prüft und committet der Operator eingereichte Representations und sieht die committeten.

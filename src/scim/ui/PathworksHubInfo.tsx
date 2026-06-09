@@ -53,7 +53,7 @@ export function PathworksHubClipboard() {
         }}>pathworks-hub-clipboard</span>
       </div>
       <p style={{ fontSize: 12.5, color: '#4a5568', lineHeight: 1.6, margin: '0 0 14px' }}>
-        Arbeitstisch der Drehscheibe <strong>„Pathworks (Hub)"</strong> (vormals Workspace).
+        Arbeitstisch der Drehscheibe <strong>„Pathworks Hub"</strong> (vormals Workspace).
         Hält fest, was bewusst <em>noch nicht</em> gebaut ist, wie sich das Panel verhält und
         wo der große Umbau anschließen kann.
       </p>

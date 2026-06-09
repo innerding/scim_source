@@ -53,9 +53,9 @@ export default function SeaBrandung({ height = 56 }: { height?: number }) {
       const edge = (a: P, b?: P) => {
         if (!b) return;
         const fade = 1 - a.vr;                            // unten kräftiger, oben aus
-        const alpha = 0.05 + 0.16 * fade;                 // zart
-        const g = 55;                                     // mittel-dunkles Grau
-        ctx.strokeStyle = `rgba(${g},${g},${g},${alpha})`;
+        const alpha = 0.10 + 0.30 * fade;                 // zart, aber sichtbar
+        // Hellblau wie das Intro-„Empty Sea", nur einfarbig.
+        ctx.strokeStyle = `rgba(125,179,232,${alpha})`;
         ctx.lineWidth = 0.6;
         ctx.beginPath();
         ctx.moveTo(a.x, a.y);

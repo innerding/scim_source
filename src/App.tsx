@@ -51,7 +51,7 @@ export default function App() {
   // Wrapper: wenn Panel wechselt, Default-Tab setzen. Pro Panel überschreibbar
   // (P11 öffnet auf Transfer, V03 auf Puls); ein explizit übergebener Tab gewinnt
   // immer (z.B. Footer-Presence → V03 t1).
-  const DEFAULT_TAB: Record<string, TabId> = { P11: 'transfer', V03: 't5' };
+  const DEFAULT_TAB: Record<string, TabId> = { P11: 'transfer', V03: 't5', P06: 't1' };
   const goTo = (id: string, tab?: TabId) => {
     setActiveId(id);
     setActiveTab(tab ?? DEFAULT_TAB[id] ?? 'input');

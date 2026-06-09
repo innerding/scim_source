@@ -441,14 +441,14 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
     return (
       <NavThemeContext.Provider value={navTheme}>
         <nav style={{
-          width: 210, flexShrink: 0, background: navTheme.bg,
+          width: 210, flexShrink: 0, background: '#03050f',   // 100% schwarz = Header-Hintergrund
           borderRight: `1px solid ${navTheme.border}`,
           display: 'flex', flexDirection: 'column', alignItems: 'center',
           overflowY: 'auto', padding: '12px 6px', position: 'relative',
           transition: 'background 0.2s, border-color 0.2s',
         }}>
           <div style={{ height: 280, flexShrink: 0 }} />
-          <RegioDashboardControl activeId={activeId} onJumpTo={go} variant="dark" size={171} arcsDeco toolsEnabled={!!boundRep} />
+          <RegioDashboardControl activeId={activeId} onJumpTo={go} variant="dark" size={205} arcsDeco toolsEnabled={!!boundRep} />
           {/* Status-Bild: welche Rep · Region · Version die Werkzeuge gerade bearbeiten. */}
           <div style={{ marginTop: 12, width: 190, fontFamily: 'system-ui, sans-serif' }}>
             {boundRep ? (

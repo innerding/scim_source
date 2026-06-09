@@ -80,17 +80,26 @@ CLOUD (im Spalt zwischen Mond und Transmissionsfeld)
                     -> Rep aus den publizierten Fakten in R2.
 
 TRANSMISSION (Mesh zwischen Mond und Komposit-Tetraeder)
-  Klick : oeffnet P06 Transmitter.
+  Klick : oeffnet P06 Transmitter (Atem).
 
-  Das Feld visualisiert die Uebergabe klassifizierter Signale vom
-  Komposit-Tetraeder Richtung Ziel-App. P06 (Header: Transmitter)
-  ist heute der einzige real gebaute Teil der Kette: er sortiert
-  eingehende Signale in drei Klassen — flow (fliessend),
-  accumulation (Stau/Sammel), ambiguous (mehrdeutig).
+  Das Feld visualisiert den ATEM — die 5-Min-Auslieferung des
+  Anthem (Lastbild) vom Komposit-Tetraeder zur Ziel-App. P06 ist
+  die Ausatem-Station einer real gebauten Kette:
 
-  Stand: eine groessere Verarbeitungskette (Priority Queue,
-  Cache/Lookup, Dispatcher) ist konzeptuell gedacht, aber nicht
-  gebaut. Das Mesh ist hier Darstellung, nicht Funktion.
+    Telco (P04)        einatmen - presence-Intake · Sim-Telco ·
+                       Normalisierung (Rohlast -> [0..1]).
+    Thresholds (P01)   deuten - System -> Region -> Load (Schwellen).
+    Coder (P02)        packen - Anthem-Encoder: Last -> segId-Snapshot.
+    Transmitter (P06)  ausatmen - Anthem-Auslieferung (alle 5 Min)
+                       an die Runtime. Scheduling lebt hier.
+
+  Den laufenden Puls dieses Atems zeigt V03 · Puls (hot path).
+
+  Stand: die Atem-Kette ist gebaut (Snapshot-Erzeugung im Worker,
+  presence-gegated, 5-Min-Raster). Offen: echtes Scheduling /
+  Priority und reale Telco-Last statt Sim. (Die fruehere P06-Rolle
+  - Signal-Klassifikation flow/accumulation/ambiguous - lebt als
+  eigener Tab weiter.)
 
 KOMPOSIT-TETRAEDER (Apex up - fire)
   Klick Face   : scb -> P11, org -> Workspace,

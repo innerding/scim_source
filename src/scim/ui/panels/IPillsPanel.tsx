@@ -16,7 +16,7 @@ const PILLS: { badge: React.ReactNode; name: string; desc: string; audiences: Au
   { badge: <AnthemCycleBadge />,       name: 'anthem-run',      desc: 'Der zyklische Anthem-Pulse: 5-Min-Takt, Last-Mathematik und Refresh-Takt der Ziel-App.', audiences: ['operator'] },
   { badge: <BuilderClipboardBadge />,  name: 'build-clipboard', desc: 'Ziel-App-UX-Details fürs Bauen — Manifest, POI-Interaktion, BAK-Kaskade, Guidance.', audiences: ['operator'] },
   { badge: <AppManifestBadge />,       name: 'i-manifest',      desc: 'Das App-Manifest der Ziel-App — Marke & UX (Slogan „Geh deinen Weg", Leitsätze).', audiences: ['operator'] },
-  { badge: <PathworksHubBadge />,      name: 'pathworks-hub-clipboard', desc: 'Arbeitstisch der Drehscheibe Pathworks (Hub) — tote Knöpfe, Default-Verhalten, Umbau-Anschlüsse.', audiences: ['operator', 'editor'] },
+  { badge: <PathworksHubBadge />,      name: 'pathworks-hub-clipboard', desc: 'Arbeitstisch der Drehscheibe Pathworks Hub — tote Knöpfe, Default-Verhalten, Umbau-Anschlüsse.', audiences: ['operator', 'editor'] },
 ];
 
 const AUDIENCE_BY_TAB: Record<string, Audience> = {
