@@ -189,30 +189,23 @@ unverändert: stille Eskalation, „kein Routen-Shop", Wahl muss eindeutig treff
 
 ### B — Stufe 3 (POI-Tausch) + Sammel-Karte
 
-- **B1 · Ähnlichkeits-Vorschlag.** Beim Tausch bevorzugt das System einen POI
-  **ähnlicher Kategorie**. Äquivalenz-Regeln (Buckets: Points, Squares, Regenerate,
-  Transport, Service): *2 Subkategorien einer Hauptkategorie = ähnlich · Points ≡
-  Squares · Squares ≡ Regenerate · Transport ≡ Service.* Regelwerk erweiterbar
-  (Pflege in `ann_116`).
+- **B1 ✓ GEBAUT (shell-kit v0.46.0) · Ähnlichkeits-Vorschlag (Klassifikator + Pipeline).**
+  `similarity.ts`: `bucketOf` (Präfix vor „_") + `similarityTier` (3 gleiche Subkat /
+  2 gleiche Hauptkat / 1 äquivalente Hauptkat / 0 unähnlich; **nur direkte Paare**, keine
+  Transitivität: Points≡Square · Square≡Regenerate · Transport≡Service; `BUCKET_EQUIVALENCE`
+  erweiterbar). `swap.ts`: `suggestSwap(net, chainIds, pois, bottleneckId, dimmed)` —
+  komponierbare Pipeline: 1) nur Ähnliche (tier≥1) · 2) getauschte Route muss ruhig sein
+  (kein Breach) · 3) Rang = höchste Ähnlichkeit, dann kleinster Umweg → bester Ersatz-POI
+  (+`deltaM`/`newTotalM`) oder null. 27/27 Tests. **Noch nicht in der Runtime verdrahtet
+  (das macht B2).** Regel-Pflege in `ann_116`.
 - **B2 · POI-Confrontation-Animation.** Die Gegenüberstellung ist **nicht** nur eine
   Zeitdifferenz, sondern ein **Energieaustausch wie kommunizierende Gefäße**: der
   Abzuwählende **verwelkt/schrumpft/dimmt** (Normal → suboptimal), der Anzuwählende
   **erblüht/wächst/glüht** (Normal → optimal), simultan, je vom eigenen
-  Normal-Niveau. Zeitdifferenz (%, ±Min) begleitet die Animation.
+  Normal-Niveau. Zeitdifferenz (%, ±Min) begleitet die Animation. Verdrahtet `suggestSwap`.
 - **B3 · Sammel-Karte (aus „Karten-Lebenszyklus").** Eine Karte bei Überlast mit
   Route-Darstellung + verwelkenden Engpass-POIs (teilt die Verwelk-Optik mit B2) +
   Reihenfolge; zwei Pole „Belebte Ziele weglassen" / „Alle behalten" (= Mute).
-
-- **B1 · Ähnlichkeits-Vorschlag.** Beim Tausch bevorzugt das System einen POI
-  **ähnlicher Kategorie**. Äquivalenz-Regeln (Buckets: Points, Squares, Regenerate,
-  Transport, Service): *2 Subkategorien einer Hauptkategorie = ähnlich · Points ≡
-  Squares · Squares ≡ Regenerate · Transport ≡ Service.* Regelwerk erweiterbar
-  (Pflege in `ann_116`).
-- **B2 · POI-Confrontation-Animation.** Die Gegenüberstellung ist **nicht** nur eine
-  Zeitdifferenz, sondern ein **Energieaustausch wie kommunizierende Gefäße**: der
-  Abzuwählende **verwelkt/schrumpft/dimmt** (Normal → suboptimal), der Anzuwählende
-  **erblüht/wächst/glüht** (Normal → optimal), simultan, je vom eigenen
-  Normal-Niveau. Zeitdifferenz (%, ±Min) begleitet die Animation.
 
 ### C — Offene Designfrage (zu lösen, NICHT jetzt)
 
