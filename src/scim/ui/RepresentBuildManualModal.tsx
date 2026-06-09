@@ -304,13 +304,22 @@ export default function RepresentBuildManualModal({ onClose }: Props) {
           fontFamily: 'ui-monospace, "SF Mono", Consolas, monospace',
           fontSize: 13, lineHeight: 1.55, color: '#1a202c',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 18, marginBottom: 16 }}>
-            <TrygonLoopEmblem size={104} withLegend={false} animated />
-            <div style={{ fontWeight: 700 }}>USAGE MANUAL &amp; SCIM-STATE</div>
-          </div>
-          <pre style={{ margin: 0, fontFamily: 'inherit', fontSize: 'inherit', whiteSpace: 'pre-wrap' }}>
-            {MANUAL_BODY}
-          </pre>
+          <div style={{ fontWeight: 700, marginBottom: 16 }}>USAGE MANUAL &amp; SCIM-STATE</div>
+          {(() => {
+            // TL-Animation lebt jetzt UNTEN am TRYGON-LOOP-Abschnitt (nicht mehr im
+            // Kopf — sie stünde sonst neben der Panel-Animation). Body am Spec splitten.
+            const preStyle = { margin: 0, fontFamily: 'inherit', fontSize: 'inherit', whiteSpace: 'pre-wrap' as const };
+            const [before, after] = MANUAL_BODY.split(TRYGON_SPEC);
+            return (
+              <>
+                <pre style={preStyle}>{before}</pre>
+                <div style={{ margin: '4px 0 8px' }}>
+                  <TrygonLoopEmblem size={104} withLegend={false} animated />
+                </div>
+                <pre style={preStyle}>{TRYGON_SPEC}{after}</pre>
+              </>
+            );
+          })()}
         </div>
       </div>
     </div>
