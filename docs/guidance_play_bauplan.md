@@ -141,3 +141,54 @@ Pivot `16,16`, Spitze nach Norden (rotiert per `bearingDeg`):
 
 **Jetzt vorzubereiten (S2–S3):** Pause · Doppelpunkt · Positions-Marker.
 **Bestand finden/überarbeiten:** Play · Plus · Zielflagge · Kompass · Ziffern. **Später (S4):** Häkchen.
+
+---
+
+## Verfeinerung & Erweiterung (2026-06-10) — BAK-Kaskade präzisiert
+
+*Operator-Feedback nach Live-Test. Basis-Kaskade (Stufe 1 auto / Stufe 2 Frage) ist
+gebaut; hier die nächsten Schritte. Regel-Heimat = in-app `ann_116`. Leitbild
+unverändert: stille Eskalation, „kein Routen-Shop", Wahl muss eindeutig treffbar sein.*
+
+### A — Konkrete Verfeinerungen (baubar, klein → groß)
+
+- **A2 · BAK-Modal-Breite.** Auf **≤ halbe Screen-Breite** beschränken (heute
+  `width: min(90vw, 360px)` → halbieren). Reine CSS-Änderung in OriginPreview.
+- **A3 · Zeit-Box-Hintergrund = Comfort-Farbe.** Die Steuerleiste (heute navy
+  `#1b2a6b`) bekommt **immer** die Comfort-Farbe `colorAt(scale, comfort)`. ⚠
+  Kontrast: weiße Uhr/Badges brauchen adaptive Textfarbe (helle Comfort-Farbe →
+  dunkler Text), sonst unlesbar.
+- **A4 · BAK-Box-Hintergrund = „Ohne-BAK"-Farbe.** Das Kaskaden-Modal bekommt
+  **immer** die Last-Farbe der Lage, in die der Wanderer *ohne* BAK geriete (die
+  ungemilderte Basis-Route). Je belebter, desto „heißer" das Modal → Dringlichkeit
+  sofort lesbar. (Heute fix orange; soll aus der Breach-Schwere kommen.)
+- **A1 · Stufe-1-Hinweis quantifiziert + Schwelle.** Der Umleitungs-Hinweis zeigt
+  **immer Prozent UND Mehrzeit**: `% = (altLen−baseLen)/baseLen`,
+  `Mehrzeit = (altLen−baseLen)/WALK_SPEED_MPS`. **Bis +20 %** ruhiger Hinweis;
+  **ab +20 %** auffälligere (eskalierte) Mitteilung (Farbe/Gewicht hoch), weil der
+  Umweg spürbar wird.
+
+### B — Stufe 3 (POI-Tausch)
+
+- **B1 · Ähnlichkeits-Vorschlag.** Beim Tausch bevorzugt das System einen POI
+  **ähnlicher Kategorie**. Äquivalenz-Regeln (Buckets: Points, Squares, Regenerate,
+  Transport, Service): *2 Subkategorien einer Hauptkategorie = ähnlich · Points ≡
+  Squares · Squares ≡ Regenerate · Transport ≡ Service.* Regelwerk erweiterbar
+  (Pflege in `ann_116`).
+- **B2 · POI-Confrontation-Animation.** Die Gegenüberstellung ist **nicht** nur eine
+  Zeitdifferenz, sondern ein **Energieaustausch wie kommunizierende Gefäße**: der
+  Abzuwählende **verwelkt/schrumpft/dimmt** (Normal → suboptimal), der Anzuwählende
+  **erblüht/wächst/glüht** (Normal → optimal), simultan, je vom eigenen
+  Normal-Niveau. Zeitdifferenz (%, ±Min) begleitet die Animation.
+
+### C — Offene Designfrage (zu lösen, NICHT jetzt)
+
+- **C1 · Eigene Strecken-/Kreuzungspunkt-Wahl** (nicht nur POIs): eine Strecke
+  zwischen zwei Kreuzungen, oder mehrere. Kandidaten: (a) Auswahl über Strecken ·
+  (b) über Kreuzungspunkte · (c) eigenes Werkzeug · (d) Swipe + Trassierung.
+  **Manifest-Leitplanke: eindeutig treffbar** (treffsicher an-/abwählen, keine
+  Zweideutigkeit — vgl. Ziel-App-UX „Geh deinen Weg") — sonst Ärger. **Erst Design
+  klären, dann bauen.**
+
+### Abarbeitungs-Reihenfolge (Vorschlag)
+**A2 → A3 → A4 → A1 → B → C** (kleine sichtbare zuerst; C nach Design-Klärung).

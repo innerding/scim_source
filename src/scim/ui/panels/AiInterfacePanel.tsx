@@ -29,6 +29,17 @@ const CATEGORY_META: Record<AnnotationCategory, { label: string; color: string; 
 // Initial seed annotations — operator extends these in the UI
 const SEED_ANNOTATIONS: Annotation[] = [
 
+  // ── BAK-Kaskade — Verfeinerung, Regeln, Stufe 3, offene Streckenwahl (2026-06-10) ──
+
+  {
+    id: 'ann_116',
+    category: 'next_intent',
+    label: 'BAK-Kaskade — Verfeinerung + Regeln + Stufe 3 + offene Streckenwahl',
+    content: 'BAK-KASKADE — VERFEINERUNG, REGELN, STUFE 3, OFFENE STRECKENWAHL (Stand 2026-06-10; zu präzisieren + abzuarbeiten. Basis-Kaskade Stufe 1/2 ist gebaut, siehe ann_115/ann_114; Reihenfolge unten). Manifest-treu „kein Routen-Shop", stille Eskalation. — A) KONKRETE VERFEINERUNGEN (baubar): A1 STUFE-1-HINWEIS QUANTIFIZIERT — immer Prozent UND Mehrzeit zeigen: Prozent = (altLen−baseLen)/baseLen, Mehrzeit = (altLen−baseLen)/WALK_SPEED_MPS. Ruhiger Hinweis bis +20 % Mehrweg; AB +20 % → auffälligere (eskalierte) Mitteilung (Farbe/Gewicht hoch), weil der Umweg spürbar wird. A2 BAK-MODAL-BREITE: auf ≤ halbe Screen-Breite beschränken (heute width min(90vw,360px) → z. B. min(50vw, …)). A3 ZEIT-BOX (Steuerleiste) HINTERGRUND = IMMER Comfort-Farbe (colorAt(scale, comfort)); Kontrast für weiße Uhr/Badges sicherstellen (Textfarbe adaptiv, helle Comfort-Farbe → dunkler Text). A4 BAK-BOX HINTERGRUND = IMMER die Farbe der Lage, in die der Wanderer OHNE BAK geriete (Last-Farbe der ungemilderten Basis-Route = Breach-Schwere). Macht die Dringlichkeit sofort lesbar (je belebter, desto „heißer" das Modal). — B) STUFE 3 (POI-TAUSCH) — Design: B1 VORSCHLAG bevorzugt ÄHNLICHE Kategorie. POI-Buckets (Lichtenberg): Points, Squares, Regenerate, Transport, Service. ÄQUIVALENZ-/ÄHNLICHKEITS-REGELN: (i) 2 Subkategorien EINER Hauptkategorie sind ohnehin ähnlich; (ii) Points ≡ Squares; (iii) Squares ≡ Regenerate; (iv) Transport ≡ Service. (Regelwerk ERWEITERBAR — weitere Äquivalenzen/Gewichte hier ergänzen, gebaut wie geplant.) B2 GEGENÜBERSTELLUNG ist NICHT nur eine Zeitdifferenz, sondern eine POI-CONFRONTATION-ANIMATION = Energieaustausch wie kommunizierende Gefäße: der ABzuwählende verblüht/verwelkt, schrumpft kurz, dimmt ab (von Normal → suboptimal); der ANzuwählende erblüht, wächst, bekommt Glow (von Normal → optimal); simultan, jeweils vom eigenen Normal-Niveau aus — dem einen wird Energie entzogen, das andere bekommt sie. Die Zeitdifferenz (Prozent + Mehr-/Minderzeit) begleitet die Animation, ersetzt sie aber nicht. — C) OFFENE DESIGNFRAGE (NOTIERT, nicht jetzt lösen): Der User soll auch selbst STRECKEN/KREUZUNGSPUNKTE wählen können (nicht nur POIs) — eine Strecke zwischen zwei Kreuzungen, oder mehrere. Mögliche Wege: (a) Auswahl über Strecken, (b) über Kreuzungspunkte, (c) eigenes Werkzeug, (d) Swipe + Trassierung. MANIFEST-LEITPLANKE: die Wahl muss EINDEUTIG treffbar sein (treffsicher an-/abwählen, KEINE Zweideutigkeit — vgl. Ziel-App-UX „Geh deinen Weg", Autofocus/Tooltip), sonst Ärger. Erst Design klären, dann bauen. — D) META: weitere Regeln (gebaut ODER geplant) gehören ebenfalls hierher (dies ist der Regel-/Verfeinerungs-Speicher der Kaskade). ABARBEITUNGS-REIHENFOLGE (Vorschlag): A2/A3/A4 (klein, sichtbar) → A1 (Schwelle + Quantifizierung) → B (Stufe 3 inkl. Confrontation-Animation) → C (Streckenwahl, erst nach Design-Klärung). Doku-Heimat: docs/guidance_play_bauplan.md (Abschnitt „Verfeinerung & Erweiterung 2026-06-10").',
+    related_panel: 'V03',
+    date: '2026-06-10',
+  },
+
   // ── App-System-Adjustments — zentrale Stellschrauben (2026-06-09) ───────────
 
   {
