@@ -658,6 +658,13 @@ function LeistungsmessungKonzeptTab() {
         So wird das Leistungsblatt zugleich das <strong>Schaufenster des Datengröße-Hebels</strong>: am mit/ohne-Assets- oder
         Bytes/Segment-Schalter drehen → die KB/h fallen live. <strong>Bei Bedarf zu bauen</strong>; erster Messer = Anthem-Pulse im Transmitter (P06).
       </div>
+
+      <div style={{ background: '#f0fff4', border: '1px solid #9ae6b4', borderRadius: 6, padding: '10px 14px', fontSize: 11.5, color: '#276749', lineHeight: 1.55, marginTop: 14 }}>
+        <strong>Versorgungssicherheit durch minimale Last.</strong> Weil die laufende Last so klein ist (Lichtenberg ~3,3 KB/5 Min,
+        ~5 B/Segment, ohne px-Bilder), kennt die Skalierung <strong>keine Daten-Wand</strong> und bleibt auch unter überlasteten
+        Netzen (Events) robust. Und weil <strong>Origin lokal</strong> liegt (fällt nicht aus), übersteht das Gerät kurze
+        <strong> Anthem-Aussetzer</strong> — es rechnet auf lokalem Origin + letztem Anthem weiter. <em>Design-Manifest · 7. Satz · ann_113.</em>
+      </div>
     </div>
   );
 }

@@ -72,6 +72,10 @@ PAKET-GRÖSSEN  (Beispiel Lichtenberg · gzip · ohne px-Bilder)
   Erstlieferung  ~190 KB   (Shell + Origin + Anthem)
   laufend         3,3 KB   Bestandsnutzer · nur Anthem / 5 Min
 
+  Versorgungssicherheit: die winzige laufende Last bleibt auch
+  unter ueberlasteten Netzen (Events) robust; und weil Origin
+  lokal liegt, laeuft die App durch kurze Anthem-Aussetzer weiter.
+
 ────────────────────────────────────────────────────────
 
   Systemarchitektur ab 09.2025 · Implementierung ~1 Monat
