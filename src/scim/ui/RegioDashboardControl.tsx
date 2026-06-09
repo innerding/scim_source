@@ -28,6 +28,10 @@ const SICKLE_TO_PANEL: Record<RepresentBuildSickle, string> = {
   engine_prep: 'P11',       // Publish / Transfer (Sensus Core)
   wegnetz_sampling: 'V01',  // Versionen / Verlauf (All-Publications)
 };
+// Rückrichtung: welche Sichel ist markiert, wenn ihr Zielpanel offen ist.
+const PANEL_TO_SICKLE: Record<string, RepresentBuildSickle> = {
+  V03: 'boundary', P11: 'engine_prep', V01: 'wegnetz_sampling',
+};
 
 // Werkzeug-Faces (an eine Rep gebunden) — vs. die immer offene Pathworks-Face.
 const TOOL_FACES: RepresentBuildFace[] = ['geometry_draw', 'catalog_magazination', 'sensus_core_build'];
@@ -45,6 +49,7 @@ export default function RegioDashboardControl({
   toolsEnabled?: boolean;
 }) {
   const activeFace = PANEL_TO_FACE[activeId];
+  const activeSickle = PANEL_TO_SICKLE[activeId];
   return (
     <RepresentBuildTetrahedron
       dashboard
@@ -53,6 +58,7 @@ export default function RegioDashboardControl({
       size={size}
       variant={variant}
       activeFace={activeFace}
+      activeSickle={activeSickle}
       dimFaces={toolsEnabled ? undefined : TOOL_FACES}
       onFaceClick={(f) => {
         // Ohne gebundene Rep: Werkzeug-Faces führen nach Pathworks statt ins leere Werkzeug.

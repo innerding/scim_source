@@ -752,7 +752,7 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
             if (f === 'geometry_draw') go('geometry_editor');
             else if (f === 'catalog_magazination') go('catalog');
             else if (f === 'represent_organisation') go('workspace');
-            else if (f === 'sensus_core_build') go('P11');
+            else if (f === 'sensus_core_build') go('P11', 'transfer');
           }}
           onArcClick={(a) => {
             // T2: Thresholds→P01 · Telco→P04 · Coder→P02.
