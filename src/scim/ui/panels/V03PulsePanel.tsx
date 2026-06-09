@@ -131,9 +131,11 @@ export default function V03PulsePanel() {
         <div style={{ fontSize: 11.5, fontFamily: 'ui-monospace, Menlo, monospace', color: '#c05621' }}>✗ {err}</div>
       ) : (
         <>
-          {/* Das Instrument: TL-Animation mittig, die drei Kernel an den Trygon-Ecken. */}
-          <div style={{ position: 'relative', width: 380, height: 340, margin: '0 auto' }}>
-            <div style={{ position: 'absolute', top: 96, left: '50%', transform: 'translateX(-50%)' }}>
+          {/* Das Instrument: TL-Animation mittig, die drei Kernel an den Trygon-Ecken.
+              Genug Höhe + Emblem-Offset, damit die obere AP-Karte (4 Zeilen) die
+              Animation NICHT mehr überdeckt. */}
+          <div style={{ position: 'relative', width: 380, height: 392, margin: '0 auto' }}>
+            <div style={{ position: 'absolute', top: 134, left: '50%', transform: 'translateX(-50%)' }}>
               <TrygonLoopEmblem size={150} withLegend={false} animated />
             </div>
 
