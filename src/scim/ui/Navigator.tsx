@@ -448,16 +448,18 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
           overflowY: 'auto', padding: '12px 6px', position: 'relative',
           transition: 'background 0.2s, border-color 0.2s',
         }}>
-          {/* Marke des Editor-Dashboards — SCIM3-Wortmarke wie im Intro, Pathworks
-              direkt daneben; Gap zu den Rändern der Navigator-Spalte. */}
+          {/* Marke des Editor-Dashboards — SCIM3-Wortmarke wie im Intro, breit über
+              die Spalte (Gap zu den Rändern), Pathworks darunter. Auf ~Höhe der
+              „Meine Representations"-Box weiter unten. */}
+          <div style={{ height: 56, flexShrink: 0 }} />
           <div style={{
-            width: '100%', boxSizing: 'border-box', padding: '0 14px', marginTop: 4, marginBottom: 2,
-            display: 'flex', alignItems: 'center', gap: 9, flexShrink: 0,
+            width: '100%', boxSizing: 'border-box', padding: '0 16px', flexShrink: 0,
+            display: 'flex', flexDirection: 'column', gap: 6,
           }}>
-            <Scim3Wordmark height={24} />
-            <span style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: 15, color: 'rgba(251,191,36,0.92)' }}>Pathworks</span>
+            <Scim3Wordmark fluid />
+            <span style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: 16, letterSpacing: '0.02em', color: 'rgba(251,191,36,0.92)' }}>Pathworks</span>
           </div>
-          <div style={{ height: 262, flexShrink: 0 }} />
+          <div style={{ height: 150, flexShrink: 0 }} />
           <RegioDashboardControl activeId={activeId} onJumpTo={go} variant="dark" size={205} arcsDeco toolsEnabled={!!boundRep} />
           {/* Status-Bild: welche Rep · Region · Version die Werkzeuge gerade bearbeiten. */}
           <div style={{ marginTop: 12, width: 190, fontFamily: 'system-ui, sans-serif' }}>

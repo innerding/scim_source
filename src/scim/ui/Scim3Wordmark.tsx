@@ -22,9 +22,14 @@ function layer(mask: string): CSSProperties {
   } as CSSProperties;
 }
 
-export default function Scim3Wordmark({ height = 26 }: { height?: number }) {
+// height = feste Höhe (Breite folgt dem Seitenverhältnis); fluid = füllt die
+// Container-Breite (Höhe folgt dem Seitenverhältnis).
+export default function Scim3Wordmark({ height = 26, fluid = false }: { height?: number; fluid?: boolean }) {
+  const box: CSSProperties = fluid
+    ? { position: 'relative', width: '100%', aspectRatio: `${RATIO}`, flexShrink: 0 }
+    : { position: 'relative', height, width: height * RATIO, flexShrink: 0 };
   return (
-    <div style={{ position: 'relative', height, width: height * RATIO, flexShrink: 0 }} aria-label="SCIM3">
+    <div style={box} aria-label="SCIM3">
       <style>{'@keyframes scim-wave-blue { from { background-position: left center; } to { background-position: right center; } }'}</style>
       <div style={layer(BASE_MASK)} />
       <div style={layer(HEX_MASK)} />
