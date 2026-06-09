@@ -9,8 +9,8 @@ import { useState } from 'react';
 interface Item { id: string; label: string; glyph: string; desc: string }
 
 const HUB: Item = {
-  id: 'workspace', label: 'Pathworks Hub', glyph: '◎',
-  desc: 'Heim-Drehscheibe: deine Representations anlegen, öffnen, einreichen. Hier wählst du, welche Rep die Werkzeuge bearbeiten.',
+  id: 'workspace', label: 'Meine Representations', glyph: '◎',
+  desc: 'Jede Representation ist die Einheit — über sie öffnest du ihre Werkzeuge (Drawer · Katalog · Schwellen). Speichern bleibt lokal; mit »Senden zur Review« geht sie an den Operator zum Committen.',
 };
 const INFO: Item[] = [
   { id: 'V03', label: 'Vorschau', glyph: '◉', desc: 'Monitor & QR — wie die Rep am Gerät ausgeliefert läuft.' },

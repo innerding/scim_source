@@ -196,19 +196,6 @@ export default function EditorRepsHome({ onJumpTo }: Props) {
 
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 720 }}>
-      <div style={{
-        background: 'linear-gradient(135deg, #1a365d 0%, #2b6cb0 100%)', borderRadius: 6,
-        padding: '14px 18px', marginBottom: 18, color: '#fff',
-      }}>
-        <div style={{ fontSize: 9, opacity: 0.65, fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-          Pathworks · Editor
-        </div>
-        <div style={{ fontSize: 14, fontWeight: 700, marginTop: 2 }}>Meine Representations</div>
-        <div style={{ fontSize: 11, opacity: 0.85, marginTop: 4, lineHeight: 1.5 }}>
-          Jede Representation ist die Einheit — über sie öffnest du ihre Werkzeuge (Drawer · Katalog · Thresholds).
-          Speichern bleibt lokal; mit <strong>Senden zur Review</strong> geht sie an den Operator zum Committen.
-        </div>
-      </div>
 
       {/* Neue Representation anlegen — hier, nicht im Drawer. Sichtbar als
           Affordanz; in der Vorschau/Sandbox (nicht live) gesperrt. */}
