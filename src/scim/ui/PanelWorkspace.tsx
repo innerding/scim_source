@@ -67,7 +67,7 @@ import { publishOriginMesh, anthemPublishConfigured, knockPresence, anthemReadCo
 import { resampleNet } from '../wegnetz/netResample';
 import PanelIcon from './PanelIcon';
 import RegionHeaderMesh from './RegionHeaderMesh';
-import SeaBrandung from './SeaBrandung';
+import IntroSea from './IntroSea';
 
 interface Props {
   activeId: string;
@@ -164,10 +164,10 @@ function headerCode(id: string): string {
 // Thresholds(P01) · Pathworks(workspace) · Drawer(geometry_editor) · Katalog(catalog).
 const REGION_DASHBOARD_IDS = new Set(['P01', 'workspace', 'geometry_editor', 'catalog']);
 // Colour-Mesh bleibt nur im Katalog + Drawer (dort ist die Farbe Gegenstand);
-// die übrigen Triangle-Panels bekommen stattdessen eine zarte graue Brandung am
-// unteren Panelrand (Intro-Variation).
+// die übrigen Triangle-Panels bekommen stattdessen die Intro-„Empty Sea"
+// großflächig hinter den Inhalt gelegt.
 const COLOUR_MESH_HEADER_IDS = new Set(['catalog', 'geometry_editor']);
-const BRANDUNG_IDS = new Set(['P01', 'workspace']);
+const SEA_BG_IDS = new Set(['P01', 'workspace']);
 const BROCKEN_IDS = new Set(['P05']);
 const MUELL_IDS = new Set(['P03', 'P10', 'P12', 'P13', 'P14', 'R03', 'R04', 'R05', 'R06', 'R07', 'R08']);
 const OPERATOR_ONLY_IDS = new Set(['ai_interface', 'ipills', 'system']);   // Substrat
@@ -1515,6 +1515,8 @@ export default function PanelWorkspace({ activeId, activeTab, onTabChange, resul
         </div>
       ) : (
         <div style={{ flex: 1, minHeight: 0, position: 'relative', overflow: 'hidden' }}>
+          {/* Intro-„Empty Sea" großflächig hinter dem Inhalt (P01 Thresholds · Pathworks). */}
+          {SEA_BG_IDS.has(activeId) && <IntroSea transparentBg />}
           {/* Großes, blasses Panel-Icon-Wasserzeichen auf der untersten Ebene (Catalog: aus). */}
           {activeId !== 'catalog' && (entry as { icon?: string }).icon && (
             <div aria-hidden style={{
@@ -1529,9 +1531,6 @@ export default function PanelWorkspace({ activeId, activeTab, onTabChange, resul
           </div>
         </div>
       )}
-      {/* Zarte graue Brandung am unteren Panelrand (Intro-Variation) — die
-          Triangle-Panels ohne Colour-Mesh-Header (P01 Thresholds · Pathworks). */}
-      {BRANDUNG_IDS.has(activeId) && <SeaBrandung />}
     </div>
   );
 }
