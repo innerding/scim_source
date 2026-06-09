@@ -29,6 +29,17 @@ const CATEGORY_META: Record<AnnotationCategory, { label: string; color: string; 
 // Initial seed annotations — operator extends these in the UI
 const SEED_ANNOTATIONS: Annotation[] = [
 
+  // ── Claude Critic (2026-06-09) ──────────────────────────────────────────────
+
+  {
+    id: 'ann_112',
+    category: 'next_intent',
+    label: 'CLAUDE CRITIC — kritisches Urteil zum Pathworks-Dashboard',
+    content: 'CLAUDE CRITIC — kritisches Urteil zum Pathworks-Dashboard (Stand 2026-06-09, von Claude auf Bitte des Operators, bewusst unbeschönigt). — VERDIKT in einem Satz: starkes konzeptionelles Rückgrat, aber drei wacklige Beine — unauthentifizierte Governance, halb geteiltes State-Modell, hohe Metapher-/Komplexitätslast, die der eigenen Leitidee „radikal schmal für Editoren" widerspricht; strategisch noch nicht das eigene Produkt, das es sein will. — WAS TRÄGT: (1) Leitidee „es gibt nur Representationen" = saubere Informationsarchitektur (Rep als Einheit, Werkzeuge scopen sich auf die gebundene Rep). (2) Git-artiger Lebenszyklus local→submitted→committed, klare Trennung Editor/Operator. (3) Cross-User ist GEBAUT (Einreichen → Operator committet auf anderem Gerät), nicht nur geplant. — KRITIK NACH GEWICHT: (1) GOVERNANCE IST THEATER, solange Auth fehlt. isOperator-Gating + Provenienz („committet von X") sind client-seitige BEHAUPTUNGEN; Presence-Endpoint ist unauthentifiziert, der Worker glaubt blind {role,name}. Jede Vertrauensaussage = Ehrenwort, bis echte Per-User-Auth (CF Access, ann_105) da ist. GRÖSSTE Lücke, alles baut darauf. (2) STATE-MODELL GESPALTEN: Drafts im localStorage EINES Browsers, Einreichungen am Server → Editor auf zwei Geräten = zwei Draft-Welten; „ansehen" einer Server-Submission nicht in lokalen draftStore verdrahtet; Draft veraltet still nach Commit. Persistenz-Naht halb gebaut. (3) KOMPLEXITÄTSLAST widerspricht der Leitidee: die „radikal schmale" Editor-Fläche sitzt in einer barocken Kosmologie (Tetraeder, Sicheln, Brocken, Müllwagen, Mond, hot/cold, Atem, V01/V02/V03, Shell/Origin/Anthem) = Privatsprache, die man erst lernen muss, bevor man handeln kann. Für Operator okay, für Editor Reibung. (4) OPERATOR = FLASCHENHALS: Editor-Weg zur Auslieferung läuft komplett über ihn (submit→review→commit→release→drossel); die entlastende Cluster-Automatisierung ist NICHT gebaut. (5) VERSIONIERUNG real aber flach + zu viele Zahlen: Quelle- vs. ausgeliefert-Version vs. gestaged — ehrlich, aber UX-Falle; keine Stelle sagt „so steht es gerade" in einem Satz. (6) PATHWORKS IST NOCH KEIN PRODUKT, sondern ein umetikettiertes workspace-Panel in SCIM3; die Ausgliederung nach diesenpark.at (ann_106) ist nicht eingelöst — Wortmarke+Eyebrow kaschieren das. — WAS ZUERST: (1) echte Auth-Entscheidung (CF Access davor), sonst bleibt Governance Fassade — Fundament. (2) State-Naht schließen (Server als Wahrheit ODER sauber lokal-mit-Sync, nicht Halb-Halb). (3) Editor-Eingang entrümpeln: für Editoren konsequent nur „Meine Representations" + die vier Werkzeuge, Kosmologie wegblenden (Visibility-Registry konsequenter nutzen). Claude-Empfehlung als Quick-Win: #3 (sofort sichtbarer Nutzen, keine Auth-Infrastruktur nötig). Cluster-Automatisierung + echte Ausgliederung wichtig, aber nachgelagert.',
+    related_panel: 'workspace',
+    date: '2026-06-09',
+  },
+
   // ── Welt um Thresholds + Welt der Rollen (2026-06-08) ───────────────────────
 
   {
