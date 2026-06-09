@@ -457,10 +457,10 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
             display: 'flex', flexDirection: 'column', gap: 6,
           }}>
             <Scim3Wordmark fluid />
-            {/* Pathworks exakt auf Logo-Breite gestreckt (SVG textLength). */}
-            <svg viewBox="0 0 120 17" width="100%" style={{ display: 'block', height: 'auto' }} aria-label="Pathworks">
-              <text x="0" y="13.5" textLength="120" lengthAdjust="spacingAndGlyphs"
-                fontFamily="ui-monospace, Menlo, monospace" fontWeight={800} fontSize={14}
+            {/* Pathworks NICHT gestreckt — eng gefasste viewBox, per width:100%
+                gleichmäßig auf Logo-Breite skaliert (wächst dadurch nach unten). */}
+            <svg viewBox="0 0 57 12" width="100%" style={{ display: 'block', height: 'auto' }} aria-label="Pathworks">
+              <text x="0" y="9.6" fontFamily="ui-monospace, Menlo, monospace" fontWeight={800} fontSize={10}
                 fill="rgba(251,191,36,0.92)">Pathworks</text>
             </svg>
           </div>
