@@ -12,7 +12,7 @@ import { useRole, isEditorRole } from './RoleContext';
 import type { Role } from './RoleContext';
 import { useRepresentationContext } from '../../runtime/repContext';
 import RepresentBuildTetrahedron from './RepresentBuildTetrahedron';
-import RegioDashboardControl from './RegioDashboardControl';
+import EditorControlGrid from './EditorControlGrid';
 
 // ── Navigator-Tönung je Rolle ────────────────────────────────────────────────
 // Operator: wie bisher (dunkel) · Analyst: amber Grundton (dunkel) · Rep-Editor:
@@ -464,8 +464,8 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
                 fill="rgba(251,191,36,0.92)">Pathworks</text>
             </svg>
           </div>
-          <div style={{ height: 150, flexShrink: 0 }} />
-          <RegioDashboardControl activeId={activeId} onJumpTo={go} variant="dark" size={205} arcsDeco toolsEnabled={!!boundRep} />
+          <div style={{ height: 16, flexShrink: 0 }} />
+          <EditorControlGrid activeId={activeId} onJumpTo={go} toolsEnabled={!!boundRep} />
           {/* Status-Bild: welche Rep · Region · Version die Werkzeuge gerade bearbeiten. */}
           <div style={{ marginTop: 12, width: 190, fontFamily: 'system-ui, sans-serif' }}>
             {boundRep ? (
