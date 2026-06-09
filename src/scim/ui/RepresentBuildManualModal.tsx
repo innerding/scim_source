@@ -49,12 +49,15 @@ INSPECTOR (Rep-Build-Observer)
   Klick : ScimMap rechts ein/ausblenden.
   Layer : Boundary, Routes, POIs, Colourmesh (vier zur Auswahl).
 
-MOON (Release Artifacts: App-Shell, Packages, Breath-Colour-Mesh)
+  Stand: zur Zeit funktionsgestoert - die Build-Status-Anzeige
+         ist nicht verlaesslich.
+
+MOON (Release Artifacts: Shell, Origin, Anthem)
   Hex                = Sechseck im Mond-Zentrum.
   Mondkoerper        = die volle Mondscheibe.
   Extension          = die seitlichen Auswuechse.
   Breath-Colour-Mesh = der atmende, eingefaerbte Karten-Layer
-                       der aktiven Region.
+                       der aktiven Region (= Anthem).
 
   Klick Hex          : oeffnet R01 Runtime Shell.
   Klick Mondkoerper  : oeffnet V01 Versions-Bibliothek.
@@ -62,6 +65,18 @@ MOON (Release Artifacts: App-Shell, Packages, Breath-Colour-Mesh)
                         Top-Left  = Gruenberg / Salzkammergut
                         Top-Right = Lichtenberg / Boehmerwald
                         Bot-Right = Gaisberg / Salzburg (prepared)
+
+CLOUD (im Spalt zwischen Mond und Transmissionsfeld)
+  Klick : oeffnet das Cloud-Panel.
+
+  Die our-side Eintritts- und Auslieferungs-Flaeche - kein Teil
+  des reisenden Pakets. Drei Werkzeuge:
+    Launcher        nackte diesenpark.com -> Kachel-Auswahl der
+                    Representationen. QR umgeht den Launcher und
+                    laedt direkt die Rep.
+    Globe-Switcher  Eintritts-Weiche am Edge, vor Sensus Core.
+    Collector       Cross-Rep-Fan-in: aggregiert Nation -> Region
+                    -> Rep aus den publizierten Fakten in R2.
 
 TRANSMISSION (Mesh zwischen Mond und Komposit-Tetraeder)
   Klick : oeffnet P06 Transmitter.
@@ -88,6 +103,12 @@ KOMPOSIT-TETRAEDER (Apex up - fire)
   Schalen-Schirme, die Threshold-Treffer aus dem Transmissionsfeld
   einfangen und an die zustaendigen Engine-Panels (P01/P04/P02)
   weiterreichen.
+
+  Die drei Sicheln sind die Publishing-Bauer: P07 High-Shell +
+  P08 Deep-Shell bilden die SHELL (App-UI/UX + Engine-Prep),
+  P09 das ORIGIN (Atomic Particles). Zusammen mit dem ANTHEM
+  (P06, Transmissionsfeld) ergeben sie die drei Release-Artefakte
+  Shell/Origin/Anthem (siehe MOON).
 
   Panels im Komposit:
     P11  Package         Bundling der Representation aus Layern,
@@ -138,6 +159,29 @@ SUBSTRAT-TETRAEDER (Apex down - matter)
 
 READER (am Fuss der Kosmologie)
   Klick : oeffnet dieses Dokument.
+
+────────────────────────────────────────────────────────
+
+ROLLEN & RECHTE (Mehrbenutzer-Betrieb)
+
+  Fuenf Rollen mit getrennten Sicht- und Benutzungsrechten:
+    Operator      baut, kuratiert, committet, liefert aus - als
+                  einziger publish / release / activate.
+    Data-Analyst  Operator-Sicht, aber read-only (Sandbox).
+    Reg-Editor    pflegt seine Region (alle Reps der Region).
+    Rep-Editor    pflegt seine eigenen Representations.
+    Editor        ungebundener Kram (privat / Event), ohne Region.
+
+  Zwei entkoppelte Achsen: SICHT (welcher Tab/Modus - was du
+  siehst) und WIRKUNG (das echte Login - ob es zaehlt). Live nur,
+  wenn das echte Login den Tab besitzt; sonst Sandbox (bedienbar,
+  aber folgenlos) oder abgedimmt. Editoren senden zur Review und
+  committen nie selbst; der Operator committet und liefert aus.
+  Provenienz-Namen (Ersteller / Committer / Publisher) reisen mit.
+
+  Stand: erste Stufe gebaut - Pathworks Hub (Cross-User-Review,
+  Provenienz, Rollen-Gating), Navigator fuer non-operator gesperrt,
+  Footer-Presence. Dynamische Rollen + echte Per-User-Auth folgen.
 
 ────────────────────────────────────────────────────────
 
@@ -197,11 +241,14 @@ SUMMARY
 
   Der architektonische Rahmen ist vielversprechend und in Teilen
   bereits am laufenden Beispiel bewiesen — die Kette Werkbank ->
-  Paket -> Geraet traegt (MVP-Lichtenberg). Vom Vollausbau steht die
-  erste Stufe: Mehrbenutzer-Betrieb und regionale Pflege haben mit
-  dem Pathworks Hub (Cross-User-Review, Versionierung, Rollen-Gating)
-  ein Fundament. Der Rest — Governance-Tiefe, reale Telco-Last — folgt
-  und wird die erwartete Codefuelle erst beweisen muessen.
+  Cloud -> Geraet traegt (MVP-Lichtenberg, per QR ladbar). Vom
+  Vollausbau steht die erste Stufe: Mehrbenutzer-Betrieb (fuenf
+  Rollen mit getrennten Sicht-/Benutzungsrechten), regionale Pflege
+  und versionierte Auslieferung haben mit dem Pathworks Hub
+  (Cross-User-Review, Versions-Bibliothek, Release-Drossel, Rollen-
+  Gating, Provenienz) ein Fundament. Der Rest — Governance-Tiefe,
+  dynamische Rollen, reale Telco-Last — folgt und wird die erwartete
+  Codefuelle erst beweisen muessen.
 
   released for review
 `;
