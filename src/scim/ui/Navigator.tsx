@@ -447,7 +447,17 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
           overflowY: 'auto', padding: '12px 6px', position: 'relative',
           transition: 'background 0.2s, border-color 0.2s',
         }}>
-          <div style={{ height: 280, flexShrink: 0 }} />
+          {/* Marke des Editor-Dashboards — links, so breit wie das Control. */}
+          <div style={{
+            width: 205, flexShrink: 0, marginTop: 4, marginBottom: 2,
+            display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
+            fontFamily: 'monospace', fontWeight: 800, fontSize: 16, color: 'rgba(251,191,36,0.92)',
+          }}>
+            <span>SCIM3</span>
+            <span style={{ opacity: 0.5 }}>·</span>
+            <span>Pathworks</span>
+          </div>
+          <div style={{ height: 262, flexShrink: 0 }} />
           <RegioDashboardControl activeId={activeId} onJumpTo={go} variant="dark" size={205} arcsDeco toolsEnabled={!!boundRep} />
           {/* Status-Bild: welche Rep · Region · Version die Werkzeuge gerade bearbeiten. */}
           <div style={{ marginTop: 12, width: 190, fontFamily: 'system-ui, sans-serif' }}>

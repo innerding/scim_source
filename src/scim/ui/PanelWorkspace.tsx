@@ -66,7 +66,6 @@ import { ShellRunBadge } from './ShellRunInfo';
 import { publishOriginMesh, anthemPublishConfigured, knockPresence, anthemReadConfigured } from '../../runtime/anthemApi';
 import { resampleNet } from '../wegnetz/netResample';
 import PanelIcon from './PanelIcon';
-import RegionHeaderMesh from './RegionHeaderMesh';
 import IntroSea from './IntroSea';
 
 interface Props {
@@ -163,10 +162,8 @@ function headerCode(id: string): string {
 // Die 4 Regio-Dashboard-Panels = die 4 Tetraeder-Faces (Thresholds löst Publishing ab):
 // Thresholds(P01) · Pathworks(workspace) · Drawer(geometry_editor) · Katalog(catalog).
 const REGION_DASHBOARD_IDS = new Set(['P01', 'workspace', 'geometry_editor', 'catalog']);
-// Colour-Mesh bleibt nur im Katalog + Drawer (dort ist die Farbe Gegenstand);
-// die übrigen Triangle-Panels bekommen stattdessen die Intro-„Empty Sea"
-// großflächig hinter den Inhalt gelegt.
-const COLOUR_MESH_HEADER_IDS = new Set(['catalog', 'geometry_editor']);
+// Intro-„Empty Sea" großflächig hinter den Inhalt (Triangle-Panels P01 + Pathworks).
+// Header tragen kein Mesh mehr (auch Katalog/Drawer nicht).
 const SEA_BG_IDS = new Set(['P01', 'workspace']);
 const BROCKEN_IDS = new Set(['P05']);
 const MUELL_IDS = new Set(['P03', 'P10', 'P12', 'P13', 'P14', 'R03', 'R04', 'R05', 'R06', 'R07', 'R08']);
@@ -206,15 +203,8 @@ function PanelHeader({ id, title, subtitle, icon }: { id: string; title: string;
         flexShrink: 0, overflow: 'hidden', opacity: 1,   // kein Dimmen: Schwarz bleibt schwarz
       }}>
         <style>{REGION_HEADER_CSS}</style>
-        {COLOUR_MESH_HEADER_IDS.has(id) && <RegionHeaderMesh />}
         <div style={{ position: 'relative', display: 'flex', alignItems: 'center', padding: '13px 20px', fontFamily: 'system-ui, sans-serif' }}>
-          {/* Links: Eyebrow — die formvolle Marke des Dashboards (Triangle-Header). */}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <span style={{
-              fontFamily: 'monospace', fontSize: 9.5, fontWeight: 700, letterSpacing: '0.07em',
-              color: 'rgba(251,191,36,0.82)', textTransform: 'uppercase', whiteSpace: 'nowrap',
-            }}>SCIM3 · Pathworks Hub</span>
-          </div>
+          <div style={{ flex: 1 }} />
           {/* Mitte: Icon (Logo-Fill) + Kürzel (Schrift-Fill) */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, flexShrink: 0 }}>
             {icon && <PanelIcon id={id} icon={icon} size={28} color="#fbbf24" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }} />}
