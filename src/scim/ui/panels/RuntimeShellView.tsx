@@ -26,7 +26,7 @@ export default function RuntimeShellView() {
 
       <div style={{ fontSize: 12.5, color: '#2d3748', lineHeight: 1.6, marginBottom: 14 }}>
         <strong>Shell (Paket) ≠ Runtime Shell.</strong> Das <em>Shell-Paket</em> (High-Shell/P07 + Deep-Shell/P08,
-        bei Sensus Core Publishing geschnürt) ist der <em>ausgespielte Code</em>. Die <strong>Runtime Shell</strong>
+        bei Sensus Core Publishing geschnürt) ist der <em>ausgespielte Code</em>. Die <strong>Runtime Shell</strong>{' '}
         ist die <em>Grundhülle auf dem Gerät</em>, die diesen Code <strong>lädt und ausführt</strong>.
       </div>
 
