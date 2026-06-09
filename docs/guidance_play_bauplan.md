@@ -94,9 +94,31 @@ Kein Greenfield-Finale — ein **Bewegungs-Baustein in shell-kit + Adapter + Mar
   NICHT im Play-Kern — aber **dieselbe POI-Detail-Komponente** wie die Ankunfts-Card (**S4**).
   → Parallel-Task, der die Ankunfts-Card mitliefert.
 
-### Icons (vorzubereiten)
-- **vorhanden/in Arbeit:** Play, Kompass (S5), Plus.
-- **neu nötig:** **Pause** · **Doppelpunkt** (für die Uhr) · **Positions-Pfeil/Heading-Marker** (S3).
-- **wahrscheinlich:** **Häkchen/Check** (Ankunft + Long-tap-Check) · **Ziel/Flagge** (Tour-Ende).
-- **Uhr-Ziffern:** das hand-gezeichnete Ziffern-Set (Katalog) nutzen (Marken-Kohärenz, reine
-  Anzeige). **⚠ gleich breite Ziffern / feste Zellen**, sonst zappelt die Uhr beim Runterzählen.
+### Icons — Spezifikation (3 Format-Klassen)
+
+**A — UI-Line-Icons** · `viewBox 0 0 24 24` · `stroke-width 1.7` · `linecap/linejoin round` ·
+`fill none` + `stroke currentColor` · Safe-Area ~2 px · *Play/Pause gefüllt* (`fill currentColor`):
+| Icon | Zweck | Schritt | Status |
+|---|---|---|---|
+| Play | Begehung starten/fortsetzen (gefüllt) | S2 | vorhanden · überarbeiten |
+| Pause | Begehung anhalten (2 Balken, gefüllt) | S2 | **neu** |
+| Plus | POI „+ zur Tour" | Browsing | vorhanden |
+| Häkchen/Check | Ankunft am POI + Check im Long-tap | S4 | evtl. |
+| Zielflagge | Tour-Ende | S4 | vorhanden |
+| Kompass | magnet. Geräte-Heading | S5 | vorhanden · später |
+
+**B — Ziffern-Zelle** · gleiche Zelle/Höhe/Strichgewicht wie die Ziffern (monospace):
+| Icon | Zweck | Schritt | Status |
+|---|---|---|---|
+| Ziffern 0–9 | Rest-Dauer-Uhr | S2 | vorhanden (monospace ✓) |
+| Doppelpunkt | Uhr-Trenner `MM:SS` (2 Punkte in x-Höhe, gleiches Gewicht) | S2 | **neu** |
+
+**C — Karten-Marker** · `viewBox 0 0 32 32` · explizite Farben (NICHT currentColor) ·
+transluzente Akzent-Scheibe + weißer Rand ~2 px + weißes Kite · Kite eigene `<g>`,
+Pivot `16,16`, Spitze nach Norden (rotiert per `bearingDeg`):
+| Icon | Zweck | Schritt | Status |
+|---|---|---|---|
+| Positions-Marker (Scheibe + Kite) | „Du" auf der Karte | S3 | **neu** |
+
+**Jetzt vorzubereiten (S2–S3):** Pause · Doppelpunkt · Positions-Marker.
+**Bestand finden/überarbeiten:** Play · Plus · Zielflagge · Kompass · Ziffern. **Später (S4):** Häkchen.
