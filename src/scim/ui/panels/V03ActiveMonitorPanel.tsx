@@ -64,13 +64,26 @@ function AnthemLayerLine({ origin, presence, errored }: { origin: OriginMeta | n
   );
 }
 
-// Eine Größen-Zeile im Paket-Breakdown.
-function SizeRow({ label, bytes, note, bold, est }: { label: string; bytes: number | null; note?: string; bold?: boolean; est?: boolean }) {
+// Erwartete Anthem-gzip-Größe aus der Segmentzahl, wenn die Rep kalt ist (kein
+// Live-Snapshot). Grobe Schätzung: ~120 B Metadaten + ~2 B/Segment (2-Dezimal-
+// Loads, gzip-komprimiert). Nur ungefähr — daher in Klammern mit „~".
+function anthemEstBytes(stretches: number | null): number | null {
+  return stretches != null ? Math.round(120 + stretches * 2.2) : null;
+}
+
+// Eine Größen-Zeile im Paket-Breakdown. estBytes = ungefährer Erwartungswert,
+// gezeigt in Klammern, wenn der echte Wert fehlt (kalt).
+function SizeRow({ label, bytes, estBytes, note, bold, est }: {
+  label: string; bytes: number | null; estBytes?: number | null; note?: string; bold?: boolean; est?: boolean;
+}) {
+  const valColor = bytes != null ? (bold ? '#1a202c' : '#2d3748') : (estBytes != null ? '#a0aec0' : '#cbd5e0');
   return (
     <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
       <span style={{ width: 86, color: bold ? '#2d3748' : '#718096', fontWeight: bold ? 700 : 400 }}>{label}</span>
-      <span style={{ width: 62, textAlign: 'right', color: bytes == null ? '#cbd5e0' : (bold ? '#1a202c' : '#2d3748'), fontWeight: bold ? 700 : 400 }}>
-        {bytes == null ? '— kalt' : `${est ? '~' : ''}${fmtKB(bytes)}`}
+      <span style={{ width: 76, textAlign: 'right', color: valColor, fontWeight: bold ? 700 : 400 }}>
+        {bytes != null ? `${est ? '~' : ''}${fmtKB(bytes)}`
+          : estBytes != null ? `(~${fmtKB(estBytes)})`
+          : '— kalt'}
       </span>
       {note && <span style={{ color: '#a0aec0' }}>{note}</span>}
     </div>
@@ -78,11 +91,15 @@ function SizeRow({ label, bytes, note, bold, est }: { label: string; bytes: numb
 }
 
 // Paket-Größen je Rep — ALLES gzip (echte Transfer-Größe): Shell (geteilt) +
-// Origin (Bundle) + Anthem (Snapshot).
-function SizeBreakdown({ originGzip, anthemGzip }: { originGzip: number | null; anthemGzip: number | null }) {
-  const firstDelivery = (originGzip != null)
-    ? SHELL_BYTES + originGzip + (anthemGzip ?? 0)
-    : null;
+// Origin (Bundle) + Anthem (Snapshot). Bei kalter Rep: erwartete Anthem-Größe
+// (aus Segmentzahl) in Klammern, und ins Erstlieferungs-/laufend-Total eingerechnet.
+function SizeBreakdown({ originGzip, anthemGzip, stretches }: {
+  originGzip: number | null; anthemGzip: number | null; stretches: number | null;
+}) {
+  const anthemEst = anthemEstBytes(stretches);
+  const anthemForTotal = anthemGzip ?? anthemEst ?? 0;
+  const approx = anthemGzip == null && anthemEst != null;   // Total enthält Schätzung
+  const firstDelivery = (originGzip != null) ? SHELL_BYTES + originGzip + anthemForTotal : null;
   return (
     <div style={{
       borderTop: '1px dashed #e2e8f0', paddingTop: 6, marginTop: 2,
@@ -91,10 +108,10 @@ function SizeBreakdown({ originGzip, anthemGzip }: { originGzip: number | null; 
       <div style={{ color: '#a0aec0', marginBottom: 2 }}>Paket-Größen <span style={{ fontSize: 9, color: '#cbd5e0' }}>· gzip (Transfer)</span></div>
       <SizeRow label="Shell" bytes={SHELL_BYTES} note="einkompiliert · einmalig" est />
       <SizeRow label="Origin" bytes={originGzip} note="Bundle · je Version" />
-      <SizeRow label="Anthem" bytes={anthemGzip} note="Snapshot · alle 5 Min" />
+      <SizeRow label="Anthem" bytes={anthemGzip} estBytes={anthemEst} note="Snapshot · alle 5 Min" />
       <div style={{ borderTop: '1px solid #edf2f7', margin: '3px 0', width: 156 }} />
-      <SizeRow label="Erstlieferung" bytes={firstDelivery} bold />
-      <SizeRow label="laufend" bytes={anthemGzip} note="Bestandsnutzer · 5 Min" />
+      <SizeRow label="Erstlieferung" bytes={firstDelivery} bold est={approx} />
+      <SizeRow label="laufend" bytes={anthemGzip} estBytes={anthemEst} note="Bestandsnutzer · 5 Min" />
     </div>
   );
 }
@@ -178,7 +195,7 @@ function RepresentationRow({
           {live ? `● aktives Origin-Bundle v${version ?? '?'}${origin?.bundleUploadedAt ? ` · ${fmtUploaded(origin.bundleUploadedAt)}` : ''}` : '○ kein aktives Origin-Bundle'}
         </div>
         <AnthemLayerLine origin={origin} presence={presence} errored={errored} />
-        <SizeBreakdown originGzip={originGzip} anthemGzip={anthemGzip} />
+        <SizeBreakdown originGzip={originGzip} anthemGzip={anthemGzip} stretches={origin?.stretches ?? null} />
       </div>
     </div>
   );
