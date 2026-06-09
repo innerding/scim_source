@@ -9,6 +9,7 @@ import type { Role } from './scim/ui/RoleContext';
 import type { TabId } from './scim/ui/panelRegistry';
 import RepresentBuildManualModal from './scim/ui/RepresentBuildManualModal';
 import EditorManualModal from './scim/ui/EditorManualModal';
+import SandboxFrame from './scim/ui/SandboxFrame';
 import { RepresentationProvider } from './runtime/repContext';
 import { WorkspaceNavProvider } from './scim/ui/workspaceNav';
 import Scim3Footer from './scim/ui/Scim3Footer';
@@ -107,6 +108,11 @@ export default function App() {
     setActiveModeState(target === effectiveRole ? null : target);
   };
 
+  // Sandbox = aktive Ansicht ist NICHT live (folgenlos): Analyst-Sicht oder eine
+  // Vorschau nach unten. Live nur, wenn das echte Login den aktiven Modus besitzt
+  // und es nicht Analyst ist — sonst Sandbox (→ Amber-Mode-Rahmen).
+  const isSandbox = !(role === resolvedActiveMode && resolvedActiveMode !== 'analyst');
+
   return (
     <RoleContext.Provider value={effectiveRole}>
      <ModeSwitchContext.Provider value={{ real: role, effective: effectiveRole, cycle: cycleMode, set: setMode, activeMode: resolvedActiveMode, setActiveMode }}>
@@ -163,6 +169,7 @@ export default function App() {
         {showManual && (isEditorRole(role)
           ? <EditorManualModal onClose={() => setShowManual(false)} />
           : <RepresentBuildManualModal onClose={() => setShowManual(false)} />)}
+        {isSandbox && <SandboxFrame />}
       </div>
       <Scim3Footer realRole={role} />
       </div>
