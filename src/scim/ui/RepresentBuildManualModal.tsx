@@ -4,11 +4,42 @@
 // Urfassung (Render von docs/represent_build.md), die durch dieses
 // Manual abgeloest wurde.
 
+import { Fragment } from 'react';
 import { TrygonLoopEmblem } from './TrygonLoopEmblem';
-import { LEISTUNGEN_STAND, leistungenManualBlock } from '../sensus/leistungen';
+import { LEISTUNGEN_STAND, LEISTUNGEN } from '../sensus/leistungen';
 
 interface Props {
   onClose: () => void;
+}
+
+// Leistungen + cosmos-spezifische Zusatzzeilen, EINE Tabelle. Label links, Wert +
+// (umbrechender) Detail rechts → lange Detail-Zeilen hängen ein, fangen NICHT links an.
+const LEISTUNGEN_ROWS: { label: string; wert: string; detail: string }[] = [
+  ...LEISTUNGEN,
+  { label: 'Kosmologie-Klick-Karte', wert: '21 Hitboxen', detail: 'Mond 6 · Transmissionsfeld 1 · Komposit 10 · Substrat 3 · Grund 1' },
+  { label: 'R2-Deploy', wert: 'Cloudflare R2 + D1 + Worker', detail: '' },
+  { label: 'QR-Generierung', wert: 'automatisiert je Representation', detail: '' },
+];
+
+function LeistungenTable() {
+  return (
+    <div style={{
+      display: 'grid', gridTemplateColumns: '170px 1fr', columnGap: 14, rowGap: 9,
+      fontFamily: 'inherit', fontSize: 'inherit', margin: '2px 0 6px',
+    }}>
+      {LEISTUNGEN_ROWS.map((r) => (
+        <Fragment key={r.label}>
+          <div style={{ color: '#1a202c' }}>{r.label}</div>
+          <div style={{ minWidth: 0 }}>
+            <span style={{ fontWeight: 700 }}>{r.wert}</span>
+            {r.detail && (
+              <div style={{ color: '#718096', fontSize: 11.5, lineHeight: 1.5, marginTop: 1 }}>{r.detail}</div>
+            )}
+          </div>
+        </Fragment>
+      ))}
+    </div>
+  );
 }
 
 const TRYGON_SPEC = `TRYGON-LOOP (TL) — KERNFUNKTION (Systemmerkmal · HOT PATH)
@@ -32,7 +63,7 @@ const MANUAL_BODY = `    JAHR                     2026
 
     Die Architektur des digitalen Systems SCIM3 — Sensus Core Integration
     Model — ist ab Juni 2026 ueber das 3D-visualisierte Navigationstool
-    Cosmo Control erklaer- und navigierbar. SCIM3 publiziert mit heutigem
+    Cosmo Controls erklaer- und navigierbar. SCIM3 publiziert mit heutigem
     Stand die Ziel-App MVP-Lichtenberg: per QR auf ein Endgeraet ladbar
     (diesenpark.com/?rep=rep-lichtenberg), edge-lokal und datensparsam.
     Damit ist die Funktionalitaet der Kette Werkbank -> Paket -> Geraet
@@ -54,11 +85,9 @@ INSPECTOR (Rep-Build-Observer)
          ist nicht verlaesslich.
 
 MOON (Release Artifacts: Shell, Origin, Anthem)
-  Hex                = Sechseck im Mond-Zentrum.
-  Mondkoerper        = die volle Mondscheibe.
-  Extension          = die seitlichen Auswuechse.
-  Breath-Colour-Mesh = der atmende, eingefaerbte Karten-Layer
-                       der aktiven Region (= Anthem).
+  Hex          = Sechseck im Mond-Zentrum.
+  Mondkoerper  = die volle Mondscheibe.
+  Extension    = die seitlichen Auswuechse.
 
   Klick Hex          : oeffnet R01 Runtime Shell.
   Klick Mondkoerper  : oeffnet V01 Versions-Bibliothek.
@@ -83,8 +112,10 @@ TRANSMISSION (Mesh zwischen Mond und Komposit-Tetraeder)
   Klick : oeffnet P06 Transmitter (Atem).
 
   Das Feld visualisiert den ATEM — die 5-Min-Auslieferung des
-  Anthem (Lastbild) vom Komposit-Tetraeder zur Ziel-App. P06 ist
-  die Ausatem-Station einer real gebauten Kette:
+  Anthem vom Komposit-Tetraeder zur Ziel-App. Das Anthem IST das
+  Breath-Colour-Mesh: der atmende, eingefaerbte Karten-Layer der
+  aktiven Region (Lastbild je Segment). P06 ist die Ausatem-
+  Station einer real gebauten Kette:
 
     Telco (P04)        einatmen - presence-Intake · Sim-Telco ·
                        Normalisierung (Rohlast -> [0..1]).
@@ -102,17 +133,16 @@ TRANSMISSION (Mesh zwischen Mond und Komposit-Tetraeder)
   eigener Tab weiter.)
 
 KOMPOSIT-TETRAEDER (Apex up - fire)
-  Klick Face   : scb -> P11, org -> Workspace,
-                 cat -> Katalog, geo -> Editor.
-  Klick Arc    : sys -> P01 Thresholds, regio -> P04 Telco,
-                 load -> P02 Coder.
-  Klick Sichel : bou -> P07 High-Shell, eng -> P08 Deep-Shell,
-                 smp -> P09 Origin-Capsuler.
+  Klick Face   : Sensus Core Publishing (P11) · Pathworks Hub ·
+                 Katalog · Drawer.
+  Klick Arc    : P01 Thresholds · P04 Telco · P02 Coder.
+  Klick Sichel : P07 High-Shell · P08 Deep-Shell ·
+                 P09 Origin-Capsuler.
 
   Die drei Arcs sind als konkave Signal-Catcher modelliert —
-  Schalen-Schirme, die Threshold-Treffer aus dem Transmissionsfeld
-  einfangen und an die zustaendigen Engine-Panels (P01/P04/P02)
-  weiterreichen.
+  Schalen-Schirme, die quantifizierte Micro-Impacts aus dem
+  Transmissionsfeld einfangen und an die zustaendigen Engine-
+  Panels (P01/P04/P02) weiterreichen.
 
   Die drei Sicheln sind die Publishing-Bauer: P07 High-Shell +
   P08 Deep-Shell bilden die SHELL (App-UI/UX + Engine-Prep),
@@ -121,14 +151,14 @@ KOMPOSIT-TETRAEDER (Apex up - fire)
   Shell/Origin/Anthem (siehe MOON).
 
   Panels im Komposit:
-    P11  Package         Bundling der Representation aus Layern,
-                         Geometrien und Katalog-POIs zu einem
+    P11  Sensus Core     Bundling der Representation aus Layern,
+         Publishing      Geometrien und Katalog-POIs zu einem
                          versionierten Artefakt.
-    Workspace            Rahmen der Repraesentation: Region,
+    Pathworks Hub        Rahmen der Repraesentation: Region,
                          Bezeichner, Zielgruppe.
     Katalog              POI-Bestand der Region, kuratiert nach
                          Buckets und Subkategorien.
-    Editor               Polygone, Linien und Punkte direkt auf
+    Drawer               Polygone, Linien und Punkte direkt auf
                          der Karte zeichnen.
     P01  Thresholds      Globale Last-Schwellen der Farbskala
                          (Felder/Grenzen) — System-Ebene.
@@ -154,25 +184,19 @@ KOMPOSIT-TETRAEDER (Apex up - fire)
                       Events bauen — eigenes Sicherheitsprofil,
                       zeitlich und scope-begrenzt.
 
-SUBSTRAT-TETRAEDER (Apex down - matter)
+SUBSTRAT-TETRAEDER (Apex down - matter · COLD PATH)
   Klick : toggelt eine Navigator-Sektion.
-            Upper       -> Versionen
-            Lower-Left  -> Package Pipeline
-            Lower-Right -> Runtime Builder
-
-  Stand: der Versionen-Ast ist jetzt funktional — V01/V02 Versions-
-  Bibliothek (Historie je Rep, aktiv ausgeliefert, Rollback) plus
-  zeitliche Release-Drossel, alles auf dem Origin-Pfad. Package-
-  Pipeline und Runtime-Builder bleiben duenn. Die heute weitgehend
-  ungenutzten Panels (P03, P10, P12-P14, R02-R08) sind im
-  Navigator im Muellwagen gesammelt — Klick klappt sie aus.
+            Upper       -> SCIM-Dev-Notes
+            Lower-Left  -> Package-Build-Pipelines
+            Lower-Right -> SCIM-Capabilities & Development
 
   COLD PATH: Substrat-Tetraeder, Brocken und Muellwagen stehen
   ausserhalb der Hochfrequenz-Maschine (Anthem-Puls / Trygon-Loop,
   5-Min-Takt = HOT PATH). Brocken und Muellwagen sind fragmentiert
   von Natur aus; der Substrat-Tetraeder ist kein Fragment, sondern
-  der bewusste, versionierte Takt (Versionierung, Lifecycle) - sein
-  Versionen-Ast ist tragend.
+  der bewusste, versionierte Takt (Versionierung, Lifecycle). Die
+  heute weitgehend ungenutzten Panels (P03, P10, P12-P14, R02-R08)
+  sind im Navigator im Muellwagen gesammelt.
 
 READER (am Fuss der Kosmologie)
   Klick : oeffnet dieses Dokument.
@@ -208,13 +232,7 @@ ${TRYGON_SPEC}
 
 LEISTUNGEN  (Stand ${LEISTUNGEN_STAND} · eine Quelle mit dem Leistungsblatt)
 
-${leistungenManualBlock()}
-  Kosmologie-Klick-Karte          21 Hitboxen verdrahtet
-                                  (Mond 6 · Transmissionsfeld 1 ·
-                                   Komposit 10 · Substrat 3 · Grund 1)
-  R2-Deploy                       Cloudflare R2 + D1 + Worker
-  QR-Generierung                  automatisiert je Representation
-
+«LEISTUNGEN_TABLE»
 ────────────────────────────────────────────────────────
 
 STAND JUNI 2026 (neu)
@@ -310,13 +328,16 @@ export default function RepresentBuildManualModal({ onClose }: Props) {
             // Kopf — sie stünde sonst neben der Panel-Animation). Body am Spec splitten.
             const preStyle = { margin: 0, fontFamily: 'inherit', fontSize: 'inherit', whiteSpace: 'pre-wrap' as const };
             const [before, after] = MANUAL_BODY.split(TRYGON_SPEC);
+            const [afterTop, afterBottom] = after.split('«LEISTUNGEN_TABLE»');
             return (
               <>
                 <pre style={preStyle}>{before}</pre>
                 <div style={{ margin: '4px 0 8px' }}>
                   <TrygonLoopEmblem size={104} withLegend={false} animated />
                 </div>
-                <pre style={preStyle}>{TRYGON_SPEC}{after}</pre>
+                <pre style={preStyle}>{TRYGON_SPEC}{afterTop}</pre>
+                <LeistungenTable />
+                <pre style={preStyle}>{afterBottom}</pre>
               </>
             );
           })()}
