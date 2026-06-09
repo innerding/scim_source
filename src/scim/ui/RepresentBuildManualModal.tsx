@@ -237,9 +237,9 @@ LEISTUNGEN  (Stand ${LEISTUNGEN_STAND} · eine Quelle mit dem Leistungsblatt)
 
 VERSORGUNGSSICHERHEIT durch minimale Last  (Skalierungs-Merkmal)
 
-  Die laufende Last (Anthem ~3,3 KB / 5 Min je Rep, ~5 B/Segment,
-  ohne px-Bilder) ist zu klein, um bei Skalierung zur Daten-Wand
-  zu werden — und kommt auch durch ueberlastete Netze (Events).
+  Die laufende Last (Anthem ~3,3 KB / 5 Min je Rep, ~5 B/Segment)
+  ist zu klein, um bei Skalierung zur Daten-Wand zu werden — und
+  kommt auch durch ueberlastete Netze (Events).
   Weil ORIGIN LOKAL liegt (faellt nicht aus), uebersteht das Geraet
   kurze ANTHEM-Aussetzer: es rechnet auf lokalem Origin + letztem
   Anthem weiter, die Last altert nur. (Design-Manifest · 7. Satz)

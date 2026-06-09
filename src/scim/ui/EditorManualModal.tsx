@@ -63,10 +63,10 @@ DEINE RECHTE
 
 ────────────────────────────────────────────────────────
 
-PAKET-GRÖSSEN  (Beispiel Lichtenberg · gzip · ohne px-Bilder)
+PAKET-GRÖSSEN  (Beispiel Lichtenberg · gzip)
 
   Shell           138 KB   einkompiliert · einmalig
-  Origin           49 KB   Bundle (648 Segmente) · je Version
+  Origin           49 KB   Bundle (648 Seg.) · ohne px-Bilder
   Anthem          3,3 KB   Snapshot · alle 5 Min
   ─────────────────────
   Erstlieferung  ~190 KB   (Shell + Origin + Anthem)

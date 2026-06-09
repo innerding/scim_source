@@ -16,7 +16,7 @@ export const LEISTUNGEN: Kennzahl[] = [
   { label: 'Pipeline',       wert: '14 P-Panels + 7 Compute', detail: 'stabile Architektur seit v0.2' },
   { label: 'Region-Katalog', wert: '3 Regionen · 55 POIs',    detail: 'publiziert: Grünberg 31 · Lichtenberg 24 · Gaisberg prepared' },
   { label: 'Icon-Bibliothek',wert: '64 SVG-Assets',           detail: 'POI-Icons + Glyphs + Identity/Region-Icons (data/)' },
-  { label: 'Paket Lichtenberg', wert: '~190 KB Erstlieferung', detail: 'gzip · OHNE px-Bilder — Shell 138 + Origin 49 (648 Segmente) + Anthem 3,3 KB · laufend (Bestandsnutzer) nur Anthem ~3,3 KB / 5 Min' },
+  { label: 'Paket Lichtenberg', wert: '~190 KB Erstlieferung', detail: 'gzip — Shell 138 + Origin 49 (648 Segmente, ohne px-Bilder) + Anthem 3,3 KB · laufend (Bestandsnutzer) nur Anthem ~3,3 KB / 5 Min' },
 ];
 
 // Monospace-Block fürs Usage-Manual (gleiche Quelle wie das Leistungsblatt).

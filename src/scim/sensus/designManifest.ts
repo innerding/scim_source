@@ -73,7 +73,7 @@ export const DESIGN_PRINCIPLES: DesignPrinciple[] = [
     label: 'Versorgungssicherheit durch minimale Last',
     content:
       'Weil das laufende Anthem extrem klein ist (~3,3 KB je Representation alle 5 Min, ~5 Byte je ' +
-      'Segment, am Beispiel Lichtenberg/648 Segmente gemessen, gzip, ohne px-Bilder), bleibt die ' +
+      'Segment, am Beispiel Lichtenberg/648 Segmente gemessen, gzip), bleibt die ' +
       'Live-Versorgung auch bei großem Aufkommen und unter schlechten Netzbedingungen robust. Die ' +
       'wiederkehrende Last ist zu gering, um Kosten, Bandbreite oder Edge-Kapazität zur Skalierungs-' +
       'Wand werden zu lassen — gerade dort, wo Netze unter Menschenmengen einbrechen, kommt das ' +

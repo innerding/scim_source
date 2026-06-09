@@ -105,9 +105,9 @@ function SizeBreakdown({ originGzip, anthemGzip, stretches }: {
       borderTop: '1px dashed #e2e8f0', paddingTop: 6, marginTop: 2,
       fontSize: 10.5, fontFamily: 'ui-monospace, Menlo, monospace', lineHeight: 1.7,
     }}>
-      <div style={{ color: '#a0aec0', marginBottom: 2 }}>Paket-Größen <span style={{ fontSize: 9, color: '#cbd5e0' }}>· gzip · ohne px-Bilder</span></div>
+      <div style={{ color: '#a0aec0', marginBottom: 2 }}>Paket-Größen <span style={{ fontSize: 9, color: '#cbd5e0' }}>· gzip (Transfer)</span></div>
       <SizeRow label="Shell" bytes={SHELL_BYTES} note="einkompiliert · einmalig" est />
-      <SizeRow label="Origin" bytes={originGzip} note="Bundle · je Version" />
+      <SizeRow label="Origin" bytes={originGzip} note="Bundle · je Version · ohne px-Bilder" />
       <SizeRow label="Anthem" bytes={anthemGzip} estBytes={anthemEst} note="Snapshot · alle 5 Min" />
       <div style={{ borderTop: '1px solid #edf2f7', margin: '3px 0', width: 156 }} />
       <SizeRow label="Erstlieferung" bytes={firstDelivery} bold est={approx} />
