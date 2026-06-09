@@ -457,7 +457,12 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
             display: 'flex', flexDirection: 'column', gap: 6,
           }}>
             <Scim3Wordmark fluid />
-            <span style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: 16, letterSpacing: '0.02em', color: 'rgba(251,191,36,0.92)' }}>Pathworks</span>
+            {/* Pathworks exakt auf Logo-Breite gestreckt (SVG textLength). */}
+            <svg viewBox="0 0 120 17" width="100%" style={{ display: 'block', height: 'auto' }} aria-label="Pathworks">
+              <text x="0" y="13.5" textLength="120" lengthAdjust="spacingAndGlyphs"
+                fontFamily="ui-monospace, Menlo, monospace" fontWeight={800} fontSize={14}
+                fill="rgba(251,191,36,0.92)">Pathworks</text>
+            </svg>
           </div>
           <div style={{ height: 150, flexShrink: 0 }} />
           <RegioDashboardControl activeId={activeId} onJumpTo={go} variant="dark" size={205} arcsDeco toolsEnabled={!!boundRep} />
