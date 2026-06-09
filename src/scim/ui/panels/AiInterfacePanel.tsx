@@ -29,6 +29,17 @@ const CATEGORY_META: Record<AnnotationCategory, { label: string; color: string; 
 // Initial seed annotations — operator extends these in the UI
 const SEED_ANNOTATIONS: Annotation[] = [
 
+  // ── NetzStrukturTests — BAK-Kaskade auf dem Lichtenberg-Netz (2026-06-10) ──
+
+  {
+    id: 'ann_117',
+    category: 'invariant',
+    label: 'NetzStrukturTests — Lichtenberg ist ein prädestiniertes Netz',
+    content: 'NETZSTRUKTUR-TESTS — empirischer Befund zur BAK-Kaskade auf dem Lichtenberg-Origin-Netz (rep-lichtenberg), erhoben 2026-06-10 beim Live-Test der Stufen 1/2. — WAS GETESTET: das Verhalten des Kaskaden-Resolvers (Stufe 0 komfortabel / Stufe 1 Ausweichroute / Stufe 2 Engpass-Frage) in Abhängigkeit von (a) der gewählten POI-Kette und (b) der Netz-Last. — WIE GETESTET: in der laufenden Runtime (diesenpark.com/?rep=rep-lichtenberg, mobil 375×844). POI-Paare/Tripel per Klick zu Ketten gewählt; die Netz-Last über den telco-last-sim-Slider (Sim-Tageszeit 6–20 h) variiert — mittags steigt die Last → mehr ausgedimmte Strecken (Ø-Last > comfort) → Resolver bewertet neu. Kein echtes Anthem nötig (Worker liefert Sim-Last). Pro Konstellation abgelesen: Stufe (status=Stufe 1 / alert=Stufe 2) + Umweg-Kennzahlen (pctMore, extraMin). Stichprobe: ~6 POI-Paare × mehrere Zeiten; nicht erschöpfend. — BEFUNDE: (1) Lichtenberg ist ein DICHTES Maschen-Netz mit vielen GLEICH LANGEN Parallelwegen → Stufe-1-Ausweichrouten sind oft „GRATIS": sehr häufig „+0 % · < 1 Min" (es existiert ein gleich langer komfortabler Parallelweg). (2) Bei mittlerer Last (~9:00–9:35) findet die Ausweichung komfortable Wege, teils mit echtem Umweg: gemessen +9 %, +16 % (ruhig) bis +85 % (Alarm, ≥ 20 %) bei ungünstigen, weit auseinander liegenden Paaren. (3) Bei hoher Last (~12:00) deckt der Andrang ganze Bereiche ab → keine komfortable Ausweichung mehr → Stufe 2 (Frage), oft mit RE-ESKALATION (nach „Auslassen" wandert der Engpass zum nächsten POI). — SCHLUSS / WARUM „PRÄDESTINIERT": die Maschen-/Parallel-Struktur macht Stufe-1-Umleitungen billig und hält den Wanderer fast immer im Comfort, OHNE ihn mit Fragen zu behelligen — ideal für den „Geh deinen Weg"-Comfort-Begleiter. Ein DÜNNES / baum-/kettenartiges Netz (wenige Alternativwege, Sackgassen) hätte das Gegenteil: jede Belebung erzwingt Umweg-Prozente oder gleich Stufe 2/3. → NETZ-TOPOLOGIE IST EINE EIGNUNGS-KENNZAHL einer Representation. — ABLEITUNG (Vorschlag, ungebaut): vor Aufnahme einer neuen Rep ein „NetzStruktur-Check" — Maschendichte / Alternativweg-Quote / Anteil degree-1-Enden (Sackgassen) — als Ampel, wie gut sich das Netz für adaptive Comfort-Führung eignet. — METHODEN-LIMITS: Sim-Last (keine echten Anthem-Daten); pct-Werte hängen an der Sim-Last-Verteilung; manuelle Stichprobe. Bezug: BAK-Kaskade ann_116/ann_115; Bau-Stand guidance_play_bauplan.md.',
+    related_panel: 'P08',
+    date: '2026-06-10',
+  },
+
   // ── BAK-Kaskade — Verfeinerung, Regeln, Stufe 3, offene Streckenwahl (2026-06-10) ──
 
   {
