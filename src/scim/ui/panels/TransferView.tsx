@@ -4,7 +4,6 @@
 // Auslieferung. Verb 'transfer' (statt 'ausspielen'). shell-run-Schritt 'transfer'.
 import { useState } from 'react';
 import { ShellRunBadge } from '../ShellRunInfo';
-import { useWorkspaceNav } from '../workspaceNav';
 import { useAuftraggeberRep } from '../../../runtime/useAuftraggeberRep';
 import { resolveOriginReference } from '../../sensus/originReference';
 import { publishOriginBundle, anthemPublishConfigured } from '../../../runtime/anthemApi';
@@ -20,7 +19,6 @@ const STEPS: { n: number; head: string; body: string }[] = [
 ];
 
 export default function TransferView() {
-  const { goStation } = useWorkspaceNav();
   const rep = useAuftraggeberRep();
   const role = useRole();
   const mode = useModeSwitch();
@@ -56,7 +54,7 @@ export default function TransferView() {
       <p style={{ fontSize: 12.5, color: '#2d3748', lineHeight: 1.6, margin: '0 0 14px' }}>
         Die fertige, <strong>generische</strong> Shell wird an Sensus Core P <strong>transferiert</strong>. Erst HIER wird
         aus der generischen Shell eine <strong>konkrete Auslieferung</strong> — die Shell selbst bleibt rep-neutral, alles
-        Spezifische kommt beim Transfer dazu. (Verb <strong>transfer</strong> statt „ausspielen".)
+        Spezifische kommt beim Transfer dazu.
       </p>
 
       <div style={{ border: '1px solid #e2e8f0', borderRadius: 8, overflow: 'hidden', marginBottom: 14 }}>
@@ -98,14 +96,9 @@ export default function TransferView() {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        <button onClick={() => goStation('P11', 'input')} style={{ fontSize: 11, padding: '4px 11px', borderRadius: 6, cursor: 'pointer', border: '1px solid #fbb6ce', background: '#fff5f7', color: '#b83280', fontWeight: 600 }}>→ Publishing (schnüren)</button>
-        <button onClick={() => goStation('P11', 't1')} style={{ fontSize: 11, padding: '4px 11px', borderRadius: 6, cursor: 'pointer', border: '1px solid #bee3f8', background: '#ebf8ff', color: '#2b6cb0', fontWeight: 600 }}>→ Shell-ID (stempeln)</button>
-      </div>
-
       <div style={{ fontSize: 11, color: '#718096', background: '#f7fafc', border: '1px solid #e2e8f0', borderRadius: 6, padding: '9px 12px', lineHeight: 1.55, marginTop: 12 }}>
-        <strong>Stand:</strong> teilweise — P11 existiert (Publishing + Shell-ID). Dieses Tab macht den Transfer-Handoff als eigenen Schritt sichtbar.
-        <br /><strong>Auslieferungsweg:</strong> Cloud-only, ohne Desktop-Nabel — Shell einkompiliert, Origin als R2-Bundle (hier), Anthem als Worker-Stream; Eintritt QR → direkt zur Rep. Doktrin: System-Tab „Manifest" · <em>Auslieferung</em>.
+        <strong>Stand:</strong> Der Transfer ist der Operator-Schritt, der das Origin-Bundle nach R2 ausspielt — versioniert in der V01-Bibliothek, Release über die zeitliche Drossel. Im MVP vereinfacht: die Shell ist in den App-Build einkompiliert, der Anthem läuft als Sim — real ausgespielt wird das Origin-Bundle.
+        <br /><strong>Auslieferungsweg:</strong> Cloud-only, ohne Desktop-Nabel — Shell einkompiliert, Origin als R2-Bundle (hier), Anthem als Worker-Stream; Eintritt per QR → direkt zur Rep. Doktrin: System-Tab „Manifest" · <em>Auslieferung</em>.
       </div>
     </div>
   );
