@@ -4,7 +4,7 @@ import Navigator from './scim/ui/Navigator';
 import PanelWorkspace from './scim/ui/PanelWorkspace';
 import { useScimPipeline } from './scim/ui/useScimPipeline';
 import IntroScreen from './scim/ui/IntroScreen';
-import { RoleContext, UserNameContext, ModeSwitchContext, ROLE_ORDER } from './scim/ui/RoleContext';
+import { RoleContext, UserNameContext, ModeSwitchContext, ROLE_ORDER, isEditorRole } from './scim/ui/RoleContext';
 import type { Role } from './scim/ui/RoleContext';
 import type { TabId } from './scim/ui/panelRegistry';
 import RepresentBuildManualModal from './scim/ui/RepresentBuildManualModal';
@@ -18,7 +18,8 @@ export default function App() {
   const [preview, setPreview] = useState<Role | null>(null);   // Diode-Vorschau (effektive Rolle)
   const [activeMode, setActiveModeState] = useState<Role | null>(null);   // aktiver Tab (entkoppelt)
   const result = useScimPipeline();
-  // Default-Panel: zuletzt geöffnetes (gemerkt), sonst Pathworks (Hub) — nicht mehr P01.
+  // Seed vor dem Login (zeigt eh die Intro); der Login setzt die Landung dann
+  // rollen-basiert (Editor → Pathworks Hub, Operator/Analyst → V03 · Puls).
   const [activeId, setActiveId] = useState<string>(() => {
     try { return localStorage.getItem('scim3_last_panel') || 'workspace'; } catch { return 'workspace'; }
   });
@@ -63,7 +64,13 @@ export default function App() {
   });
 
   if (role === null) {
-    return <IntroScreen onAuth={(r, n) => { setUserName(n); setRole(r); }} />;
+    // Login-Landung rollen-basiert: Editoren → Pathworks Hub (ihre Heimat),
+    // Operator/Analyst → V03 · Puls (der Wahrheitskreislauf, hot path).
+    return <IntroScreen onAuth={(r, n) => {
+      setUserName(n); setRole(r);
+      if (isEditorRole(r)) { setActiveId('workspace'); setActiveTab('input'); }
+      else { setActiveId('V03'); setActiveTab('t5'); }
+    }} />;
   }
 
   // Vorschau nur für Kaskaden-Rollen (Operator/Analyst); echte Editor-Logins (reg/rep) sind terminal.
