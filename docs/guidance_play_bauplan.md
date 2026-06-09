@@ -198,11 +198,14 @@ unverändert: stille Eskalation, „kein Routen-Shop", Wahl muss eindeutig treff
   (kein Breach) · 3) Rang = höchste Ähnlichkeit, dann kleinster Umweg → bester Ersatz-POI
   (+`deltaM`/`newTotalM`) oder null. 27/27 Tests. **Noch nicht in der Runtime verdrahtet
   (das macht B2).** Regel-Pflege in `ann_116`.
-- **B2 · POI-Confrontation-Animation.** Die Gegenüberstellung ist **nicht** nur eine
-  Zeitdifferenz, sondern ein **Energieaustausch wie kommunizierende Gefäße**: der
-  Abzuwählende **verwelkt/schrumpft/dimmt** (Normal → suboptimal), der Anzuwählende
-  **erblüht/wächst/glüht** (Normal → optimal), simultan, je vom eigenen
-  Normal-Niveau. Zeitdifferenz (%, ±Min) begleitet die Animation. Verdrahtet `suggestSwap`.
+- **B2 ✓ GEBAUT (runtime 2597c0a, shell-kit v0.47.0) · POI-Confrontation-Animation.**
+  Stufe 3: bei Engpass bietet die Kaskade einen **Tausch** gegen einen ähnlichen, ruhigeren
+  POI (`suggestSwap`) statt nur „Auslassen". `PoiConfrontation.tsx` = Energieaustausch: X
+  (belebt) **verwelkt** (schrumpft/kippt/dimmt/entsättigt, forwards), Y (ruhiger) **erblüht**
+  (wächst/glüht/atmet, infinite alternate), ein **Funke** fließt X→Y; darunter „ruhiger · ±Min".
+  Buttons [Bei X bleiben] / [Tauschen]. Resolver: erst `suggestSwap` (Treffer→Stufe 3, sonst
+  Stufe 2). shell-kit v0.47.0: **lokale Ruhe-Prüfung** (nur die Beine um den Ersatz müssen
+  komfortabel sein, nicht die ganze Route — die Kaskade löst einen Engpass/Runde). Live ok.
 - **B3 · Sammel-Karte (aus „Karten-Lebenszyklus").** Eine Karte bei Überlast mit
   Route-Darstellung + verwelkenden Engpass-POIs (teilt die Verwelk-Optik mit B2) +
   Reihenfolge; zwei Pole „Belebte Ziele weglassen" / „Alle behalten" (= Mute).
