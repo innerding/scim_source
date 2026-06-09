@@ -67,6 +67,7 @@ import { publishOriginMesh, anthemPublishConfigured, knockPresence, anthemReadCo
 import { resampleNet } from '../wegnetz/netResample';
 import PanelIcon from './PanelIcon';
 import RegionHeaderMesh from './RegionHeaderMesh';
+import SeaBrandung from './SeaBrandung';
 
 interface Props {
   activeId: string;
@@ -162,6 +163,11 @@ function headerCode(id: string): string {
 // Die 4 Regio-Dashboard-Panels = die 4 Tetraeder-Faces (Thresholds löst Publishing ab):
 // Thresholds(P01) · Pathworks(workspace) · Drawer(geometry_editor) · Katalog(catalog).
 const REGION_DASHBOARD_IDS = new Set(['P01', 'workspace', 'geometry_editor', 'catalog']);
+// Colour-Mesh bleibt nur im Katalog + Drawer (dort ist die Farbe Gegenstand);
+// die übrigen Triangle-Panels bekommen stattdessen eine zarte graue Brandung am
+// unteren Panelrand (Intro-Variation).
+const COLOUR_MESH_HEADER_IDS = new Set(['catalog', 'geometry_editor']);
+const BRANDUNG_IDS = new Set(['P01', 'workspace']);
 const BROCKEN_IDS = new Set(['P05']);
 const MUELL_IDS = new Set(['P03', 'P10', 'P12', 'P13', 'P14', 'R03', 'R04', 'R05', 'R06', 'R07', 'R08']);
 const OPERATOR_ONLY_IDS = new Set(['ai_interface', 'ipills', 'system']);   // Substrat
@@ -200,9 +206,15 @@ function PanelHeader({ id, title, subtitle, icon }: { id: string; title: string;
         flexShrink: 0, overflow: 'hidden', opacity: 1,   // kein Dimmen: Schwarz bleibt schwarz
       }}>
         <style>{REGION_HEADER_CSS}</style>
-        <RegionHeaderMesh />
+        {COLOUR_MESH_HEADER_IDS.has(id) && <RegionHeaderMesh />}
         <div style={{ position: 'relative', display: 'flex', alignItems: 'center', padding: '13px 20px', fontFamily: 'system-ui, sans-serif' }}>
-          <div style={{ flex: 1 }} />
+          {/* Links: Eyebrow — die formvolle Marke des Dashboards (Triangle-Header). */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <span style={{
+              fontFamily: 'monospace', fontSize: 9.5, fontWeight: 700, letterSpacing: '0.07em',
+              color: 'rgba(251,191,36,0.82)', textTransform: 'uppercase', whiteSpace: 'nowrap',
+            }}>SCIM3 · Pathworks Hub</span>
+          </div>
           {/* Mitte: Icon (Logo-Fill) + Kürzel (Schrift-Fill) */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, flexShrink: 0 }}>
             {icon && <PanelIcon id={id} icon={icon} size={28} color="#fbbf24" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }} />}
@@ -1486,6 +1498,7 @@ export default function PanelWorkspace({ activeId, activeTab, onTabChange, resul
       flexDirection: 'column',
       overflow: 'hidden',
       minWidth: 0,
+      position: 'relative',
     }}>
       <PanelHeader id={entry.id} title={entry.label} subtitle={subtitle} icon={(entry as { icon?: string }).icon} />
       {/* Keine Modus-Tabs — die Footer-Diode schaltet die Rolle/Ansicht. */}
@@ -1516,6 +1529,9 @@ export default function PanelWorkspace({ activeId, activeTab, onTabChange, resul
           </div>
         </div>
       )}
+      {/* Zarte graue Brandung am unteren Panelrand (Intro-Variation) — die
+          Triangle-Panels ohne Colour-Mesh-Header (P01 Thresholds · Pathworks). */}
+      {BRANDUNG_IDS.has(activeId) && <SeaBrandung />}
     </div>
   );
 }
