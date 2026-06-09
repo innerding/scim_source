@@ -74,3 +74,29 @@ Kein Greenfield-Finale — ein **Bewegungs-Baustein in shell-kit + Adapter + Mar
 ## Offene Mini-Entscheidungen
 - Diskret (Auto-`NEXT_SEGMENT` per Timer, 30 Min) vs. **kontinuierlich** (Walker auf Polyline) → **kontinuierlich**, weil die Geometrie da ist und es echt aussieht.
 - Speed: fixer Demo-Wert (z. B. 1,4 m/s Gehtempo) + Zeitraffer-Faktor für die Vorführung.
+
+---
+
+## UX-Nachtrag (Operator-Feedback 2026-06-09)
+
+- **Rest-Dauer-Uhr = erstes Anzeige-Element (Herzstück).** Sobald eine Route existiert:
+  Planung = Gesamt-Schätzung (`estimated_duration_minutes`), Begehung = **Rest-Dauer**
+  (zählt runter, aus Walker-Progress). Persistent sichtbar während der Begehung. Reine
+  Anzeige (nicht interaktiv). → fließt in **S2**.
+- **Fortschrittsbalken-Header: RAUS.** Die Uhr ersetzt ihn (menschlicher als ein abstrakter
+  Balken). **Nächster Halt + Rest-Distanz** aus GuidanceHeader BLEIBEN. Nur EINE Steuerleiste
+  (kein Zwei-Footer-Demo mehr). → vereinfacht **S2/S3**.
+- **Positions-Pfeil zeigt Fahrtrichtung sofort** aus `bearingDeg` (Walker) — **kein** Sensor
+  nötig. → **S3**.
+- **Magnetischer Kompass** (`DeviceOrientationEvent`) = Geräte-Sensor, gehört mit
+  `watchPosition` in **S5** (echtes Gerät), iOS-Permission. Kein Demo-Blocker.
+- **Long-tap-POI-Detail** (short-tap=markieren bleibt) ist ein eigenes Browsing-Feature,
+  NICHT im Play-Kern — aber **dieselbe POI-Detail-Komponente** wie die Ankunfts-Card (**S4**).
+  → Parallel-Task, der die Ankunfts-Card mitliefert.
+
+### Icons (vorzubereiten)
+- **vorhanden/in Arbeit:** Play, Kompass (S5), Plus.
+- **neu nötig:** **Pause** · **Doppelpunkt** (für die Uhr) · **Positions-Pfeil/Heading-Marker** (S3).
+- **wahrscheinlich:** **Häkchen/Check** (Ankunft + Long-tap-Check) · **Ziel/Flagge** (Tour-Ende).
+- **Uhr-Ziffern:** das hand-gezeichnete Ziffern-Set (Katalog) nutzen (Marken-Kohärenz, reine
+  Anzeige). **⚠ gleich breite Ziffern / feste Zellen**, sonst zappelt die Uhr beim Runterzählen.
