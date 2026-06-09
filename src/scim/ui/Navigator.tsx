@@ -673,7 +673,7 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
               stroke={activeId === 'V03' ? '#63b3ed' : undefined}
               strokeWidth={activeId === 'V03' ? 1.0 : undefined}
               className={activeId === 'V03' ? 'scim-active-pulse' : undefined}
-              onClick={() => go('V03')}
+              onClick={() => go('V03', 't5')}
               style={{ pointerEvents: 'fill', cursor: 'pointer' }}
             >
               <title>Hex — Publishing-Monitor (V03)</title>
@@ -745,7 +745,7 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
           activeArc={arcFromActive(activeId)}
           activeSickle={sickleFromActive(activeId)}
           variant="dark"
-          size={171}
+          size={205}
           showLabels
           transmissionMode={transmissionMode}
           onFaceClick={(f) => {

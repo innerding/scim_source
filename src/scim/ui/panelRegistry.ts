@@ -456,11 +456,11 @@ export const VERSIONEN_REGISTRY: VersionenDescriptor[] = [
     label: 'Publishing-Monitor',
     shortDescription: 'Beobachter der ausgelieferten Maschine — wer ist präsent (presence-origin) · laufen die Pakete (CDN/QR)',
     tabs: [
+      { id: 't5', label: 'Puls', icon: '◌' },            // hot path: Wahrheitskreislauf live — Default
       { id: 't1', label: 'Presence-Origin', icon: '◉' },
       { id: 't2', label: 'Active-Monitor', icon: '◈' },
       { id: 't3', label: 'Runtime Shell', icon: '◻' },   // R01 hier aufgegangen
       { id: 't4', label: 'Release-Drossel', icon: '⊕' },
-      { id: 't5', label: 'Puls', icon: '◌' },            // hot path: Wahrheitskreislauf live
     ],
   },
 ];

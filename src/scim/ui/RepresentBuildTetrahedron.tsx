@@ -482,13 +482,15 @@ export default function RepresentBuildTetrahedron({
         );
       })}
 
-      {/* Empty-Sea-Stil Pulse-Animation auf dem aktiven Tile */}
+      {/* Aktiv-Tile: grelles Markierungsfeedback — Glow + kräftiger Puls, damit
+          Sicheln UND Triangles gleich deutlich markiert sind wie die Mitte. */}
       <style>{`
         .rb-active-tile {
-          animation: rb-pulse 3200ms ease-in-out infinite;
+          animation: rb-pulse 2400ms ease-in-out infinite;
+          filter: drop-shadow(0 0 3.5px ${isDark ? '#63b3ed' : '#1a365d'});
         }
         @keyframes rb-pulse {
-          0%, 100% { opacity: 0.80; }
+          0%, 100% { opacity: 0.70; }
           50%       { opacity: 1.00; }
         }
       `}</style>
