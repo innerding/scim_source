@@ -29,6 +29,17 @@ const CATEGORY_META: Record<AnnotationCategory, { label: string; color: string; 
 // Initial seed annotations — operator extends these in the UI
 const SEED_ANNOTATIONS: Annotation[] = [
 
+  // ── App-System-Adjustments — zentrale Stellschrauben (2026-06-09) ───────────
+
+  {
+    id: 'ann_115',
+    category: 'invariant',
+    label: 'App-System-Adjustments — zentrale Stellschrauben (Tuning)',
+    content: 'APP-SYSTEM-ADJUSTMENTS — die zentralen Stellschrauben der ausgelieferten Ziel-App (sensus-core-runtime), damit sie beim Feintuning nicht untergehen. Hier steht WO sie sitzen + Default + Wirkung; ändern = Konstante anpassen, neu bauen (npm run build), Deploy. — GUIDANCE/PLAY (src/target-app/origin/OriginPreview.tsx): • SIM_LAPSE = 6 → Vorführ-Zeitraffer des Sim-Walkers (Marker läuft 6× Gehtempo; die Rest-Dauer-Uhr komprimiert dadurch 6× = zählt schneller runter als die Wanduhr). 1 = Echtzeit. ⚠ HAUPT-HEBEL für „die Uhr läuft eigenwillig/zu schnell": kleiner = ruhiger. • WALK_SPEED_MPS = 1.4 → reales Gehtempo (m/s), speist die Rest-Dauer-Schätzung (Restdistanz/1,4). • Tick-Intervall = 200 ms (setInterval im Play-Loop) → Geschmeidigkeit des Positions-Markers. • Steuerleiste: navy #1b2a6b, bottom-center, EINE Leiste (Play/Pause-Badge + DurationClock + nächster-Halt). — POSITIONS-MARKER: Scheibenfarbe fix #f60 (src/assets/guidance/position.svg); SOLL später = Comfort-Farbe (ann_114). Ganzes 32×32-SVG per bearingDeg gedreht. — REST-DAUER-UHR (src/target-app/ui/DurationClock.tsx): MM:SS aus 4×5-Ziffern-SVGs (#000→currentColor, erbt Themenfarbe). height-Prop (Bar nutzt 22). Doppelpunkt-Zelle colonW = cellW*0.5 + preserveAspectRatio=slice (sonst skaliert er nach Breite und wirkt zu klein). — MESH/COMFORT/SIM: comfort-Default 0.65 (BCK tolerierte Last-Obergrenze); tMin-Start 480 (8:00); telco-Turbo-Sim Schritt +20 min / 250 ms (6→20 h Schleife). — GEPLANT (noch nicht gebaut): S4 Ankunfts-Radius ~25 m (POI-Card + Pause); S5 echtes GPS (watchPosition, gleiche Schnittstelle wie Walker) + magnet. Kompass. — Doku: docs/guidance_play_bauplan.md; Bau-Detail siehe ann_114.',
+    related_panel: 'V03',
+    date: '2026-06-09',
+  },
+
   // ── Target-App MVP-Lichtenberg — Gesamtbild (2026-06-09) ────────────────────
 
   {
