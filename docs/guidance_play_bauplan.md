@@ -161,11 +161,13 @@ unverändert: stille Eskalation, „kein Routen-Shop", Wahl muss eindeutig treff
 - **A4 ✓ GEBAUT (73bfd44) · BAK-Box-Hintergrund = „Ohne-BAK"-Farbe.** Modal bekommt
   **immer** die Spitzen-Last-Farbe der ungemilderten Basis-Route (`peakColorOf`);
   Text/Buttons adaptiv (fg/bg getauscht). Je belebter, desto „heißer" → Dringlichkeit.
-- **A1 · Stufe-1-Hinweis quantifiziert + Schwelle.** ⏭ NÄCHSTER. Der Umleitungs-Hinweis zeigt
-  **immer Prozent UND Mehrzeit**: `% = (altLen−baseLen)/baseLen`,
-  `Mehrzeit = (altLen−baseLen)/WALK_SPEED_MPS`. **Bis +20 %** ruhiger Hinweis;
-  **ab +20 %** auffälligere (eskalierte) Mitteilung (Farbe/Gewicht hoch), weil der
-  Umweg spürbar wird.
+- **A1 ✓ GEBAUT (82920f7) · Stufe-1-Hinweis quantifiziert + Schwelle.** Zeigt **immer
+  Prozent UND Mehrzeit** (`% = (altLen−baseLen)/baseLen`, `Mehrzeit = .../WALK_SPEED_MPS`).
+  **Bis +20 %** ruhig („↳ Wegen Andrang umgeleitet · +9 % · +9 Min"); **ab +20 %**
+  auffällig („⚠ Deutlich längerer Weg · +85 % · +19 Min": größer, fett, Warn-Icon,
+  stärkerer Schatten). Live verifiziert.
+
+**→ Damit ist A komplett. Nächster: B (Stufe 3).**
 
 ### B — Stufe 3 (POI-Tausch)
 
