@@ -22,8 +22,8 @@ interface NavTheme {
 }
 const NAV_THEMES: Record<Role, NavTheme> = {
   operator:     { bg: '#0d1520', border: '#1a2535', fg: '#a0aec0', fgActive: '#e0eeff', activeBg: '#1e3a5f', hover: '#1a2535', sub: '#3d556f', divider: '#1a2d3e' },
-  // Schwarzer Hintergrund wie Operator; Amber bleibt nur als Text-/Aktiv-Akzent (Analyst-Kennung).
-  analyst:      { bg: '#0d1520', border: '#1a2535', fg: '#cbb083', fgActive: '#ffe6b0', activeBg: '#3a2e12', hover: '#1a2535', sub: '#6b5630', divider: '#1a2d3e' },
+  // Wie Operator (neutral-dunkler Hintergrund), nur die Blau-Akzente durch Bernstein ersetzt.
+  analyst:      { bg: '#0d1520', border: '#2c2310', fg: '#cbb083', fgActive: '#ffe6b0', activeBg: '#4a3410', hover: '#241a0b', sub: '#6b5630', divider: '#2c2310' },
   // Editor-Rollen: gleiche (dunkle) Farbwelt wie der Operator (keine Extrawurst).
   regio_editor: { bg: '#0d1520', border: '#1a2535', fg: '#a0aec0', fgActive: '#e0eeff', activeBg: '#1e3a5f', hover: '#1a2535', sub: '#3d556f', divider: '#1a2d3e' },
   reg_editor:   { bg: '#0d1520', border: '#1a2535', fg: '#a0aec0', fgActive: '#e0eeff', activeBg: '#1e3a5f', hover: '#1a2535', sub: '#3d556f', divider: '#1a2d3e' },
