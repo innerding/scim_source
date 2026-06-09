@@ -330,16 +330,17 @@ export default function RepresentBuildTetrahedron({
 }: Props) {
   const isDark = variant === 'dark';
 
-  // Farben pro Variante
-  const triangleActiveFill = isDark ? '#2b6cb0' : '#1a365d';
-  const triangleActiveStroke = isDark ? '#63b3ed' : '#1a365d';
-  const triangleInactiveStroke = isDark ? '#2d4a6a' : '#a0aec0';
+  // Farben pro Variante. Im Dark-Modus über CSS-Variablen (--cm-*) gefärbt, damit
+  // die Kosmologie je Rolle umschlägt (Operator blau / Analyst amber, Fallback blau).
+  const triangleActiveFill = isDark ? 'var(--cm-a, #2b6cb0)' : '#1a365d';
+  const triangleActiveStroke = isDark ? 'var(--cm-b, #63b3ed)' : '#1a365d';
+  const triangleInactiveStroke = isDark ? 'var(--cm-dim, #2d4a6a)' : '#a0aec0';
   const triangleLabelActive = '#fff';
   const triangleLabelInactive = isDark ? '#4a6a8a' : '#718096';
   const arcFillInactive = isDark ? '#1a2535' : '#edf2f7';
-  const arcFillActive = isDark ? '#2b6cb0' : '#1a365d';
-  const arcStrokeInactive = isDark ? '#2d4a6a' : '#cbd5e0';
-  const arcStrokeActive = isDark ? '#63b3ed' : '#1a365d';
+  const arcFillActive = isDark ? 'var(--cm-a, #2b6cb0)' : '#1a365d';
+  const arcStrokeInactive = isDark ? 'var(--cm-dim, #2d4a6a)' : '#cbd5e0';
+  const arcStrokeActive = isDark ? 'var(--cm-b, #63b3ed)' : '#1a365d';
   const arcLabelInactive = isDark ? '#a0aec0' : '#4a5568';
   const arcLabelActive = '#fff';
 
@@ -487,7 +488,7 @@ export default function RepresentBuildTetrahedron({
       <style>{`
         .rb-active-tile {
           animation: rb-pulse 2400ms ease-in-out infinite;
-          filter: drop-shadow(0 0 3.5px ${isDark ? '#63b3ed' : '#1a365d'});
+          filter: drop-shadow(0 0 3.5px ${isDark ? 'var(--cm-b, #63b3ed)' : '#1a365d'});
         }
         @keyframes rb-pulse {
           0%, 100% { opacity: 0.70; }

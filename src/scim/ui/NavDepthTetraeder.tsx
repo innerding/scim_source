@@ -70,7 +70,7 @@ const REGION_LOWER_RIGHT_PANEL = 'system';
 //   Face 2: theta = 150
 const FACE_FULL_ANGLES: Record<number, number> = { 0: 30, 1: 270, 2: 150 };
 
-const STROKE_INACTIVE  = '#2d4a6a';
+const STROKE_INACTIVE  = 'var(--cm-dim, #2d4a6a)';
 const STROKE_W_NORMAL  = 0.8;
 
 const SPEED_DEG_PER_SEC      = 13.5;   // 18 * 0.75 — 25% langsamer
@@ -308,7 +308,7 @@ export default function NavDepthTetraeder({ activeId, onFaceClick, size = 208, l
           <polygon
             key={`region-${r.panelId}`}
             points={polyPoints(r.vertices)}
-            fill={isActive && !locked ? 'rgba(99, 179, 237, 0.28)' : 'transparent'}
+            fill={isActive && !locked ? 'var(--cm-tint, rgba(99,179,237,0.28))' : 'transparent'}
             stroke="none"
             onClick={locked ? undefined : () => onFaceClick(r.panelId)}
             style={{ pointerEvents: locked ? 'none' : 'all', cursor: locked ? 'default' : 'pointer' }}

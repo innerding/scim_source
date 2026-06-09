@@ -13,7 +13,7 @@ export default function NavTrashTruck({
 }: { isOpen: boolean; count: number; onClick: () => void; locked?: boolean }) {
   const [hover, setHover] = useState(false);
   const fill = isOpen ? '#5f7d9c' : hover ? '#52677f' : '#425468';
-  const outline = isOpen ? '#63b3ed' : hover ? '#4a6a8a' : 'transparent';
+  const outline = isOpen ? 'var(--cm-b, #63b3ed)' : hover ? '#4a6a8a' : 'transparent';
 
   return (
     <div

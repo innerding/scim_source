@@ -435,6 +435,12 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
     descById(id) && !(id === 'ai_interface' && role !== 'operator')).length, 0);
 
   const navTheme = NAV_THEMES[role] ?? NAV_THEMES.operator;
+  // Kosmologie-Akzent als CSS-Variablen (erben in alle SVG-Elemente der Nav):
+  // Operator blau · Analyst amber. --cm-a Aktiv-Fill · --cm-b Stroke/Glow ·
+  // --cm-dim inaktiver Stroke · --cm-tint heller Region-Tint.
+  const cosmoVars: Record<string, string> = role === 'analyst'
+    ? { '--cm-a': '#b45309', '--cm-b': '#f59e0b', '--cm-dim': '#4a3a1e', '--cm-tint': 'rgba(245,158,11,0.28)' }
+    : { '--cm-a': '#2b6cb0', '--cm-b': '#63b3ed', '--cm-dim': '#2d4a6a', '--cm-tint': 'rgba(99,179,237,0.28)' };
 
   // Editor-Rollen: reduzierte Spalte — NUR die Kartography-Drehscheibe, sonst nichts.
   // Gleiche dunkle Farbwelt; der Spacer setzt das Control auf ~dieselbe Höhe wie
@@ -522,6 +528,7 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
   return (
     <NavThemeContext.Provider value={navTheme}>
     <nav style={{
+      ...(cosmoVars as React.CSSProperties),
       width: 210,
       flexShrink: 0,
       background: navTheme.bg,
@@ -687,9 +694,9 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
                 'M52.95,20.79 L61.23,25.57 L61.23,35.13 ' +
                 'L52.95,39.91 L44.67,35.13 L44.67,25.57 Z'
               }
-              fill={activeId === 'V01' ? '#2b6cb0' : 'transparent'}
+              fill={activeId === 'V01' ? 'var(--cm-a, #2b6cb0)' : 'transparent'}
               fillRule="evenodd"
-              stroke={activeId === 'V01' ? '#63b3ed' : undefined}
+              stroke={activeId === 'V01' ? 'var(--cm-b, #63b3ed)' : undefined}
               strokeWidth={activeId === 'V01' ? 1.0 : undefined}
               className={activeId === 'V01' ? 'scim-active-pulse' : undefined}
               onClick={() => go('V01')}
@@ -700,8 +707,8 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
             {/* Hex-Polygon — der Beobachter der ausgelieferten Maschine. */}
             <polygon
               points="52.95,20.79 61.23,25.57 61.23,35.13 52.95,39.91 44.67,35.13 44.67,25.57"
-              fill={activeId === 'V03' ? '#2b6cb0' : 'transparent'}
-              stroke={activeId === 'V03' ? '#63b3ed' : undefined}
+              fill={activeId === 'V03' ? 'var(--cm-a, #2b6cb0)' : 'transparent'}
+              stroke={activeId === 'V03' ? 'var(--cm-b, #63b3ed)' : undefined}
               strokeWidth={activeId === 'V03' ? 1.0 : undefined}
               className={activeId === 'V03' ? 'scim-active-pulse' : undefined}
               onClick={() => go('V03', 't5')}
@@ -722,8 +729,8 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
                 <path
                   key={`auswuchs-${label}`}
                   d={pathD}
-                  fill={isAct ? '#2b6cb0' : 'transparent'}
-                  stroke={isAct ? '#63b3ed' : undefined}
+                  fill={isAct ? 'var(--cm-a, #2b6cb0)' : 'transparent'}
+                  stroke={isAct ? 'var(--cm-b, #63b3ed)' : undefined}
                   strokeWidth={isAct ? 1.0 : undefined}
                   className={isAct ? 'scim-active-pulse' : undefined}
                   onClick={() => {
