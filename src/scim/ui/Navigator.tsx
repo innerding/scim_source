@@ -435,12 +435,12 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
     descById(id) && !(id === 'ai_interface' && role !== 'operator')).length, 0);
 
   const navTheme = NAV_THEMES[role] ?? NAV_THEMES.operator;
-  // Kosmologie-Akzent als CSS-Variablen (erben in alle SVG-Elemente der Nav):
-  // Operator blau · Analyst amber. --cm-a Aktiv-Fill · --cm-b Stroke/Glow ·
-  // --cm-dim inaktiver Stroke · --cm-tint heller Region-Tint.
-  const cosmoVars: Record<string, string> = role === 'analyst'
-    ? { '--cm-a': '#b45309', '--cm-b': '#f59e0b', '--cm-dim': '#4a3a1e', '--cm-tint': 'rgba(245,158,11,0.28)' }
-    : { '--cm-a': '#2b6cb0', '--cm-b': '#63b3ed', '--cm-dim': '#2d4a6a', '--cm-tint': 'rgba(99,179,237,0.28)' };
+  // Kosmologie-Akzent als CSS-Variablen (erben in alle SVG-Elemente der Nav).
+  // Analyst-Amber wieder zurückgebaut (zu viel Kosmologie noch blau, lohnt erst,
+  // wenn alles umgestellt ist) — vorerst für ALLE Rollen blau. Die Var-Infra-
+  // struktur bleibt, ein Re-Enable des Analyst-Amber wäre dann ein Einzeiler.
+  const cosmoVars: Record<string, string> =
+    { '--cm-a': '#2b6cb0', '--cm-b': '#63b3ed', '--cm-dim': '#2d4a6a', '--cm-tint': 'rgba(99,179,237,0.28)' };
 
   // Editor-Rollen: reduzierte Spalte — NUR die Kartography-Drehscheibe, sonst nichts.
   // Gleiche dunkle Farbwelt; der Spacer setzt das Control auf ~dieselbe Höhe wie

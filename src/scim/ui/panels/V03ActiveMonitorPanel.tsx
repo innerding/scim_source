@@ -15,6 +15,18 @@ const WORKER_URL = import.meta.env.VITE_WORKER_URL as string | undefined;
 const SHELL_KB = 138;
 const SHELL_BYTES = SHELL_KB * 1024;
 
+// Echte gzip-Größe eines Strings (Transfer-Größe), via CompressionStream. null,
+// wenn die API fehlt (älterer Browser) oder etwas schiefgeht.
+async function gzipLen(text: string): Promise<number | null> {
+  try {
+    const CS = (globalThis as { CompressionStream?: typeof CompressionStream }).CompressionStream;
+    if (!CS) return null;
+    const stream = new Blob([text]).stream().pipeThrough(new CS('gzip'));
+    const buf = await new Response(stream).arrayBuffer();
+    return buf.byteLength;
+  } catch { return null; }
+}
+
 const QR_LABEL: CSSProperties = { fontSize: 10, fontWeight: 700, color: '#4a5568', marginBottom: 4 };
 
 const fmtKB = (b: number | null) => (b == null ? '' : `${(b / 1024).toFixed(1)} KB`);
@@ -65,25 +77,24 @@ function SizeRow({ label, bytes, note, bold, est }: { label: string; bytes: numb
   );
 }
 
-// Paket-Größen je Rep: Shell (geteilt) + Origin (Bundle) + Anthem (Snapshot).
-function SizeBreakdown({ origin, anthemBytes }: { origin: OriginMeta | null; anthemBytes: number | null }) {
-  const originBytes = origin?.bytes ?? null;
-  const firstDelivery = (originBytes != null)
-    ? SHELL_BYTES + originBytes + (anthemBytes ?? 0)
+// Paket-Größen je Rep — ALLES gzip (echte Transfer-Größe): Shell (geteilt) +
+// Origin (Bundle) + Anthem (Snapshot).
+function SizeBreakdown({ originGzip, anthemGzip }: { originGzip: number | null; anthemGzip: number | null }) {
+  const firstDelivery = (originGzip != null)
+    ? SHELL_BYTES + originGzip + (anthemGzip ?? 0)
     : null;
   return (
     <div style={{
       borderTop: '1px dashed #e2e8f0', paddingTop: 6, marginTop: 2,
       fontSize: 10.5, fontFamily: 'ui-monospace, Menlo, monospace', lineHeight: 1.7,
     }}>
-      <div style={{ color: '#a0aec0', marginBottom: 2 }}>Paket-Größen</div>
-      <SizeRow label="Shell" bytes={SHELL_BYTES} note="einkompiliert · einmalig (gzip)" est />
-      <SizeRow label="Origin" bytes={originBytes} note="Bundle · je Version" />
-      <SizeRow label="Anthem" bytes={anthemBytes} note="Snapshot · alle 5 Min" est />
+      <div style={{ color: '#a0aec0', marginBottom: 2 }}>Paket-Größen <span style={{ fontSize: 9, color: '#cbd5e0' }}>· gzip (Transfer)</span></div>
+      <SizeRow label="Shell" bytes={SHELL_BYTES} note="einkompiliert · einmalig" est />
+      <SizeRow label="Origin" bytes={originGzip} note="Bundle · je Version" />
+      <SizeRow label="Anthem" bytes={anthemGzip} note="Snapshot · alle 5 Min" />
       <div style={{ borderTop: '1px solid #edf2f7', margin: '3px 0', width: 156 }} />
-      <SizeRow label="Erstlieferung" bytes={firstDelivery} bold est />
-      <SizeRow label="laufend" bytes={anthemBytes} note="Bestandsnutzer · 5 Min" est />
-      <div style={{ color: '#cbd5e0', marginTop: 2, fontSize: 9.5 }}>Roh-Größen; Transfer wird gzip-komprimiert.</div>
+      <SizeRow label="Erstlieferung" bytes={firstDelivery} bold />
+      <SizeRow label="laufend" bytes={anthemGzip} note="Bestandsnutzer · 5 Min" />
     </div>
   );
 }
@@ -100,23 +111,35 @@ function RepresentationRow({
   const repId = canonicalRepId(rep.id);
   const [origin, setOrigin] = useState<OriginMeta | null>(null);
   const [presence, setPresence] = useState<PresenceStatus | null>(null);
-  const [anthemBytes, setAnthemBytes] = useState<number | null>(null);
+  const [anthemGzip, setAnthemGzip] = useState<number | null>(null);
+  const [originGzip, setOriginGzip] = useState<number | null>(null);
   const [errored, setErrored] = useState(false);
 
   useEffect(() => {
     let alive = true;
     const tick = () => {
-      Promise.allSettled([fetchOriginMeta(repId), fetchPresence(repId), fetchAnthem(repId)]).then(([o, p, a]) => {
+      Promise.allSettled([fetchOriginMeta(repId), fetchPresence(repId), fetchAnthem(repId)]).then(async ([o, p, a]) => {
         if (!alive) return;
         if (o.status === 'fulfilled') { setOrigin(o.value); setErrored(false); } else setErrored(true);
         if (p.status === 'fulfilled') setPresence(p.value);
-        // Anthem-Snapshot-Größe (presence-gegated; kalt = 425 → null).
-        setAnthemBytes(a.status === 'fulfilled' ? JSON.stringify(a.value).length : null);
+        // Anthem-Snapshot → echte gzip-Größe (presence-gegated; kalt = 425 → null).
+        const ag = a.status === 'fulfilled' ? await gzipLen(JSON.stringify(a.value)) : null;
+        if (alive) setAnthemGzip(ag);
       });
     };
     tick();
     const id = setInterval(tick, 15000);
     return () => { alive = false; clearInterval(id); };
+  }, [repId]);
+
+  // Origin-Bundle EINMAL holen (statisch je Version) und gzippen → Transfer-Größe.
+  useEffect(() => {
+    let alive = true;
+    fetch(`${WORKER_URL}/api/origin/${repId}/bundle`)
+      .then((r) => (r.ok ? r.text() : null))
+      .then(async (txt) => { if (alive) setOriginGzip(txt ? await gzipLen(txt) : null); })
+      .catch(() => { if (alive) setOriginGzip(null); });
+    return () => { alive = false; };
   }, [repId]);
 
   const live = origin?.bundlePublished ?? false;
@@ -155,7 +178,7 @@ function RepresentationRow({
           {live ? `● aktives Origin-Bundle v${version ?? '?'}${origin?.bundleUploadedAt ? ` · ${fmtUploaded(origin.bundleUploadedAt)}` : ''}` : '○ kein aktives Origin-Bundle'}
         </div>
         <AnthemLayerLine origin={origin} presence={presence} errored={errored} />
-        <SizeBreakdown origin={origin} anthemBytes={anthemBytes} />
+        <SizeBreakdown originGzip={originGzip} anthemGzip={anthemGzip} />
       </div>
     </div>
   );
