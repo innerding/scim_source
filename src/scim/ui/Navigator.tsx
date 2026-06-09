@@ -33,6 +33,7 @@ const useNavTheme = () => useContext(NavThemeContext);
 import type { RepresentBuildFace, RepresentBuildArc, RepresentBuildSickle } from './RepresentBuildTetrahedron';
 import type { TabId } from './panelRegistry';
 import NavTransmissionField from './NavTransmissionField';
+import Scim3Wordmark from './Scim3Wordmark';
 import NavMetaSpace from './NavMetaSpace';
 import NavDepthTetraeder from './NavDepthTetraeder';
 import NavTrashTruck from './NavTrashTruck';
@@ -447,15 +448,14 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
           overflowY: 'auto', padding: '12px 6px', position: 'relative',
           transition: 'background 0.2s, border-color 0.2s',
         }}>
-          {/* Marke des Editor-Dashboards — links, so breit wie das Control. */}
+          {/* Marke des Editor-Dashboards — SCIM3-Wortmarke wie im Intro, Pathworks
+              direkt daneben; Gap zu den Rändern der Navigator-Spalte. */}
           <div style={{
-            width: 205, flexShrink: 0, marginTop: 4, marginBottom: 2,
-            display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
-            fontFamily: 'monospace', fontWeight: 800, fontSize: 16, color: 'rgba(251,191,36,0.92)',
+            width: '100%', boxSizing: 'border-box', padding: '0 14px', marginTop: 4, marginBottom: 2,
+            display: 'flex', alignItems: 'center', gap: 9, flexShrink: 0,
           }}>
-            <span>SCIM3</span>
-            <span style={{ opacity: 0.5 }}>·</span>
-            <span>Pathworks</span>
+            <Scim3Wordmark height={24} />
+            <span style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: 15, color: 'rgba(251,191,36,0.92)' }}>Pathworks</span>
           </div>
           <div style={{ height: 262, flexShrink: 0 }} />
           <RegioDashboardControl activeId={activeId} onJumpTo={go} variant="dark" size={205} arcsDeco toolsEnabled={!!boundRep} />
