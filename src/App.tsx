@@ -8,6 +8,7 @@ import { RoleContext, UserNameContext, ModeSwitchContext, ROLE_ORDER, isEditorRo
 import type { Role } from './scim/ui/RoleContext';
 import type { TabId } from './scim/ui/panelRegistry';
 import RepresentBuildManualModal from './scim/ui/RepresentBuildManualModal';
+import EditorManualModal from './scim/ui/EditorManualModal';
 import { RepresentationProvider } from './runtime/repContext';
 import { WorkspaceNavProvider } from './scim/ui/workspaceNav';
 import Scim3Footer from './scim/ui/Scim3Footer';
@@ -32,15 +33,19 @@ export default function App() {
   const [mapCollapsed, setMapCollapsed] = useState(true);
   const [mapEverOpened, setMapEverOpened] = useState(false);
   const [showManual, setShowManual] = useState(false);
-  // Analyst-Geste: bei den ersten 2 Anmeldungen eines Analysten das Usage-Manual
-  // automatisch öffnen (Einstiegshilfe). Zähler in localStorage; Operator unberührt.
+  // Einstiegshilfe: bei den ersten 2 Anmeldungen automatisch das passende Manual
+  // öffnen — Analyst → voller Atlas, Editoren → Editor-Handbuch. Operator unberührt.
+  // Eigener Zähler je Manual-Art (localStorage).
   useEffect(() => {
-    if (role !== 'analyst') return;
+    if (!role) return;
+    const key = role === 'analyst' ? 'scim3_manual_seen'
+      : isEditorRole(role) ? 'scim3_editor_manual_seen' : null;
+    if (!key) return;
     try {
-      const seen = Number(localStorage.getItem('scim3_manual_seen') || '0');
+      const seen = Number(localStorage.getItem(key) || '0');
       if (seen < 2) {
         setShowManual(true);
-        localStorage.setItem('scim3_manual_seen', String(seen + 1));
+        localStorage.setItem(key, String(seen + 1));
       }
     } catch { /* noop */ }
   }, [role]);
@@ -155,7 +160,9 @@ export default function App() {
             />
           )}
         </div>
-        {showManual && <RepresentBuildManualModal onClose={() => setShowManual(false)} />}
+        {showManual && (isEditorRole(role)
+          ? <EditorManualModal onClose={() => setShowManual(false)} />
+          : <RepresentBuildManualModal onClose={() => setShowManual(false)} />)}
       </div>
       <Scim3Footer realRole={role} />
       </div>

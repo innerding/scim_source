@@ -449,6 +449,19 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
           overflowY: 'auto', padding: '12px 6px', position: 'relative',
           transition: 'background 0.2s, border-color 0.2s',
         }}>
+          {/* Editor-Handbuch öffnen (Gegenstück zum Reader der Kosmologie). */}
+          {onManualOpen && (
+            <button
+              onClick={onManualOpen}
+              title="Editor-Handbuch"
+              style={{
+                position: 'absolute', top: 8, right: 8, zIndex: 2, width: 20, height: 20,
+                borderRadius: '50%', cursor: 'pointer', fontSize: 11, fontWeight: 800,
+                border: '1px solid rgba(251,191,36,0.5)', background: 'transparent',
+                color: 'rgba(251,191,36,0.85)', lineHeight: 1, padding: 0,
+              }}
+            >?</button>
+          )}
           {/* Marke des Editor-Dashboards — SCIM3-Wortmarke wie im Intro, breit über
               die Spalte (Gap zu den Rändern), Pathworks darunter. Auf ~Höhe der
               „Meine Representations"-Box weiter unten. */}
