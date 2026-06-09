@@ -77,12 +77,30 @@ export default function EditorControlGrid({ activeId, onJumpTo, toolsEnabled }: 
   };
 
   const row3: React.CSSProperties = { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 };
+  const subStyle: React.CSSProperties = {
+    fontSize: 8.5, fontWeight: 700, letterSpacing: '0.09em', textTransform: 'uppercase',
+    color: 'rgba(255,255,255,0.4)', margin: '0 0 4px', fontFamily: 'system-ui, sans-serif',
+  };
 
   return (
     <div style={{ width: '100%', boxSizing: 'border-box', padding: '0 16px', flexShrink: 0 }}>
-      <div style={{ ...row3, marginBottom: 6 }}>{INFO.map((it) => <div key={it.id}>{cell(it, 'info')}</div>)}</div>
-      <div style={{ marginBottom: 6 }}>{cell(HUB, 'hub')}</div>
-      <div style={row3}>{TOOLS.map((it) => <div key={it.id}>{cell(it, 'tool')}</div>)}</div>
+      {/* Gerahmter Block mit Titel + Zeilen-Subtitel (Orientierung für den Editor). */}
+      <div style={{
+        position: 'relative', border: '1px solid rgba(255,255,255,0.16)', borderRadius: 9,
+        padding: '15px 10px 11px', marginTop: 4,
+      }}>
+        <div style={{
+          position: 'absolute', top: -7, left: 11, background: '#03050f', padding: '0 6px',
+          fontSize: 9.5, fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase',
+          color: 'rgba(200,215,235,0.72)',
+        }}>Editor-Controls</div>
+        <div style={subStyle}>Status</div>
+        <div style={{ ...row3, marginBottom: 8 }}>{INFO.map((it) => <div key={it.id}>{cell(it, 'info')}</div>)}</div>
+        <div style={subStyle}>Registry</div>
+        <div style={{ marginBottom: 8 }}>{cell(HUB, 'hub')}</div>
+        <div style={subStyle}>Tools</div>
+        <div style={row3}>{TOOLS.map((it) => <div key={it.id}>{cell(it, 'tool')}</div>)}</div>
+      </div>
 
       {/* Erklär-Bereich: aktiver bzw. gehoverter Eintrag (ersetzt die Button-Texte). */}
       <div style={{
