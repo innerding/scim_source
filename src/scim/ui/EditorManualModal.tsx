@@ -63,6 +63,17 @@ DEINE RECHTE
 
 ────────────────────────────────────────────────────────
 
+PAKET-GRÖSSEN  (Beispiel Lichtenberg · gzip · ohne px-Bilder)
+
+  Shell           138 KB   einkompiliert · einmalig
+  Origin           49 KB   Bundle (648 Segmente) · je Version
+  Anthem          3,3 KB   Snapshot · alle 5 Min
+  ─────────────────────
+  Erstlieferung  ~190 KB   (Shell + Origin + Anthem)
+  laufend         3,3 KB   Bestandsnutzer · nur Anthem / 5 Min
+
+────────────────────────────────────────────────────────
+
   Systemarchitektur ab 09.2025 · Implementierung ~1 Monat
   Dietmar Broda
 

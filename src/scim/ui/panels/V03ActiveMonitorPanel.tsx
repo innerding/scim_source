@@ -65,10 +65,10 @@ function AnthemLayerLine({ origin, presence, errored }: { origin: OriginMeta | n
 }
 
 // Erwartete Anthem-gzip-Größe aus der Segmentzahl, wenn die Rep kalt ist (kein
-// Live-Snapshot). Grobe Schätzung: ~120 B Metadaten + ~2 B/Segment (2-Dezimal-
-// Loads, gzip-komprimiert). Nur ungefähr — daher in Klammern mit „~".
+// Live-Snapshot). Grob ~150 B Metadaten + ~5 B/Segment — kalibriert an der echten
+// Lichtenberg-Messung (648 Segmente → 3,3 KB gzip). Nur ungefähr → Klammern + „~".
 function anthemEstBytes(stretches: number | null): number | null {
-  return stretches != null ? Math.round(120 + stretches * 2.2) : null;
+  return stretches != null ? Math.round(150 + stretches * 5) : null;
 }
 
 // Eine Größen-Zeile im Paket-Breakdown. estBytes = ungefährer Erwartungswert,
@@ -105,7 +105,7 @@ function SizeBreakdown({ originGzip, anthemGzip, stretches }: {
       borderTop: '1px dashed #e2e8f0', paddingTop: 6, marginTop: 2,
       fontSize: 10.5, fontFamily: 'ui-monospace, Menlo, monospace', lineHeight: 1.7,
     }}>
-      <div style={{ color: '#a0aec0', marginBottom: 2 }}>Paket-Größen <span style={{ fontSize: 9, color: '#cbd5e0' }}>· gzip (Transfer)</span></div>
+      <div style={{ color: '#a0aec0', marginBottom: 2 }}>Paket-Größen <span style={{ fontSize: 9, color: '#cbd5e0' }}>· gzip · ohne px-Bilder</span></div>
       <SizeRow label="Shell" bytes={SHELL_BYTES} note="einkompiliert · einmalig" est />
       <SizeRow label="Origin" bytes={originGzip} note="Bundle · je Version" />
       <SizeRow label="Anthem" bytes={anthemGzip} estBytes={anthemEst} note="Snapshot · alle 5 Min" />
