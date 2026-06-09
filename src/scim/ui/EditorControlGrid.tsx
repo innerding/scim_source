@@ -4,98 +4,31 @@
 //   Hub-Button (breit, per Default aktiv)          — die Heim-Drehscheibe
 //   Werkzeug-Reihe (Drawer · Katalog · Schwellen)  — an die gebundene Rep gekoppelt
 // KEINE Button-Beschriftung: nur zentrierte Icons + Tooltips; der Erklär-Bereich
-// darunter beschreibt den aktiven/gehoverten Eintrag. Icons = ein homogenes, selbst
-// gezeichnetes Line-Set (24×24, currentColor, gleiche Strichstärke/Rundungen).
+// darunter beschreibt den aktiven/gehoverten Eintrag. Die Icons kommen aus DERSELBEN
+// Quelle wie die Panel-Header (PanelIcon / PANEL_GLYPHS, keyed nach Panel-ID) →
+// Button-Icon und Header-Icon sind je Panel garantiert identisch.
 import { useState } from 'react';
+import PanelIcon from './PanelIcon';
 
-interface Item { id: string; label: string; icon: IconName; desc: string }
-type IconName = 'hub' | 'vorschau' | 'transfer' | 'versionen' | 'drawer' | 'katalog' | 'schwellen';
+interface Item { id: string; label: string; desc: string }
 
 const HUB: Item = {
-  id: 'workspace', label: 'Meine Representations', icon: 'hub',
+  id: 'workspace', label: 'Meine Representations',
   desc: 'Jede Representation ist die Einheit — über sie öffnest du ihre Werkzeuge (Drawer · Katalog · Schwellen). Speichern bleibt lokal; mit »Senden zur Review« geht sie an den Operator zum Committen.',
 };
 const INFO: Item[] = [
-  { id: 'V03', label: 'Vorschau', icon: 'vorschau', desc: 'Monitor & QR — wie die Rep am Gerät ausgeliefert läuft.' },
-  { id: 'P11', label: 'Transfer', icon: 'transfer', desc: 'Ausspielen nach R2 — der Operator-Schritt. Für dich: zur Info.' },
-  { id: 'V01', label: 'Versionen', icon: 'versionen', desc: 'Versions-Bibliothek & Rollback der ausgespielten Origin-Versionen.' },
+  { id: 'V03', label: 'Vorschau', desc: 'Monitor & QR — wie die Rep am Gerät ausgeliefert läuft.' },
+  { id: 'P11', label: 'Transfer', desc: 'Ausspielen nach R2 — der Operator-Schritt. Für dich: zur Info.' },
+  { id: 'V01', label: 'Versionen', desc: 'Versions-Bibliothek & Rollback der ausgespielten Origin-Versionen.' },
 ];
 const TOOLS: Item[] = [
-  { id: 'geometry_editor', label: 'Drawer', icon: 'drawer', desc: 'Boundary, Wegnetz und POIs der Rep auf der Karte zeichnen.' },
-  { id: 'catalog', label: 'Katalog', icon: 'katalog', desc: 'POI-Bestand der Rep kuratieren (Buckets, Subkategorien).' },
-  { id: 'P01', label: 'Schwellen', icon: 'schwellen', desc: 'Thresholds — Farb-/Last-Schwellen der Rep.' },
+  { id: 'geometry_editor', label: 'Drawer', desc: 'Boundary, Wegnetz und POIs der Rep auf der Karte zeichnen.' },
+  { id: 'catalog', label: 'Katalog', desc: 'POI-Bestand der Rep kuratieren (Buckets, Subkategorien).' },
+  { id: 'P01', label: 'Schwellen', desc: 'Thresholds — Farb-/Last-Schwellen der Rep.' },
 ];
 const ALL = [HUB, ...INFO, ...TOOLS];
 
 const AMBER = 'rgba(251,191,36,0.95)';
-
-// ── Homogenes Line-Icon-Set (24×24, stroke=currentColor) ────────────────────
-function Icon({ name, size }: { name: IconName; size: number }) {
-  const common = {
-    width: size, height: size, viewBox: '0 0 24 24', fill: 'none',
-    stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round' as const,
-    strokeLinejoin: 'round' as const, style: { display: 'block' as const },
-  };
-  switch (name) {
-    case 'hub':
-      return (
-        <svg {...common}>
-          <circle cx="12" cy="12" r="2.4" /><circle cx="12" cy="4.6" r="1.7" />
-          <circle cx="5" cy="17.2" r="1.7" /><circle cx="19" cy="17.2" r="1.7" />
-          <line x1="12" y1="9.6" x2="12" y2="6.3" />
-          <line x1="10" y1="13.4" x2="6.4" y2="15.8" />
-          <line x1="14" y1="13.4" x2="17.6" y2="15.8" />
-        </svg>
-      );
-    case 'vorschau':
-      return (
-        <svg {...common}>
-          <rect x="7" y="3" width="10" height="18" rx="2.2" />
-          <line x1="10.5" y1="18.3" x2="13.5" y2="18.3" />
-        </svg>
-      );
-    case 'transfer':
-      return (
-        <svg {...common}>
-          <line x1="12" y1="15.5" x2="12" y2="5.5" />
-          <polyline points="8 9 12 5 16 9" />
-          <line x1="6" y1="18.5" x2="18" y2="18.5" />
-        </svg>
-      );
-    case 'versionen':
-      return (
-        <svg {...common}>
-          <polygon points="12 3.5 20 7.5 12 11.5 4 7.5" />
-          <polyline points="4 11.5 12 15.5 20 11.5" />
-          <polyline points="4 15.5 12 19.5 20 15.5" />
-        </svg>
-      );
-    case 'drawer':
-      return (
-        <svg {...common}>
-          <path d="M17 3 a2.83 2.83 0 0 1 4 4 L7.5 20.5 L2 22 L3.5 16.5 Z" />
-          <line x1="14.5" y1="5.5" x2="18.5" y2="9.5" />
-        </svg>
-      );
-    case 'katalog':
-      return (
-        <svg {...common}>
-          <line x1="9" y1="6" x2="20" y2="6" /><line x1="9" y1="12" x2="20" y2="12" /><line x1="9" y1="18" x2="20" y2="18" />
-          <circle cx="4.6" cy="6" r="1.1" fill="currentColor" stroke="none" />
-          <circle cx="4.6" cy="12" r="1.1" fill="currentColor" stroke="none" />
-          <circle cx="4.6" cy="18" r="1.1" fill="currentColor" stroke="none" />
-        </svg>
-      );
-    case 'schwellen':
-      return (
-        <svg {...common}>
-          <line x1="4" y1="7" x2="20" y2="7" /><circle cx="9" cy="7" r="2.1" />
-          <line x1="4" y1="12" x2="20" y2="12" /><circle cx="15" cy="12" r="2.1" />
-          <line x1="4" y1="17" x2="20" y2="17" /><circle cx="7" cy="17" r="2.1" />
-        </svg>
-      );
-  }
-}
 
 export default function EditorControlGrid({ activeId, onJumpTo, toolsEnabled }: {
   activeId: string; onJumpTo: (id: string) => void; toolsEnabled: boolean;
@@ -138,7 +71,7 @@ export default function EditorControlGrid({ activeId, onJumpTo, toolsEnabled }: 
         onMouseEnter={() => setHover(it.id)} onMouseLeave={() => setHover(null)}
         style={{ ...base, ...tone, ...dims }}
       >
-        <Icon name={it.icon} size={iconSize} />
+        <PanelIcon id={it.id} size={iconSize} />
       </button>
     );
   };

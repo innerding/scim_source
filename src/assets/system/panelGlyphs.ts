@@ -20,7 +20,7 @@ const INNER: Record<string, string> = {
   P08: '<path d="M13 3L6 13h5l-1 8 8-11h-5z"/>',                                                            // Deep-Shell — Blitz
   P09: '<rect x="3" y="9" width="18" height="6" rx="3"/><line x1="12" y1="9" x2="12" y2="15"/>',            // Origin-Capsuler — Pille
   P10: '<circle cx="6" cy="18" r="2" fill="currentColor" stroke="none"/><circle cx="18" cy="6" r="2" fill="currentColor" stroke="none"/><path d="M6 16c0-6 12-4 12-8"/>', // Route+Layer — Route
-  P11: '<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5"/><line x1="12" y1="12" x2="12" y2="21"/>', // Sensus Core — Paket
+  P11: '<rect x="3" y="9.5" width="12" height="10.5" rx="1.5"/><line x1="3" y1="13" x2="15" y2="13"/><line x1="9" y1="13" x2="9" y2="20"/><path d="M15 9 L20.5 3.5"/><polyline points="16.5 3.5 20.5 3.5 20.5 7.5"/>', // Sensus Core — Paket + Transfer-Pfeil
   P12: '<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9l6 6"/><path d="M15 9l-6 6"/>',       // boxed-x
   P13: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/>',                                    // Doppelring
   P14: '<path d="M12 16V5"/><path d="M7 10l5-5 5 5"/><path d="M5 19h14"/>',                                  // Upload
@@ -36,7 +36,8 @@ const INNER: Record<string, string> = {
   V02: '<path d="M12 21s6.5-5.5 6.5-11A6.5 6.5 0 0 0 5.5 10c0 5.5 6.5 11 6.5 11z"/><circle cx="12" cy="10" r="2.3"/>', // Region — Pin
   V03: '<rect x="3" y="4" width="18" height="13" rx="2"/><line x1="9" y1="21" x2="15" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>', // Monitor
   // ── Komposit-Faces / Substrat ──
-  catalog: '<rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/>', // Katalog — Raster
+  catalog: '<line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4.6" cy="6" r="1.2" fill="currentColor" stroke="none"/><circle cx="4.6" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="4.6" cy="18" r="1.2" fill="currentColor" stroke="none"/>', // Katalog — Liste mit Punkten
+  workspace: '<circle cx="12" cy="12" r="2.4"/><circle cx="12" cy="4.6" r="1.7"/><circle cx="5" cy="17.2" r="1.7"/><circle cx="19" cy="17.2" r="1.7"/><line x1="12" y1="9.6" x2="12" y2="6.3"/><line x1="10" y1="13.4" x2="6.4" y2="15.8"/><line x1="14" y1="13.4" x2="17.6" y2="15.8"/>', // Pathworks Hub — Drehscheibe
   geometry_editor: '<path d="M5 19l1-4 9-9 3 3-9 9-4 1z"/><path d="M14 6l3 3"/>',                          // Drawer — Stift
   system: '<circle cx="12" cy="12" r="3.2"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/>', // System — Zahnrad
   ai_interface: '<path d="M5 5h14a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H10l-4 4v-4H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/><circle cx="9" cy="10" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="10" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="10" r="1" fill="currentColor" stroke="none"/>', // AI — Chat
