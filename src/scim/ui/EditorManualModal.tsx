@@ -63,6 +63,9 @@ DEINE RECHTE
 
 ────────────────────────────────────────────────────────
 
+  Systemarchitektur ab 09.2025 · Implementierung ~1 Monat
+  Dietmar Broda
+
   Geh deinen Weg.
 `;
 

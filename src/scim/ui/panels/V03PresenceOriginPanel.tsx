@@ -49,7 +49,7 @@ export default function V03PresenceOriginPanel() {
           display: 'inline-block', padding: '2px 8px', fontSize: 10, fontFamily: 'monospace',
           color: '#2b6cb0', background: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: 4,
         }}>
-          V03 · t1 · Presence-Origin (Call-Log)
+          V03 · t2 · Presence-Origin (Call-Log)
         </div>
         <AnthemCycleBadge />
       </div>

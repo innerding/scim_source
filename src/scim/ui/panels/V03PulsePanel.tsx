@@ -94,7 +94,7 @@ export default function V03PulsePanel() {
           display: 'inline-block', padding: '2px 8px', fontSize: 10, fontFamily: 'monospace',
           color: '#2b6cb0', background: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: 4,
         }}>
-          V03 · t5 · Puls (Wahrheitskreislauf)
+          V03 · t1 · Puls (Wahrheitskreislauf)
         </div>
         <AnthemCycleBadge />
       </div>
