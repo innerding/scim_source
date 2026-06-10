@@ -29,6 +29,17 @@ const CATEGORY_META: Record<AnnotationCategory, { label: string; color: string; 
 // Initial seed annotations — operator extends these in the UI
 const SEED_ANNOTATIONS: Annotation[] = [
 
+  // ── ANALYSE — Routen-Rendering passt nicht zum Colour-Mesh (2026-06-11) ──
+
+  {
+    id: 'ann_133',
+    category: 'adr',
+    label: 'ANALYSE — Route (Whole-Route-Breach-Boolean) passt nicht zum per-Segment Colour-Mesh',
+    content: 'ROUTEN-RENDERING-ANALYSE (2026-06-11, Operator-Frage „passt es noch zum Colour-Mesh?" → NEIN). — WAS renderRoute (shell-kit/route) ZEICHNET: pro Route EINE farbige Linie über weißer Unterlage + Nummern-Marken. Farbe/Strichelung an EINEM Boolean `breach`: im Comfort = `#1b2a6b` Navy DURCHGEZOGEN · Breach = `#d2502a` orangebraun STRICHLIERT (`10 8`). `isBreach` = routeBreachesComfort(endgültige Route) → sobald IRGENDEIN über-Comfort-Segment drin ist, wird die GANZE Linie orange-strichliert (= Operator „die Strichlierte stellt meistens die ganze Route dar"; „meistens", weil Stufe-1 bis zur Sättigung detouriert, ann_130 → Endroute breacht fast immer). — KERN-BEFUND: ZWEI getrennte, widersprüchliche Comfort-Darstellungen. (1) Colour-Mesh = Comfort PRO 10m-Segment (eingefärbt; zu volle Segmente fast unsichtbar ausgeblendet, opacity 0.12). (2) Route = Comfort als EIN Boolean für die GANZE Linie (alles-oder-nichts). Zwei GRANULARITÄTEN überlagern sich → redundant + unlogisch. Das Routen-Modell stammt aus der bak-test-Zeit VOR dem erneuerten Mesh, wurde nie angepasst. — DREI-LINIEN-RÄTSEL (Operator sieht dunkle + orange-strichlierte + orange-DURCHGEZOGENE): renderRoute erzeugt nur Navy-durchgezogen ODER Orange-strichliert. Die orange-DURCHGEZOGENE kommt NICHT aus dem Routen-Code → verdächtig; mögliche Quellen: weiße Unterlage, Mesh-Effekt, Render-Rest. NOCH VISUELL ZU VERIFIZIEREN (Preview), nicht geraten. dunkle Linie = Navy-Route ODER dunkel-violette Hochlast-Mesh-Segmente. — SOLL (für deliberate Routing ann_130): EINE Comfort-Sprache statt zwei — das MESH trägt „was ist voll" (pro Segment, schon da), die ROUTE wird neutraler Pfad-Indikator (zeigt nur WO man geht), der Whole-Route-Breach-Strich FÄLLT WEG. Deckt sich mit ann_132 (Route=Linie · überlastetes Segment=zappelt am Mesh · Umweg=blinkt). → kein Drei-Linien-Rätsel, Last wird nur an EINER Stelle (Mesh) erzählt. Bezug: ann_130 (Routing=Mock), ann_132 (Animations-Taxonomie), ann_128 (per-Segment-Skala).',
+    related_panel: 'R07',
+    date: '2026-06-11',
+  },
+
   // ── GROBES MODELL — 2 Concerns (Path/Rest) + Map-Animations-Taxonomie (2026-06-11) ──
 
   {
