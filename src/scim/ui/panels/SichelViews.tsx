@@ -5,9 +5,12 @@
 
 import type { ReactNode } from 'react';
 import { REPRESENTATIONS, wegnetzById, geometryById } from '../../workspace/workspace.registry';
-import { buildOriginPackage, MVP_RESAMPLE_TARGET_METERS } from '../../sensus/originPackage';
+import { buildOriginPackage, MVP_RESAMPLE_TARGET_METERS, ORIGIN_STAGE_COUNT } from '../../sensus/originPackage';
 import { fmtBytes } from '../../sensus/formatBytes';
 import { playReveal } from '../../sensus/revealPrep';
+import { effectiveRepColour } from '../../sensus/colourSettings';
+import { slugify } from '../../../runtime/router';
+import { resampleScale, colorAt, type ScaleSpec } from 'shell-kit';
 
 // Demo-Auflösung: dieselbe Quelle wie P11 (Lichtenberg bzw. erste Representation).
 function resolveDemo() {
@@ -158,6 +161,84 @@ function NetSvg({ stretches, nodes = false, bounds }: {
         <circle key={`${si}-${pi}`} cx={X(lon)} cy={Y(lat)} r={r} fill="#3182ce" fillOpacity={0.7} />
       )))}
     </svg>
+  );
+}
+
+// ── P09 Colour-Sampling (Coloursample) · Schauglas ──────────────────────────
+// Das Farb-Pendant zum Wegnetz-Sampling: der autorierte (stetige) Gradient wird
+// beim Publish in ORIGIN_STAGE_COUNT gleiche Stufen-Felder zerschnitten
+// (shell-kit resampleScale). Macht sichtbar, was auf der Karte unsichtbar bleibt:
+// der gelieferte Verlauf ist FAST identisch (colorAtBorders interpoliert durch die
+// Feld-Mitten) — die Diskretisierung steckt in den 6 STUFEN, nicht im Pixel.
+function resolveDemoColour() {
+  const rep = REPRESENTATIONS.find((r) => /lichtenberg/i.test(r.id) || /lichtenberg/i.test(r.name)) ?? REPRESENTATIONS[0];
+  const geo = rep?.geometry_id ? geometryById(rep.geometry_id) : undefined;
+  const regionSlug = slugify(geo?.region ?? '') || 'default';
+  const c = effectiveRepColour(regionSlug);
+  const authored: ScaleSpec = { stops: c.stops, borders: c.borders, spreizung: c.spreizung, verjuengung: c.verjuengung };
+  const sampled = resampleScale(authored, ORIGIN_STAGE_COUNT);
+  return { rep, regionSlug, authored, sampled };
+}
+
+// Stetiger Verlauf einer Skala als CSS-linear-gradient (colorAt an N Stützstellen).
+function gradientCss(scale: ScaleSpec, n = 48): string {
+  const parts: string[] = [];
+  for (let i = 0; i < n; i++) { const t = i / (n - 1); parts.push(`${colorAt(t, scale)} ${(t * 100).toFixed(1)}%`); }
+  return `linear-gradient(to right, ${parts.join(', ')})`;
+}
+
+function GradientBar({ scale, label, note }: { scale: ScaleSpec; label: string; note: string }) {
+  return (
+    <div style={{ margin: '0 0 14px' }}>
+      <div style={{ fontSize: 11.5, fontWeight: 700, color: '#2d3748', marginBottom: 3 }}>{label}</div>
+      <div style={{ height: 26, borderRadius: 5, background: gradientCss(scale), border: '1px solid #e2e8f0' }} />
+      <div style={{ fontSize: 10.5, color: '#a0aec0', marginTop: 3 }}>{note}</div>
+    </div>
+  );
+}
+
+export function ColoursampleView() {
+  const { rep, authored, sampled } = resolveDemoColour();
+  const n = sampled.stops.length;
+  const borders = sampled.borders ?? [];
+  // Feld-Last-Bereiche [unten, oben) je Stufe.
+  const range = (i: number) => {
+    const lo = i === 0 ? 0 : borders[i - 1];
+    const hi = i === n - 1 ? 1 : borders[i];
+    return `${lo.toFixed(2)}–${hi.toFixed(2)}`;
+  };
+  return (
+    <div style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 600 }}>
+      <Badge text={`P09 · Origin-Capsuler · Colour-Sampling → ${n} Stufen · live`} />
+      <div style={{ fontSize: 11, color: '#718096', margin: '0 0 14px', lineHeight: 1.5 }}>
+        Das Farb-Pendant zum Wegnetz-Sampling: der autorierte (stetige) Gradient von
+        „{rep?.name ?? '—'}" wird beim Publish in <strong>{n} gleich große Stufen-Felder</strong> zerschnitten
+        (<code>resampleScale</code>) — jedes bekommt die treffendste Farbe an seiner Feld-Mitte. Darum sieht
+        das Mesh fast gleich aus: die Diskretisierung steckt in den <strong>Stufen</strong>, die <code>stageOf</code>
+        liest, nicht in der gemalten Farbe.
+      </div>
+
+      <GradientBar scale={authored} label="① Autoriert (stetig)" note={`Editor-Gradient · ${authored.stops.length} Farben + Spreizung — die feine Vorlage.`} />
+      <GradientBar scale={sampled} label="② Geliefert (Mesh)" note="Was die Karte zeigt: colorAt interpoliert durch die Feld-Mitten → fast identisch zu ①." />
+
+      <div style={{ fontSize: 11.5, fontWeight: 700, color: '#2d3748', marginBottom: 4 }}>③ {n} Stufen <span style={{ fontWeight: 400, color: '#a0aec0' }}>· was stageOf sieht (unsichtbar auf der Karte)</span></div>
+      <div style={{ display: 'flex', borderRadius: 5, overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+        {sampled.stops.map((col, i) => (
+          <div key={i} style={{ flex: 1, height: 46, background: col, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', paddingBottom: 3 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#fff', textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}>{i + 1}</span>
+          </div>
+        ))}
+      </div>
+      <div style={{ display: 'flex', marginTop: 2 }}>
+        {sampled.stops.map((_, i) => (
+          <div key={i} style={{ flex: 1, textAlign: 'center', fontSize: 9.5, fontFamily: 'ui-monospace, Menlo, monospace', color: '#a0aec0' }}>{range(i)}</div>
+        ))}
+      </div>
+      <div style={{ fontSize: 10.5, color: '#a0aec0', marginTop: 10, lineHeight: 1.5 }}>
+        Gleichmäßige Grenzen <code>[{borders.map((b) => b.toFixed(2)).join(', ')}]</code> · neutrale Spreizung.
+        Ein Knopf: <code>ORIGIN_STAGE_COUNT = {ORIGIN_STAGE_COUNT}</code>. Wirkt im Bundle erst nach Republish.
+      </div>
+    </div>
   );
 }
 

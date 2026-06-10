@@ -289,6 +289,7 @@ export const PANEL_REGISTRY: PanelDescriptor[] = [
       { id: 't2', label: 'cap origin-mesh', icon: '▦' },
       { id: 't3', label: 'cap origin-asset-set', icon: '◫' },
       { id: 't4', label: 'cap origin-poi-set', icon: '⊙' },
+      { id: 't5', label: 'cap origin-colour', icon: '◧' },
     ],
   },
   {

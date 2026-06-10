@@ -18,7 +18,7 @@ import SensusCorePipeline from './panels/SensusCorePipeline';
 import GlobeSwitcherView from './panels/GlobeSwitcherView';
 import CollectorView from './panels/CollectorView';
 import TransferView from './panels/TransferView';
-import { BoundaryView, WegnetzCompareView, IntroView, RingSvg } from './panels/SichelViews';
+import { BoundaryView, WegnetzCompareView, IntroView, RingSvg, ColoursampleView } from './panels/SichelViews';
 import HighShellIconAssets from './panels/HighShellIconAssets';
 import ShellStudio from './panels/ShellStudio';
 import RuntimeShellView from './panels/RuntimeShellView';
@@ -945,6 +945,12 @@ function OriginCapsulerView({ tab }: { tab: TabId }) {
             <div style={{ flex: '0 0 auto', fontSize: 10.5, color: '#a0aec0', fontStyle: 'italic', borderTop: '1px solid #e2e8f0', paddingTop: 6, marginTop: 6 }}>
               Cap — Publishing folgt: <code>origin/{rep.id}/poi-set.json</code>. Noch nicht gebaut.
             </div>
+          </div>
+        )}
+
+        {tab === 't5' && (
+          <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, overflowY: 'auto', paddingTop: 4 }}>
+            <ColoursampleView />
           </div>
         )}
       </div>
