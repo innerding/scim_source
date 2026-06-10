@@ -239,10 +239,9 @@ unverändert: stille Eskalation, „kein Routen-Shop", Wahl muss eindeutig treff
 - **Demo ↔ Echt-Wandern umschalten.** Aktuell läuft der Sim (Sim-Walker + telco-last-sim).
   Echt = **S5** (`watchPosition`, 1:1-Tausch der Positions-Quelle) + reale Anthem-Last. Offen:
   wo/wie der Umschalter (Auto-Detect / Schalter / `?demo=1` vs. live). Hängt an S5.
-- **Stufe-3 Tap-to-cycle.** Tap auf das **blühende** POI blättert durch die ~3 artverwandten
-  ruhigen Kandidaten (Name/Zeit/Verlauf/Icon aktualisieren). Voraussetzung: `dompteurPick` → Top-N.
-  Manege-konform (kuratierte Wenige). **Entfaltet Wert erst mit dem Floating-Panel** ↓.
-- **Floating / Glass-Look-Panel.** Confrontation/Manege verdeckt die Karte → Routen-Änderung beim
-  Blättern unsichtbar. Ideal: floating + glass, Route darunter sichtbar. ⚠ Trade-off: Glass vs.
-  Last-**Verlauf** (Box-Hintergrund) — abwägen (mögl. Verlauf als schmale Leiste). Drag = nicht nötig.
-  → sinnvoll mit Tap-to-cycle zusammen als „Confrontation/Manege v2".
+- **Stufe-3 Tap-to-cycle ✓ GEBAUT (Confrontation v2, runtime f41313e, shell-kit v0.49.0).**
+  `dompteurPicks` (Top-N); Tap aufs blühende POI / ↻ i/N-Badge blättert durch die Kandidaten,
+  Name/Zeit/Verlauf/Icon aktualisieren. swapIdx, Reset nur bei Engpass-Wechsel.
+- **Glass-Look-Panel ✓ GEBAUT (Confrontation v2).** Alle Kaskaden-Boxen durchscheinend (`withAlpha`
+  0.6 + backdrop blur + Glass-Edge) → Route bleibt darunter sichtbar. **Entscheid:** Last-**Verlauf**
+  bleibt (dezenter unter Glass — bewusst, Farbtonlage unverändert). Drag = nicht gebaut (nicht nötig).
