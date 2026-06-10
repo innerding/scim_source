@@ -206,9 +206,16 @@ unverändert: stille Eskalation, „kein Routen-Shop", Wahl muss eindeutig treff
   Buttons [Bei X bleiben] / [Tauschen]. Resolver: erst `suggestSwap` (Treffer→Stufe 3, sonst
   Stufe 2). shell-kit v0.47.0: **lokale Ruhe-Prüfung** (nur die Beine um den Ersatz müssen
   komfortabel sein, nicht die ganze Route — die Kaskade löst einen Engpass/Runde). Live ok.
-- **B3 · Sammel-Karte (aus „Karten-Lebenszyklus").** Eine Karte bei Überlast mit
-  Route-Darstellung + verwelkenden Engpass-POIs (teilt die Verwelk-Optik mit B2) +
-  Reihenfolge; zwei Pole „Belebte Ziele weglassen" / „Alle behalten" (= Mute).
+- **B3 · Manege — Sammel-Karte (aus „Karten-Lebenszyklus").** Eine Karte bei Überlast
+  mit Route-Darstellung + verwelkenden Engpass-POIs (teilt die Verwelk-Optik mit B2) +
+  Reihenfolge; zwei Pole „Belebte Ziele weglassen" / „Alle behalten" (= Mute). Heißt
+  **Manege** (ann_119); Komponente z. B. `PoiManege`. **Ordnung (entschieden 2026-06-10):**
+  das räumliche bottom-up („du unten, Weg geht hoch") lebt in der **Mini-Karte** (dort
+  ist oben=voraus natürlich); die **Entscheidungs-Liste** bleibt **konventionell top-down
+  in Begehreihenfolge** mit den **Original-Routen-Nummern** (Custom-Ziffern-Badges wie die
+  Hauptkarte) — KEINE Live-Umnummerierung (sie würde den Karte↔Manege-Anker zerschneiden;
+  Lücken wie „Stopp 3·5·7" sind sogar Info). Die einzelne Stufe-3-Confrontation = „eine
+  Nummer in der Manege".
 
 ### C — Offene Designfrage (zu lösen, NICHT jetzt)
 
