@@ -29,6 +29,17 @@ const CATEGORY_META: Record<AnnotationCategory, { label: string; color: string; 
 // Initial seed annotations — operator extends these in the UI
 const SEED_ANNOTATIONS: Annotation[] = [
 
+  // ── GEBAUT — Step 0+1 (Absolute Last · stageOf · Coloursample) (2026-06-11) ──
+
+  {
+    id: 'ann_129',
+    category: 'adr',
+    label: 'GEBAUT Step 0+1 — absolute Last · stageOf · Coloursample (resampleScale)',
+    content: 'BAU-STAND (2026-06-11, Umbauplan ann_128 — Reihenfolge 0→1→4, 2+3 zurückgestellt). — STEP 0 (absolute Last) VERIFIZIERT + GEHÄRTET: die ganze Kette liest Rohlast/absolut (produceAnthem ruft produceAnthemLoads(net,simMin,{}), Editor+Worker bit-gleich; spread/floor in der Editor-Kette längst ausgemustert). Das tote `norm{spread,floor}` aus dem Runtime-Vertrag (OriginMesh) + publishOriginMesh-Param + Kommentaren ENTFERNT (Rückfall-Schutz). 2 Commits (runtime + scim_source). — STEP 1 (die Skala): shell-kit v0.51.0 → `stageOf(load, scale) → 1..N` + `stageCount` = die EINE Stufen-Wahrheit; spiegelt die colorAt-Branch (borders mit Vorrang, sonst Spreizung), liest also DIESELBEN borders wie das Mesh. v0.52.0 → `resampleScale(scale, n=6)` = COLOURSAMPLE, das Farb-Pendant zu resampleNet: schneidet den autorierten stetigen Gradienten in n GLEICH große Last-Felder, jedes bekommt die treffendste Farbe = colorAt an der Feld-Mitte ((i+0.5)/n); Ergebnis = n stops + gleichmäßige borders + neutrale Spreizung (Wrap bleibt). 41/41 scale.test grün. — CAPSULER-BAKE: scim_source buildOriginBundle (originPackage.ts) zerschneidet beim Publish via resampleScale in ORIGIN_STAGE_COUNT=6 Felder (neben resampleNet); der Editor autoriert WEITER den feinen 3-Farb-Gradienten, das BUNDLE trägt die fertige 6-Stufen-Welt (6 stops + even borders, middleField=null). shell-kit dep scim_source 0.40→0.52. — ⚠ WIRKT ERST NACH REPUBLISH von Lichtenberg (P11-CTA „ausspielen") — Farbe ist bundle-gebacken; bis dahin zeigt die Live-App noch den alten 3-Stop-Gradienten. NACH Republish: Mesh zeigt 6 diskrete Farbbänder statt glattem Verlauf. — BEWUSST NICHT in Step 1: der Comfort-Schnitt bleibt STETIG (`avg > comfort`) bis zur Hysterese (Step 3) — ein stufiger Schnitt ohne Deadband wäre nur steppy; POI-Gestalt liest stageOf erst in Step 4. — OFFEN: Step 4 (POI-Gestalt liest stageOf + Director-Controls = sichtbares MVP-Redesign ann_126) · Step 3 (Hysterese/stateful BCK-Kernel) · Step 2 (Path/Rest-Radien). 2+3 zurückgestellt. Bezug: ann_128 (Modell), ann_126 (Redesign), ann_127 (Path/Rest).',
+    related_panel: 'P01',
+    date: '2026-06-11',
+  },
+
   // ── Last→Stufe-Skala + Hysterese — ABSOLUTE Verankerung (2026-06-11) ──
 
   {
