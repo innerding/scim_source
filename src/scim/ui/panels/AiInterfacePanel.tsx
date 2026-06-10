@@ -29,6 +29,17 @@ const CATEGORY_META: Record<AnnotationCategory, { label: string; color: string; 
 // Initial seed annotations — operator extends these in the UI
 const SEED_ANNOTATIONS: Annotation[] = [
 
+  // ── System-Merkmal — Relative Last, nicht absolute Flächendichte (2026-06-10) ──
+
+  {
+    id: 'ann_124',
+    category: 'adr',
+    label: 'SYSTEM-MERKMAL — Relative (menschen-kalibrierte) Last, keine absolute Flächendichte',
+    content: 'SYSTEM-MERKMAL / ADR (2026-06-10): SCIM3 führt RELATIVE Last, NICHT absolute Flächendichte (Personen/m²). Comfort ist MENSCHEN-/PRÄFERENZ-kalibriert, nicht abstraktions-kalibriert. — FRAGE (Operator): der mathematische Reflex wäre, „Last je Fläche" (P/m²) als Grund-Maßstab zu nehmen. Braucht das System das? — ENTSCHEIDUNG: für den KERN NEIN, mit Begründung (Claude-Stellungnahme, vom Operator angestoßen „Der Mensch kalibriert das System, nicht die Abstraktion"): (1) Die Maschine entscheidet immer nur RELATIV/ORDINAL — „ist dieses Segment zu voll für DIESEN Menschen?" = Vergleich + Ordnung. Routing/dimmed/Perzentil rechnen identisch, ob die Last absolut oder normalisiert ist — die EINHEITEN KÜRZEN SICH RAUS. (2) Das ZIEL ist WAHRGENOMMENER Comfort, nicht Physik: Dichte ist ein LOSSY PROXY (gleiche P/m² fühlen sich je nach Wegbreite/Sonne/Person verschieden an). Der Mensch (senkt Regler / flieht) IST die Zielgröße → auf ihn kalibrieren = auf die echte Zielgröße; auf Dichte = auf einen Stellvertreter. (3) Der „objektive Grundeinheit"-Reflex ist bei einem PRÄFERENZ-Problem fehl am Platz (richtig nur bei Physik-Problemen). — STEELMAN (wo Dichte doch zählt, alle NON-CORE): Cross-Rep-Vergleich (Wanderer ist in EINER Rep → irrelevant für Erfahrung, nur Analytik); absolute Sättigung („alles voll" — aber „gib das am wenigsten Volle" ist bessere UX); Kommunikation (relative Sprache „ruhiger als sonst" ist INTUITIVER als „0,5 P/m²"). — NICHT-MASSSTABSLOS: relativ braucht weiterhin einen konsistenten per-Segment-Skalar (hat das Anthem, normalisiert) + eine Referenz (Live-Verteilung der Rep, ann_123); nur OHNE physikalische Einheiten als Grundlage. — AUSNAHME/OFFEN: sobald OBJEKTIVE/REGULATORISCHE Aussagen nötig werden (Event-Sicherheits-Caps, behördliche max. Dichte) → absolute Dichte als SEPARATE Sicherheits-/Compliance-Schicht (nicht Comfort-Grundmaß); hängt evtl. an one-direction-Strömen ann_122. — STATUS: Empfehlung/entschieden für den Kern; offen für Operator-Gegenargument. Bezug: ann_122 (Lastmodell), ann_123 (Comfort-Perzentil).',
+    related_panel: 'validation',
+    date: '2026-06-10',
+  },
+
   // ── Fundamentales Lastmodell — Spinnennetz · Ströme · Stau/Rast (2026-06-10) ──
 
   {
