@@ -9,8 +9,9 @@ const UPLOAD_API_KEY = import.meta.env.VITE_UPLOAD_API_KEY as string | undefined
 export const anthemPublishConfigured = () => !!(WORKER_URL && UPLOAD_API_KEY);
 export const anthemReadConfigured    = () => !!WORKER_URL;
 
-/** Origin-Mesh (minimal: stretches[{id,points}]) + Load-Thresholds nach R2 veröffentlichen. */
-export async function publishOriginMesh(repId: string, net: { stretches: Array<{ id: string; points: [number, number][] }>; norm?: { spread: number; floor: number } }) {
+/** Origin-Mesh (minimal: stretches[{id,points}]) nach R2 veröffentlichen. Reine
+ *  Geometrie — die Last wird absolut/roh gelesen (kein spread/floor mehr, ann_128). */
+export async function publishOriginMesh(repId: string, net: { stretches: Array<{ id: string; points: [number, number][] }> }) {
   const res = await fetch(`${WORKER_URL}/api/origin/${repId}/mesh`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', 'X-Scim-Key': UPLOAD_API_KEY ?? '' },
