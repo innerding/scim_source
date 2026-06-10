@@ -29,6 +29,17 @@ const CATEGORY_META: Record<AnnotationCategory, { label: string; color: string; 
 // Initial seed annotations — operator extends these in the UI
 const SEED_ANNOTATIONS: Annotation[] = [
 
+  // ── Guidance/Manege — Backlog (notiert, nicht jetzt) (2026-06-10) ──
+
+  {
+    id: 'ann_120',
+    category: 'next_intent',
+    label: 'Guidance/Manege — Backlog (Undo · Demo↔Echt · Tap-Cycle · Glass-Panel)',
+    content: 'GUIDANCE/MANEGE — BACKLOG (notiert 2026-06-10, NICHT jetzt bauen; Operator-Befunde). (1) UNDO / RÜCKGÄNGIG für Routen-Edits: wenn man eine Route verkürzt (POI auslassen via Stufe 2 / tauschen via Stufe 3 / abwählen) und es SPÄT bemerkt, fehlt ein Rückgängig. Heute: einen abgewählten POI re-klicken hängt ihn ans ENDE (Reihenfolge kaputt), kein echtes Undo. → kleine Undo-Historie der selectedPoiIds-Änderungen (Schritt-zurück). (2) DEMO ↔ ECHT-WANDERN UMSCHALTEN: aktuell läuft der SIM (Sim-Walker mit SIM_LAPSE + telco-last-sim treibt die Last). Echt-Wandern = S5: navigator.geolocation.watchPosition (gleiche Schnittstelle wie der Walker → 1:1-Tausch) + reale Anthem-Last (kein telco-Slider, echte Tageszeit). OFFEN: wo/wie der Umschalter (Standort-Auto-Detect? expliziter Schalter? ?demo=1 vs. live?). Hängt an S5, Distanz-Frage. (3) STUFE-3 TAP-TO-CYCLE (mögliche Spezifikation): statt nur EINES Vorschlags per Tap auf das BLÜHENDE POI durch die (bis zu ~3) in Frage kommenden artverwandten, ruhigen POIs durchblättern; je Kandidat aktualisieren sich Name + Zeit (deltaMin) + Last-Verlauf + Icon. Voraussetzung: dompteurPick liefert Top-N statt nur Bester (shell-kit). Manege-konform (kuratierte Wenige, KEIN Routen-Shop). (4) FLOATING / GLASS-LOOK PANEL: das Confrontation/Manege-Panel verdeckt die Karte → man sieht die Routen-Änderung beim Durchblättern (3) NICHT. Ideal: floating + glass-look, damit die Route darunter sichtbar bleibt. ⚠ TRADE-OFF: Glass macht den Last-VERLAUF (Box-Hintergrund) schlecht sichtbar → einmal abwägen (Verlauf vs. Durchsicht; mögl. Kompromiss: Verlauf als schmale Leiste statt Vollfläche). VERSCHIEBBAR/Drag = nicht unmittelbar nötig. — Tap-Cycle (3) entfaltet seinen Wert erst mit dem Floating-Panel (4); sinnvoll gemeinsam als „Confrontation/Manege v2". Bezug: B2/B3 guidance_play_bauplan.md, ann_119.',
+    related_panel: 'R07',
+    date: '2026-06-10',
+  },
+
   // ── POI-Dompteur — Terminologie der Filter-/Tausch-Pipeline (2026-06-10) ──
 
   {

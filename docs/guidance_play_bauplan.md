@@ -228,3 +228,21 @@ unverändert: stille Eskalation, „kein Routen-Shop", Wahl muss eindeutig treff
 
 ### Abarbeitungs-Reihenfolge (Vorschlag)
 **A2 → A3 → A4 → A1 → B → C** (kleine sichtbare zuerst; C nach Design-Klärung).
+
+---
+
+## Backlog — notiert, nicht jetzt (2026-06-10) · siehe `ann_120`
+
+- **Undo / Rückgängig für Routen-Edits.** Route verkürzt (auslassen/tauschen/abwählen) und
+  spät bemerkt → kein Schritt-zurück. Heute hängt ein re-geklickter POI ans Ende (Reihenfolge
+  kaputt). → kleine Undo-Historie der `selectedPoiIds`.
+- **Demo ↔ Echt-Wandern umschalten.** Aktuell läuft der Sim (Sim-Walker + telco-last-sim).
+  Echt = **S5** (`watchPosition`, 1:1-Tausch der Positions-Quelle) + reale Anthem-Last. Offen:
+  wo/wie der Umschalter (Auto-Detect / Schalter / `?demo=1` vs. live). Hängt an S5.
+- **Stufe-3 Tap-to-cycle.** Tap auf das **blühende** POI blättert durch die ~3 artverwandten
+  ruhigen Kandidaten (Name/Zeit/Verlauf/Icon aktualisieren). Voraussetzung: `dompteurPick` → Top-N.
+  Manege-konform (kuratierte Wenige). **Entfaltet Wert erst mit dem Floating-Panel** ↓.
+- **Floating / Glass-Look-Panel.** Confrontation/Manege verdeckt die Karte → Routen-Änderung beim
+  Blättern unsichtbar. Ideal: floating + glass, Route darunter sichtbar. ⚠ Trade-off: Glass vs.
+  Last-**Verlauf** (Box-Hintergrund) — abwägen (mögl. Verlauf als schmale Leiste). Drag = nicht nötig.
+  → sinnvoll mit Tap-to-cycle zusammen als „Confrontation/Manege v2".
