@@ -400,7 +400,7 @@ function P09Artifact({ d, rep, origin }: { d: P09Descriptor; rep?: { name: strin
 // P07/P08/P09 in atomare particles portioniert; SCS sortiert sie nach Horizont
 // in die drei Pakete. Statische Modell-Sicht.
 const SCS_PACKAGES: { name: string; horizon: string; version: string; particles: string[] }[] = [
-  { name: 'Shell', horizon: 'long-term', version: 'eigene App-Shell-Version', particles: ['dompteur', 'Farb-Engine: colorize · normalizeLoads', 'BCK: classifyStretches · stretchAverages', 'BAK: buildRoutePath · netRoute', 'reveal-engine: boundary-intro (verbraucht origin-boundary)', 'container-system'] },
+  { name: 'Shell', horizon: 'long-term', version: 'eigene App-Shell-Version', particles: ['POI-Circus: kinship · energy · detour (Filter-Nummern)', 'POI-dompteuring: dompteurPick + poi-dompteur-energy (Tausch + Animation)', 'Farb-Engine: colorize · normalizeLoads', 'BCK: classifyStretches · stretchAverages', 'BAK: buildRoutePath · netRoute', 'reveal-engine: boundary-intro (verbraucht origin-boundary)', 'container-system'] },
   { name: 'Origin', horizon: 'mid-term', version: '= Representation-Version', particles: ['origin-boundary', 'origin-mesh (wegnetz-sample)', 'origin-asset-set', 'origin-poi-set', 'origin-pixel-images', 'colour-settings (spectrum/bias/safety/degradier)'] },
   { name: 'Anthem', horizon: 'short-term', version: 'Load-Zyklus (flüchtig)', particles: ['presence-origin (Einatmen · Gate)', 'load-values (Ausatmen)', 'user-exclusion (Runtime)'] },
 ];
