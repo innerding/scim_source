@@ -206,7 +206,13 @@ unverändert: stille Eskalation, „kein Routen-Shop", Wahl muss eindeutig treff
   Buttons [Bei X bleiben] / [Tauschen]. Resolver: erst `suggestSwap` (Treffer→Stufe 3, sonst
   Stufe 2). shell-kit v0.47.0: **lokale Ruhe-Prüfung** (nur die Beine um den Ersatz müssen
   komfortabel sein, nicht die ganze Route — die Kaskade löst einen Engpass/Runde). Live ok.
-- **B3 · Manege — Sammel-Karte (aus „Karten-Lebenszyklus").** Eine Karte bei Überlast
+- **B3 ✓ GEBAUT (runtime bfcb42b, shell-kit v0.50.0) · Manege — Sammel-Karte.**
+  `PoiManege.tsx`: ab `MANEGE_THRESHOLD`=3 (justierbar) gleichzeitigen Engpässen EINE Bühne —
+  SVG-Mini-Karte auf den Engpass-Abschnitt gezoomt (Route + verwelkende, last-gefärbte,
+  nummerierte Marken) + Liste top-down mit Original-Routen-Nummern (Custom-Ziffern) + 2 Pole
+  „Belebte Ziele weglassen"/„Alle behalten"(=Mute). shell-kit `breachingLegs` (alle Engpässe).
+  Glass-Look, Karte 88vw. Live verifiziert (5 Engpässe → Manege, beide Pole). — Ursprungs-Spec:
+- **B3-alt · Manege — Sammel-Karte (aus „Karten-Lebenszyklus").** Eine Karte bei Überlast
   mit Route-Darstellung + verwelkenden Engpass-POIs (teilt die Verwelk-Optik mit B2) +
   Reihenfolge; zwei Pole „Belebte Ziele weglassen" / „Alle behalten" (= Mute). Heißt
   **Manege** (ann_119); Komponente z. B. `PoiManege`. **Ordnung (entschieden 2026-06-10):**
