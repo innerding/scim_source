@@ -17,6 +17,7 @@ import { resolveIcon } from '../poi-catalog/poiCatalog.composite';
 import { containerOf } from '../poi-catalog/poiCatalog.containerSystem';
 import { resampleNet, type ResampledNet } from '../wegnetz/netResample';
 import { effectiveRepColour, type ColourSettings } from './colourSettings';
+import { resampleScale } from 'shell-kit';
 import { slugify } from '../../runtime/router';
 import { extractDecoration, iconMeta, type DecorationMatch } from '../poi-catalog/decorations';
 import { GLYPHS } from '../poi-catalog/digitGlyphs';
@@ -25,6 +26,12 @@ import { GLYPHS } from '../poi-catalog/digitGlyphs';
 // Atem (Load-Array) ~6 kB / 5 Min. 3 m wäre Detail-Untergrenze (Geometrie
 // explodiert), 25 m gröber/kleiner. Ein Knopf, falls wir's später drehen.
 export const MVP_RESAMPLE_TARGET_METERS = 10;
+
+// Coloursample-Stufen fürs gelieferte Origin-Bundle (Beschluss): 6 gleich große
+// Last-Felder. Der Editor autoriert weiter den feinen 3-Farben-Gradienten; der
+// Capsuler zerschneidet ihn beim Publish in 6 Felder (shell-kit resampleScale),
+// wie resampleNet fürs Wegnetz. Ein Knopf, falls wir's später drehen. ann_128.
+export const ORIGIN_STAGE_COUNT = 6;
 
 // EINE Quelle des mesh-output (= P09 cap-origin-mesh „3. mesh-output"): der
 // Capsulator isoliert das resampelte Netz HIER; Origin-Paket, Origin-Bundle und
@@ -191,7 +198,23 @@ export function buildOriginBundle(rep: Representation): OriginBundle {
   // Farb-/Schwellen-Kette reist mit — so reproduziert die Runtime das Mesh exakt.
   // Aufgelöste Default-Kaskade: rep-editor-rep → representation → global → Region (Fallback).
   const regionSlug = slugify(geo?.region ?? '') || 'default';
-  const colour = effectiveRepColour(regionSlug);
+  const authored = effectiveRepColour(regionSlug);
+  // Coloursample: den autorierten (stetigen) Gradienten beim Publish in
+  // ORIGIN_STAGE_COUNT gleiche Stufen-Felder zerschneiden (treffendste Farbe je
+  // Feld-Mitte). Das Bundle trägt die fertige Stufen-Welt; der Editor behält
+  // seinen feinen Gradienten. middleField (Editor-Zentrierung) ist danach gegen-
+  // standslos → null. ann_128, Step 1.
+  const sampled = resampleScale(
+    { stops: authored.stops, borders: authored.borders, spreizung: authored.spreizung, verjuengung: authored.verjuengung },
+    ORIGIN_STAGE_COUNT,
+  );
+  const colour: ColourSettings = {
+    ...authored,
+    stops: sampled.stops,
+    borders: sampled.borders ?? [],
+    spreizung: sampled.spreizung,
+    middleField: null,
+  };
 
   return {
     kind: 'origin_bundle_v1',
