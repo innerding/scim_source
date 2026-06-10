@@ -11,8 +11,12 @@ export interface ReleaseResult { ok: boolean; version: number; bytes?: number; e
 export async function releaseRep(rep: Representation, publishedBy?: string): Promise<ReleaseResult> {
   const version = rep.version ?? 1;
   try {
-    const res = await publishOriginBundle(rep.id, resolveOriginReference(rep).bundle, publishedBy);
-    return { ok: true, version, bytes: res.bytes };
+    const ref = resolveOriginReference(rep);
+    const res = await publishOriginBundle(rep.id, ref.bundle, publishedBy);
+    // Worker gibt keine bytes zurück (nur version/staged) → lokal messen (= identisch
+    // zu dem, was der Worker als bundleJson.length speichert).
+    const bytes = new TextEncoder().encode(JSON.stringify(ref.bundle)).length;
+    return { ok: true, version: res.version ?? version, bytes };
   } catch (e) {
     return { ok: false, version, error: (e as Error).message };
   }
