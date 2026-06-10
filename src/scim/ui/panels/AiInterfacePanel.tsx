@@ -29,6 +29,28 @@ const CATEGORY_META: Record<AnnotationCategory, { label: string; color: string; 
 // Initial seed annotations — operator extends these in the UI
 const SEED_ANNOTATIONS: Annotation[] = [
 
+  // ── FUNDAMENT-BEFUND — Routing ist ein Mock; Stufe-1 unbeschränkt (2026-06-11) ──
+
+  {
+    id: 'ann_130',
+    category: 'invariant',
+    label: 'FUNDAMENT — Routing ist ein MOCK; Stufe-1 unbeschränkt → Multi-POI = Artefakt',
+    content: 'FUNDAMENT-BEFUND (Operator 2026-06-11) — DIE ROUTENANZEIGE IST EIN MOCK. Die ganze Routen-/Cascade-Maschinerie (solveRoute, Stufe-1-Ausweichroute, BAK, dompteurPicks, die Route-Darstellung) ist aus dem bak-test GEWACHSENES Gerüst, folgte KEINEM bewussten Routing-Plan des Operators → effektiv ein Mock. Aktuell zeigt die Preview teils GAR KEINE Routen. — SYMPTOM-KETTE (Operator-Beobachtung): Deeskalation Stufe 1 (automatische Ausweichroute = „das größere Modal") ist UNBESCHRÄNKT — plant beliebig lange Umwege (44 Min beobachtet) und gibt erst auf, wenn praktisch ALLE POIs überlastet sind. → DARAUS das degenerierte Multi-POI-Bild „5 POIs überlastet, KEINE Alternativen": ein ARTEFAKT der grenzenlosen Stufe 1, KEIN echter Viel-Engpass-Fall. Die Manege/Multi-POI hat also großteils eine Situation behandelt, die so kaum real auftritt. (Dazu: dompteurPicks liefert nur ruhige Ersatz-POIs; bei flächiger Sättigung gibt es keine → „keine Alternative" ist dann korrekt, nicht kaputt — ann_126-Kontext.) — WAS SOLIDE IST (mock-unabhängig): die 4c-Entscheidungs-UX — Zustandsmaschine (committed⊕intent→preview, Rahmen, Play-commit), Mini-Modal-Eintritt (CHANGE/IGNORE + IGNORE-Episode), Einzel-POI-Replace-Flow (4c-iii-a). Gilt, egal was darunter routet. — KONSEQUENZ: weitere UI-Ausarbeitung auf dem Mock (gestapelte Alternativen ann_131, Multi-POI-Politur 4c-iii-c) = VERFRÜHT (Politur auf Sand). STOPP-PUNKT: 4c-iii-a. — ECHTER NÄCHSTER SCHRITT (für eine AUSGERUHTE Session, NICHT überstürzen): das Routing BEWUSST machen — ein deliberates Routen-Modell definieren + die Stufe-1-Umwege BESCHRÄNKEN (vernünftige Grenze in % / Minuten, statt bis zur Sättigung zu detourieren). Erst dann trägt die Entscheidungs-UX echten Boden, und erst dann lohnt der Stapel. Bezug: ann_126 (Decision-UX), ann_122/128 (Last/Comfort), docs/komfort_kaskade_spec.md.',
+    related_panel: 'R07',
+    date: '2026-06-11',
+  },
+
+  // ── IDEE — gestapelte Alternativen (geparkt bis Routing real) (2026-06-11) ──
+
+  {
+    id: 'ann_131',
+    category: 'next_intent',
+    label: 'IDEE — gestapelte/versetzte Alternativen (Tap-to-cycle), geparkt bis Routing real',
+    content: 'IDEE — GESTAPELTE ALTERNATIVEN (Operator 2026-06-11, GEPARKT bis das Routing real ist, ann_130). Statt 3 Chips nebeneinander: ein VERSETZTER KARTEN-STAPEL der Ersatz-Kandidaten. BESTE oben (höchste Ähnlichkeit, kleinster Umweg); darunter je ~0.3 POI-Container-Breite nach RECHTS+UNTEN versetzt die nächstbeste (der Versatz verrät „mehr dahinter"). TAP = durchblättern (nächste rutscht nach oben). Die OBERSTE = Live-Vorschau: ±Zeit steht dran, die Gesamtuhr ändert sich gleichzeitig, die Route swappt — alles in Preview. Spart Platz, schafft Raum für die Zeit, bringt die Tap-to-cycle-Geste des alten PoiDompteurEnergy-Modals zurück. — MECHANIK (Claude-Vorschlag, vom Operator ok): Auslassen → Stapel erscheint als ANGEBOT (noch NICHT angewandt, nur Lücke in der Route) → erster Tap macht die oberste zum Swap (Preview) → weiter tappen cycelt → „nur auslassen" = Stapel nicht antippen. Reversibel. — UHR-SIGNAL (Operator: „gute Idee"): KEINE dritte Vorschau-Markierung — der screenweite VORSCHAU-Rahmen + das blinkende ▶ sagen schon „tentativ"; die Uhr aktualisiert nur LIVE ihren Wert + ein kurzer Puls bei Änderung (ein globales Preview-Signal, ein lokales Mikro-Signal). — EINSATZ: ersetzt die 3-nebeneinander-Chips von 4c-iii-b, sobald 4c-iii-c gebaut wird — aber NACH dem Routing-Fundament (ann_130). — WELK/BLÜH-Experiment: vom Operator auf UNBESTIMMTE Zeit verschoben (bleibt als Asset PoiDompteurEnergy-Welken-Bluehen.md geparkt). Simples Zappeln des hektischen Chips (4b scim-zappel) wäre davon unabhängig billig nachrüstbar — offen.',
+    related_panel: 'R07',
+    date: '2026-06-11',
+  },
+
   // ── GEBAUT — Step 0+1 (Absolute Last · stageOf · Coloursample) (2026-06-11) ──
 
   {
