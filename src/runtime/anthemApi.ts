@@ -31,7 +31,8 @@ export async function publishOriginBundle(repId: string, bundle: unknown, by?: s
     body: JSON.stringify(bundle),
   });
   if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
-  return res.json() as Promise<{ ok: boolean; repId: string; bytes: number; uploadedAt: string }>;
+  // Worker-Vertrag (Drossel-aware): version + ob jetzt aktiv oder nur gestaged.
+  return res.json() as Promise<{ ok: boolean; repId: string; version: number; active: number | null; staged: boolean; mode: string }>;
 }
 
 // ── Versions-Bibliothek (V01) — Historie + aktiv + Rollback ──────────────────

@@ -33,8 +33,8 @@ export default function TransferView() {
       // Publish ruft die EINE Origin-Resolve-Quelle (Phase 0) → genau das
       // Referenzpaket, das auch das Shell-Studio bekommt.
       const res = await publishOriginBundle(rep.id, resolveOriginReference(rep).bundle);
-      const kb = (res.bytes / 1024).toFixed(1);
-      setMsg(`✓ veröffentlicht: origin/${res.repId}/bundle.json · ${kb} kB · ${new Date(res.uploadedAt).toLocaleString('de')}`);
+      const status = res.staged ? `gestaged (Cron schaltet live, mode=${res.mode})` : 'jetzt aktiv';
+      setMsg(`✓ veröffentlicht: origin/${res.repId}/bundle.json · v${res.version} · ${status}`);
       setPhase('done');
     } catch (e) {
       setMsg(`✗ ${(e as Error).message}`);
