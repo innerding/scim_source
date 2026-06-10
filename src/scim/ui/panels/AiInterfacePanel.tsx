@@ -29,6 +29,17 @@ const CATEGORY_META: Record<AnnotationCategory, { label: string; color: string; 
 // Initial seed annotations — operator extends these in the UI
 const SEED_ANNOTATIONS: Annotation[] = [
 
+  // ── GROBES MODELL — 2 Concerns (Path/Rest) + Map-Animations-Taxonomie (2026-06-11) ──
+
+  {
+    id: 'ann_132',
+    category: 'invariant',
+    label: 'GROB — Eskalation = 2 Concerns (Path/Rest), nicht 3 Stufen · Map-Animations-Taxonomie',
+    content: 'GROBES MODELL (Operator 2026-06-11, iterativ) — STUFEN-VEREINFACHUNG: die gefühlten „3 Deeskalationsstufen" (1 Route-Auto-Umweg · 2 POI-Mini-Modal · 3 Director-Controls) kollabieren auf ZWEI CONCERNS = exakt der Path/Rest-Split (ann_127). (a) PATH-Problem (Strecke/Segmente belebt, Ziele ok) → das System leitet STILL um (Stufe-1) + EINE Info „Umweg +X Min" — AUTONOM, keine Interaktion. (b) REST-Problem (ein Ziel-POI belebt) → INTERAKTIV: Mini-Modal (Ignore/Change) als EINGANG → Director-Controls (Abwählen ODER komfortables Anwählen/Swap). → das Mini-Modal ist die TÜR zur Rest-Entscheidung, KEINE eigene Stufe; darum 2 Concerns, nicht 3 Stufen. Beide können GLEICHZEITIG auftreten (Path+Rest unabhängig, laufen in der UI geordnet zusammen, ann_127). Director-Controls = zwei Aufgaben (Abwählen + Anwählen), aber EIN Rest-Track. „Mehr als das braucht es vermutlich nicht." — MAP-ANIMATIONS-TAXONOMIE (grob, Operator): drei sichtbar zu unterscheidende Dinge: (1) ROUTE = normale Linie (wie gehabt) · (2) ÜBERLASTETES SEGMENT = ZAPPELN (nervös; wie die POIs in 4b) · (3) UMWEG/Detour = RUHIG BLINKEN. SEMANTIK (der Kern): NERVÖS/zappeln = PROBLEM (belebtes Segment/POI) · RUHIGES BLINKEN = SYSTEM-ANTWORT (Umweg / Vorschau, führt weg vom Andrang). Konsistent mit 4b. — CLAUDE-SCHÄRFUNG: Segmente sind LINIEN, keine Icons → brauchen eine LINIEN-Animation (Schimmern/Pulsieren ENTLANG der Strecke), NICHT das Icon-Scale-Wobble der POIs; sonst dieselbe Sprache. — ZUORDNUNG (schließt den Kreis): Path-Concern = Segment-Zappeln + Umweg-Blinken · Rest-Concern = POI-Zappeln + Mini-Modal/Drop-up. Die Animationen SIND der sichtbare Ausdruck der zwei Concerns. — BAUBARKEIT (ann_130): Segment-Zappeln = MESH-visuell, last-basiert, MOCK-UNABHÄNGIG (erweitert 4b/poiVisualState-Gedanken auf Segmente) → klar baubar, wenn gewünscht. Umweg-Blinken hängt an der Stufe-1-Ausweichroute (Mock) → wartet aufs deliberate Routing. Bezug: ann_127 (Path/Rest), ann_126 (Decision-UX), ann_130 (Routing=Mock).',
+    related_panel: 'R07',
+    date: '2026-06-11',
+  },
+
   // ── FUNDAMENT-BEFUND — Routing ist ein Mock; Stufe-1 unbeschränkt (2026-06-11) ──
 
   {
