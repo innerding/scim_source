@@ -29,6 +29,17 @@ const CATEGORY_META: Record<AnnotationCategory, { label: string; color: string; 
 // Initial seed annotations — operator extends these in the UI
 const SEED_ANNOTATIONS: Annotation[] = [
 
+  // ── POI-Dompteur — Terminologie der Filter-/Tausch-Pipeline (2026-06-10) ──
+
+  {
+    id: 'ann_119',
+    category: 'vocabulary',
+    label: 'POI-Dompteur / poi-circus / poi-dompteur-energy (eingefroren)',
+    content: 'POI-DOMPTEUR — Terminologie der POI-Filter-/Tausch-Pipeline (Operator-Vokabular, eingefroren 2026-06-10; ersetzt die generischen Begriffe „swap/suggest"). METAPHER: ein Dompteur bändigt unruhige (belebte) POIs und führt dem Wanderer einen ruhigeren Ersatz vor. — DREI BEGRIFFE: (1) POI-DOMPTEUR = das Subsystem/die Filter-Pipeline selbst (shell-kit poiDompteur.ts; Hauptfunktion dompteurPick(net, chainIds, pois, bottleneckId, dimmed) → DompteurPick|null; Eingabe-POI = CircusPoi). (2) poi-circus = die FILTER-NUMMERN (die „Manege", wo POIs durch ihre Übungen gehen); jede Dimension ist eine Nummer: poi-circus-KINSHIP (Ähnlichkeit, similarity.ts bucketOf/similarityTier — bewusst deskriptiv gehalten) · poi-circus-ENERGY (Ruhe/Netz-Last — die getauschten Beine müssen im Comfort liegen) · poi-circus-DETOUR (Umweg — kleinster Aufschlag). (3) poi-dompteur-‹thema› = die ANIMATIONEN (der Dompteur führt eine Nummer vor); poi-dompteur-ENERGY = die Energieaustausch-Confrontation (Runtime PoiDompteurEnergy.tsx, CSS pde-*): der belebte POI VERWELKT (schrumpft/kippt/dimmt/entsättigt), der ruhigere ERBLÜHT (wächst/glüht/atmet), ein Funke fließt X→Y. — SYSTEMATIK: ein THEMA spannt sich über Filter + Animation (z. B. „energy" = poi-circus-energy Filter ⊕ poi-dompteur-energy Animation). Erweiterbar: weitere Nummern/Themen andocken. Tiefe = „ausgewogen": Orchestrierung + Animation tragen die Metapher, die reinen Kategorie-Helfer (bucketOf/similarityTier) bleiben deskriptiv (Bibliotheks-Lesbarkeit). shell-kit v0.48.0. Bezug: B1/B2 in guidance_play_bauplan.md, ann_116.',
+    related_panel: 'P11',
+    date: '2026-06-10',
+  },
+
   // ── Leistungsblatt versionieren + Shell-kB aktualisieren (Todo, 2026-06-10) ──
 
   {
