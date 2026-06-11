@@ -29,6 +29,17 @@ const CATEGORY_META: Record<AnnotationCategory, { label: string; color: string; 
 // Initial seed annotations — operator extends these in the UI
 const SEED_ANNOTATIONS: Annotation[] = [
 
+  // ── KORREKTUR — Zappeln gehört an die ROUTE, nicht ans Netz; Umwege dashed (2026-06-11) ──
+
+  {
+    id: 'ann_135',
+    category: 'next_intent',
+    label: 'ROUTEN-DARSTELLUNG — busy Route-Segmente zappeln · Umwege dashed · Tap-Alt→Map-Modal',
+    content: 'KORREKTUR + ROUTEN-DARSTELLUNG (Operator 2026-06-11). MISSVERSTÄNDNIS: das Segment-Zappeln (Step 2, shell-kit v0.56) ans NETZ zu hängen war falsch (Operator: „nur die Segmente EINER ROUTE, die zu voll werden, sollen zappeln; nicht das Netz"). Zudem: Netz über Comfort ganz verschwinden (alte opacity-0.12) ist auch nicht schön; vom Netz-Zappeln bekam man nichts mit (nur der weiße Rand fehlte). — KORRIGIERT: (1) NETZ (Mesh): über-Comfort-Segmente = ruhiges HELLES GRAU (#c2c9d2, dünn, opacity 0.55, KEIN white stroke), STATISCH — sichtbar aber zurückhaltend, weder verschwinden noch zappeln (v0.57, provisorisch). (2) AKTIVE ROUTE (das eigentliche Ziel): die Segmente einer GEWÄHLTEN Route, die durch Besucherdruck ÜBER die Comfort-Schwelle gehen, sollen RICHTIG ZAPPELN (prominent, NUR auf der Route). GLEICHZEITIG zeigt das System einen oder mehrere UMWEGE — DASHED. → „dashed" bekommt damit ein NEUES, sauberes Vokabular: Alternativ-Pfad-Angebot (NICHT mehr „breach" wie der in Step 1/v0.55 entfernte Strich). Route solid (busy-Stücke zappeln) + Umweg(e) dashed, gleichzeitig sichtbar. — BAU-WEG (Vorschlag): renderRoute pro-Segment; über-Comfort-Route-Stretches (route.stretchIds ∩ dimmedStretchIds, Geometrie aus net.stretches) als scim-seg-Zappel-Overlay (Keyframe existiert schon); plus eine `dashed`-Option für den Umweg. Resolver zeigt die gewählte Route solid + Detour(s) dashed, statt sie STILL zu ERSETZEN. Berührt renderRoute + Resolver = Routing-Schicht (ann_130) → das ist die Route-Darstellung des „deliberate Routing"-Schritts (Plan-Step 3), klar umrissen, aber kein Mini-Fix. — NEUE IDEE (Operator): Tap auf einen ALTERNATIV-POI im Director-Control → öffnet auf der KARTE ein Modal AM entsprechenden POI (zeigt, WO die Alternative liegt; erdet die abstrakten Chips). Braucht das POI-Info-Modal (Long-tap-Detail, noch nicht gebaut, datenabhängig: Origin-POI-Set trägt nur Name+Subkat). Leichte Erstversion = Icon+Name-Popup an der POI-Position; volles Info-Modal später. Bezug: ann_132 (Animations-Taxonomie — hiermit präzisiert: Zappeln = ROUTE, nicht Netz), ann_133 (Route in Step 1 entkoppelt → wird hier wieder PER-SEGMENT comfort-aware), ann_130 (Routing/Stufe-1 deckeln), ann_126 (Map-Autofocus + POI-Modal).',
+    related_panel: 'R07',
+    date: '2026-06-11',
+  },
+
   // ── REGEL — Meldung bei POI/Segment außerhalb des Comfort-Netzes (2026-06-11) ──
 
   {
