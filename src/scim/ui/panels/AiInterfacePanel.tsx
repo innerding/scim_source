@@ -29,6 +29,17 @@ const CATEGORY_META: Record<AnnotationCategory, { label: string; color: string; 
 // Initial seed annotations — operator extends these in the UI
 const SEED_ANNOTATIONS: Annotation[] = [
 
+  // ── REGEL — Meldung bei POI/Segment außerhalb des Comfort-Netzes (2026-06-11) ──
+
+  {
+    id: 'ann_134',
+    category: 'invariant',
+    label: 'REGEL — POI außerhalb Comfort-Netz → Ignore/Change-Modal (schon gebaut, 4c-ii)',
+    content: 'REGEL (Operator-Frage „was meldet das System bei absichtlich außerhalb des Comfort-Netzes gewähltem POI?", analysiert 2026-06-11). — VORAB: die Route bleibt als SEGMENTE erhalten; die Comfort-Aussage lebt am MESH (per-Segment), die Route ist nur der Pfad darüber (ann_133). — „COMFORT-NETZ": der Comfort-Button dimmt zu volle Stretches → übrig bleibt das Comfort-Netz (ruhige Strecken). Ein POI ist INNERHALB, wenn über ruhige Strecken erreichbar; AUSSERHALB, wenn der Weg zwingend durch eine gedimmte Strecke muss. — BEFUND: ist im Kern SCHON GEBAUT. Wählt man ein außerhalb-POI, MUSS die Route durch Andrang → Resolver erkennt es (routeBreachesComfort) → Rest-Concern → dessen Eingang ist das MINI-MODAL (Ignore/Change, 4c-ii). Operator-Vorschlag „es genügt ein Ignore/Change-Modal" = genau das, was schon passiert. — MELDET/MELDET-NICHT-REGEL: MELDET (Ignore/Change-Modal) wenn das gewählte POI die Route durch Andrang zwingt, den KEIN akzeptabler Umweg auflöst (= effektiv außerhalb Comfort-Netz) UND noch nicht akzeptiert. MELDET NICHT wenn (a) komfortabel erreichbar — ruhig ODER kleiner Umweg reicht → nur stille Info „+X Min" (Path-auto, ann_132); (b) schon per IGNORE akzeptiert (IGNORE-Episode bis Last sich ändert, ann_128); (c) Route ganz im Comfort. IGNORE = „ja, ich will da hin" → hingenommen, kein Nörgeln. — HAKEN (ann_130): damit der Fluss CLEAN erscheint, muss STUFE-1 BESCHRÄNKT sein — sonst erst 44-Min-Umweg, scheitern, dann Modal mit degeneriertem „alles überlastet". Mit gedeckeltem Stufe-1 = außerhalb-POI → kurzer Umweg-Versuch → reicht nicht → EIN Ignore/Change-Modal. — SPÄTER (Weg-Segmente, Path, post-MVP): dasselbe Muster, dasselbe Modal. Bezug: ann_126/4c-ii (Mini-Modal), ann_127/132 (Path/Rest), ann_130 (Stufe-1 deckeln), ann_133 (Route=Pfad, Mesh=Last).',
+    related_panel: 'R07',
+    date: '2026-06-11',
+  },
+
   // ── ANALYSE — Routen-Rendering passt nicht zum Colour-Mesh (2026-06-11) ──
 
   {
