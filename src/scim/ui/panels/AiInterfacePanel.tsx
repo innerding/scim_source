@@ -29,6 +29,17 @@ const CATEGORY_META: Record<AnnotationCategory, { label: string; color: string; 
 // Initial seed annotations — operator extends these in the UI
 const SEED_ANNOTATIONS: Annotation[] = [
 
+  // ── DOKTRIN — „besser plump als komplex" (Tie-Breaker für alle UI/UX) (2026-06-12) ──
+
+  {
+    id: 'ann_139',
+    category: 'invariant',
+    label: 'DOKTRIN — einfach + sofort bedienbar; im Zweifel BESSER PLUMP ALS KOMPLEX',
+    content: 'DESIGN-DOKTRIN / TIE-BREAKER (Operator 2026-06-12). „Unser System ist einfach, sofort für JEDEN bedienbar, ohne plump zu wirken — aber besser plump als komplex." Im Konflikt MEHR-FUNKTION vs EINFACHHEIT gewinnt IMMER die Einfachheit. Ein System, das man SOFORT bedient, schlägt eines, das man bewundert: ein Tap mehr ist ok, ein Rätsel nie. — GEGEN DEN „MÖGLICHKEITSSUMPF": nicht jede Feinheit modellieren (Over-Engineering); lieber die grobe, klare Lösung als die feine komplexe. Genauer als nötig wird zur Falle. — HAT SCHON GEFÜHRT: Path/Rest kollabiert auf 2 GESTALTEN statt 4 Komponenten (weniger zu lernen, ann_138); detourPicks gibt LEER zurück statt zweifelhaft über-anzubieten (ann_138); „kein Reroute ohne Commit" = VORHERSEHBAR statt clever (ann_136). — GILT BESONDERS JETZT für die kommende Footer-/Director-Control-Ausgestaltung (ann_138): Optionen nicht über-fächern, sofort begreifbar halten. — ergänzt das App-Manifest (Slogan „Geh deinen Weg", Comfort-Begleiter, kein Routen-Shop; project_ziel_app_ux). Diese Doktrin ist der feste Boden für jede UI/UX-Abwägung.',
+    related_panel: 'validation',
+    date: '2026-06-12',
+  },
+
   // ── ARCHITEKTUR — Modal/Director-Console: Path/Rest-Symmetrie + Umbauplan (2026-06-12) ──
 
   {
