@@ -29,6 +29,17 @@ const CATEGORY_META: Record<AnnotationCategory, { label: string; color: string; 
 // Initial seed annotations — operator extends these in the UI
 const SEED_ANNOTATIONS: Annotation[] = [
 
+  // ── KERN-INSIGHT — Auto-Reroute muss committete Wahl werden; Deckel = Auto/Commit-Grenze (2026-06-11) ──
+
+  {
+    id: 'ann_136',
+    category: 'adr',
+    label: 'KERN — Auto-Reroute muss committete Wahl werden; der Deckel ist die Auto/Commit-Grenze',
+    content: 'KERN-INSIGHT (Operator 2026-06-11, beim Testen gefunden). BEOBACHTUNG: das Route-Zappeln (ann_135) ist faktisch nie sichtbar, WEIL Stufe-1 die Route STILL + AUTOMATISCH umleitet, BEVOR ein Engpass-Segment je stehenbleibt. Und wenn kein Comfort-Weg da ist, leitet sie BELIEBIG um → Routen ändern sich „ohne Rücksicht auf Comfort", obwohl Comfort der Auslöser ist. Operator: „die Routen sind zu wenig intelligent." DIAGNOSE: die grenzenlose, stille Auto-Umleitung ist die Wurzel (= ann_130 Stufe-1 unbeschränkt, jetzt von der ERLEBNIS-Seite bestätigt). Das Zappeln hat nie eine Chance, weil das Problem schon wegoptimiert ist, ehe man es sieht. — LÖSUNG (Operator selbst: „Commit-Bindung ist schon die Lösung"): die automatische Umleitung wird eine COMMITTETE Wahl, vereint mit der Deckelung — der DECKEL ist die AUTO/COMMIT-GRENZE: (a) KLEINER Umweg (unter Deckel, klar besser) → still automatisch (Path bleibt autonom, kein Drama, ann_127). (b) GROSSER Umweg ODER kein Comfort-Weg → NICHT automatisch: das Engpass-Segment ZAPPELT (Problem bleibt stehen), der Umweg wird DASHED angeboten, der USER COMMITTET (Play) — oder ignoriert (ann_134). → erst dadurch wird (1) das Zappeln sinnvoll (Problem bleibt sichtbar statt wegoptimiert) UND (2) die Route INTELLIGENT + VORHERSEHBAR (ändert sich nicht hinter dem Rücken des Users). — Es ist DIESELBE Preview/Commit-Maschine (4c: committed⊕intent→preview, Play committet) — jetzt auf den PFAD/Umweg angewandt statt auf POIs. — SCHÄRFT ann_127: „Path autonom" gilt NUR für kleine Umwege; ab dem Deckel wird der Pfad eine committete Entscheidung (wie Rest). — TEST-NOTIZ: Operator testet via Comfort-Button (Schwelle ziehen), NICHT telco-last-sim (Last). Beide kreuzen dieselbe Comfort-Linie → valider Test; das Comfort-Ziehen machte den Dauer-Auto-Reroute sogar besonders sichtbar. ⚠ Real-Praxis anders: User setzt Comfort EINMAL, die Last (Telco) variiert — der Comfort-Button als ARBEITS-Werkzeug ist nicht der echte User-Flow (eigener offener Punkt: „auch der Comfort-Button sollte wahrscheinlich anders funktionieren"). — STATUS: NIEDERGELEGT, nicht gebaut (Operator müde, „besser niederlegen"). Nächste (ausgeruhte) Session = der Resolver-Brocken: Stufe-1 DECKELN + UMWEG-COMMIT (Auto nur unter dem Deckel; darüber zappel + dashed + Play-commit). Bezug: ann_130 (Deckel), ann_135 (Zappel+dashed), ann_127/132 (Path/Rest), ann_134 (Ignore/Change), ann_126 (Commit-Maschine).',
+    related_panel: 'R07',
+    date: '2026-06-11',
+  },
+
   // ── KORREKTUR — Zappeln gehört an die ROUTE, nicht ans Netz; Umwege dashed (2026-06-11) ──
 
   {
