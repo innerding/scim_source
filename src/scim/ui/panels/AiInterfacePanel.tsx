@@ -29,6 +29,17 @@ const CATEGORY_META: Record<AnnotationCategory, { label: string; color: string; 
 // Initial seed annotations — operator extends these in the UI
 const SEED_ANNOTATIONS: Annotation[] = [
 
+  // ── STELLSCHRAUBEN — Verhaltens-Konstanten später in der SCIM3-UI feinjustierbar (2026-06-11) ──
+
+  {
+    id: 'ann_141',
+    category: 'next_intent',
+    label: 'STELLSCHRAUBEN — Runtime-Konstanten später per Operator in der SCIM3-UI feinjustierbar',
+    content: 'STELLSCHRAUBEN / FEINJUSTIERUNG (Operator 2026-06-11). Viele Verhaltens-Konstanten der Ziel-App/Shell sind heute hartkodiert und sollen SPÄTER per Operator in der SCIM3-UI (System-Adjust, vgl. P01 default_*-Ranges + Regio-Parameter) feinjustierbar werden — pro System-Default und ggf. pro Representation. Erste Kandidaten: BCK-Hysterese-Deadband (BCK_MARGIN, heute 0,04 — W2), Zappel-Tempo (Route 0,6 s / Chip-Variante), Comfort-Default (0,65), Long-press-Dauer (500 ms), POI-Nummer-Inset, Netz-Grau (#c2c9d2), Resample-Zielweite (10 m), Detour-/Director-Gates (>15 Min, ann_140), Alternativen-Filter. PRINZIP: nichts davon ist „richtig für immer" — die Werte sind Vorgaben, die der Betrieb am echten Aufkommen nachzieht. Die Maschinerie existiert in Ansätzen (system-adjust NumericRange; regio-content smoothing_strength = ungenutzter Platzhalter). NICHT JETZT bauen — erst wenn die Funktionen stehen; hier festgehalten, damit diese Werte als BEWUSSTE Stellschrauben markiert sind, nicht als Zufallszahlen. Bezug: W2 (Hysterese), ann_137 (Backlog Stellschrauben), system-adjust (P01).',
+    related_panel: 'P01',
+    date: '2026-06-11',
+  },
+
   // ── PATH-DIRECTOR-GATE — Schwelle Mini-Modal-Path → Director-Controls-Path (2026-06-12) ──
 
   {
