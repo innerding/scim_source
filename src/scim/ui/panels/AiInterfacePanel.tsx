@@ -29,6 +29,17 @@ const CATEGORY_META: Record<AnnotationCategory, { label: string; color: string; 
 // Initial seed annotations — operator extends these in the UI
 const SEED_ANNOTATIONS: Annotation[] = [
 
+  // ── HINWEIS-MODAL-KONZEPT — vereinfachte Comfort-UX, ersetzt die Director-Controls (2026-06-11) ──
+
+  {
+    id: 'ann_143',
+    category: 'next_intent',
+    label: 'HINWEIS-MODAL-KONZEPT — Modal = Hinweis, Karte = Werkzeug; Diode statt Director',
+    content: 'HINWEIS-MODAL-KONZEPT (Operator 2026-06-11) — die VEREINFACHTE Comfort-UX, ersetzt die Director-Controls. LEITSATZ: Modal = HINWEIS, Karte = WERKZEUG. Der User bekommt nur Hinweise, wenn ROUTE oder RAST nicht mehr seinem Comfort entsprechen; geändert wird selbstständig AUF DER KARTE (POIs an-/abwählen wie gehabt). Kein Drop-up/Director mehr (bereits stillgelegt, DROPUP_ENABLED=false), kein Alternativen-Durchklicken. — MODAL-GESTALT: Rahmen in der Comfort-EINSTELL-Farbe (comfortColor). Darin IMMER ein Last-Farbfeld als DIODE: schwillt mit Glow auf/ab, Text (Comfort-Wort still…voll) mal sichtbar, mal nicht. Die Diode zeigt die TATSÄCHLICHE Last (colorAt(load)) — Rahmen=Einstellung, Diode=Realität. — DIODE = FLIPP-KASKADE wie die POI-Gestalt (poiVisualState/hektik): Last ÜBER dem eingestellten Comfort flippt; je weiter über Comfort, desto flippiger (Puls/Blink steigt, frac = (load minus comfort)/(1 minus comfort)); bei Last AUF oder UNTER Comfort: Diode RUHIG. — TRIGGER-UNTERSCHIED: öffnet das Modal per SYSTEM (Überlast), dann grosses ACHTUNG-TRIANGLE als Hintergrund-Wasserzeichen, pulsierend von unsichtbar auf Wasserzeichen. Öffnet es der USER (Long-tap), dann ruhig, KEIN Triangle. — TAP AUFS MODAL = WEG = HINGENOMMEN: gilt als bewusst akzeptiert (wie der alte ignored-Zustand), ▶ gehbar, hält bis der Breach klärt; danach meldet ein neuer Breach wieder. — MEHRERE überlastete POIs → EIN SAMMELMODAL (nicht je POI eines). — DAS POI-MODAL ist das bestehende POI-Detail (Long-tap-Card, oben) — dieselbe Card öffnet bei Überlast automatisch (mit Triangle + Diode). — ROUTE-ÜBERLAST: Kopf „Routenabschnitt überlastet" + Farb-Pill (wie beim POI). BEIDE Texte IMMER da, der unzutreffende AUSGEGRAUT: „Keine Alternative vorhanden." UND „Wähle Alternative in der Map." — UMWEG AUF DER KARTE = das NÄCHSTE (noch nicht gebaut): die dashed Umweg-Linie wird auf der Karte an-/abgewählt (nicht im Modal). — KEIN PREVIEW MEHR NÖTIG: direktes Karten-Editieren ersetzt die committed-plus-intent → Vorschau → ▶-commit-Maschine; ▶ = nur noch Begehung starten. — WAS ZURÜCKGEBAUT WIRD: Director-Controls/Drop-up (raus), die Tier-3-Slider-Mini-Modale plus Checkbox (gehen in dieses Hinweis-Modal auf), die statische Comfort-Box (wird zur Diode), Vorschau-Rahmen plus intent-Maschine (raus). OFFEN/NÄCHSTES: Umweg-Antippen auf der Karte. Bezug: ann_139 (besser plump als komplex), ann_138 (Path/Rest-Symmetrie), ann_126 (poiVisualState/hektik), ann_141 (Stellschrauben), W3.',
+    related_panel: 'R07',
+    date: '2026-06-11',
+  },
+
   // ── TELCO-LAST-INTERPRETATION — W1-Ausbauplan, festgehalten + VERTAGT (2026-06-11) ──
 
   {
