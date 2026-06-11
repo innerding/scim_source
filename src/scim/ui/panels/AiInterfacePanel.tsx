@@ -29,6 +29,17 @@ const CATEGORY_META: Record<AnnotationCategory, { label: string; color: string; 
 // Initial seed annotations — operator extends these in the UI
 const SEED_ANNOTATIONS: Annotation[] = [
 
+  // ── TELCO-LAST-INTERPRETATION — W1-Ausbauplan, festgehalten + VERTAGT (2026-06-11) ──
+
+  {
+    id: 'ann_142',
+    category: 'next_intent',
+    label: 'TELCO-LAST-INTERPRETATION — echte Lastverteilung + Telco-Einhängepunkt (VERTAGT)',
+    content: 'TELCO-LAST-INTERPRETATION (Operator 2026-06-11, VERTAGT). Ausbauplan für W1 — die echte Lastverteilung + der Telco-Einhängepunkt; jetzt nur festgehalten, dann aufgeschoben. — HEUTE (synthetisch): Worker GET /api/anthem → produceAnthem(net, simMin) → produceAnthemLoads = normalizeLoads(simSegmentLoads(net)) × dayPhase → simSegmentLoads ruft fieldAt(lat,lng) = reines sin/cos-Raummuster am Segment-Mittelpunkt. Keine Dichte, keine Personen, kein Telco. — DIE NAHT (Vorschlag): EINE reine shell-kit-Funktion als einzige Last-Quelle, ersetzt fieldAt: loadFromDensity(net, samples, ladder) → ein Last-Wert je 10m-Segment. samples = {lat, lng, weight} = die Telco-/Dichte-Eingabe (Telco: Funkzellen-Schwerpunkt + Geräte-Zahl; Sim: synthetische Cluster um POIs). ladder = Abstands-Kernel: ein Mensch in 50 m zählt stark, in 150 m mittel, in 250 m schwach, darüber ~null (W1-b). Pro Netz-Punkt load = Summe weight_j × kernel(dist_j). Einheit = PERSONEN PRO METER entlang des Pfads (W1-c) — räumliche Dichte wird zu linearer Pfad-Dichte; die Farb-GRENZEN (heute evenBorders) werden auf echte Pers./m kalibriert. Sim UND Telco füttern DIESELBE Funktion, nur die samples kommen aus verschiedenen Quellen — genau das ist der Einhängepunkt. — GESTAFFELTER PLAN: (1) Naht + Kernel in shell-kit (rein, getestet). (2) Sim-Feeder: synthetische samples (Cluster um POIs/Attraktoren × Tageskurve) durch loadFromDensity, ersetzt fieldAt im Worker — ändert das Sim-Bild (von abstraktem Muster zu dichte-geformt; ECHT wird es dadurch nicht). (3) Worker ruft die neue Kette. (4) Grenzen-Kalibrierung auf Pers./m (iterativ, kann später). — OFFENE ENTSCHEIDUNGEN: (a) Eingabe-Form Punkt-Samples vs Raster/Grid; (b) die Sim durch die neue Naht schicken (Sim-Bild ändert sich) ODER fieldAt für die Sim lassen und die Telco-Funktion nur danebenstellen (Naht da, im Live-Pfad ungenutzt bis Telco); (c) Tiefe — nur Naht + Kernel + Sim-Feeder jetzt, Kalibrierung später, oder gleich kalibrieren. — KERN-EINSICHT: macht die Sim NICHT echter (keine echten Menschen), aber Telco hängt 1:1 ein; der Wert liegt im Interface + im kalibrierten Modell, nicht in mehr Sim-Realismus. Passt zum Black-Box-Prinzip (Gerät meldet nur „brauche das Lastbild der Representation"). Bezug: W1 (ann_137), Anthem-Kette (produceAnthem/produceAnthemLoads/simSegmentLoads/fieldAt im Worker + shell-kit/anthem), ann_128 (Last-Modell), ann_141 (Grenzen als Stellschraube).',
+    related_panel: 'P06',
+    date: '2026-06-11',
+  },
+
   // ── STELLSCHRAUBEN — Verhaltens-Konstanten später in der SCIM3-UI feinjustierbar (2026-06-11) ──
 
   {
