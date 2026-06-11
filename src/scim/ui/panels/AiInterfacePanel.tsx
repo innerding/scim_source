@@ -29,6 +29,17 @@ const CATEGORY_META: Record<AnnotationCategory, { label: string; color: string; 
 // Initial seed annotations — operator extends these in the UI
 const SEED_ANNOTATIONS: Annotation[] = [
 
+  // ── PATH-DIRECTOR-GATE — Schwelle Mini-Modal-Path → Director-Controls-Path (2026-06-12) ──
+
+  {
+    id: 'ann_140',
+    category: 'next_intent',
+    label: 'PATH-DIRECTOR-GATE — reicher Path-Director nur bei >15 Min UND >1 Alternative',
+    content: 'PATH-DIRECTOR-GATE (Operator 2026-06-12) — die REICHE Director-Controls-Path (mehrere Umwege durchklicken, Phase C ann_138) erscheint NUR, wenn: (1) ein Umweg LÄNGER ALS 15 MINUTEN ist, UND (2) es MEHR ALS 1 (komfortable) Alternative gibt. (3) — schon implementiert via Resolver-Kette A1: nur wenn KEIN POI betroffen ist = Path-Concern. SONST genügt das MINI-MODAL-PATH mit 1-Tap „Umweg nehmen" (ann_139 besser-plump-als-komplex: für einen kleinen Umweg lohnt das Durchklicken nicht). = die Eskalations-Schwelle Mini-Modal-Path → Director-Controls-Path. STAND: A1 zeigt immer das Mini-Modal-Path mit dem besten Umweg; dieses Gate + der reiche Director sind Phase C. Bezug: ann_138 (Architektur/Umbauplan), ann_139 (Doktrin).',
+    related_panel: 'R07',
+    date: '2026-06-12',
+  },
+
   // ── DOKTRIN — „besser plump als komplex" (Tie-Breaker für alle UI/UX) (2026-06-12) ──
 
   {
