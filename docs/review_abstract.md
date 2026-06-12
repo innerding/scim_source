@@ -7,8 +7,10 @@ lastadaptive Ziel-Apps, am Beispiel der MVP-Lichtenberg*
 
 ## Abstract
 
-SCIM3 ist eine **Autoren- und Auslieferungsplattform** (Authoring & Delivery Platform), die
-ortsbezogene, lastadaptive Endnutzer-Apps erzeugt, versioniert und ausliefert. Sie trennt
+SCIM3 ist der **funktionsfähige MVP** einer **Autoren- und Auslieferungsplattform** (Authoring
+& Delivery Platform), die ortsbezogene, lastadaptive Endnutzer-Apps erzeugt, versioniert und
+ausliefert. Der Kern trägt bereits produktiv; die eigentliche Wertschöpfung liegt in mehreren
+noch ausstehenden, forschungsnahen Ausbaustufen (siehe unten). Die Plattform trennt
 strikt zwischen Produzent und Konsument: In der Werkbank (SCIM3) wird ein realer Ort als
 *Representation* modelliert — Gebietsgrenze, Wegnetz als Segment-Graph, POI-Katalog, Icons
 sowie ein Farb-/Schwellenmodell der Auslastung. Das Einpflegen erfolgt rollengetrennt über
@@ -48,6 +50,36 @@ unabhängig unit-getestete Single-Source-of-Truth-Bibliothek (*shell-kit*) sowie
 Berechnung bei minimaler Datenhaltung (Erstlieferung ~199 KB gzip, im laufenden Betrieb nur
 das Lastsignal mit ~2 KB je Fünf-Minuten-Takt — robust auch unter überlasteten Mobilnetzen).
 
+## Reifegrad und Ausbaustufen
+
+SCIM3 ist ein **funktionsfähiger MVP**: Der vollständige Weg von der Modellierung einer
+Representation über die Paketierung bis zur ausgelieferten, edge-lokal rechnenden Ziel-App ist
+durchgängig erprobt — die Machbarkeit ist am Beispiel Lichtenberg belegt. Auf diesem
+tragfähigen Kern setzen mehrere **Ausbaustufen** auf, die den eigentlichen Forschungs- und
+Entwicklungsgehalt ausmachen und Gegenstand der weiteren Arbeit sind:
+
+- **Reale Last als Ground Truth.** Ablösung der Simulation durch reale Mobilfunk-Auslastung,
+  perspektivisch die **datenschutzfreundliche Fusion** mehrerer Signalquellen (anonymisiert,
+  differenziell privat) — Datenschutz als Forschungsgegenstand, nicht als Nachgedanke.
+- **Vorausschauende Lenkung (ML-Forecast).** Ein Vorhersagemodell, das die Auslastung nicht
+  nur abbildet, sondern **prognostiziert**; die Wegführung wird damit proaktiv statt reaktiv.
+- **Anomalie-Erkennung.** Automatisches Erkennen ungewöhnlicher Lastmuster — Andrangsspitzen,
+  Events, Störungen — als Auslöser für Sonderverhalten und Frühwarnung.
+- **Event-Modus.** Dedizierte Behandlung von Großveranstaltungen und Massenandrang mit
+  temporären Kapazitäts- und Komfortregimen.
+- **Eingangsseitige Ausspielung & Zugangssteuerung.** Die Eintritts-Weiche bestimmt, welche
+  Representation ein Gerät erhält; sicherheitsrelevantes Gating, geofenced Zugang und **Sperren**
+  einzelner Bereiche oder Wege (bei Gefahr, Überlast oder Sperrgebieten).
+- **Sicherheits- und Governance-Schicht.** Server-seitige Authentifizierung, rollenbasierte
+  Berechtigungen und Sperren, nachvollziehbare Provenienz und Audit — heute als UX-Gate
+  angelegt, künftig serverseitig durchgesetzt.
+- **Skalierung und Wirkungsnachweis.** Automatisierung des Operator-Schritts für die rasche
+  Ausbringung vieler Regionen sowie ein Wirkungsnachweis der Lenkung (misst, ob die Empfehlung
+  Andrang real entzerrt — der Regelkreis als überprüfbare Hypothese).
+
+Der MVP ist damit zugleich Machbarkeitsbeleg und Ausgangspunkt einer substanziellen
+Weiterentwicklung.
+
 ## Vorschlag zur Begutachtung
 
 Um die Beurteilung auf unmittelbare Anschauung statt auf Beschreibung allein zu stützen,
@@ -67,23 +99,16 @@ Produzentensicht:
    Beispiel nachvollzogen.
 
 Als Ergebnis dieser Vorgänge wird ein **Schreiben des Instituts** angestrebt, das den Stand
-von SCIM für **FFG, TVB und AWS** allgemeinverständlich skizziert — insbesondere die
-Fähigkeit, Representationen **sehr rasch zu erzeugen und zu skalieren** — und zugleich
-**ausdrücklich benennt, was noch fehlt**: die Anbindung realer Mobilfunk-Auslastung als
-Ground Truth (derzeit simuliert), eine server-seitige Authentifizierung und vertiefte
-Governance (Rollen und Provenienz wirken heute als UX-Gate), die Feld-Verifikation der
-GPS-gestützten Vor-Ort-Führung sowie die Automatisierung des Operator-Schritts für die
-Skalierung auf viele Regionen.
+von SCIM für **FFG, TVB und AWS** allgemeinverständlich skizziert — insbesondere die Fähigkeit,
+Representationen **sehr rasch zu erzeugen und zu skalieren** — und zugleich den **MVP-Charakter
+samt der oben genannten Ausbaustufen ausdrücklich benennt** (von der Anbindung realer Last über
+ML-Forecast und Anomalie-Erkennung bis zu Event-Modus, eingangsseitiger Zugangssteuerung mit
+Sperren und der Sicherheits-/Governance-Schicht). Gerade dieses Zusammenspiel aus erprobtem
+Kern und ausgewiesenem Entwicklungspotenzial bildet die Grundlage für die angestrebte Förderung.
 
 ---
 
 <p style="font-size: 0.8em; color: #888;">
-<strong>Herkunft dieses Dokuments.</strong> Die vorstehende Beschreibung entstand im Dialog
-mit dem KI-Assistenten Claude (Opus 4.8) auf folgende Fragestellung des Autors: „Hilf mir,
-für einen universitären Review der MVP-Lichtenberg sowie der SCIM3 — als eine <em>Kategorie</em>,
-welche die Funktionen eines Einpflege-Dashboards für eine Ziel-App wie die MVP-Lichtenberg
-erfüllt — eine Beschreibung zu definieren." Die offene Kategorie wurde dabei zu „Autoren- und
-Auslieferungsplattform" präzisiert; die Kennzahlen sind über die drei Auslieferungs-Repositorys
-(Werkbank, Runtime, <em>shell-kit</em>) gemessen, die Paketgrößen am Lichtenberg-Beispiel
-(gzip, Stand Juni 2026).
+Entstanden im Dialog mit dem KI-Assistenten Claude (Opus 4.8); Kennzahlen über die drei
+Auslieferungs-Repositorys gemessen, Paketgrößen am Lichtenberg-Beispiel (gzip, Stand Juni 2026).
 </p>
