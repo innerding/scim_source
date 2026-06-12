@@ -106,6 +106,44 @@ ML-Forecast und Anomalie-Erkennung bis zu Event-Modus, eingangsseitiger Zugangss
 Sperren und der Sicherheits-/Governance-Schicht). Gerade dieses Zusammenspiel aus erprobtem
 Kern und ausgewiesenem Entwicklungspotenzial bildet die Grundlage für die angestrebte Förderung.
 
+## Andockpunkt für das Institut
+
+Das Anforderungsbild war von Beginn an, eine **MVP-App samt Regio-Dashboard** zu schaffen, an
+die ein Forschungspartner **andocken** kann. Genau darauf ist die Architektur ausgelegt: Das
+Lastsignal (*anthem*), das Schwellenmodell und die Eintritts-Weiche sind **definierte
+Schnittstellen**, an denen sich Forschungsmodule als **Panels** einhängen lassen, ohne den
+Auslieferungsweg oder das Endgerät zu berühren. Plattform, Datenmodell, Paketierung,
+Auslieferung und die edge-lokale App bleiben in unserer Hand und funktionieren bereits — ebenso
+die deterministische Lastsimulation, die Schwellen-Kalibrierung und eine Prognose-Baseline.
+
+Forschungsseitig lohnend — weil über die Eigenmittel hinausgehend und genau auf das Profil des
+**Software Competence Center Hagenberg (SCCH)** zugeschnitten (*Data Analysis Systems*:
+Forecasting/Prediction; *Secure Software Analytics* samt Privacy für verteiltes Lernen) — sind
+folgende andockbare Panels:
+
+- **Schwarm-Sensorik-Panel — telco-unabhängige Auslastung aus wenigen Geräten.** Die
+  wissenschaftlich anspruchsvollste und eigenständigste Aufgabe: aus einer kleinen,
+  selbstselektierten und damit verzerrten Stichprobe app-tragender Geräte die flächige
+  Auslastung je Segment zu schätzen — mit Stichproben-/Coverage-Korrektur, raumzeitlicher
+  Inferenz und **privacy-erhaltender, föderierter Aggregation** (Differential Privacy, Secure
+  Aggregation), sodass kein Gerät seine Spur preisgibt. Das trifft SCCHs „distributed learning
+  + privacy" punktgenau und löst zugleich die Abhängigkeit von Mobilfunk-Verträgen — ein klarer
+  Geschäftsvorteil. Optional an wenigen Referenzpunkten über bildbasierte Personenzählung
+  kalibriert/validiert (ebenfalls SCCH-Kompetenz, *Knowledge-Based Vision Systems*).
+- **Forecast-Panel (ML-Forecast).** Robuste Mehrhorizont-Prognose der Auslastung unter spärlichen
+  Daten, regionenübergreifender Transfer, Unsicherheitsquantifizierung und Einbezug exogener
+  Signale (Wetter, Kalender, Events) — über die Baseline hinaus, die wir selbst stellen.
+- **Anomalie-/Event-Panel.** Automatisches Erkennen ungewöhnlicher Lastmuster als Frühwarnung
+  und Auslöser des Event-Modus.
+- **Security- & Governance-Panel (Cyber Security).** Bedrohungsmodell und Sicherheits-Audit der
+  Auslieferungs-Pipeline (*Secure Software Analytics*), server-seitige Authentifizierung,
+  rollenbasierte Berechtigungen und Sperren sowie die Privacy-by-Design-Grundlage der
+  Schwarm-Sensorik — Vertrauen, das ein zertifizierender Forschungspartner ausweisen kann.
+
+Die Trennung ist damit sauber und für eine Förderung klar argumentierbar: **Wir liefern die
+tragende, bereits lauffähige Plattform, das Institut den forschungsgetriebenen Mehrwert — als
+Panels, die an definierten Nahtstellen andocken.**
+
 ---
 
 <p style="font-size: 0.8em; color: #888;">
