@@ -1,6 +1,6 @@
 # Einleitung — SCIM3 für Michael Moser
 
-*Onboarding als Regio-Editor oder Data-Analyst. Begleitend: der angehängte QR-Code.*
+*Onboarding als Data-Analyst oder Rep-Editor. Begleitend: der angehängte QR-Code.*
 
 Lieber Michael,
 
@@ -9,7 +9,8 @@ mit dem du in zwei Minuten die fertige App in der Hand hast. Hier das Wichtigste
 
 ## 1. Zwei Zugänge
 
-- **Die Werkbank** — `scim3.diesenpark.com` — hier arbeitest du als **Editor** oder **Analyst**.
+- **Die Werkbank** — `scim3.diesenpark.com` — hier arbeitest du als **Data-Analyst** oder
+  **Rep-Editor**.
 - **Die Ziel-App** — der **angehängte QR-Code** — lädt die fertige MVP-Lichtenberg direkt auf
   dein Handy (kein Login, keine Installation). Das ist die Konsumentensicht; fang am besten
   damit an.
@@ -18,10 +19,9 @@ mit dem du in zwei Minuten die fertige App in der Hand hast. Hier das Wichtigste
 
 1. `scim3.diesenpark.com` öffnen.
 2. Als Name **`Michael Moser`** eingeben.
-3. **Zugangscode:** der dir separat übermittelte Wiederherstellungscode
-   (Groß-/Kleinschreibung und Bindestriche egal).
-4. Du hast **zwei Rollen** hinterlegt — **Data-Analyst** und **Editor** — und **wählst beim
-   Login eine davon**. Wechseln = neu anmelden und die andere Rolle wählen.
+3. **Zugangscode:** **`analyst`** (Groß-/Kleinschreibung egal).
+4. Du hast **zwei Rollen** hinterlegt — und **wählst beim Login eine davon**:
+   **Data-Analyst** oder **Rep-Editor**. Wechseln = neu anmelden und die andere Rolle wählen.
 
 > Hinweis: Die Anmeldung ist derzeit ein **UX-Gate** (Bequemlichkeit, noch keine harte
 > Sicherheitsschranke). Eine echte Zugangskontrolle ist als Ausbaustufe vorgesehen.
@@ -37,7 +37,7 @@ Du **beobachtest und bewertest**, ohne etwas zu verändern:
 Die Bau-/Kosmologie-Bedienelemente sind für die Analyst-Sicht bewusst gesperrt — du siehst sie
 zur Information, bedienst sie aber nicht.
 
-## 4. Als Regio-Editor aktiv werden
+## 4. Als Rep-Editor aktiv werden
 
 Merksatz: **Es gibt nur Representationen.** Eine Representation ist ein modellierter Ort —
 Gebietsgrenze, Wegnetz, POI-Katalog, Farb-/Schwellenmodell.
@@ -63,7 +63,7 @@ Ende ausliefert.
 
 1. **QR scannen** und die App ~5 Minuten erkunden (Konsumentensicht).
 2. In der Werkbank als **Analyst** umsehen (Monitor, Lastbild, Versionen).
-3. Als **Editor** eine kleine Representation antesten (Hub → Werkzeuge → Speichern → Review).
+3. Als **Rep-Editor** eine kleine Representation antesten (Hub → Werkzeuge → Speichern → Review).
 
 Bei Fragen melde dich jederzeit — den ersten Durchlauf gehen wir gerne gemeinsam durch.
 
