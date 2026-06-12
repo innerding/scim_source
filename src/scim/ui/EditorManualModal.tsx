@@ -65,11 +65,11 @@ DEINE RECHTE
 
 PAKET-GRÖSSEN  (Beispiel Lichtenberg · gzip)
 
-  Shell           138 KB   einkompiliert · einmalig
+  Shell           147 KB   einkompiliert · einmalig (JS 139 + CSS 8)
   Origin           49 KB   Bundle (648 Seg.) · ohne px-Bilder
   Anthem          3,3 KB   Snapshot · alle 5 Min
   ─────────────────────
-  Erstlieferung  ~190 KB   (Shell + Origin + Anthem)
+  Erstlieferung  ~200 KB   (Shell + Origin + Anthem)
   laufend         3,3 KB   Bestandsnutzer · nur Anthem / 5 Min
 
   Versorgungssicherheit: die winzige laufende Last bleibt auch

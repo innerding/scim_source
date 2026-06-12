@@ -517,7 +517,7 @@ function LeistungsblattV03Tab({ result }: { result: ScimPipelineResult }) {
         background: '#e6fffa', border: '1px solid #38b2ac',
         borderRadius: 6, padding: '10px 14px', marginBottom: 12, fontSize: 12, color: '#234e52',
       }}>
-        Drei Wochen Weiterentwicklung nach dem v0.2-Implementierungssprint. Schwerpunkt: Operator-Datenpflege (Katalog, Cluster, Decorations) und zweite Region als Generizitäts-Beweis.
+        Ein Monat Weiterentwicklung nach dem v0.2-Implementierungssprint. Schwerpunkt: Operator-Datenpflege (Katalog, Cluster, Decorations) und zweite Region als Generizitäts-Beweis.
       </div>
       {NEUERUNGEN_V03.map((n) => (
         <div key={n.id} style={{

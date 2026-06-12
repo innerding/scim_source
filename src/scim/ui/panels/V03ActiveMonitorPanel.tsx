@@ -10,9 +10,9 @@ import { AnthemCycleBadge } from '../AnthemCycleInfo';
 const WORKER_URL = import.meta.env.VITE_WORKER_URL as string | undefined;
 
 // Shell = die generische Runtime-App (shell-kit einkompiliert), für alle Reps gleich.
-// Auslieferungsgröße = der gzippte App-Build (JS+CSS). Gemessen am dist 2026-06-07;
-// bei größeren Runtime-Änderungen nachmessen.
-const SHELL_KB = 138;
+// Auslieferungsgröße = der gzippte App-Build (JS+CSS). Gemessen am dist 2026-06-12
+// (JS 139 + CSS 8); bei größeren Runtime-Änderungen nachmessen.
+const SHELL_KB = 147;
 const SHELL_BYTES = SHELL_KB * 1024;
 
 // Echte gzip-Größe eines Strings (Transfer-Größe), via CompressionStream. null,
