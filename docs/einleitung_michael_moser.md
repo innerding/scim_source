@@ -32,7 +32,7 @@ Du **beobachtest und bewertest**, ohne etwas zu verändern:
 
 - der **Active-Monitor** (aktives Origin-Bundle, Paketgrößen je Schicht, Presence, QR),
 - das **Lastbild** (anthem) und sein Verhalten über den Tag (Zeit-Regler „Turbo"),
-- die **Versions-Bibliothek** und das **Leistungsblatt** (System ◈).
+- die ausgelieferten **Versionen** der Representation.
 
 Die Bau-/Kosmologie-Bedienelemente sind für die Analyst-Sicht bewusst gesperrt — du siehst sie
 zur Information, bedienst sie aber nicht.
