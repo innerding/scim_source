@@ -5,6 +5,25 @@ lastadaptive Ziel-Apps, am Beispiel der MVP-Lichtenberg*
 
 *Stand: Juni 2026.*
 
+## Kurzfassung
+
+SCIM3 ist der **funktionsfähige MVP** einer Autoren- und Auslieferungsplattform für
+ortsbezogene, lastadaptive Endnutzer-Apps — exemplarisch die **MVP-Lichtenberg**. In einer
+Werkbank (dem *Pathworks Hub*) wird ein Ort als versionierte *Representation* modelliert; eine
+Pipeline schnürt daraus drei Pakete (*shell, origin, anthem*) und liefert sie cloud-only per
+QR-Code auf das Endgerät. Die App rechnet **edge-lokal** (Comfort, Wegfindung, GPS-Führung) und
+passt die Route im Fünf-Minuten-Takt an die Auslastung an — derzeit **simuliert**,
+architektonisch auf reale Mobilfunklast ausgelegt. Der Kern trägt produktiv; die Wertschöpfung
+liegt in noch ausstehenden, **forschungsnahen Ausbaustufen**.
+
+Daraus folgt der **Andockpunkt für das Institut (SCCH)**: An definierten Nahtstellen
+(Lastsignal, Schwellenmodell, Eintritts-Weiche) docken Forschungs-Panels an — allen voran die
+**telco-unabhängige „Schwarm-Sensorik"** (Auslastung aus wenigen Geräten, föderiert und
+privacy-erhaltend), dazu ML-Forecast, Anomalie-Erkennung und eine Cyber-Security-/Governance-
+Schicht. **Wir liefern die erprobte Plattform, das Institut den forschungsgetriebenen Mehrwert.**
+Eine Begutachtung — App per QR und eine im Workshop live publizierte eigene Representation — soll
+in ein Schreiben des Instituts für **FFG, TVB und AWS** münden.
+
 ## Abstract
 
 SCIM3 ist der **funktionsfähige MVP** einer **Autoren- und Auslieferungsplattform** (Authoring
