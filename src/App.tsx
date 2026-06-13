@@ -26,6 +26,17 @@ export default function App() {
     try { return localStorage.getItem('scim3_last_panel') || 'workspace'; } catch { return 'workspace'; }
   });
   useEffect(() => { try { localStorage.setItem('scim3_last_panel', activeId); } catch { /* noop */ } }, [activeId]);
+  // Globaler Drop-Schutz: ein Datei-Drop NEBEN eine Drop-Zone (auf's Dokument)
+  // ließe den Browser die Datei als Seite öffnen → App weg. Window-weit abfangen;
+  // die echten Drop-Zonen (eigenes onDrop) handeln ihre Drops weiterhin selbst.
+  useEffect(() => {
+    const guard = (e: DragEvent) => {
+      if (e.dataTransfer?.types?.includes('Files')) e.preventDefault();
+    };
+    window.addEventListener('dragover', guard);
+    window.addEventListener('drop', guard);
+    return () => { window.removeEventListener('dragover', guard); window.removeEventListener('drop', guard); };
+  }, []);
   const [activeTab, setActiveTab] = useState<TabId>('input');
   // Inspector startet eingeklappt → ScimMap wird NICHT beim Start gemountet
   // (kein Off-screen-Rechnen beim Kaltstart). Aber: nach dem 1. Öffnen bleibt sie
