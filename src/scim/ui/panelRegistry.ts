@@ -21,6 +21,8 @@ export interface TabDescriptor {
   id: TabId;
   label: string;
   icon: string;
+  // Optionale Subline unter dem Tab-Label (z.B. Stern-Name = label, Funktion = sub).
+  sub?: string;
   // Optionaler Konzept-Text (text-first): wird statt eines echten Inhalts als
   // Kasten gezeigt, solange der Tab noch nicht funktional befuellt ist.
   body?: string[];
@@ -82,7 +84,7 @@ export interface CloudDescriptor {
 // (Stroke-Font). Eigener Himmelskörper/Namespace, NICHT in der Pipeline.
 export interface TypefaceDescriptor {
   kind: 'typeface';
-  id: 'polarstar';
+  id: string;            // 'polarstar' (Kleiner Bär) · 'ursa_major' (Großer Bär)
   label: string;
   icon: string;
   shortDescription: string;
@@ -512,7 +514,7 @@ export const DRAWER_DESCRIPTOR: WorkspaceDescriptor = {
   icon: '◇',
   tabs: [
     { id: 'input', label: 'Karte', icon: '◇' },   // enthält Umriss/Wegnetz (intern)
-    { id: 'icon', label: 'Icon', icon: '✎' },      // Icon-Build (kein Karte)
+    // (Tab „Icon" herausgezogen → Großer Bär · Icon-Schmiede.)
   ],
 };
 
@@ -583,17 +585,39 @@ export const AI_INTERFACE_DESCRIPTOR: AiInterfaceDescriptor = {
   ],
 };
 
+// Kleiner Bär — die Schrift-Schmiede (= das frühere Polarstern-Panel, aufgegangen).
+// Tabs = Sterne des Kleinen Wagens, Subline = Funktion. id bleibt 'polarstar'
+// (load-bearing: Sternbild-Klick, Cosmo-Liste, Panel-Dispatch hängen daran).
 export const POLARSTERN_DESCRIPTOR: TypefaceDescriptor = {
   kind: 'typeface',
   id: 'polarstar',
-  label: 'Polarstern',
+  label: 'Kleiner Bär',
   icon: '✦',
-  shortDescription: 'Stroke-Font — die universelle Sprache der Maschine',
+  shortDescription: 'Schrift-Schmiede — die universelle Sprache der Maschine',
   tabs: [
-    { id: 'input',      label: 'Glyphen',   icon: '✎' },
-    { id: 'result',     label: 'Vorschau',  icon: '◎' },
-    { id: 'validation', label: 'Metriken',  icon: '⚑' },
-    { id: 'raw',        label: 'Font-JSON', icon: '{}' },
+    { id: 'input',      label: 'Polaris',  sub: 'Fonts',    icon: '✎' },
+    { id: 'result',     label: 'Kochab',   sub: 'Vorschau', icon: '◎' },
+    { id: 'validation', label: 'Pherkad',  sub: 'Metriken', icon: '⚑' },
+    { id: 'raw',        label: 'Yildun',   sub: 'Export',   icon: '{}' },
+  ],
+};
+
+// Großer Bär — die Icon-Schmiede (Node-Editor, BA2). Tab-Gerüst nach den sieben
+// Sternen des Großen Wagens; Funktionen noch leer (Vorbereitung).
+export const URSA_MAJOR_DESCRIPTOR: TypefaceDescriptor = {
+  kind: 'typeface',
+  id: 'ursa_major',
+  label: 'Großer Bär',
+  icon: '✦',
+  shortDescription: 'Icon-Schmiede — Node-Editor (Vorbereitung, BA2)',
+  tabs: [
+    { id: 'input',      label: 'Dubhe',  sub: 'Schmiede', icon: 'ℹ' },
+    { id: 't1',         label: 'Merak',  icon: '·' },
+    { id: 't2',         label: 'Phecda', icon: '·' },
+    { id: 't3',         label: 'Megrez', icon: '·' },
+    { id: 't4',         label: 'Alioth', icon: '·' },
+    { id: 't5',         label: 'Mizar',  icon: '·' },
+    { id: 't6',         label: 'Alkaid', icon: '·' },
   ],
 };
 

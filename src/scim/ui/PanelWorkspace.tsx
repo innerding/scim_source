@@ -5,7 +5,7 @@ import type { TabId } from './panelRegistry';
 import {
   PANEL_REGISTRY, SYSTEM_DESCRIPTOR, AI_INTERFACE_DESCRIPTOR, IPILLS_DESCRIPTOR, CLOUD_DESCRIPTOR,
   RUNTIME_BUILDER_REGISTRY, VERSIONEN_REGISTRY, WORKSPACE_DESCRIPTOR,
-  DRAWER_DESCRIPTOR, CATALOG_DESCRIPTOR, POLARSTERN_DESCRIPTOR,
+  DRAWER_DESCRIPTOR, CATALOG_DESCRIPTOR, POLARSTERN_DESCRIPTOR, URSA_MAJOR_DESCRIPTOR,
 } from './panelRegistry';
 import type { ScimPipelineResult } from '../pipeline/scimPipeline.types';
 
@@ -36,6 +36,7 @@ import type { TelcoLoadState } from '../telco-load/telcoLoad.types';
 import SystemPanel from './panels/SystemPanel';
 import AiInterfacePanel from './panels/AiInterfacePanel';
 import PolarsternPanel from './panels/PolarsternPanel';
+import IconForgeSpec from './panels/IconForgeSpec';
 import CatalogTab from './panels/CatalogTab';
 import { useRole, useModeSwitch, isEditorRole } from './RoleContext';
 import V01PackagesPanel from './panels/V01PackagesPanel';
@@ -86,7 +87,7 @@ const TAB_ORDER: TabId[] = ['catalog', 't1', 't2', 't3', 't4', 't5', 't6', 'sign
 function TabBar({
   tabs, active, onSelect,
 }: {
-  tabs: { id: TabId; label: string; icon: string }[];
+  tabs: { id: TabId; label: string; icon: string; sub?: string }[];
   active: TabId;
   onSelect: (id: TabId) => void;
 }) {
@@ -119,7 +120,12 @@ function TabBar({
             }}
           >
             <PanelIcon icon={t.icon} size={13} />
-            {t.label}
+            {t.sub ? (
+              <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: 1.1 }}>
+                <span>{t.label}</span>
+                <span style={{ fontSize: 8.5, opacity: 0.7, letterSpacing: '0.02em' }}>{t.sub}</span>
+              </span>
+            ) : t.label}
           </button>
         );
       })}
@@ -1129,7 +1135,6 @@ function SensusCorePackages() {
 // Zirkumpolar-Sternbilder (außer dem Kleinen Bär = Polarstern, der ein echtes
 // Panel hat). Vorerst Stubs — Benennung/Tabs/Inhalt folgen (Schritt 2+3).
 const CONSTELLATION_STUBS: Record<string, { label: string; role: string }> = {
-  ursa_major: { label: 'Großer Bär', role: 'Icon-Schmiede (Maschine) — Icons zeichnen/importieren' },
   cassiopeia: { label: 'Cassiopeia', role: 'Katalog-Maschine — hält & gibt Asset-Sets aus' },
   cepheus:    { label: 'Cepheus', role: 'Katalog-Maschine — Nation-/Region-/SCIM3-Icon-Sets' },
   draco:      { label: 'Draco', role: 'Katalog-Maschine — Regio-Katalog-Icon-Sets' },
@@ -1154,7 +1159,7 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
     return <WorkspacePanel onJumpTo={onJumpTo ?? (() => {})} activeTab={activeTab} />;
   }
   if (activeId === DRAWER_DESCRIPTOR.id) {
-    return <DrawerPanel onJumpTo={onJumpTo ?? (() => {})} openGeometryId={openGeometryId} onGeometryConsumed={onGeometryConsumed} iconView={activeTab === 'icon'} />;
+    return <DrawerPanel onJumpTo={onJumpTo ?? (() => {})} openGeometryId={openGeometryId} onGeometryConsumed={onGeometryConsumed} />;
   }
   if (activeId === CATALOG_DESCRIPTOR.id) {
     // Katalog ist auch für Analyst sichtbar (operator-Gate entfernt).
@@ -1169,6 +1174,24 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
   }
   if (activeId === POLARSTERN_DESCRIPTOR.id) {
     return <PolarsternPanel activeTab={activeTab} />;
+  }
+  if (activeId === URSA_MAJOR_DESCRIPTOR.id) {
+    // Dubhe (input) = die Schmiede-Spec (aus dem Drawer gezogen); die übrigen
+    // Wagen-Sterne sind noch leeres Gerüst (Funktionen folgen in BA2).
+    if (activeTab === 'input') {
+      return <div style={{ padding: '20px 22px' }}><IconForgeSpec /></div>;
+    }
+    return (
+      <div style={{ padding: '28px 24px', fontFamily: 'system-ui, sans-serif', color: '#718096' }}>
+        <div style={{ display: 'inline-block', padding: '3px 8px', marginBottom: 14, fontSize: 10, fontFamily: 'monospace', color: '#9c6a00', background: '#fff0d6', border: '1px solid #f6c177', borderRadius: 4 }}>
+          Großer Bär · noch leer
+        </div>
+        <div style={{ fontSize: 13, lineHeight: 1.6 }}>
+          Tab-Gerüst nach den sieben Wagen-Sternen — Funktion folgt in <strong>BA2</strong>
+          (der echte Node-Editor: Zeichnen · Layer · Boolean · Import · Cleaner · Export).
+        </div>
+      </div>
+    );
   }
   if (CONSTELLATION_STUBS[activeId]) {
     return <StubPanel id={CONSTELLATION_STUBS[activeId].label} description={CONSTELLATION_STUBS[activeId].role} />;
@@ -1446,6 +1469,7 @@ export default function PanelWorkspace({ activeId, activeTab, onTabChange, resul
     activeId === IPILLS_DESCRIPTOR.id ? IPILLS_DESCRIPTOR :
     activeId === CLOUD_DESCRIPTOR.id ? CLOUD_DESCRIPTOR :
     activeId === POLARSTERN_DESCRIPTOR.id ? POLARSTERN_DESCRIPTOR :
+    activeId === URSA_MAJOR_DESCRIPTOR.id ? URSA_MAJOR_DESCRIPTOR :
     CONSTELLATION_STUBS[activeId] ? {
       id: activeId,
       label: CONSTELLATION_STUBS[activeId].label,
