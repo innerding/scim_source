@@ -611,13 +611,13 @@ export const URSA_MAJOR_DESCRIPTOR: TypefaceDescriptor = {
   icon: '✦',
   shortDescription: 'Icon-Schmiede — Node-Editor (Vorbereitung, BA2)',
   tabs: [
-    { id: 'input',      label: 'Dubhe',  sub: 'Schmiede', icon: 'ℹ' },
-    { id: 't1',         label: 'Merak',  icon: '·' },
-    { id: 't2',         label: 'Phecda', icon: '·' },
-    { id: 't3',         label: 'Megrez', icon: '·' },
-    { id: 't4',         label: 'Alioth', icon: '·' },
-    { id: 't5',         label: 'Mizar',  icon: '·' },
-    { id: 't6',         label: 'Alkaid', icon: '·' },
+    { id: 'input',      label: 'Dubhe',  sub: 'Intro',     icon: 'ℹ' },
+    { id: 't1',         label: 'Merak',  sub: 'Cleaner',   icon: '⌗' },
+    { id: 't2',         label: 'Phecda', sub: 'Canvas',    icon: '✎' },
+    { id: 't3',         label: 'Megrez', sub: 'Layer',     icon: '▤' },
+    { id: 't4',         label: 'Alioth', sub: 'Werkzeuge', icon: '⚒' },
+    { id: 't5',         label: 'Mizar',  sub: 'Vorschau',  icon: '◎' },
+    { id: 't6',         label: 'Alkaid', sub: 'Export',    icon: '↥' },
   ],
 };
 

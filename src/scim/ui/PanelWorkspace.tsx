@@ -36,7 +36,7 @@ import type { TelcoLoadState } from '../telco-load/telcoLoad.types';
 import SystemPanel from './panels/SystemPanel';
 import AiInterfacePanel from './panels/AiInterfacePanel';
 import PolarsternPanel from './panels/PolarsternPanel';
-import IconForgeSpec from './panels/IconForgeSpec';
+import UrsaMajorPanel from './panels/UrsaMajorPanel';
 import { DracoPanel, CepheusPanel, CassiopeiaPanel } from './panels/CatalogPanels';
 import CatalogTab from './panels/CatalogTab';
 import { useRole, useModeSwitch, isEditorRole } from './RoleContext';
@@ -1141,11 +1141,12 @@ const CATALOG_INFO: Record<string, { label: string; role: string }> = {
   cassiopeia: { label: 'Cassiopeia', role: 'Typo-Bibliothek · Polarstern-Schrift' },
 };
 
-function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, onGeometryConsumed, openCatalogId, onCatalogConsumed }: {
+function PanelContent({ activeId, activeTab, result, onJumpTo, onTabChange, openGeometryId, onGeometryConsumed, openCatalogId, onCatalogConsumed }: {
   activeId: string;
   activeTab: TabId;
   result: ScimPipelineResult;
   onJumpTo?: (panelId: string, geometryId?: string) => void;
+  onTabChange?: (tab: TabId) => void;
   openGeometryId?: string | null;
   onGeometryConsumed?: () => void;
   openCatalogId?: string | null;
@@ -1177,22 +1178,7 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
     return <PolarsternPanel activeTab={activeTab} />;
   }
   if (activeId === URSA_MAJOR_DESCRIPTOR.id) {
-    // Dubhe (input) = die Schmiede-Spec (aus dem Drawer gezogen); die übrigen
-    // Wagen-Sterne sind noch leeres Gerüst (Funktionen folgen in BA2).
-    if (activeTab === 'input') {
-      return <div style={{ padding: '20px 22px' }}><IconForgeSpec /></div>;
-    }
-    return (
-      <div style={{ padding: '28px 24px', fontFamily: 'system-ui, sans-serif', color: '#718096' }}>
-        <div style={{ display: 'inline-block', padding: '3px 8px', marginBottom: 14, fontSize: 10, fontFamily: 'monospace', color: '#9c6a00', background: '#fff0d6', border: '1px solid #f6c177', borderRadius: 4 }}>
-          Großer Bär · noch leer
-        </div>
-        <div style={{ fontSize: 13, lineHeight: 1.6 }}>
-          Tab-Gerüst nach den sieben Wagen-Sternen — Funktion folgt in <strong>BA2</strong>
-          (der echte Node-Editor: Zeichnen · Layer · Boolean · Import · Cleaner · Export).
-        </div>
-      </div>
-    );
+    return <UrsaMajorPanel activeTab={activeTab} onJump={onTabChange ?? (() => {})} />;
   }
   if (activeId === 'draco') return <DracoPanel />;
   if (activeId === 'cepheus') return <CepheusPanel />;
@@ -1538,7 +1524,7 @@ export default function PanelWorkspace({ activeId, activeTab, onTabChange, resul
         </div>
       ) : activeId === DRAWER_DESCRIPTOR.id ? (
         <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
-          <PanelContent activeId={activeId} activeTab={safeTab} result={result} onJumpTo={onJumpTo} openGeometryId={openGeometryId} onGeometryConsumed={onGeometryConsumed} openCatalogId={openCatalogId} onCatalogConsumed={onCatalogConsumed} />
+          <PanelContent activeId={activeId} activeTab={safeTab} result={result} onJumpTo={onJumpTo} onTabChange={onTabChange} openGeometryId={openGeometryId} onGeometryConsumed={onGeometryConsumed} openCatalogId={openCatalogId} onCatalogConsumed={onCatalogConsumed} />
         </div>
       ) : (
         <div style={{ flex: 1, minHeight: 0, position: 'relative', overflow: 'hidden' }}>
@@ -1554,7 +1540,7 @@ export default function PanelWorkspace({ activeId, activeTab, onTabChange, resul
             </div>
           )}
           <div style={{ position: 'absolute', inset: 0, overflowY: 'auto', padding: 20, zIndex: 1 }}>
-            <PanelContent activeId={activeId} activeTab={safeTab} result={result} onJumpTo={onJumpTo} openGeometryId={openGeometryId} onGeometryConsumed={onGeometryConsumed} openCatalogId={openCatalogId} onCatalogConsumed={onCatalogConsumed} />
+            <PanelContent activeId={activeId} activeTab={safeTab} result={result} onJumpTo={onJumpTo} onTabChange={onTabChange} openGeometryId={openGeometryId} onGeometryConsumed={onGeometryConsumed} openCatalogId={openCatalogId} onCatalogConsumed={onCatalogConsumed} />
           </div>
         </div>
       )}
