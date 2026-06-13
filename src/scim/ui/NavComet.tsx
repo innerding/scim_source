@@ -59,29 +59,34 @@ export default function NavComet({ onSelect }: { onSelect: (id: string) => void 
            Zwischen-Knick → kein Ruck), Schweif konstant nachziehend (rotate -66°,
            kein Schwenk). Anflug wächst (scale 0.5→1, „kommt auf uns zu"); 3×-Blitz. */
         @keyframes scim-comet-fly {
-          0%   { transform: translate(196px, 6px) rotate(-66deg) scale(0.5); opacity: 0; }
+          0%   { transform: translate(196px, 6px) rotate(114deg) scale(0.5); opacity: 0; }
           8%   { opacity: 1; }
-          30%  { transform: translate(108px, 202px) rotate(-66deg) scale(1); opacity: 1; }
-          34%  { transform: translate(106px, 207px) rotate(-66deg) scale(4.5); opacity: 1; }
-          40%  { transform: translate(104px, 212px) rotate(-66deg) scale(0.15); opacity: 0; }
-          41%  { transform: translate(330px, -70px) scale(0.15); opacity: 0; }
-          100% { transform: translate(330px, -70px) scale(0.15); opacity: 0; }
+          30%  { transform: translate(108px, 202px) rotate(114deg) scale(1); opacity: 1; }
+          32%  { transform: translate(107px, 205px) rotate(114deg) scale(4.5); opacity: 1; }
+          36%  { transform: translate(105px, 209px) rotate(114deg) scale(0.12); opacity: 0; }
+          37%  { transform: translate(330px, -70px) scale(0.12); opacity: 0; }
+          100% { transform: translate(330px, -70px) scale(0.12); opacity: 0; }
         }
         .scim-comet { animation: scim-comet-fly 15s linear infinite; }
-        /* Schweif WÄCHST beim Anflug vom Kopf aus (scaleX, Ursprung = Kopf-Ende):
-           head-on kurz/kaum sichtbar → broadside voll. Verblasst vor dem Blitz. */
+        /* Schweif NACHZIEHEND (rotate 114° am Wrapper). Kurz beim Anflug, voll über
+           die Sternenscheibe, dann ZIEHT er sich in den Kopf zurück (scaleX→0,
+           Ursprung = Kopf-Ende), sobald der Komet die Scheibe verlässt — weg, bevor
+           er explodiert. */
         @keyframes scim-comet-tail {
-          0%   { opacity: 0; transform: scaleX(0.12); }
-          8%   { opacity: 1; }
-          30%  { opacity: 1; transform: scaleX(1); }
-          33%  { opacity: 0; transform: scaleX(1); }
-          100% { opacity: 0; transform: scaleX(1); }
+          0%   { opacity: 0; transform: scaleX(0.15); }
+          8%   { opacity: 1; transform: scaleX(0.55); }
+          22%  { transform: scaleX(1); }
+          25%  { transform: scaleX(1); }
+          31%  { opacity: 1; transform: scaleX(0.06); }
+          32%  { opacity: 0; transform: scaleX(0.04); }
+          100% { opacity: 0; transform: scaleX(0.04); }
         }
         .scim-comet-tail { animation: scim-comet-tail 15s linear infinite; transform-origin: 100% 50%; }
+        /* Funkenregen — ~0.5× schneller. */
         @keyframes scim-spark {
           0%, 31% { opacity: 0; transform: translate(0,0); }
-          35%     { opacity: 1; }
-          50%     { opacity: 0; transform: translate(var(--dx,0), var(--dy,30px)); }
+          34%     { opacity: 1; }
+          41%     { opacity: 0; transform: translate(var(--dx,0), var(--dy,30px)); }
           100%    { opacity: 0; transform: translate(var(--dx,0), var(--dy,30px)); }
         }
         .scim-spark { animation: scim-spark 15s linear infinite; }
