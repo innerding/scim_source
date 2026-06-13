@@ -63,6 +63,11 @@ export interface GlyphDef {
   strokes?: GlyphStroke[];
   /** true bei akzentuierten Zeichen — nutzt die Akzent-Zone über capY. */
   hasAccent?: boolean;
+  // ── Satz-Werkstatt (per-Glyph-Spacing) ──────────────────────────────────────
+  /** Versatz: x-Verschiebung des Glyphs im Slot (linkes Seitenband). Default 0. */
+  lead?: number;
+  /** Letter-Stretch: horizontale Skalierung der Form. Default 1. */
+  stretchX?: number;
 }
 
 export interface FontModel {

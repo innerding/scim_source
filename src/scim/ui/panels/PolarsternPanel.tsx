@@ -193,51 +193,83 @@ function GlyphsTab({ font, setFont }: { font: FontModel; setFont: (f: FontModel)
   );
 }
 
-// ── Tab: Vorschau ────────────────────────────────────────────────────────────
+// ── Tab: Vorschau / Satz-Werkstatt ───────────────────────────────────────────
+// Tippst ein Wort → Glyph anklicken → Vorschub (advance) · Versatz (lead) ·
+// Stauchen (stretchX) justieren. Das ist „Versalien korrigieren" — Stand/Abstand/
+// Stauchung, nicht die Form (Knoten-Editor → Großer Bär).
 
-function PreviewTab({ font }: { font: FontModel }) {
-  const [text, setText] = useState('POLARSTERN');
+function PreviewTab({ font, setFont }: { font: FontModel; setFont: (f: FontModel) => void }) {
+  const [text, setText] = useState('HAMBURG');
   const heaviest = font.weights[font.weights.length - 1]?.stroke ?? font.metrics.maxStroke;
   const lightest = font.weights[0]?.stroke ?? 4;
   const [weight, setWeight] = useState(font.weights[1]?.stroke ?? 8);
-  const [size, setSize] = useState(96);
-  const [italic, setItalic] = useState(false);
+  const [size, setSize] = useState(110);
   const [dark, setDark] = useState(false);
+  const [sel, setSel] = useState<string | null>(null);
 
-  const { svg, missing } = renderText(font, text, { weight, size, italic });
-  const nearest = [...font.weights].sort((a, b) => Math.abs(a.stroke - weight) - Math.abs(b.stroke - weight))[0];
+  const res = renderText(font, text, { weight, size });
+  const scale = size / font.metrics.boxHeight;
+  const g = sel ? font.glyphs[sel] : undefined;
+  const patch = (key: string, p: Partial<GlyphDef>) =>
+    setFont({ ...font, glyphs: { ...font.glyphs, [key]: { ...font.glyphs[key], ...p } } });
 
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif' }}>
       <div style={card}>
         <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Testwort…"
           style={{ width: '100%', boxSizing: 'border-box', padding: '8px 10px', fontSize: 14,
-            border: '1px solid #cbd5e0', borderRadius: 6, marginBottom: 14, fontFamily: 'system-ui, sans-serif' }} />
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            border: '1px solid #cbd5e0', borderRadius: 6, marginBottom: 12, fontFamily: 'system-ui, sans-serif' }} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <Slider label="Gewicht (stroke)" value={weight} min={lightest} max={heaviest} onChange={setWeight} suffix="px" />
-          <Slider label="Größe" value={size} min={24} max={180} onChange={setSize} suffix="px" />
-          <div style={{ display: 'flex', gap: 16, alignItems: 'center', fontSize: 12, color: '#4a5568' }}>
-            <label style={{ display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer' }}>
-              <input type="checkbox" checked={italic} onChange={(e) => setItalic(e.target.checked)} /> Kursiv ({font.italicSkewDeg}°)
-            </label>
-            <label style={{ display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer' }}>
-              <input type="checkbox" checked={dark} onChange={(e) => setDark(e.target.checked)} /> dunkler Hintergrund
-            </label>
-            <span style={{ marginLeft: 'auto', fontFamily: 'monospace', color: '#718096' }}>≈ {nearest?.name}</span>
+          <Slider label="Größe" value={size} min={40} max={180} onChange={setSize} suffix="px" />
+          <label style={{ display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer', fontSize: 12, color: '#4a5568' }}>
+            <input type="checkbox" checked={dark} onChange={(e) => setDark(e.target.checked)} /> dunkler Hintergrund
+          </label>
+        </div>
+        <div style={{ fontSize: 11, color: '#718096', marginTop: 8 }}>Klick einen Buchstaben unten → justiere ihn.</div>
+      </div>
+
+      {/* Wort + klickbares Overlay je Glyph */}
+      <div style={{ ...card, background: dark ? '#0d1520' : '#fff', minHeight: 150, overflowX: 'auto' }}>
+        <div style={{ position: 'relative', display: 'inline-block', color: dark ? '#e0eeff' : '#1a365d' }}>
+          <span style={{ lineHeight: 0, display: 'inline-block' }} dangerouslySetInnerHTML={{ __html: res.svg }} />
+          <div style={{ position: 'absolute', inset: 0 }}>
+            {res.layout.map((l, i) => font.glyphs[l.ch] ? (
+              <div key={i} onClick={() => setSel(l.ch)} title={l.ch}
+                style={{ position: 'absolute', left: l.x * scale, top: 0, width: l.advance * scale, height: res.height,
+                  cursor: 'pointer', boxSizing: 'border-box',
+                  borderBottom: sel === l.ch ? '2px solid #0074d9' : '2px solid transparent',
+                  background: sel === l.ch ? 'rgba(0,116,217,0.08)' : 'transparent' }} />
+            ) : null)}
           </div>
         </div>
       </div>
 
-      <div style={{ ...card, background: dark ? '#0d1520' : '#fff', minHeight: 160,
-        display: 'flex', alignItems: 'center', justifyContent: 'flex-start', overflowX: 'auto' }}>
-        <Svg markup={svg} color={dark ? '#e0eeff' : '#1a365d'} />
-      </div>
+      {/* Editor des gewählten Glyphs */}
+      {g ? (
+        <div style={card}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#1a365d', marginBottom: 10 }}>
+            Glyph <span style={{ fontFamily: 'monospace', fontSize: 16 }}>{sel === ' ' ? '␣' : sel}</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <Slider label="Vorschub (advance)" value={Math.round(g.advance)} min={20} max={200} onChange={(v) => patch(sel!, { advance: v })} />
+            <Slider label="Versatz (links/rechts)" value={Math.round(g.lead ?? 0)} min={-40} max={40} onChange={(v) => patch(sel!, { lead: v })} />
+            <Slider label="Stauchen" value={Math.round((g.stretchX ?? 1) * 100)} min={60} max={140} onChange={(v) => patch(sel!, { stretchX: v / 100 })} suffix="%" />
+          </div>
+          <button onClick={() => patch(sel!, { lead: 0, stretchX: 1 })}
+            style={{ marginTop: 10, padding: '5px 12px', fontSize: 12, border: '1px solid #cbd5e0', borderRadius: 6, background: '#fff', color: '#4a5568', cursor: 'pointer' }}>
+            Versatz &amp; Stauchen zurücksetzen
+          </button>
+        </div>
+      ) : (
+        <div style={{ ...card, color: '#a0aec0', fontSize: 12.5 }}>Kein Glyph gewählt — klick einen Buchstaben im Wort.</div>
+      )}
 
-      {missing.length > 0 && (
+      {res.missing.length > 0 && (
         <div style={{ ...card, marginBottom: 0, borderColor: '#feb2b2', background: '#fff5f5' }}>
           <div style={{ fontSize: 12, color: '#c53030' }}>
-            Noch nicht gezeichnet (Platzhalter-Kästchen):{' '}
-            <span style={{ fontFamily: 'monospace' }}>{missing.map((c) => (c === ' ' ? '␣' : c)).join(' ')}</span>
+            Noch nicht gezeichnet:{' '}
+            <span style={{ fontFamily: 'monospace' }}>{res.missing.map((c) => (c === ' ' ? '␣' : c)).join(' ')}</span>
           </div>
         </div>
       )}
@@ -365,7 +397,7 @@ export default function PolarsternPanel({ activeTab }: { activeTab: TabId }) {
 
   switch (activeTab) {
     case 'input':      return <GlyphsTab font={font} setFont={setFont} />;
-    case 'result':     return <PreviewTab font={font} />;
+    case 'result':     return <PreviewTab font={font} setFont={setFont} />;
     case 'validation': return <MetricsTab font={font} setFont={setFont} />;
     case 'raw':        return <JsonTab font={font} setFont={setFont} />;
     default:           return null;

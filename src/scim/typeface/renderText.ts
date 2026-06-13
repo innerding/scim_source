@@ -29,6 +29,8 @@ export interface RenderResult {
   height: number;
   /** Zeichen ohne Glyph (dedupliziert, in Reihenfolge des Auftretens). */
   missing: string[];
+  /** Layout je Zeichen (User-Units), für klickbare Satz-Werkstatt. */
+  layout: { ch: string; x: number; advance: number }[];
 }
 
 const DEG2RAD = Math.PI / 180;
@@ -52,6 +54,7 @@ export function renderText(model: FontModel, text: string, opts: RenderOpts = {}
 
   const missing: string[] = [];
   const parts: string[] = [];
+  const layout: { ch: string; x: number; advance: number }[] = [];
   let x = 0;
 
   for (const ch of text) {
@@ -65,18 +68,22 @@ export function renderText(model: FontModel, text: string, opts: RenderOpts = {}
           `rx="3" fill="none" stroke="${opts.guideColor ?? '#cbd5e0'}" stroke-width="1" stroke-dasharray="3 3"/>`,
         );
       }
+      layout.push({ ch, x, advance: adv });
       x += adv;
       continue;
     }
-    // Ein Glyph kann mehrere Teil-Striche haben, jeder mit eigenem Gewichts-
-    // Faktor (w) und optionaler Transform. Kurzform `d` = ein Strich, Faktor 1.
+    // Satz-Werkstatt: Versatz (lead, x-Verschiebung im Slot) + Letter-Stretch
+    // (stretchX, horizontale Skalierung um den Slot-Anfang). advance = Slot-Breite.
+    const lead = g.lead ?? 0;
+    const sx = g.stretchX ?? 1;
     const strokes = g.strokes ?? (g.d ? [{ d: g.d }] : []);
     for (const s of strokes) {
       if (!s.d) continue;
       const sw = weight * (s.w ?? 1);
-      const tf = `translate(${x},0)${s.transform ? ' ' + s.transform : ''}`;
+      const tf = `translate(${x + lead},0)${sx !== 1 ? ` scale(${sx},1)` : ''}${s.transform ? ' ' + s.transform : ''}`;
       parts.push(`<path d="${s.d}" stroke-width="${sw}" transform="${tf}"/>`);
     }
+    layout.push({ ch, x, advance: g.advance });
     x += g.advance;
   }
 
@@ -98,7 +105,7 @@ export function renderText(model: FontModel, text: string, opts: RenderOpts = {}
     `width="${Math.round(vbW * scale)}" height="${Math.round(size)}" ` +
     `preserveAspectRatio="xMinYMid meet">${guides}${group}</svg>`;
 
-  return { svg, width: Math.round(vbW * scale), height: Math.round(size), missing };
+  return { svg, width: Math.round(vbW * scale), height: Math.round(size), missing, layout };
 }
 
 function buildGuides(model: FontModel, width: number, color: string): string {
