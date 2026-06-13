@@ -71,7 +71,10 @@ const SKY: Constellation[] = [
 
 // Feld + Projektion
 const W = 206, H = 198;
-const CX = 103, CY = 96;
+// Pol nach unten gesetzt (96→134): die Figur sitzt zwischen Inspector und Mond,
+// der obere (leere) Teil der Box liegt unterm Inspector — keine Überlappung,
+// keine neue Höhe. Inhalt überragt die Box unten leicht (svg overflow:visible).
+const CX = 103, CY = 140;
 const SCALE = 2.05;          // px pro Grad Pol-Abstand → maxR ≈ 84 (minDec ≈ 49°)
 const D2R = Math.PI / 180;
 
