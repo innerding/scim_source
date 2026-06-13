@@ -677,7 +677,7 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
           Hex-Layer pulsiert; Dim-Wert um 50% tiefer als zuvor. */}
       <div style={{
         display: 'flex', justifyContent: 'center',
-        marginTop: 74, marginBottom: 28, flexShrink: 0,
+        marginTop: 34, marginBottom: 28, flexShrink: 0,
       }}>
         <div style={{
           position: 'relative',

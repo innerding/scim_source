@@ -92,7 +92,7 @@ function ConstellationSvg({ c, active, onSelect }: { c: Constellation; active: b
   const hull = hullIdx.map((i) => pts[i].map((v) => v.toFixed(1)).join(',')).join(' ');
   const dim = c.kind === 'catalog' && !active;
   return (
-    <g style={{ cursor: 'pointer' }} onClick={() => onSelect(c.panelId)}>
+    <g style={{ cursor: 'pointer', pointerEvents: 'auto' }} onClick={() => onSelect(c.panelId)}>
       <title>{c.label} — {c.role}</title>
       <polygon points={hull} fill="transparent" stroke="transparent" strokeWidth={12} strokeLinejoin="round" />
       {c.lines.map(([a, b], i) => (
@@ -112,15 +112,15 @@ export default function NavConstellations({ activeId, onSelect }: { activeId: st
   const polActive = activeId === 'polarstar';
   const [px, py] = project(2.530, 89.26);   // reale Polaris-Position (winziger Kreis um den Pol)
   return (
-    <div style={{ width: '100%', height: H, flexShrink: 0, position: 'relative', marginBottom: 6 }}>
-      <svg viewBox={`0 0 ${W} ${H}`} width="100%" height="100%" style={{ overflow: 'visible' }}>
+    <div style={{ width: '100%', height: H, flexShrink: 0, position: 'relative', marginBottom: 6, zIndex: 6, pointerEvents: 'none' }}>
+      <svg viewBox={`0 0 ${W} ${H}`} width="100%" height="100%" style={{ overflow: 'visible', pointerEvents: 'none' }}>
         {/* der ganze Himmel wheelt langsam gegen den Uhrzeigersinn um den Pol */}
         <g style={{ transformOrigin: `${CX}px ${CY}px`, animation: 'scim-sky-wheel 280s linear infinite' }}>
           {SKY.map((c) => (
             <ConstellationSvg key={c.panelId} c={c} active={activeId === c.panelId} onSelect={onSelect} />
           ))}
           {/* Polaris — glimmernder Pol, an seiner echten (fast zentralen) Stelle */}
-          <g style={{ cursor: 'pointer' }} onClick={() => onSelect('polarstar')}>
+          <g style={{ cursor: 'pointer', pointerEvents: 'auto' }} onClick={() => onSelect('polarstar')}>
             <title>Polarstern — Kleiner Bär (Schrift-Schmiede)</title>
             <circle cx={px} cy={py} r={9} fill="transparent" />
             <path
