@@ -55,23 +55,29 @@ export default function NavComet({ onSelect }: { onSelect: (id: string) => void 
       </div>
 
       <style>{`
-        /* Wrapper: fliegt entlang der Bahn; Schweif-Drehung morpht von führend
-           (rotate 112°, vor-sich-her) auf nachziehend (rotate -66°, hinter-sich-
-           her); Anflug wächst (scale 0.55→1, „kommt auf uns zu"); dann 3×-Blitz. */
+        /* Wrapper: gleichmäßiger Flug entlang EINER glatten Strecke (kein
+           Zwischen-Knick → kein Ruck), Schweif konstant nachziehend (rotate -66°,
+           kein Schwenk). Anflug wächst (scale 0.5→1, „kommt auf uns zu"); 3×-Blitz. */
         @keyframes scim-comet-fly {
-          0%   { transform: translate(196px, 6px) rotate(112deg) scale(0.55); opacity: 0; }
-          7%   { opacity: 1; }
-          16%  { transform: translate(160px, 80px) rotate(40deg) scale(0.78); opacity: 1; }
+          0%   { transform: translate(196px, 6px) rotate(-66deg) scale(0.5); opacity: 0; }
+          8%   { opacity: 1; }
           30%  { transform: translate(108px, 202px) rotate(-66deg) scale(1); opacity: 1; }
           34%  { transform: translate(106px, 207px) rotate(-66deg) scale(4.5); opacity: 1; }
           40%  { transform: translate(104px, 212px) rotate(-66deg) scale(0.15); opacity: 0; }
           41%  { transform: translate(330px, -70px) scale(0.15); opacity: 0; }
           100% { transform: translate(330px, -70px) scale(0.15); opacity: 0; }
         }
-        .scim-comet { animation: scim-comet-fly 15s ease-in infinite; }
-        /* Schweif verblasst kurz vor dem Verglühen → Explosion = nur Kopf-Blitz. */
-        @keyframes scim-comet-tailfade { 0%, 28% { opacity: 1; } 32%, 100% { opacity: 0; } }
-        .scim-comet-tail { animation: scim-comet-tailfade 15s linear infinite; }
+        .scim-comet { animation: scim-comet-fly 15s linear infinite; }
+        /* Schweif WÄCHST beim Anflug vom Kopf aus (scaleX, Ursprung = Kopf-Ende):
+           head-on kurz/kaum sichtbar → broadside voll. Verblasst vor dem Blitz. */
+        @keyframes scim-comet-tail {
+          0%   { opacity: 0; transform: scaleX(0.12); }
+          8%   { opacity: 1; }
+          30%  { opacity: 1; transform: scaleX(1); }
+          33%  { opacity: 0; transform: scaleX(1); }
+          100% { opacity: 0; transform: scaleX(1); }
+        }
+        .scim-comet-tail { animation: scim-comet-tail 15s linear infinite; transform-origin: 100% 50%; }
         @keyframes scim-spark {
           0%, 31% { opacity: 0; transform: translate(0,0); }
           35%     { opacity: 1; }
