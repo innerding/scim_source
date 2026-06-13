@@ -1173,6 +1173,27 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
   if (CONSTELLATION_STUBS[activeId]) {
     return <StubPanel id={CONSTELLATION_STUBS[activeId].label} description={CONSTELLATION_STUBS[activeId].role} />;
   }
+  if (activeId === 'comet') {
+    return (
+      <div style={{ padding: '28px 24px', fontFamily: 'system-ui, sans-serif', maxWidth: 620 }}>
+        <div style={{ display: 'inline-block', padding: '3px 9px', marginBottom: 16, fontSize: 10, fontFamily: 'monospace', color: '#553c9a', background: '#faf5ff', border: '1px solid #d6bcfa', borderRadius: 4 }}>
+          ✦ Komet · Experiment · flüchtig
+        </div>
+        <div style={{ fontSize: 15, fontWeight: 600, color: '#1a365d', marginBottom: 10 }}>Quanten-Filter (Vorbereitung)</div>
+        <p style={{ fontSize: 13, color: '#4a5568', lineHeight: 1.65 }}>
+          Ein <strong>schneller Filter</strong>, der das ungeordnete Feld aus Millionen
+          presence-origin/runtime/transmission-Anforderungen und -Bereitstellungen auf eine
+          <strong> Eingangs- und eine Ausgangslinie</strong> legt und eine Ordnung
+          <strong> vorschlägt</strong>. Quanten ist nur schneller — <strong>Aktion und
+          Verantwortung bleiben bei SCIM3.</strong>
+        </p>
+        <p style={{ fontSize: 12.5, color: '#718096', lineHeight: 1.6, marginTop: 10 }}>
+          Noch keine Controls — dies ist eine <strong>Vorbereitung</strong>. Flüchtig, weil
+          Experiment: der Komet ist nur im Vorbeiflug zu fangen, nicht in der Cosmo-Controls-Liste.
+        </p>
+      </div>
+    );
+  }
 
   // i-Pills: per-Audience (Operator/Analyst/Editor) über das Substrat-Feld.
   if (activeId === 'ipills') return <IPillsPanel activeTab={activeTab} />;
@@ -1429,6 +1450,12 @@ export default function PanelWorkspace({ activeId, activeTab, onTabChange, resul
       id: activeId,
       label: CONSTELLATION_STUBS[activeId].label,
       shortDescription: CONSTELLATION_STUBS[activeId].role,
+      tabs: [{ id: 'input' as TabId, label: 'Übersicht', icon: 'ℹ' }],
+    } :
+    activeId === 'comet' ? {
+      id: 'comet',
+      label: 'Komet',
+      shortDescription: 'Quanten-Filter — flüchtiges Experiment (Vorbereitung)',
       tabs: [{ id: 'input' as TabId, label: 'Übersicht', icon: 'ℹ' }],
     } :
     RUNTIME_BUILDER_REGISTRY.find((m) => m.id === activeId) ??

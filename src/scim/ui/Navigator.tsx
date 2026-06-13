@@ -9,6 +9,7 @@ import {
 import logoBaseNaked from '../../assets/logo-base-naked.svg';
 import logoHexNaked from '../../assets/logo-hex-naked.svg';
 import NavConstellations from './NavConstellations';
+import NavComet from './NavComet';
 import { useRole, isEditorRole } from './RoleContext';
 import type { Role } from './RoleContext';
 import { useRepresentationContext } from '../../runtime/repContext';
@@ -579,6 +580,10 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
       {/* Zirkumpolar-Himmel — Polaris als ruhender Pol, die Sternbild-Maschinen
           wheeln langsam um ihn. Eigenes Band ganz oben (Sky über der Maschine). */}
       <NavConstellations activeId={activeId} onSelect={onSelect} />
+
+      {/* Komet — flüchtiges Experiment (Quanten-Filter). Fliegt periodisch durch,
+          verglüht vor dem Mond; nur im Vorbeiflug fangbar (Gnadenfenster). */}
+      <NavComet onSelect={onSelect} />
 
       {/* Inspector — Pergament-Trapez ueber dem Mond.
           Perspektivisch: oben breit (Gap zu li/re/oben), unten schmaler.
