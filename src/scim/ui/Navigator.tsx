@@ -4,7 +4,7 @@ import {
   KOSMOLOGIE_IDS,
   PANEL_REGISTRY, SYSTEM_DESCRIPTOR, AI_INTERFACE_DESCRIPTOR, IPILLS_DESCRIPTOR, CLOUD_DESCRIPTOR,
   RUNTIME_BUILDER_REGISTRY, VERSIONEN_REGISTRY, WORKSPACE_DESCRIPTOR,
-  DRAWER_DESCRIPTOR, CATALOG_DESCRIPTOR,
+  DRAWER_DESCRIPTOR, CATALOG_DESCRIPTOR, POLARSTERN_DESCRIPTOR,
 } from './panelRegistry';
 import logoBaseNaked from '../../assets/logo-base-naked.svg';
 import logoHexNaked from '../../assets/logo-hex-naked.svg';
@@ -644,6 +644,51 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
           width: `${Math.round(0.88 * 100)}%`,                          // f0.88
           height: Math.round(0.88 * (210 - 12) / (107.5 / 51.122)),     // proportional mit f0.88
         }}>
+          {/* ── Polarstern — der Stern HINTER dem Mond (Spender der universellen
+              Sprache, Stroke-Font). Erstes Kind → malt hinter die Mondscheibe;
+              die oberen-rechten Strahlen lugen in den Spalt zwischen Inspector
+              und Mond. Eigene Scheiben-Hitbox, leichtes Glimmern. */}
+          <svg
+            viewBox="0 0 100 100"
+            onClick={() => onSelect(POLARSTERN_DESCRIPTOR.id)}
+            style={{
+              position: 'absolute', top: '-34%', right: '-12%', width: '46%', height: '46%',
+              overflow: 'visible', cursor: 'pointer',
+              filter: activeId === POLARSTERN_DESCRIPTOR.id
+                ? 'drop-shadow(0 0 6px rgba(255,224,150,0.95))'
+                : 'drop-shadow(0 0 3px rgba(255,224,150,0.45))',
+            }}
+          >
+            <title>Polarstern — Schrift (universelle Sprache)</title>
+            {/* unsichtbare Scheibe = großzügige Klickfläche */}
+            <circle cx="50" cy="50" r="48" fill="transparent" />
+            {/* weicher Hof */}
+            <circle cx="50" cy="50" r="30" fill="rgba(255,224,150,0.10)"
+              className="scim-polarstern-glimmer" />
+            {/* dünne diagonale Strahlen */}
+            <g stroke="rgba(255,236,190,0.55)" strokeWidth="1.4" strokeLinecap="round"
+              className="scim-polarstern-glimmer">
+              <line x1="50" y1="14" x2="50" y2="2" />
+              <line x1="50" y1="86" x2="50" y2="98" />
+              <line x1="14" y1="50" x2="2" y2="50" />
+              <line x1="86" y1="50" x2="98" y2="50" />
+            </g>
+            {/* vierzackiger Stern (konkav), Gold→weißer Kern */}
+            <path
+              d="M50,6 C54,40 60,46 94,50 C60,54 54,60 50,94 C46,60 40,54 6,50 C40,46 46,40 50,6 Z"
+              fill={activeId === POLARSTERN_DESCRIPTOR.id ? '#fff3d6' : '#ffe6a6'}
+              stroke="rgba(255,255,255,0.85)" strokeWidth="0.8" strokeLinejoin="round"
+              className={activeId === POLARSTERN_DESCRIPTOR.id ? 'scim-active-pulse' : 'scim-polarstern-glimmer'}
+            />
+            <circle cx="50" cy="50" r="6" fill="#fffaf0" />
+          </svg>
+          <style>{`
+            @keyframes scim-polarstern-glimmer {
+              0%, 100% { opacity: 0.62; }
+              50%      { opacity: 1.0; }
+            }
+            .scim-polarstern-glimmer { animation: scim-polarstern-glimmer 2600ms ease-in-out infinite; }
+          `}</style>
           <img
             src={logoBaseNaked}
             alt="SCIM3"

@@ -5,7 +5,7 @@ import type { TabId } from './panelRegistry';
 import {
   PANEL_REGISTRY, SYSTEM_DESCRIPTOR, AI_INTERFACE_DESCRIPTOR, IPILLS_DESCRIPTOR, CLOUD_DESCRIPTOR,
   RUNTIME_BUILDER_REGISTRY, VERSIONEN_REGISTRY, WORKSPACE_DESCRIPTOR,
-  DRAWER_DESCRIPTOR, CATALOG_DESCRIPTOR,
+  DRAWER_DESCRIPTOR, CATALOG_DESCRIPTOR, POLARSTERN_DESCRIPTOR,
 } from './panelRegistry';
 import type { ScimPipelineResult } from '../pipeline/scimPipeline.types';
 
@@ -35,6 +35,7 @@ import SimArchitecture from './panels/SimArchitecture';
 import type { TelcoLoadState } from '../telco-load/telcoLoad.types';
 import SystemPanel from './panels/SystemPanel';
 import AiInterfacePanel from './panels/AiInterfacePanel';
+import PolarsternPanel from './panels/PolarsternPanel';
 import CatalogTab from './panels/CatalogTab';
 import { useRole, useModeSwitch, isEditorRole } from './RoleContext';
 import V01PackagesPanel from './panels/V01PackagesPanel';
@@ -1157,6 +1158,9 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
     if (role !== 'operator') return null;
     return <AiInterfacePanel activeTab={activeTab} />;
   }
+  if (activeId === POLARSTERN_DESCRIPTOR.id) {
+    return <PolarsternPanel activeTab={activeTab} />;
+  }
 
   // i-Pills: per-Audience (Operator/Analyst/Editor) über das Substrat-Feld.
   if (activeId === 'ipills') return <IPillsPanel activeTab={activeTab} />;
@@ -1408,6 +1412,7 @@ export default function PanelWorkspace({ activeId, activeTab, onTabChange, resul
     activeId === AI_INTERFACE_DESCRIPTOR.id ? AI_INTERFACE_DESCRIPTOR :
     activeId === IPILLS_DESCRIPTOR.id ? IPILLS_DESCRIPTOR :
     activeId === CLOUD_DESCRIPTOR.id ? CLOUD_DESCRIPTOR :
+    activeId === POLARSTERN_DESCRIPTOR.id ? POLARSTERN_DESCRIPTOR :
     RUNTIME_BUILDER_REGISTRY.find((m) => m.id === activeId) ??
     VERSIONEN_REGISTRY.find((v) => v.id === activeId) ??
     PANEL_REGISTRY.find((p) => p.id === activeId);

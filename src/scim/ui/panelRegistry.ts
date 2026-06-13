@@ -78,6 +78,17 @@ export interface CloudDescriptor {
   tabs: TabDescriptor[];
 }
 
+// Polarstern — der Stern hinter dem Mond, Spender der universellen Sprache
+// (Stroke-Font). Eigener Himmelskörper/Namespace, NICHT in der Pipeline.
+export interface TypefaceDescriptor {
+  kind: 'typeface';
+  id: 'polarstar';
+  label: string;
+  icon: string;
+  shortDescription: string;
+  tabs: TabDescriptor[];
+}
+
 const STANDARD_TABS: TabDescriptor[] = [
   { id: 'input',      label: 'Eingabe',    icon: '✎' },
   { id: 'result',     label: 'Ergebnis',   icon: '◎' },
@@ -572,13 +583,28 @@ export const AI_INTERFACE_DESCRIPTOR: AiInterfaceDescriptor = {
   ],
 };
 
+export const POLARSTERN_DESCRIPTOR: TypefaceDescriptor = {
+  kind: 'typeface',
+  id: 'polarstar',
+  label: 'Polarstern',
+  icon: '✦',
+  shortDescription: 'Stroke-Font — die universelle Sprache der Maschine',
+  tabs: [
+    { id: 'input',      label: 'Glyphen',   icon: '✎' },
+    { id: 'result',     label: 'Vorschau',  icon: '◎' },
+    { id: 'validation', label: 'Metriken',  icon: '⚑' },
+    { id: 'raw',        label: 'Font-JSON', icon: '{}' },
+  ],
+};
+
 export type NavigatorEntry =
   | { kind: 'panel'; descriptor: PanelDescriptor }
   | { kind: 'runtime_module'; descriptor: RuntimeModuleDescriptor }
   | { kind: 'versionen'; descriptor: VersionenDescriptor }
   | { kind: 'system'; descriptor: SystemDescriptor }
   | { kind: 'workspace'; descriptor: WorkspaceDescriptor }
-  | { kind: 'ai_interface'; descriptor: AiInterfaceDescriptor };
+  | { kind: 'ai_interface'; descriptor: AiInterfaceDescriptor }
+  | { kind: 'typeface'; descriptor: TypefaceDescriptor };
 
 export type StatusColor = 'green' | 'orange' | 'red' | 'grey' | 'blue';
 
