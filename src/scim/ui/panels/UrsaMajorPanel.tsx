@@ -22,6 +22,7 @@ const STARS: Star[] = [
 const LINES: [number, number][] = [[0, 1], [1, 2], [2, 3], [3, 0], [3, 4], [4, 5], [5, 6]];
 
 interface Asset { name: string; svg: string }
+interface Staged { name: string; svg: string; target: typeof TARGETS[number]['key'] }
 
 const TARGETS = [
   { key: 'draco', label: 'Draco · data/icons', folder: 'data/icons' },
@@ -89,13 +90,13 @@ function IconPreviewBox({ svg, size = 56 }: { svg: string; size?: number }) {
 }
 
 // ── t2 · Cleaner / Routing / Schutt ──────────────────────────────────────────
-function CleanerTab({ pending, setPending, schutt, setSchutt }: {
+function CleanerTab({ pending, setPending, schutt, setSchutt, setStaged, onJump }: {
   pending: Asset | null; setPending: (a: Asset | null) => void;
   schutt: Asset[]; setSchutt: (fn: (s: Asset[]) => Asset[]) => void;
+  setStaged: (s: Staged) => void; onJump: (t: TabId) => void;
 }) {
   const [target, setTarget] = useState<typeof TARGETS[number]['key']>('draco');
   const result = useMemo(() => (pending ? cleanIconSvg(pending.svg) : null), [pending]);
-  const tgt = TARGETS.find((t) => t.key === target)!;
 
   return (
     <div style={{ padding: '18px 22px', fontFamily: 'system-ui, sans-serif' }}>
@@ -149,9 +150,9 @@ function CleanerTab({ pending, setPending, schutt, setSchutt }: {
                 ))}
               </div>
               <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                <button onClick={() => { download(pending.name, result.cleaned); setPending(null); }}
+                <button onClick={() => { setStaged({ name: pending.name, svg: result.cleaned, target }); setPending(null); onJump('t6'); }}
                   style={{ padding: '6px 14px', fontSize: 12, borderRadius: 6, border: '1px solid #2f855a', background: '#f0fff4', color: '#22543d', cursor: 'pointer', fontWeight: 600 }}>
-                  Übernehmen → {tgt.folder} (Download)
+                  Übernehmen → Export (Alkaid)
                 </button>
                 <button onClick={() => { setSchutt((s) => [pending, ...s]); setPending(null); }}
                   style={{ padding: '6px 14px', fontSize: 12, borderRadius: 6, border: '1px solid #cbd5e0', background: '#fff', color: '#c05621', cursor: 'pointer' }}>
@@ -190,6 +191,93 @@ function CleanerTab({ pending, setPending, schutt, setSchutt }: {
   );
 }
 
+// ── t7 · Export / Prüfung / Provenienz ───────────────────────────────────────
+const escapeAttr = (s: string) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+const stripMetadata = (svg: string) => svg.replace(/<metadata>[\s\S]*?<\/metadata>/g, '');
+function injectProvenance(svg: string, p: { creator: string; year: string; rights: string }) {
+  const meta = `<metadata><scim3:provenance xmlns:scim3="https://diesenpark.com/scim3" creator="${escapeAttr(p.creator)}" date="${p.year}" rights="${escapeAttr(p.rights)}" source="SCIM3 · diesenpark.com"/></metadata>`;
+  return stripMetadata(svg).replace(/(<svg[^>]*>)/, `$1${meta}`);
+}
+const bytes = (s: string) => `${new Blob([s]).size} B`;
+
+function ExportTab({ staged, setStaged }: { staged: Staged | null; setStaged: (s: Staged | null) => void }) {
+  const year = String(new Date().getFullYear());
+  const [creator, setCreator] = useState('');
+  const [rights, setRights] = useState('© SCIM3 · diesenpark.com');
+  const [stamp, setStamp] = useState(true);
+
+  if (!staged) {
+    return (
+      <div style={{ padding: '28px 24px', fontFamily: 'system-ui, sans-serif', color: '#718096' }}>
+        <div style={{ display: 'inline-block', padding: '3px 8px', marginBottom: 14, fontSize: 10, fontFamily: 'monospace', color: '#2b6cb0', background: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: 4 }}>Alkaid · Export / Prüfung / Provenienz</div>
+        <div style={{ fontSize: 13, lineHeight: 1.6 }}>Nichts zum Exportieren. Reinige eine SVG im <strong>Merak · Cleaner</strong> und klick dort <strong>„Übernehmen → Export"</strong>.</div>
+      </div>
+    );
+  }
+  const tgt = TARGETS.find((t) => t.key === staged.target)!;
+  const nodes = nodeCount(staged.svg);
+  const over = nodes > 60;
+  const source = stamp ? injectProvenance(staged.svg, { creator: creator || '—', year, rights }) : stripMetadata(staged.svg);
+  const delivered = stripMetadata(staged.svg);
+
+  return (
+    <div style={{ padding: '18px 22px', fontFamily: 'system-ui, sans-serif' }}>
+      <div style={{ display: 'inline-block', padding: '3px 9px', marginBottom: 12, fontSize: 10, fontFamily: 'monospace', color: '#2b6cb0', background: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: 4 }}>Alkaid · Export / Prüfung / Provenienz</div>
+
+      <div style={card}>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <IconPreviewBox svg={staged.svg} />
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: '#1a365d' }}>{staged.name}</div>
+            <div style={{ fontSize: 11, color: '#718096' }}>Ziel: <strong>{tgt.folder}</strong></div>
+          </div>
+        </div>
+      </div>
+
+      {/* Prüfung */}
+      <div style={{ ...card, borderColor: over ? '#feb2b2' : '#9ae6b4', background: over ? '#fff5f5' : '#f0fff4' }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: over ? '#822727' : '#22543d', marginBottom: 4 }}>
+          {over ? '⚠ Node-Budget überschritten' : '✓ Node-Budget bestanden'}
+        </div>
+        <div style={{ fontSize: 12, color: '#4a5568', fontFamily: 'monospace' }}>~{nodes} / 60 Knoten</div>
+        {over && <div style={{ fontSize: 11, color: '#9c6a00', marginTop: 6 }}>Knoten-Reduktion (DP-Vereinfachung) folgt mit dem Pfad-Tooling im <strong>Canvas (Phecda)</strong>. Vorerst nur Warnung.</div>}
+      </div>
+
+      {/* Provenienz */}
+      <div style={card}>
+        <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 12.5, fontWeight: 700, color: '#1a365d', cursor: 'pointer', marginBottom: 10 }}>
+          <input type="checkbox" checked={stamp} onChange={(e) => setStamp(e.target.checked)} /> Provenienz in die Quelle stempeln
+        </label>
+        {stamp && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 8 }}>
+            <input value={creator} onChange={(e) => setCreator(e.target.value)} placeholder="Ersteller (Name)"
+              style={{ padding: '5px 10px', fontSize: 12.5, border: '1px solid #cbd5e0', borderRadius: 6 }} />
+            <input value={rights} onChange={(e) => setRights(e.target.value)} placeholder="Rechte-Hinweis"
+              style={{ padding: '5px 10px', fontSize: 12.5, border: '1px solid #cbd5e0', borderRadius: 6 }} />
+            <div style={{ fontSize: 11, color: '#718096' }}>Datum: {year} · Quelle: SCIM3 · diesenpark.com</div>
+          </div>
+        )}
+        <div style={{ fontSize: 11, color: '#718096', lineHeight: 1.6, background: '#f7fafc', borderRadius: 6, padding: '8px 10px' }}>
+          <strong>Quelle</strong> (mit Provenienz): {bytes(source)} · <strong>ausgeliefert</strong> (Build streift Metadaten ab): {bytes(delivered)}.
+          Die Provenienz reist nur in der Quelle; das ausgelieferte Glyph bleibt winzig.
+        </div>
+      </div>
+
+      {/* Export */}
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button onClick={() => { download(staged.name, source); }}
+          style={{ padding: '6px 14px', fontSize: 12, borderRadius: 6, border: '1px solid #2f855a', background: '#f0fff4', color: '#22543d', cursor: 'pointer', fontWeight: 600 }}>
+          Download → {tgt.folder}
+        </button>
+        <button onClick={() => setStaged(null)}
+          style={{ padding: '6px 14px', fontSize: 12, borderRadius: 6, border: '1px solid #cbd5e0', background: '#fff', color: '#718096', cursor: 'pointer' }}>
+          Erledigt
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function Placeholder({ name, fn }: { name: string; fn: string }) {
   return (
     <div style={{ padding: '28px 24px', fontFamily: 'system-ui, sans-serif', color: '#718096' }}>
@@ -207,6 +295,7 @@ function Placeholder({ name, fn }: { name: string; fn: string }) {
 export default function UrsaMajorPanel({ activeTab, onJump }: { activeTab: TabId; onJump: (t: TabId) => void }) {
   const [pending, setPending] = useState<Asset | null>(null);
   const [schutt, setSchutt] = useState<Asset[]>([]);
+  const [staged, setStaged] = useState<Staged | null>(null);
 
   if (activeTab === 'input') {
     return (
@@ -240,7 +329,10 @@ export default function UrsaMajorPanel({ activeTab, onJump }: { activeTab: TabId
     );
   }
   if (activeTab === 't1') {
-    return <CleanerTab pending={pending} setPending={setPending} schutt={schutt} setSchutt={setSchutt} />;
+    return <CleanerTab pending={pending} setPending={setPending} schutt={schutt} setSchutt={setSchutt} setStaged={setStaged} onJump={onJump} />;
+  }
+  if (activeTab === 't6') {
+    return <ExportTab staged={staged} setStaged={setStaged} />;
   }
   const star = STARS.find((s) => s.tab === activeTab);
   return <Placeholder name={star?.name ?? '—'} fn={star?.fn ?? ''} />;
