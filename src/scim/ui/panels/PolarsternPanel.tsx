@@ -1,7 +1,10 @@
 import { useMemo, useState } from 'react';
 import type { TabId } from '../panelRegistry';
-import type { FontModel, FontMetrics } from '../../typeface';
-import { DEFAULT_FONT, renderText } from '../../typeface';
+import type { FontModel, FontMetrics, GlyphDef, ImportedGlyph } from '../../typeface';
+import { DEFAULT_FONT, renderText, parseGlyphSvg, keyFromFilename } from '../../typeface';
+
+// Glyph hat Geometrie, wenn er entweder `d` (Kurzform) oder `strokes[]` trägt.
+const hasGeometry = (g: GlyphDef): boolean => !!(g.d || (g.strokes && g.strokes.length));
 
 // Schrift-Panel — Editor über dem reinen Stroke-Font-Modell (src/scim/typeface).
 // Justiert live Metriken, Gewichte, Kursiv und zeigt Vorschau/Export. Angetrieben
@@ -55,9 +58,92 @@ const h: React.CSSProperties = {
 
 // ── Tab: Glyphen ─────────────────────────────────────────────────────────────
 
-function GlyphsTab({ font }: { font: FontModel }) {
+interface Pending { key: string; advance: number; strokes: GlyphDef['strokes']; warnings: string[]; fileName: string; }
+
+function GlyphImportCard({ font, setFont }: { font: FontModel; setFont: (f: FontModel) => void }) {
+  const [pending, setPending] = useState<Pending | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const onFiles = async (files: FileList | null) => {
+    if (!files || !files.length) return;
+    setError(null);
+    try {
+      const file = files[0];
+      const text = await file.text();
+      const imp: ImportedGlyph = parseGlyphSvg(text, font.metrics.boxHeight);
+      setPending({ key: keyFromFilename(file.name), advance: imp.advance, strokes: imp.strokes, warnings: imp.warnings, fileName: file.name });
+    } catch (e) {
+      setPending(null);
+      setError((e as Error).message);
+    }
+  };
+
+  const add = () => {
+    if (!pending) return;
+    const key = pending.key;
+    if (font.glyphs[key] && hasGeometry(font.glyphs[key]) && !confirm(`„${key}" existiert schon — überschreiben?`)) return;
+    const glyph: GlyphDef = { advance: pending.advance, strokes: pending.strokes };
+    setFont({ ...font, glyphs: { ...font.glyphs, [key]: glyph } });
+    setPending(null);
+  };
+
+  // Vorschau des anstehenden Glyphs (temporäre Schrift mit genau diesem Zeichen).
+  const preview = pending
+    ? renderText({ ...font, glyphs: { [pending.key]: { advance: pending.advance, strokes: pending.strokes } } }, pending.key, { size: 96, showGuides: true, weight: font.weights[1]?.stroke ?? 8 }).svg
+    : '';
+
+  return (
+    <div style={{ ...card, borderStyle: 'dashed', borderColor: '#cbd5e0' }}>
+      <div style={h}>Glyph importieren</div>
+      <label
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={(e) => { e.preventDefault(); onFiles(e.dataTransfer.files); }}
+        style={{ display: 'block', padding: '16px', textAlign: 'center', border: '1.5px dashed #b3c2d6', borderRadius: 8, background: '#fafcff', cursor: 'pointer', fontSize: 12.5, color: '#5a6b80' }}
+      >
+        SVG aus Illustrator hier ablegen oder klicken — mehrere Layer + Gruppe/Transform werden behandelt.
+        <input type="file" accept=".svg,image/svg+xml" style={{ display: 'none' }}
+          onChange={(e) => { onFiles(e.target.files); e.target.value = ''; }} />
+      </label>
+
+      {error && (
+        <div style={{ marginTop: 10, fontSize: 12, color: '#c53030', background: '#fff5f5', border: '1px solid #feb2b2', borderRadius: 6, padding: '6px 10px' }}>
+          ✗ {error}
+        </div>
+      )}
+
+      {pending && (
+        <div style={{ marginTop: 12, display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+          <div style={{ width: 100, height: 100, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8 }}>
+            <Svg markup={preview} />
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+              <span style={{ fontSize: 11, color: '#718096' }}>Zeichen:</span>
+              <input value={pending.key} onChange={(e) => setPending({ ...pending, key: e.target.value })}
+                style={{ width: 60, padding: '3px 8px', fontSize: 14, fontFamily: 'monospace', border: '1px solid #cbd5e0', borderRadius: 5, textAlign: 'center' }} />
+              <span style={{ fontSize: 11, color: '#718096', fontFamily: 'monospace' }}>adv {pending.advance} · {pending.strokes?.length ?? 0} Layer</span>
+            </div>
+            {pending.warnings.map((w, i) => (
+              <div key={i} style={{ fontSize: 11, color: w.includes('≠') || w.includes('Versatz') ? '#c05621' : '#718096', lineHeight: 1.5 }}>· {w}</div>
+            ))}
+            <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+              <button onClick={add} style={{ padding: '5px 14px', fontSize: 12, borderRadius: 6, border: '1px solid #2f855a', background: '#f0fff4', color: '#22543d', cursor: 'pointer', fontWeight: 600 }}>
+                Hinzufügen
+              </button>
+              <button onClick={() => setPending(null)} style={{ padding: '5px 14px', fontSize: 12, borderRadius: 6, border: '1px solid #cbd5e0', background: '#fff', color: '#718096', cursor: 'pointer' }}>
+                Verwerfen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function GlyphsTab({ font, setFont }: { font: FontModel; setFont: (f: FontModel) => void }) {
   const keys = Object.keys(font.glyphs);
-  const drawn = keys.filter((k) => font.glyphs[k].d).length;
+  const drawn = keys.filter((k) => hasGeometry(font.glyphs[k])).length;
   const tokenFor = useMemo(() => {
     const inv: Record<string, string> = {};
     for (const [tok, ch] of Object.entries(font.tokens)) inv[ch] = tok;
@@ -80,20 +166,24 @@ function GlyphsTab({ font }: { font: FontModel }) {
         </div>
       </div>
 
+      <GlyphImportCard font={font} setFont={setFont} />
+
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(96px, 1fr))', gap: 10 }}>
         {keys.map((k) => {
           const g = font.glyphs[k];
+          const present = hasGeometry(g);
           const { svg } = renderText(font, k, { size: 78, showGuides: true, weight: font.weights[1]?.stroke ?? 8 });
           const display = k === ' ' ? '␣' : k;
           const tok = tokenFor[k];
+          const layers = g.strokes?.length ?? (g.d ? 1 : 0);
           return (
             <div key={k} style={{ ...card, padding: 8, marginBottom: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
               <div style={{ height: 80, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fafcff', borderRadius: 4, width: '100%' }}>
-                {g.d ? <Svg markup={svg} /> : <span style={{ color: '#a0aec0', fontSize: 11 }}>leer</span>}
+                {present ? <Svg markup={svg} /> : <span style={{ color: '#a0aec0', fontSize: 11 }}>leer</span>}
               </div>
               <div style={{ fontSize: 13, fontWeight: 600, color: '#1a365d', fontFamily: 'monospace' }}>{display}</div>
               <div style={{ fontSize: 10, color: '#718096', fontFamily: 'monospace' }}>
-                {tok ? `${tok} · ` : ''}adv {g.advance}
+                {tok ? `${tok} · ` : ''}adv {g.advance}{layers > 1 ? ` · ${layers}×` : ''}
               </div>
             </div>
           );
@@ -274,7 +364,7 @@ export default function PolarsternPanel({ activeTab }: { activeTab: TabId }) {
   const setFont = (f: FontModel) => { setFontState(f); saveFont(f); };
 
   switch (activeTab) {
-    case 'input':      return <GlyphsTab font={font} />;
+    case 'input':      return <GlyphsTab font={font} setFont={setFont} />;
     case 'result':     return <PreviewTab font={font} />;
     case 'validation': return <MetricsTab font={font} setFont={setFont} />;
     case 'raw':        return <JsonTab font={font} setFont={setFont} />;

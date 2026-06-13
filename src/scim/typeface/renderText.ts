@@ -68,8 +68,14 @@ export function renderText(model: FontModel, text: string, opts: RenderOpts = {}
       x += adv;
       continue;
     }
-    if (g.d) {
-      parts.push(`<path d="${g.d}" transform="translate(${x},0)"/>`);
+    // Ein Glyph kann mehrere Teil-Striche haben, jeder mit eigenem Gewichts-
+    // Faktor (w) und optionaler Transform. Kurzform `d` = ein Strich, Faktor 1.
+    const strokes = g.strokes ?? (g.d ? [{ d: g.d }] : []);
+    for (const s of strokes) {
+      if (!s.d) continue;
+      const sw = weight * (s.w ?? 1);
+      const tf = `translate(${x},0)${s.transform ? ' ' + s.transform : ''}`;
+      parts.push(`<path d="${s.d}" stroke-width="${sw}" transform="${tf}"/>`);
     }
     x += g.advance;
   }

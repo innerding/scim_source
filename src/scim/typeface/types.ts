@@ -37,12 +37,30 @@ export interface FontWeight {
   stroke: number;
 }
 
-/** Ein Glyph = eine Mittellinie (Pfad-`d`) plus seine Vorschubbreite. */
-export interface GlyphDef {
+/**
+ * Ein Teil-Strich eines Glyphs. Erlaubt es, Teile (Akzente, der innere Ring im
+ * `@`) in EINER ANDEREN relativen Strichstärke zu führen — OHNE das „Gewicht =
+ * ein Parameter"-Modell aufzugeben: `w` ist ein FAKTOR auf das globale Gewicht,
+ * kein absoluter Wert. So bleibt das Verhältnis zweier Stärken über alle Gewichte
+ * konstant. Der dickste Layer ist die Basis (w = 1), dünnere bekommen w < 1.
+ */
+export interface GlyphStroke {
   /** SVG-Pfad-`d` der Mittellinie, im Koordinatenraum 0..advance × 0..boxHeight. */
   d: string;
+  /** Gewichts-Faktor relativ zum Basis-Gewicht (Default 1 = Basis). */
+  w?: number;
+  /** Optionale Transform-Matrix (aus Gruppen-/Pfad-Transform beim Import). */
+  transform?: string;
+}
+
+/** Ein Glyph = eine oder mehrere Mittellinien plus seine Vorschubbreite. */
+export interface GlyphDef {
   /** Vorschubbreite (advance) inkl. eigener Seitenbänder, in User-Units. */
   advance: number;
+  /** Kurzform für einen einzelnen Strich (Faktor 1). Entweder `d` ODER `strokes`. */
+  d?: string;
+  /** Mehrere Teil-Striche mit eigenem relativen Gewicht (@, Diakritika). */
+  strokes?: GlyphStroke[];
   /** true bei akzentuierten Zeichen — nutzt die Akzent-Zone über capY. */
   hasAccent?: boolean;
 }
