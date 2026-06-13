@@ -18,6 +18,17 @@ export default function IconForgeSpec() {
       }}>
         Baukonzeptnotiz · Großer Bär · Icon-Schmiede (Node-Editor) — Vorbereitung (BA2)
       </div>
+
+      <div style={{ margin: '4px 0 14px', padding: '12px 14px', border: '1px solid #bee3f8', background: '#ebf8ff', borderRadius: 8 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: '#2b6cb0', marginBottom: 4 }}>Gate-Prinzip — der Große Bär liegt upstream</div>
+        <p style={{ ...P, color: '#2c5282' }}>Der Große Bär ist das <strong>zentrale Import-/Cleaner-Gate</strong>: <strong>nichts kommt roh rein</strong> — weder Icons für <strong>Draco</strong> noch Glyphen für den <strong>Kleinen Bären</strong>. Alles läuft erst durch den Cleaner, dann in einen Speicher. <strong>Ein Gate, eine Engine, zwei Profile</strong> (Icon: fill/stroke·48/24·Node-Budget · Glyph: Mittellinie·Box 130·advance). Das im Kleinen Bären gebaute <code>glyphImport</code> ist bereits das Glyph-Profil und konvergiert hierher. <strong>User-Dashboard:</strong> dieselbe geteilte Cleaner-Quelle (shell-kit), keine Kopie — die Invariante: nichts landet un-gecleant in einer Representation.</p>
+      </div>
+
+      <div style={{ margin: '0 0 14px', padding: '12px 14px', border: '1px solid #f6c177', background: '#fffaf0', borderRadius: 8 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: '#9c6a00', marginBottom: 4 }}>Lieferung / Backend (offen, BA2)</div>
+        <p style={{ ...P, color: '#7a4d00' }}>Schrift + Icons sind <strong>global</strong> (nicht per-Rep). Offene Frage: Trennung <code>scim_source</code> ↔ <code>sensus-core-runtime</code> — wo liegen und <strong>wie reisen</strong> die globalen Assets (via <strong>shell-kit</strong> ins Runtime, nicht im Per-Rep-Bundle). Hier festgehalten, gebaut in BA2.</p>
+      </div>
+
       <p style={P}><strong>Zweck:</strong> regelbasierter, reduzierter Schwarz-Weiß-Icon-Editor mit optionaler Fill-/Stroke-Trennung. Erzeugt tabfähige Icons. <em>Braucht keine Karte.</em></p>
 
       <div style={H}>Ausgabegröße</div>

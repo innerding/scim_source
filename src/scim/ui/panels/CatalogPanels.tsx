@@ -18,8 +18,8 @@ function titleCase(s: string): string {
   return s.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 }
 
-function CatalogBrowse({ badge, title, note, color = '#2d3748', groups }: {
-  badge: string; title: string; note?: string; color?: string; groups: BrowseGroup[];
+function CatalogBrowse({ badge, title, note, color = '#2d3748', groups, todo }: {
+  badge: string; title: string; note?: string; color?: string; groups: BrowseGroup[]; todo?: string[];
 }) {
   const total = groups.reduce((n, g) => n + g.items.length, 0);
   return (
@@ -31,6 +31,14 @@ function CatalogBrowse({ badge, title, note, color = '#2d3748', groups }: {
       }}>{badge} · read-only · {total}</div>
       <div style={{ fontSize: 15, fontWeight: 600, color: '#1a365d', marginBottom: note ? 6 : 14 }}>{title}</div>
       {note && <p style={{ fontSize: 12, color: '#718096', lineHeight: 1.55, margin: '0 0 14px' }}>{note}</p>}
+      {todo && todo.length > 0 && (
+        <div style={{ margin: '0 0 16px', padding: '10px 14px', border: '1px solid #f6c177', background: '#fffaf0', borderRadius: 8 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#9c6a00', marginBottom: 4 }}>Noch fehlend / zu erfassen</div>
+          <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: '#7a4d00', lineHeight: 1.6 }}>
+            {todo.map((t, i) => <li key={i}>{t}</li>)}
+          </ul>
+        </div>
+      )}
 
       {groups.filter((g) => g.items.length).map((g) => (
         <div key={g.label} style={{ marginBottom: 18 }}>
@@ -95,6 +103,12 @@ export function CepheusPanel() {
       title="System-Katalog — SCIM-/Panel-Icons"
       note="Read-only: die editor-eigenen System-Glyphen (currentColor-Stroke), inkl. Package-Icons. Künftig data/icons-scim."
       groups={[{ label: 'SCIM-/Panel-Icons', items }]}
+      todo={[
+        'Weitere Custom-/System-Icons noch nicht im Katalog erfasst (heute teils hartkodiert in panelGlyphs / shellIconRegistry).',
+        'Grafische Elemente (Logos, Marken, Embleme) — noch keine Heimat hier.',
+        'Animationen (Container-/POI-Bewegungen, Diode/Glimmer) — noch nicht als Asset katalogisiert.',
+        'Ziel: alles über den Großer-Bär-Cleaner → data/icons-scim, dann hier read-only.',
+      ]}
     />
   );
 }
