@@ -4,10 +4,11 @@ import {
   KOSMOLOGIE_IDS,
   PANEL_REGISTRY, SYSTEM_DESCRIPTOR, AI_INTERFACE_DESCRIPTOR, IPILLS_DESCRIPTOR, CLOUD_DESCRIPTOR,
   RUNTIME_BUILDER_REGISTRY, VERSIONEN_REGISTRY, WORKSPACE_DESCRIPTOR,
-  DRAWER_DESCRIPTOR, CATALOG_DESCRIPTOR, POLARSTERN_DESCRIPTOR,
+  DRAWER_DESCRIPTOR, CATALOG_DESCRIPTOR,
 } from './panelRegistry';
 import logoBaseNaked from '../../assets/logo-base-naked.svg';
 import logoHexNaked from '../../assets/logo-hex-naked.svg';
+import NavConstellations from './NavConstellations';
 import { useRole, isEditorRole } from './RoleContext';
 import type { Role } from './RoleContext';
 import { useRepresentationContext } from '../../runtime/repContext';
@@ -120,9 +121,23 @@ function NavItem({
 // ─── Cosmo Controls Row (textlicher Spiegel der Kosmologie) ──────────────────
 // Reihenfolge von oben (entsprechend den Controls): Mond → Transmitter →
 // Komposit-Tetraeder → Substrat. Dünne Zwischen-Labels als Trenner.
-const COSMO_GROUPS: { label: string; ids: string[]; sub?: string }[] = [
+// Ein Cosmo-Eintrag kann ein reiner Panel-id sein ODER (für Panels mit
+// Funktions-Tabs wie die Wolke) ein {id, tab, label}, der direkt in den Tab springt.
+type CosmoEntry = string | { id: string; tab: TabId; label: string };
+const COSMO_GROUPS: { label: string; ids: CosmoEntry[]; sub?: string }[] = [
+  // Sternenscheibe — der Zirkumpolar-Himmel über dem Mond. Einträge nach Funktion;
+  // Sternbild-Namen nur im Hover-Tooltip. Schmieden (Bären) + Katalog-Maschinen.
+  { label: 'Sternenscheibe', ids: ['polarstar', 'ursa_major', 'draco', 'cepheus', 'cassiopeia'] },
   // Hexagon=V03 (Publishing-Monitor) · Scheibe=V01 (All-Publications) · Extensions=V02 (Regions).
   { label: 'Mond', ids: ['V03', 'V01', 'V02'], sub: 'url: diesenpark.com' },
+  // Wolke — Auslieferungs-/Eintritts-Schicht (war „Cloud"). Aufgefächert in ihre vier
+  // Funktionen (= die Tabs des Cloud-Panels), damit kein „Wolke/Wolke"-Echo entsteht.
+  { label: 'Wolke', ids: [
+    { id: 'cloud', tab: 'input', label: 'Übersicht' },
+    { id: 'cloud', tab: 'launcher', label: 'Launcher' },
+    { id: 'cloud', tab: 'globe_switcher', label: 'Globe-Switcher' },
+    { id: 'cloud', tab: 'collector', label: 'Collector' },
+  ] },
   { label: 'Transmitter', ids: ['P06', 'P01', 'P04', 'P02'] },
   { label: 'Komposit-Tetraeder', ids: ['P11', 'P07', 'P08', 'P09', 'workspace', 'geometry_editor', 'catalog'] },
   { label: 'Substrat', ids: ['ai_interface', 'ipills', 'system'] },
@@ -133,7 +148,19 @@ const COSMO_GROUPS: { label: string; ids: string[]; sub?: string }[] = [
 // R02 „Link & QR" ist in die Cloud-Schicht befördert (nicht mehr im Müllwagen).
 const REST_IDS = ['P03', 'P10', 'P12', 'P13', 'P14', 'R03', 'R04', 'R05', 'R06', 'R07', 'R08'];
 
+// Sternenscheibe — die Sternbild-Maschinen in der Cosmo-Controls-Liste tragen
+// FUNKTIONS-Labels (keine Sternbild-Namen; die stehen nur im Hover-Tooltip).
+const ATLAS_ITEMS: Record<string, { icon: string; label: string }> = {
+  polarstar:  { icon: '✦', label: 'Designer · Font' },
+  ursa_major: { icon: '✦', label: 'Designer · Node' },
+  draco:      { icon: '✦', label: 'Katalog · Geo' },
+  cepheus:    { icon: '✦', label: 'Katalog · System' },
+  cassiopeia: { icon: '✦', label: 'Katalog · Typo' },
+};
+
 function descById(id: string): { id: string; icon: string; label: string } | null {
+  const a = ATLAS_ITEMS[id];
+  if (a) return { id, icon: a.icon, label: a.label };
   const p = PANEL_REGISTRY.find((x) => x.id === id);
   if (p) return { id, icon: p.icon, label: p.label };
   for (const d of [WORKSPACE_DESCRIPTOR, DRAWER_DESCRIPTOR, CATALOG_DESCRIPTOR, SYSTEM_DESCRIPTOR, AI_INTERFACE_DESCRIPTOR, IPILLS_DESCRIPTOR, CLOUD_DESCRIPTOR]) {
@@ -144,6 +171,13 @@ function descById(id: string): { id: string; icon: string; label: string } | nul
   const v = VERSIONEN_REGISTRY.find((x) => x.id === id);
   if (v) return { id, icon: v.icon, label: v.label };
   return null;
+}
+
+// CosmoEntry (string-id ODER {id,tab,label}) → einheitlich {id,label,tab?}.
+function normCosmo(e: CosmoEntry): { id: string; label: string; tab?: TabId } | null {
+  if (typeof e === 'object') return { id: e.id, label: e.label, tab: e.tab };
+  const d = descById(e);
+  return d ? { id: d.id, label: d.label } : null;
 }
 
 function CosmoSubLabel({ text, sub }: { text: string; sub?: string }) {
@@ -431,8 +465,10 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
   // Anzahl sichtbarer Cosmo-Items (Rolle: catalog/ai_interface nur Operator).
   // non-operator: die Gruppen „Substrat" + „Grund" (alles unter dem Komposit) ausblenden.
   const visibleCosmoGroups = COSMO_GROUPS.filter((g) => !locked || (g.label !== 'Substrat' && g.label !== 'Grund'));
-  const cosmoCount = visibleCosmoGroups.reduce((n, g) => n + g.ids.filter((id) =>
-    descById(id) && !(id === 'ai_interface' && role !== 'operator')).length, 0);
+  const cosmoCount = visibleCosmoGroups.reduce((n, g) => n + g.ids.filter((e) => {
+    const c = normCosmo(e);
+    return c && !(c.id === 'ai_interface' && role !== 'operator');
+  }).length, 0);
 
   const navTheme = NAV_THEMES[role] ?? NAV_THEMES.operator;
   // Kosmologie-Akzent als CSS-Variablen (erben in alle SVG-Elemente der Nav).
@@ -540,6 +576,10 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
       position: 'relative',
       transition: 'background 0.2s, border-color 0.2s',
     }}>
+      {/* Zirkumpolar-Himmel — Polaris als ruhender Pol, die Sternbild-Maschinen
+          wheeln langsam um ihn. Eigenes Band ganz oben (Sky über der Maschine). */}
+      <NavConstellations activeId={activeId} onSelect={onSelect} />
+
       {/* Inspector — Pergament-Trapez ueber dem Mond.
           Perspektivisch: oben breit (Gap zu li/re/oben), unten schmaler.
           88% transluzent, kein Stroke. Klick toggelt die Map. */}
@@ -644,51 +684,8 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
           width: `${Math.round(0.88 * 100)}%`,                          // f0.88
           height: Math.round(0.88 * (210 - 12) / (107.5 / 51.122)),     // proportional mit f0.88
         }}>
-          {/* ── Polarstern — der Stern HINTER dem Mond (Spender der universellen
-              Sprache, Stroke-Font). Erstes Kind → malt hinter die Mondscheibe;
-              die oberen-rechten Strahlen lugen in den Spalt zwischen Inspector
-              und Mond. Eigene Scheiben-Hitbox, leichtes Glimmern. */}
-          <svg
-            viewBox="0 0 100 100"
-            onClick={() => onSelect(POLARSTERN_DESCRIPTOR.id)}
-            style={{
-              position: 'absolute', top: '-34%', right: '-12%', width: '46%', height: '46%',
-              overflow: 'visible', cursor: 'pointer',
-              filter: activeId === POLARSTERN_DESCRIPTOR.id
-                ? 'drop-shadow(0 0 6px rgba(255,224,150,0.95))'
-                : 'drop-shadow(0 0 3px rgba(255,224,150,0.45))',
-            }}
-          >
-            <title>Polarstern — Schrift (universelle Sprache)</title>
-            {/* unsichtbare Scheibe = großzügige Klickfläche */}
-            <circle cx="50" cy="50" r="48" fill="transparent" />
-            {/* weicher Hof */}
-            <circle cx="50" cy="50" r="30" fill="rgba(255,224,150,0.10)"
-              className="scim-polarstern-glimmer" />
-            {/* dünne diagonale Strahlen */}
-            <g stroke="rgba(255,236,190,0.55)" strokeWidth="1.4" strokeLinecap="round"
-              className="scim-polarstern-glimmer">
-              <line x1="50" y1="14" x2="50" y2="2" />
-              <line x1="50" y1="86" x2="50" y2="98" />
-              <line x1="14" y1="50" x2="2" y2="50" />
-              <line x1="86" y1="50" x2="98" y2="50" />
-            </g>
-            {/* vierzackiger Stern (konkav), Gold→weißer Kern */}
-            <path
-              d="M50,6 C54,40 60,46 94,50 C60,54 54,60 50,94 C46,60 40,54 6,50 C40,46 46,40 50,6 Z"
-              fill={activeId === POLARSTERN_DESCRIPTOR.id ? '#fff3d6' : '#ffe6a6'}
-              stroke="rgba(255,255,255,0.85)" strokeWidth="0.8" strokeLinejoin="round"
-              className={activeId === POLARSTERN_DESCRIPTOR.id ? 'scim-active-pulse' : 'scim-polarstern-glimmer'}
-            />
-            <circle cx="50" cy="50" r="6" fill="#fffaf0" />
-          </svg>
-          <style>{`
-            @keyframes scim-polarstern-glimmer {
-              0%, 100% { opacity: 0.62; }
-              50%      { opacity: 1.0; }
-            }
-            .scim-polarstern-glimmer { animation: scim-polarstern-glimmer 2600ms ease-in-out infinite; }
-          `}</style>
+          {/* (Polarstern re-homed: er ist jetzt der zentrale Pol im Zirkumpolar-
+              Himmel oben, siehe NavConstellations.) */}
           <img
             src={logoBaseNaked}
             alt="SCIM3"
@@ -977,20 +974,20 @@ export default function Navigator({ activeId, onSelect, onGoTo, onInspectorToggl
       <SectionBody isOpen={cosmoOpen}>
         {visibleCosmoGroups.map((g) => {
           const items = g.ids
-            .map(descById)
-            .filter((d): d is { id: string; icon: string; label: string } => d !== null)
-            .filter((d) => !(d.id === 'ai_interface' && role !== 'operator'));
+            .map(normCosmo)
+            .filter((c): c is { id: string; label: string; tab?: TabId } => c !== null)
+            .filter((c) => !(c.id === 'ai_interface' && role !== 'operator'));
           if (items.length === 0) return null;
           return (
             <div key={g.label}>
               <CosmoSubLabel text={g.label} sub={g.sub} />
-              {items.map((d) => (
+              {items.map((c, i) => (
                 <CosmoItem
-                  key={d.id}
-                  id={d.id}
-                  label={d.label}
-                  isActive={activeId === d.id}
-                  onClick={() => onSelect(d.id)}
+                  key={`${c.id}:${c.tab ?? i}`}
+                  id={c.id}
+                  label={c.label}
+                  isActive={activeId === c.id}
+                  onClick={() => (c.tab ? go(c.id, c.tab) : onSelect(c.id))}
                 />
               ))}
             </div>

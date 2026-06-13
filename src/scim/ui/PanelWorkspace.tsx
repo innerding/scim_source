@@ -1126,6 +1126,15 @@ function SensusCorePackages() {
   );
 }
 
+// Zirkumpolar-Sternbilder (außer dem Kleinen Bär = Polarstern, der ein echtes
+// Panel hat). Vorerst Stubs — Benennung/Tabs/Inhalt folgen (Schritt 2+3).
+const CONSTELLATION_STUBS: Record<string, { label: string; role: string }> = {
+  ursa_major: { label: 'Großer Bär', role: 'Icon-Schmiede (Maschine) — Icons zeichnen/importieren' },
+  cassiopeia: { label: 'Cassiopeia', role: 'Katalog-Maschine — hält & gibt Asset-Sets aus' },
+  cepheus:    { label: 'Cepheus', role: 'Katalog-Maschine — Nation-/Region-/SCIM3-Icon-Sets' },
+  draco:      { label: 'Draco', role: 'Katalog-Maschine — Regio-Katalog-Icon-Sets' },
+};
+
 function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, onGeometryConsumed, openCatalogId, onCatalogConsumed }: {
   activeId: string;
   activeTab: TabId;
@@ -1160,6 +1169,9 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
   }
   if (activeId === POLARSTERN_DESCRIPTOR.id) {
     return <PolarsternPanel activeTab={activeTab} />;
+  }
+  if (CONSTELLATION_STUBS[activeId]) {
+    return <StubPanel id={CONSTELLATION_STUBS[activeId].label} description={CONSTELLATION_STUBS[activeId].role} />;
   }
 
   // i-Pills: per-Audience (Operator/Analyst/Editor) über das Substrat-Feld.
@@ -1413,6 +1425,12 @@ export default function PanelWorkspace({ activeId, activeTab, onTabChange, resul
     activeId === IPILLS_DESCRIPTOR.id ? IPILLS_DESCRIPTOR :
     activeId === CLOUD_DESCRIPTOR.id ? CLOUD_DESCRIPTOR :
     activeId === POLARSTERN_DESCRIPTOR.id ? POLARSTERN_DESCRIPTOR :
+    CONSTELLATION_STUBS[activeId] ? {
+      id: activeId,
+      label: CONSTELLATION_STUBS[activeId].label,
+      shortDescription: CONSTELLATION_STUBS[activeId].role,
+      tabs: [{ id: 'input' as TabId, label: 'Übersicht', icon: 'ℹ' }],
+    } :
     RUNTIME_BUILDER_REGISTRY.find((m) => m.id === activeId) ??
     VERSIONEN_REGISTRY.find((v) => v.id === activeId) ??
     PANEL_REGISTRY.find((p) => p.id === activeId);

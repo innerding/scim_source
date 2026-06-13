@@ -560,7 +560,7 @@ export const IPILLS_DESCRIPTOR: IPillsDescriptor = {
 export const CLOUD_DESCRIPTOR: CloudDescriptor = {
   kind: 'cloud',
   id: 'cloud',
-  label: 'Cloud',
+  label: 'Wolke',
   icon: '☁',
   tabs: [
     { id: 'input',          label: 'Übersicht',      icon: '☁' },

@@ -29,6 +29,26 @@ const CATEGORY_META: Record<AnnotationCategory, { label: string; color: string; 
 // Initial seed annotations — operator extends these in the UI
 const SEED_ANNOTATIONS: Annotation[] = [
 
+  // ── STERNENSCHEIBE-KOSMOLOGIE — 2 Bauabschnitte (2026-06-13) ──
+
+  {
+    id: 'ann_144',
+    category: 'next_intent',
+    label: 'STERNENSCHEIBE BA1 — Struktur verdrahten (mit Bestehendem)',
+    content: 'STERNENSCHEIBE-KOSMOLOGIE · BAUABSCHNITT 1 „Struktur verdrahten" (Operator 2026-06-13). Die Schrift-/Icon-Maschinen + Asset-Kataloge werden zirkumpolare Sternbilder um den Polarstern (ECHTE Planisphäre, reale RA/Dec, azimutal um den Himmelsnordpol, Polkappe Dec +49°…+90°). BA1 nutzt NUR Bestehendes, erfindet nichts neu. — MODELL: Polaris-Pol = Maschine. 2 GOLDENE SCHMIEDEN: Kleiner Bär = Font-Designer (= das aufgegangene, schon gebaute Polarstern-Panel), Großer Bär = Node/Icon-Designer. 3 BLAUE KATALOG-MASCHINEN: Draco = Geo (Nation→Region→Representation-Baum, Vererbung), Cepheus = System (data/icons-scim), Cassiopeia = Typo. Prinzip: alles Maschinen, zwei Verben — schmieden / verwalten-ausgeben. — 3 BENENNUNGS-EBENEN: (1) Sternbild-Name NUR im Hover-Tooltip über der Konstellation; (2) Cosmo-Controls-Listenzeile = FUNKTION (Designer·Font, Designer·Node, Katalog·Geo/System/Typo) — KEINE Sternbild-Namen in der Liste; (3) Panel-Tabs = STERN-Namen + Funktions-Subline (Kleiner Bär: Polaris·Fonts, Kochab·Vorschau, Pherkad·Metriken, Yildun·Export; Großer Bär: die 7 Wagen-Sterne Dubhe/Merak/Phecda/Megrez/Alioth/Mizar/Alkaid). Forge=flache Tabs (Sterne); Katalog=Baum (Anatomie=Ebenen). — AUFGABEN BA1: (a) Navigator fertig: Hitbox je Sternbild = kompaktes geschlossenes Polygon (Draco: Punkte 1–8 vom Kopf, ~gleichschenklig), nicht volle Hülle; Hover-Tooltip mit Sternbild-Name; Sterne nicht einzeln klickbar. (b) Cosmo Controls: neue Gruppe „Sternenscheibe" ganz oben (über Mond, OHNE sub/Koordinaten — „Sternenatlant/Blickpunkt Erde" verworfen), Einträge nach Funktion; Cloud → „Wolke" als eigene Gruppe (Konsistenz: Cosmo-Label = Name der Kosmologie-Grafik). (c) Panels nach Sternbild + Tabs nach Sternen benennen. (d) Polarstern-Panel in „Kleiner Bär" AUFGEHEN lassen. (e) Icon-Panel-NOTIZ aus dem Drawer (IconBuildNotiz in DrawerPanel.tsx) herausziehen → Heimat „Großer Bär". (f) vorhandene Asset-Ordner (data/icons, data/icons-scim) an die Katalog-Tabs anbinden + READ-ONLY darstellen (Browse-Sicht, kein neuer Speicher). — GEBAUT bereits (lokal/ungepusht): NavConstellations.tsx (Planisphäre) + CONSTELLATION_STUBS in PanelWorkspace + Polarstern re-homed an den Pol. Bezug: project_schriftenpanel.md (Memory), ann_145 (BA2).',
+    related_panel: 'polarstar',
+    date: '2026-06-13',
+  },
+
+  {
+    id: 'ann_145',
+    category: 'next_intent',
+    label: 'STERNENSCHEIBE BA2 — Neu entwickeln (Editor, Baum, Feinschliff)',
+    content: 'STERNENSCHEIBE-KOSMOLOGIE · BAUABSCHNITT 2 „Neu entwickeln" (Operator 2026-06-13). Folgt auf BA1 (ann_144). Hier entsteht ECHTE neue Funktion. — (1) GROSSER BÄR = Icon-Schmiede: der eigentliche Node/Icon-Editor nach der IconBuild-Spec (heute nur Baukonzeptnotiz im Drawer): Schwarz-Weiß-Stroke/Fill-Layer, Raster+Snap, variable Stroke-Breiten, Stroke→Fill, Boolean, Node-Budget (60, DP-Vereinfachung), Import (Raster-Pausschicht + .svg mit Node-Zahl), Cleaner→Konvention, Export+Provenienz, 3 Speicher-Ziele (data/icons · data/icons-shell · data/icons-scim). = der „Illustrator-Klon"; aus ihm geht auch die Schrift hervor (Glyphen wandern in den Kleinen Bär). Gemeinsamer Stroke-Asset-Kern mit der Font-Schmiede. — (2) DRACO = Geo-Katalog: echter Nation→Region→Representation-Baum mit VERERBUNG (Sicht-Vererbung als Fundament: ein Icon liegt auf einer Ebene, tiefere sehen es mit; Override als Kür: Rep darf geerbtes Icon überschreiben — CSS-Kaskade-artig). „In der Nation ist alles", Region/Rep spezialisieren. Browse + Verwaltung + Routing in die 3 Speicher. Representationen leben im Baum, werden NICHT als Sterne gezeichnet. — (3) FONT-SCHMIEDE-FEINSCHLIFF (eigene, schon geplante Spur): Metriken-Tab entrümpeln (Skelett global, Set-once); neue „Satz-Werkstatt" (pro Glyph: Seitenbänder lsb/rsb via getBBox + Letter-Stretch scaleX); „Specimen" (pro Stroke-Set = Gewicht: GAP-STRETCH-Faktor auf die Bänder, alle Sets sichtbar). Knoten-Editor NICHT hier (→ Großer Bär). — (4) BACKEND-FRAGE (zu klären): Trennung scim_source ↔ sensus-core-runtime — wo liegen und wie reisen die GLOBALEN Assets (Schrift + Icons sind global, nicht per-Rep): via shell-kit ins Runtime, nicht im Per-Rep-Bundle. Cassiopeia/Cepheus/Draco lesen aus scim_source/data; Auslieferung global. Bezug: project_schriftenpanel.md, ann_144 (BA1), IconBuildNotiz (DrawerPanel.tsx).',
+    related_panel: 'ursa_major',
+    date: '2026-06-13',
+  },
+
   // ── HINWEIS-MODAL-KONZEPT — vereinfachte Comfort-UX, ersetzt die Director-Controls (2026-06-11) ──
 
   {
