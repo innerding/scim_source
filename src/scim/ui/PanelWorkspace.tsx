@@ -37,6 +37,7 @@ import SystemPanel from './panels/SystemPanel';
 import AiInterfacePanel from './panels/AiInterfacePanel';
 import PolarsternPanel from './panels/PolarsternPanel';
 import IconForgeSpec from './panels/IconForgeSpec';
+import { DracoPanel, CepheusPanel, CassiopeiaPanel } from './panels/CatalogPanels';
 import CatalogTab from './panels/CatalogTab';
 import { useRole, useModeSwitch, isEditorRole } from './RoleContext';
 import V01PackagesPanel from './panels/V01PackagesPanel';
@@ -1132,12 +1133,12 @@ function SensusCorePackages() {
   );
 }
 
-// Zirkumpolar-Sternbilder (außer dem Kleinen Bär = Polarstern, der ein echtes
-// Panel hat). Vorerst Stubs — Benennung/Tabs/Inhalt folgen (Schritt 2+3).
-const CONSTELLATION_STUBS: Record<string, { label: string; role: string }> = {
-  cassiopeia: { label: 'Cassiopeia', role: 'Katalog-Maschine — hält & gibt Asset-Sets aus' },
-  cepheus:    { label: 'Cepheus', role: 'Katalog-Maschine — Nation-/Region-/SCIM3-Icon-Sets' },
-  draco:      { label: 'Draco', role: 'Katalog-Maschine — Regio-Katalog-Icon-Sets' },
+// Katalog-Sternbilder — read-only Browse-Sichten (BA1 · Phase 4a). Header-Info;
+// der Inhalt kommt aus den dedizierten Panels (CatalogPanels).
+const CATALOG_INFO: Record<string, { label: string; role: string }> = {
+  draco:      { label: 'Draco', role: 'Geo-Katalog · data/icons (Nation→Region→Rep)' },
+  cepheus:    { label: 'Cepheus', role: 'System-Katalog · SCIM-/Panel-Icons' },
+  cassiopeia: { label: 'Cassiopeia', role: 'Typo-Bibliothek · Polarstern-Schrift' },
 };
 
 function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, onGeometryConsumed, openCatalogId, onCatalogConsumed }: {
@@ -1193,9 +1194,9 @@ function PanelContent({ activeId, activeTab, result, onJumpTo, openGeometryId, o
       </div>
     );
   }
-  if (CONSTELLATION_STUBS[activeId]) {
-    return <StubPanel id={CONSTELLATION_STUBS[activeId].label} description={CONSTELLATION_STUBS[activeId].role} />;
-  }
+  if (activeId === 'draco') return <DracoPanel />;
+  if (activeId === 'cepheus') return <CepheusPanel />;
+  if (activeId === 'cassiopeia') return <CassiopeiaPanel />;
   if (activeId === 'comet') {
     return (
       <div style={{ padding: '28px 24px', fontFamily: 'system-ui, sans-serif', maxWidth: 620 }}>
@@ -1470,11 +1471,11 @@ export default function PanelWorkspace({ activeId, activeTab, onTabChange, resul
     activeId === CLOUD_DESCRIPTOR.id ? CLOUD_DESCRIPTOR :
     activeId === POLARSTERN_DESCRIPTOR.id ? POLARSTERN_DESCRIPTOR :
     activeId === URSA_MAJOR_DESCRIPTOR.id ? URSA_MAJOR_DESCRIPTOR :
-    CONSTELLATION_STUBS[activeId] ? {
+    CATALOG_INFO[activeId] ? {
       id: activeId,
-      label: CONSTELLATION_STUBS[activeId].label,
-      shortDescription: CONSTELLATION_STUBS[activeId].role,
-      tabs: [{ id: 'input' as TabId, label: 'Übersicht', icon: 'ℹ' }],
+      label: CATALOG_INFO[activeId].label,
+      shortDescription: CATALOG_INFO[activeId].role,
+      tabs: [{ id: 'input' as TabId, label: 'Übersicht', icon: '☰' }],
     } :
     activeId === 'comet' ? {
       id: 'comet',
